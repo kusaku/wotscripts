@@ -4,6 +4,7 @@
 class TUTORIAL(object):
     MESSAGES_REQUEST_BONUS_FAILED = '#tutorial:messages/request-bonus-failed'
     MESSAGES_TUTORIAL_DISABLED = '#tutorial:messages/tutorial-disabled'
+    ONCEONLYHINTS_FALLOUTQUESTSTAB = '#tutorial:onceOnlyHints/falloutQuestsTab'
     HANGARTUTORIAL_RESEARCHTREE_RESEARCHTREE = '#tutorial:hangarTutorial/researchTree/researchTree'
     HANGARTUTORIAL_RESEARCH_PREVVEHICLES = '#tutorial:hangarTutorial/research/prevVehicles'
     HANGARTUTORIAL_RESEARCH_TANKINFO = '#tutorial:hangarTutorial/research/tankInfo'
@@ -109,6 +110,9 @@ class TUTORIAL(object):
     TUTORIALQUEST_AWARDWINDOW_TITLE_QUEST14 = '#tutorial:tutorialQuest/awardWindow/title/quest14'
     TUTORIALQUEST_AWARDWINDOW_DESCRIPTION_QUEST14 = '#tutorial:tutorialQuest/awardWindow/description/quest14'
     TUTORIALQUEST_AWARD_QUEST14 = '#tutorial:tutorialQuest/award/quest14'
+    CHAIN_HINT_BUYVEHICLE = '#tutorial:chain/hint/buyVehicle'
+    CHAIN_HINT_CHANGEVEHICLE = '#tutorial:chain/hint/changeVehicle'
+    CHAIN_HINT_CHANGETOPVEORRANDOM = '#tutorial:chain/hint/changeToPveOrRandom'
     PVECHAIN_HINT_SELECTOR = '#tutorial:pveChain/hint/selector'
     CHAIN1_HINT_GOTOBATTLE = '#tutorial:chain1/hint/goToBattle'
     CHAIN2_HINT_GOTORESEARCH = '#tutorial:chain2/hint/goToResearch'

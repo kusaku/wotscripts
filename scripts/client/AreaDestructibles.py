@@ -1312,11 +1312,11 @@ class DestructiblesManagerStaticModel():
         self.__stopLifetimeEffect(chunkID, destrIndex, -1)
         isHavokVisible = False
         if isNeedAnimation:
-            functor = partial(self.__setFragileDestroyed, self.__spaceID, chunkID, destrIndex, isNeedAnimation, isShotDamage, isHavokVisible, True, explosionInfo)
+            functor = partial(self.__setFragileDestroyed, self.__spaceID, chunkID, destrIndex, isNeedAnimation, isShotDamage, isHavokVisible, explosionInfo)
             callbackID = BigWorld.callback(DESTRUCTIBLE_HIDING_DELAY, functor)
             self.__destroyCallbacks[functor] = callbackID
         else:
-            self.__setFragileDestroyed(self.__spaceID, chunkID, destrIndex, isNeedAnimation, isShotDamage, isHavokVisible, False, explosionInfo)
+            self.__setFragileDestroyed(self.__spaceID, chunkID, destrIndex, isNeedAnimation, isShotDamage, isHavokVisible, explosionInfo, False)
         if isNeedAnimation:
             self.__launchEffect(chunkID, destrIndex, -1, 'decayEffect', isHavokVisible)
             if isShotDamage:
@@ -1349,7 +1349,7 @@ class DestructiblesManagerStaticModel():
             self.__stopLifetimeEffect(chunkID, destrIndex, moduleIndex)
             self.__setModuleDestroyed(self.__spaceID, chunkID, destrIndex, moduleIndex, isNeedAnimation, isShotDamage, isHavokVisible, False)
 
-    def __setFragileDestroyed(self, spaceID, chunkID, destrIndex, isNeedAnimation, isShotDamage, isHavokVisible, delCallback = True, explosionInfo = None):
+    def __setFragileDestroyed(self, spaceID, chunkID, destrIndex, isNeedAnimation, isShotDamage, isHavokVisible, explosionInfo = None, delCallback = True):
         if spaceID != self.__spaceID:
             return
         BigWorld.wg_destroyFragile(spaceID, chunkID, destrIndex, isNeedAnimation, isShotDamage, isHavokVisible)
@@ -1409,11 +1409,13 @@ class DestructiblesManagerStaticModel():
         elif destrType == DESTR_TYPE_STRUCTURE:
             effectCat = 'structures'
         effectName = BigWorld.wg_getDestructibleEffectName(self.__spaceID, chunkID, destrIndex, moduleIndex, effectType)
-        effectVars = g_cache._getEffect(effectName, effectCat, False)
-        if effectVars is None:
-            print 'Could not find any effects vars for: ' + str(effectName) + ' - type: ' + str(effectType) + ' - cat: ' + str(effectCat) + ' (' + str(destrType) + ')'
+        if effectName == 'none':
             return
         else:
+            effectVars = g_cache._getEffect(effectName, effectCat, False)
+            if effectVars is None:
+                print 'Could not find any effects vars for: ' + str(effectName) + ' - type: ' + str(effectType) + ' - cat: ' + str(effectCat) + ' (' + str(destrType) + ')'
+                return
             if destrType == DESTR_TYPE_TREE or destrType == DESTR_TYPE_FALLING_ATOM:
                 chunkMatrix = BigWorld.wg_getChunkMatrix(self.__spaceID, chunkID)
                 destrMatrix = BigWorld.wg_getDestructibleMatrix(self.__spaceID, chunkID, destrIndex)
@@ -1493,6 +1495,8 @@ class DestructiblesManagerStaticModel():
             return
         else:
             effectName = BigWorld.wg_getDestructibleEffectName(self.__spaceID, chunkID, destrIndex, -1, effectType)
+            if effectName == 'none':
+                return
             effectVars = g_cache._getEffect(effectName, 'fallingAtoms', False)
             if effectVars is None:
                 return

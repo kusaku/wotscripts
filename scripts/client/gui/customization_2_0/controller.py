@@ -32,6 +32,8 @@ class Controller(object):
         if g_hangarSpace.space is not None:
             g_hangarSpace.space.updateVehicleCamouflage(camouflageID=self.__aData.installed[CUSTOMIZATION_TYPE.CAMOUFLAGE][0].getID())
             g_hangarSpace.space.updateVehicleSticker(newViewData)
+            g_hangarSpace.space.locateCameraToPreview()
+            g_hangarSpace.space.clearSelectedEmblemInfo()
         return
 
     @property

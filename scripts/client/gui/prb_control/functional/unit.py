@@ -8,6 +8,7 @@ from UnitBase import SORTIE_DIVISION
 import account_helpers
 from gui.prb_control.functional import action_handlers
 from gui.prb_control.restrictions import createUnitActionValidator
+from gui.prb_control.restrictions.permissions import IntroUnitPermissions
 from gui.shared.fortifications import getClientFortMgr
 from messenger.ext import passCensor
 from account_helpers.AccountSettings import AccountSettings
@@ -24,7 +25,6 @@ from gui.prb_control.functional import interfaces
 from gui.prb_control.functional import unit_ext
 from gui.prb_control.items import unit_items, SelectResult
 from gui.prb_control.prb_cooldown import UnitCooldownManager
-from gui.prb_control.restrictions.interfaces import IUnitPermissions
 from gui.prb_control.restrictions import permissions
 from gui.prb_control.settings import FUNCTIONAL_FLAG, CTRL_ENTITY_TYPE
 from gui.prb_control.settings import PREBATTLE_ACTION_NAME
@@ -64,8 +64,9 @@ class UnitIntro(interfaces.IPrbEntry):
 
 class UnitEntry(interfaces.IPrbEntry):
 
-    def __init__(self):
+    def __init__(self, accountsToInvite = None):
         super(UnitEntry, self).__init__()
+        self._accountsToInvite = accountsToInvite or ()
 
     def create(self, ctx, callback = None):
         if not prb_getters.hasModalEntity() or ctx.isForced():
@@ -104,11 +105,11 @@ class UnitEntry(interfaces.IPrbEntry):
 
 class SquadEntry(UnitEntry):
 
-    def __init__(self):
-        super(SquadEntry, self).__init__()
+    def __init__(self, accountsToInvite = None):
+        super(SquadEntry, self).__init__(accountsToInvite=accountsToInvite)
 
     def makeDefCtx(self):
-        return unit_ctx.SquadSettingsCtx(waitingID='prebattle/create')
+        return unit_ctx.SquadSettingsCtx(waitingID='prebattle/create', accountsToInvite=self._accountsToInvite)
 
     def join(self, ctx, callback = None):
         super(SquadEntry, self).join(ctx, callback)
@@ -125,12 +126,12 @@ class SquadEntry(UnitEntry):
 
 class EventSquadEntry(UnitEntry):
 
-    def __init__(self, battleType):
-        super(EventSquadEntry, self).__init__()
+    def __init__(self, battleType, accountsToInvite = None):
+        super(EventSquadEntry, self).__init__(accountsToInvite=accountsToInvite)
         self.__battleType = battleType
 
     def makeDefCtx(self):
-        return unit_ctx.SquadSettingsCtx(waitingID='prebattle/create', flags=FUNCTIONAL_FLAG.SWITCH)
+        return unit_ctx.SquadSettingsCtx(waitingID='prebattle/create', flags=FUNCTIONAL_FLAG.SWITCH, accountsToInvite=self._accountsToInvite)
 
     def select(self, ctx, callback = None):
         self.create(ctx, callback=callback)
@@ -279,7 +280,7 @@ class _UnitFunctional(ListenersCollection, interfaces.IUnitFunctional):
             else:
                 return permissions.UnitPermissions(roles, unit._flags, pDbID == dbID, isPlayerReady)
         else:
-            return IUnitPermissions()
+            return IntroUnitPermissions()
         return
 
     def isCreator(self, dbID = None, unitIdx = None):
@@ -665,7 +666,7 @@ class IntroFunctional(_UnitFunctional):
 
 class UnitFunctional(_UnitFunctional):
 
-    def __init__(self, prbType, rosterSettings):
+    def __init__(self, prbType, rosterSettings, flags = FUNCTIONAL_FLAG.UNIT):
         RQ_TYPE = settings.REQUEST_TYPE
         handlers = {RQ_TYPE.ASSIGN: self.assign,
          RQ_TYPE.LOCK: self.lock,
@@ -685,13 +686,11 @@ class UnitFunctional(_UnitFunctional):
          RQ_TYPE.SET_ES_VEHICLE_LIST: self.setEventSquadVehicleList,
          RQ_TYPE.SET_ES_PLAYER_STATE: self.setEventSquadReady,
          RQ_TYPE.CHANGE_ES_TYPE: self.changeEventSquadType}
-        flags = FUNCTIONAL_FLAG.UNIT
         if prbType == PREBATTLE_TYPE.SQUAD:
             self._actionHandler = action_handlers.SquadActionsHandler(self)
-            flags |= FUNCTIONAL_FLAG.SQUAD
         else:
             self._actionHandler = action_handlers.CommonUnitActionsHandler(self)
-        super(UnitFunctional, self).__init__(handlers, interfaces.IUnitListener, prbType, rosterSettings, flags)
+        super(UnitFunctional, self).__init__(handlers, interfaces.IUnitListener, prbType, rosterSettings, flags & FUNCTIONAL_FLAG.UNIT_BITMASK)
         self._requestsProcessor = None
         self._vehiclesWatcher = None
         self._lastErrorCode = UNIT_ERROR.OK
@@ -1164,9 +1163,13 @@ class UnitFunctional(_UnitFunctional):
             self._requestsProcessor.doRawRequest('stopAutoSearch')
         elif pInfo.isReady:
             if not flags.isInIdle():
-                ctx = unit_ctx.SetReadyUnitCtx(False)
-                ctx.resetVehicle = True
-                self.setPlayerReady(ctx)
+                if self.getEntityType() == PREBATTLE_TYPE.SQUAD and self.getExtra().eventType:
+                    ctx = unit_ctx.SetReadyEventSquadCtx(False)
+                    self.setEventSquadReady(ctx)
+                else:
+                    ctx = unit_ctx.SetReadyUnitCtx(False)
+                    ctx.resetVehicle = True
+                    self.setPlayerReady(ctx)
             else:
                 self._deferredReset = True
         g_eventDispatcher.updateUI()
@@ -1178,8 +1181,8 @@ class UnitFunctional(_UnitFunctional):
         else:
             waitingID = 'prebattle/player_not_ready'
         if self.getEntityType() == PREBATTLE_TYPE.SQUAD and self.getExtra().eventType:
-            selVehCtx = unit_ctx.SetReadyEventSquadCtx(notReady, waitingID=waitingID)
-            self.setEventSquadReady(selVehCtx)
+            ctx = unit_ctx.SetReadyEventSquadCtx(notReady, waitingID=waitingID)
+            self.setEventSquadReady(ctx)
             return
         if launchChain:
             if notReady:

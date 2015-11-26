@@ -37,7 +37,7 @@ class BaseSortieRoster(BaseUnitRoster):
 
 class SortieRoster6(BaseSortieRoster):
     MAX_SLOTS = 7
-    MAX_EMPTY_SLOTS = 1
+    MAX_EMPTY_SLOTS = 6
     SLOT_TYPE = RosterSlot6
     DEFAULT_SLOT_PACK = RosterSlot6().pack()
     MAX_UNIT_POINTS_SUM = 42
@@ -45,7 +45,7 @@ class SortieRoster6(BaseSortieRoster):
 
 class SortieRoster8(BaseSortieRoster):
     MAX_SLOTS = 10
-    MAX_EMPTY_SLOTS = 2
+    MAX_EMPTY_SLOTS = 9
     SLOT_TYPE = RosterSlot8
     DEFAULT_SLOT_PACK = RosterSlot8().pack()
     MAX_UNIT_POINTS_SUM = 80
@@ -53,7 +53,7 @@ class SortieRoster8(BaseSortieRoster):
 
 class SortieRoster10(BaseSortieRoster):
     MAX_SLOTS = 15
-    MAX_EMPTY_SLOTS = 3
+    MAX_EMPTY_SLOTS = 14
     SLOT_TYPE = RosterSlot10
     DEFAULT_SLOT_PACK = RosterSlot10().pack()
     MAX_UNIT_POINTS_SUM = 150

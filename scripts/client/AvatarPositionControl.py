@@ -39,6 +39,8 @@ class ConsistentMatrices(object):
     def notifyVehicleLoaded(self, avatar, vehicle):
         if vehicle == avatar.vehicle:
             self.notifyVehicleChanged(avatar)
+        elif vehicle.id == avatar.playerVehicleID:
+            self.__linkOwnVehicle(vehicle)
 
     def notifyPreBind(self, avatar, targetVehicleID = None):
         bindMatrix = Math.Matrix(self.attachedVehicleMatrix)

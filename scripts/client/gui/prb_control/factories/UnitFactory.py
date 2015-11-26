@@ -1,5 +1,5 @@
 # Embedded file name: scripts/client/gui/prb_control/factories/UnitFactory.py
-from constants import PREBATTLE_TYPE
+from constants import PREBATTLE_TYPE, FALLOUT_BATTLE_TYPE
 from debug_utils import LOG_ERROR
 from gui.prb_control import prb_getters
 from gui.prb_control.context.unit_ctx import LeaveUnitCtx
@@ -66,9 +66,12 @@ class UnitFactory(ControlFactory):
                         flags |= FUNCTIONAL_FLAG.SWITCH
                     if entity.isSquad():
                         flags |= FUNCTIONAL_FLAG.SQUAD
+                        extra = entity.getExtra()
+                        if extra is not None and extra.eventType != FALLOUT_BATTLE_TYPE.UNDEFINED:
+                            flags |= FUNCTIONAL_FLAG.EVENT_SQUAD
                     ctx.removeFlags(FUNCTIONAL_FLAG.UNIT_BITMASK | FUNCTIONAL_FLAG.ACTIONS_BITMASK)
                     ctx.addFlags(flags)
-                    created = unit.UnitFunctional(entity.getPrebattleType(), unit_items.DynamicRosterSettings(entity))
+                    created = unit.UnitFunctional(entity.getPrebattleType(), unit_items.DynamicRosterSettings(entity), flags=flags)
                 else:
                     LOG_ERROR('Unit is not found in unit manager', unitMrg.unitIdx, unitMrg.units)
                     unitMrg.leave()

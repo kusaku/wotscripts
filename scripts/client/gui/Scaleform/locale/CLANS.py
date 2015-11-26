@@ -65,6 +65,7 @@ class CLANS(object):
     CLANINVITESWINDOW_TOOLTIPS_TABLE_INVITES_AWGEXP = '#clans:clanInvitesWindow/tooltips/table/invites/awgExp'
     CLANINVITESWINDOW_TOOLTIPS_TABLE_INVITES_STATUS = '#clans:clanInvitesWindow/tooltips/table/invites/status'
     CLANINVITESWINDOW_TOOLTIPS_TABLE_INVITES_SENT = '#clans:clanInvitesWindow/tooltips/table/invites/sent'
+    CLANPROFILE_SENDINVITESWINDOW_TOOLTIP_MASSSENDBLOCKED = '#clans:clanProfile/sendInvitesWindow/tooltip/massSendBlocked'
     SEARCH_SEARCHBTN_TOOLTIP = '#clans:search/searchBtn/tooltip'
     SEARCH_NEXTBTN_TOOLTIP = '#clans:search/nextBtn/tooltip'
     SEARCH_PREVIOUSBTN_TOOLTIP = '#clans:search/previousBtn/tooltip'
@@ -215,7 +216,10 @@ class CLANS(object):
     SECTION_FORT_TOOLTIPS_PROFIT_BODY = SECTION_FORT_TOOLTIPS_PROFIT + '/body'
     SECTION_FORT_BUILDING_TOOLTIP_BODY = '#clans:section/fort/building/tooltip/body'
     SECTION_FORT_DEFENCE_NOTACTIVATED = '#clans:section/fort/defence/notActivated'
+    CLANPERSONALINVITESWINDOW_TOOLTIPS_REFRESHBUTTON_ENABLED = '#clans:clanPersonalInvitesWindow/tooltips/refreshButton/enabled'
+    CLANPERSONALINVITESWINDOW_TOOLTIPS_REFRESHBUTTON_DISABLED = '#clans:clanPersonalInvitesWindow/tooltips/refreshButton/disabled'
     CLANPERSONALINVITESWINDOW_TITLE = '#clans:clanPersonalInvitesWindow/title'
+    CLANPERSONALINVITESWINDOW_LOADING = '#clans:clanPersonalInvitesWindow/loading'
     CLANPERSONALINVITESWINDOW_HEADERTEXT = '#clans:clanPersonalInvitesWindow/headerText'
     CLANPERSONALINVITESWINDOW_ACTUALINVITES = '#clans:clanPersonalInvitesWindow/actualInvites'
     CLANPERSONALINVITESWINDOW_DECLINESELECTED = '#clans:clanPersonalInvitesWindow/declineSelected'
@@ -241,6 +245,8 @@ class CLANS(object):
     CLANPERSONALINVITESWINDOW_TOOLTIPS_TABLE_REQUESTS_ACTIONS_HEADER = CLANPERSONALINVITESWINDOW_TOOLTIPS_TABLE_REQUESTS_ACTIONS + '/header'
     CLANPERSONALINVITESWINDOW_TOOLTIPS_TABLE_REQUESTS_ACTIONS_BODY = CLANPERSONALINVITESWINDOW_TOOLTIPS_TABLE_REQUESTS_ACTIONS + '/body'
     CLANPROFILE_SENDINVITESWINDOW_TITLE = '#clans:clanProfile/sendInvitesWindow/title'
+    CLANPROFILE_SENDINVITESWINDOW_TOOLTIP_MASSSENDBLOCKED_BODY = CLANPROFILE_SENDINVITESWINDOW_TOOLTIP_MASSSENDBLOCKED + '/body'
+    CLANPROFILE_SENDINVITESWINDOW_TOOLTIP_MASSSENDBLOCKED_ATTENTION = CLANPROFILE_SENDINVITESWINDOW_TOOLTIP_MASSSENDBLOCKED + '/attention'
     CLANINVITESWINDOW_STATUS_MINUTESLEFT = '#clans:clanInvitesWindow/status/minutesLeft'
     CLANINVITESWINDOW_STATUS_HOURSLEFT = '#clans:clanInvitesWindow/status/hoursLeft'
     CLANINVITESWINDOW_STATUS_DAYSLEFT = '#clans:clanInvitesWindow/status/daysLeft'
@@ -255,6 +261,7 @@ class CLANS(object):
     CLANINVITESWINDOW_FILTERS_ACTUAL = '#clans:clanInvitesWindow/filters/actual'
     CLANINVITESWINDOW_FILTERS_EXPIRED = '#clans:clanInvitesWindow/filters/expired'
     CLANINVITESWINDOW_FILTERS_PROCESSED = '#clans:clanInvitesWindow/filters/processed'
+    CLANINVITESWINDOW_FILTERS_HASANSWER = '#clans:clanInvitesWindow/filters/hasAnswer'
     CLANINVITESWINDOW_FILTERS_ALL = '#clans:clanInvitesWindow/filters/all'
     CLANINVITESWINDOW_TABLE_USERNAME = '#clans:clanInvitesWindow/table/userName'
     CLANINVITESWINDOW_TABLE_SHOWMORE = '#clans:clanInvitesWindow/table/showMore'
@@ -337,12 +344,14 @@ class CLANS(object):
     CLANPROFILE_SUMMARYVIEW_BLOCKLBL_BATTLESPERDAY = '#clans:clanProfile/summaryView/blockLbl/battlesPerDay'
     CLANPROFILE_SUMMARYVIEW_BLOCKLBL_FORTLEVEL = '#clans:clanProfile/summaryView/blockLbl/fortLevel'
     CLANPROFILE_SUMMARYVIEW_BLOCKLBL_EMPTYFORT = '#clans:clanProfile/summaryView/blockLbl/emptyFort'
+    CLANPROFILE_SUMMARYVIEW_BLOCKLBL_HASNOBATTLES = '#clans:clanProfile/summaryView/blockLbl/hasNoBattles'
     CLANPROFILE_SUMMARYVIEW_BLOCKLBL_COMMANDER = '#clans:clanProfile/summaryView/blockLbl/commander'
     CLANPROFILE_SUMMARYVIEW_BLOCKLBL_TOTALPLAYERS = '#clans:clanProfile/summaryView/blockLbl/totalPlayers'
     CLANPROFILE_SUMMARYVIEW_BLOCKLBL_PROVINCES = '#clans:clanProfile/summaryView/blockLbl/provinces'
     CLANPROFILE_SUMMARYVIEW_BLOCKLBL_GOLD = '#clans:clanProfile/summaryView/blockLbl/gold'
     CLANPROFILE_SUMMARYVIEW_BLOCKLBL_BATTLESCOUNT = '#clans:clanProfile/summaryView/blockLbl/battlesCount'
     CLANPROFILE_SUMMARYVIEW_BLOCKLBL_EMPTYGLOBALMAP = '#clans:clanProfile/summaryView/blockLbl/emptyGlobalMap'
+    CLANPROFILE_SUMMARYVIEW_NODATA = '#clans:clanProfile/summaryView/noData'
     CLANPROFILE_SUMMARYVIEW_BUTTONLBL_DETAILS = '#clans:clanProfile/summaryView/buttonLbl/details'
     CLANPROFILE_SUMMARYVIEW_BUTTONLBL_REQUEST = '#clans:clanProfile/summaryView/buttonLbl/request'
     CLANPROFILE_SUMMARYVIEW_BUTTONLBL_NAVIGATION = '#clans:clanProfile/summaryView/buttonLbl/navigation'
@@ -603,6 +612,7 @@ class CLANS(object):
      CLANPROFILE_SUMMARYVIEW_BLOCKLBL_BATTLESPERDAY,
      CLANPROFILE_SUMMARYVIEW_BLOCKLBL_FORTLEVEL,
      CLANPROFILE_SUMMARYVIEW_BLOCKLBL_EMPTYFORT,
+     CLANPROFILE_SUMMARYVIEW_BLOCKLBL_HASNOBATTLES,
      CLANPROFILE_SUMMARYVIEW_BLOCKLBL_COMMANDER,
      CLANPROFILE_SUMMARYVIEW_BLOCKLBL_TOTALPLAYERS,
      CLANPROFILE_SUMMARYVIEW_BLOCKLBL_PROVINCES,

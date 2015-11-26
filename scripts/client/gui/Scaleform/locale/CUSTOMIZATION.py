@@ -59,3 +59,7 @@ class CUSTOMIZATION(object):
     WINDOW_PURCHASE_BTNBUY = '#customization:window/purchase/btnBuy'
     WINDOW_PURCHASE_BTNCANCEL = '#customization:window/purchase/btnCancel'
     TOOLTIP_ELEMENT_PURCHASE_ACQUIRED_DAYS = '#customization:tooltip/element/purchase/acquired/days'
+    BONUSPANEL_TOOLTIP_DURATION_0 = '#customization:bonusPanel/tooltip/duration/0'
+    BONUSPANEL_TOOLTIP_DURATION_1 = '#customization:bonusPanel/tooltip/duration/1'
+    DIALOG_REPLACE_ELEMENT_DELETE = '#customization:dialog/replace_element/delete'
+    DIALOG_REPLACE_ELEMENTS_DELETE = '#customization:dialog/replace_elements/delete'

@@ -3,12 +3,12 @@ import BigWorld
 import constants
 from constants import PREBATTLE_TYPE
 from debug_utils import LOG_DEBUG
+from gui.prb_control.settings import PREBATTLE_ACTION_NAME
 from helpers import i18n
-from adisp import process
 from gui import SystemMessages
 from gui.clans.clan_controller import g_clanCtrl
 from gui.LobbyContext import g_lobbyContext
-from gui.prb_control.context import unit_ctx, SendInvitesCtx
+from gui.prb_control.context import SendInvitesCtx, PrebattleAction
 from gui.prb_control.prb_helpers import prbDispatcherProperty, prbFunctionalProperty
 from gui.shared import g_itemsCache, event_dispatcher as shared_events, utils
 from gui.Scaleform.locale.MENU import MENU
@@ -127,12 +127,8 @@ class BaseUserCMHandler(AbstractContextMenuHandler, EventSystemEntity):
     def copyToClipboard(self):
         utils.copyToClipboard(self.userName)
 
-    @process
     def createSquad(self):
-        user = self.usersStorage.getUser(self.databaseID)
-        result = yield self.prbDispatcher.create(unit_ctx.SquadSettingsCtx(waitingID='prebattle/create', accountsToInvite=[self.databaseID], isForced=True))
-        if result:
-            self.__showInviteMessage(user)
+        self.prbDispatcher.doSelectAction(PrebattleAction(PREBATTLE_ACTION_NAME.SQUAD, accountsToInvite=(self.databaseID,)))
 
     def invite(self):
         user = self.usersStorage.getUser(self.databaseID)
@@ -141,6 +137,12 @@ class BaseUserCMHandler(AbstractContextMenuHandler, EventSystemEntity):
                 func.request(SendInvitesCtx([self.databaseID], ''))
                 self.__showInviteMessage(user)
                 break
+
+    def getOptions(self, ctx = None):
+        if not self._getUseCmInfo().isCurrentPlayer:
+            return self._generateOptions(ctx)
+        else:
+            return None
 
     def _getHandlers(self):
         return {USER.INFO: 'showUserInfo',
@@ -170,12 +172,6 @@ class BaseUserCMHandler(AbstractContextMenuHandler, EventSystemEntity):
 
     def _getUseCmInfo(self):
         return UserContextMenuInfo(self.databaseID, self.userName)
-
-    def getOptions(self, ctx = None):
-        if not self._getUseCmInfo().isCurrentPlayer:
-            return self._generateOptions(ctx)
-        else:
-            return None
 
     def _generateOptions(self, ctx = None):
         userCMInfo = self._getUseCmInfo()
@@ -223,7 +219,8 @@ class BaseUserCMHandler(AbstractContextMenuHandler, EventSystemEntity):
 
     def _addSquadInfo(self, options, isIgnored):
         if not isIgnored and not self.isSquadCreator():
-            options.append(self._makeItem(USER.CREATE_SQUAD, MENU.contextmenu(USER.CREATE_SQUAD)))
+            canCreate = self.prbDispatcher.getFunctionalCollection().canCreateSquad()
+            options.append(self._makeItem(USER.CREATE_SQUAD, MENU.contextmenu(USER.CREATE_SQUAD), optInitData={'enabled': canCreate}))
         return options
 
     def _addPrebattleInfo(self, options, userCMInfo):

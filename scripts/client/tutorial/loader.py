@@ -9,6 +9,7 @@ from tutorial import settings as _settings
 from tutorial import cache as _cache
 from tutorial.control.context import GLOBAL_FLAG, GlobalStorage
 from tutorial.doc_loader import loadDescriptorData
+from tutorial.hints_manager import HintsManager
 from tutorial.logger import LOG_ERROR
 _STOP_REASON = _settings.TUTORIAL_STOP_REASON
 _SETTINGS = _settings.TUTORIAL_SETTINGS
@@ -46,6 +47,7 @@ class TutorialLoader(object):
         self.__dispatcher = None
         self.__restoreID = None
         self.__settings = _settings.createSettingsCollection()
+        self.__hintsManager = None
         return
 
     def init(self):
@@ -57,6 +59,8 @@ class TutorialLoader(object):
         g_playerEvents.onGuiCacheSyncCompleted -= self.__pe_onGuiCacheSyncCompleted
         g_playerEvents.onAvatarBecomePlayer -= self.__pe_onAvatarBecomePlayer
         connectionManager.onDisconnected -= self.__cm_onDisconnected
+        if self.__hintsManager is not None:
+            self.__hintsManager.stop()
         if self.__tutorial is not None:
             self.__dispatcher.stop()
             self.__tutorial.onStopped -= self.__onTutorialStopped
@@ -157,6 +161,7 @@ class TutorialLoader(object):
 
     def stop(self, restore = True):
         self.__doStop(reason=_STOP_REASON.PLAYER_ACTION)
+        self.__doStopHints()
         if restore:
             self.__doRestore()
         else:
@@ -205,9 +210,15 @@ class TutorialLoader(object):
             self.__tutorial = None
         return
 
+    def __doStopHints(self):
+        if self.__hintsManager is not None:
+            self.__hintsManager.stop()
+        return
+
     def __doClear(self, reason = _STOP_REASON.DEFAULT):
         self.__restoreID = None
         self.__doStop(reason=reason)
+        self.__doStopHints()
         if self.__dispatcher is not None:
             self.__dispatcher.stop()
             self.__dispatcher = None
@@ -241,6 +252,8 @@ class TutorialLoader(object):
         self.__setDispatcher(_LOBBY_DISPATCHER)
         self.__restoreID = _SETTINGS.QUESTS.id
         self.__doAutoRun((_SETTINGS.OFFBATTLE, _SETTINGS.QUESTS), runCtx)
+        self.__hintsManager = HintsManager()
+        self.__hintsManager.start()
 
     def __pe_onAvatarBecomePlayer(self):
         self.__afterBattle = True

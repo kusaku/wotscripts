@@ -149,3 +149,13 @@ class AlwaysValidObject(object):
     @classmethod
     def _makeName(cls, parentName, nodeName):
         return '%s/%s' % (parentName, nodeName)
+
+
+def isDefaultDict(sourceDict, defaultDict):
+    for k, v in defaultDict.iteritems():
+        if k not in sourceDict:
+            return False
+        if sourceDict[k] != v:
+            return False
+
+    return True

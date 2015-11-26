@@ -3,6 +3,8 @@ import operator
 import BigWorld
 from debug_utils import LOG_ERROR
 from gui.Scaleform.daapi.view.lobby.clans.profile import getI18ArenaById
+from gui.Scaleform.daapi.view.lobby.fortifications.fort_utils import fort_formatters
+from gui.clans.items import formatField
 from gui.shared.utils import sortByFields
 from helpers.i18n import makeString as _ms
 from adisp import process
@@ -173,7 +175,7 @@ class _ClanProfileProvinceDataProvider(SortableDAAPIDataProvider):
             self.refresh()
 
     def _makeVO(self, province):
-        result = {'front': self.__getFront(province),
+        result = {'front': '%s %s' % (self.__getFront(province), text_styles.standard(formatField(province.getFrontLevel, formatter=fort_formatters.getTextLevel))),
          'province': self.__getProvinceName(province),
          'map': self.__getMap(province),
          'primeTime': text_styles.main(province.getUserPrimeTime()),
@@ -189,10 +191,10 @@ class _ClanProfileProvinceDataProvider(SortableDAAPIDataProvider):
         return valueGetter(item)
 
     def __getFront(self, province):
-        return province.getFrontName()
+        return province.getFrontLocalizedName()
 
     def __getProvinceName(self, province):
-        return province.getName()
+        return province.getProvinceLocalizedName()
 
     def __getMap(self, province):
         return getI18ArenaById(province.getArenaName())

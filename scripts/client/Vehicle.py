@@ -55,6 +55,10 @@ class Vehicle(BigWorld.Entity):
         self.__edged = False
         return
 
+    def __del__(self):
+        if _g_respawnCache.has_key(self.id):
+            del _g_respawnCache[self.id]
+
     def reload(self):
         wasStarted = self.isStarted
         if self.isStarted:
@@ -107,7 +111,7 @@ class Vehicle(BigWorld.Entity):
             return
         del _g_respawnCache[self.id]
         vehicle = BigWorld.entities.get(id, None)
-        if vehicle is None:
+        if vehicle is None or vehicle != self:
             return
         else:
             if resourceRefs.failedIDs:
@@ -495,12 +499,8 @@ class Vehicle(BigWorld.Entity):
     def __showStaticCollisionEffect(self, energy, matKind, effectIdx, hitPoint, normal, isTrackCollision):
         heavyVelocities = self.typeDescriptor.type.heavyCollisionEffectVelocities
         heavyEnergy = heavyVelocities['track'] if isTrackCollision else heavyVelocities['hull']
-        if energy < LOW_ENERGY_COLLISION_D * heavyEnergy * heavyEnergy:
-            postfix = '%sCollisionLight'
-        elif energy < HIGH_ENERGY_COLLISION_D * heavyEnergy * heavyEnergy:
-            postfix = '%sCollisionMedium'
-        else:
-            postfix = '%sCollisionHeavy'
+        heavyEnergy = 0.5 * heavyEnergy * heavyEnergy
+        postfix = '%sCollisionLight' if energy < heavyEnergy else '%sCollisionHeavy'
         effectName = ''
         if effectIdx < len(EFFECT_MATERIALS):
             effectName = EFFECT_MATERIALS[effectIdx]

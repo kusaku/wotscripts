@@ -322,6 +322,7 @@ class SettingsInterface(UIInterface):
          'storeReceiverInBattle': g_settingsCore.getSetting('storeReceiverInBattle'),
          'disableBattleChat': g_settingsCore.getSetting('disableBattleChat'),
          'chatContactsListOnly': g_settingsCore.getSetting('chatContactsListOnly'),
+         'receiveClanInvitesNotifications': g_settingsCore.getSetting('receiveClanInvitesNotifications'),
          'dynamicCamera': g_settingsCore.getSetting('dynamicCamera'),
          'horStabilizationSnp': g_settingsCore.getSetting('horStabilizationSnp'),
          'enableVoIP': g_settingsCore.getSetting('enableVoIP'),

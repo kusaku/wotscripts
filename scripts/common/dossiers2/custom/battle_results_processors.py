@@ -262,10 +262,8 @@ def updateTankmanDossier(dossierDescr, battleResults):
     __updateTankmanDossierImpl(dossierDescr, battleResults)
 
 
-def updatePotapovQuestAchievements(accDossierDescr, vehClass, progress, curQuest, bonusCount):
+def updatePotapovQuestAchievements(accDossierDescr, progress, curQuest, bonusCount):
     if not bonusCount:
-        return
-    elif vehClass not in curQuest.vehClasses:
         return
     else:
         if curQuest.isInitial and not accDossierDescr['singleAchievements']['firstMerit']:

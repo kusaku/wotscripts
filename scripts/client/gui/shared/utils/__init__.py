@@ -235,3 +235,19 @@ def avg(devidend, devider):
     if devider > 0:
         return devidend / devider
     return 0
+
+
+def weightedAvg(*args):
+    values, weights = args
+    valSum = 0
+    weightSum = 0
+    itemsCount = len(values)
+    for i in range(itemsCount):
+        weight = weights[i]
+        valSum += values[i] * weight
+        weightSum += weight
+
+    if weightSum != 0:
+        return float(valSum) / weightSum
+    else:
+        return 0

@@ -6,7 +6,7 @@ from functools import partial
 import BigWorld
 from CurrentVehicle import g_currentVehicle
 from adisp import async, process
-from constants import IGR_TYPE
+from constants import IGR_TYPE, QUEUE_TYPE
 from debug_utils import LOG_ERROR, LOG_DEBUG
 from FortifiedRegionBase import FORT_ERROR
 from gui import SystemMessages, DialogsInterface, GUI_SETTINGS, game_control
@@ -178,22 +178,24 @@ class _PrebattleDispatcher(object):
     @process
     def unlock(self, unlockCtx, callback = None):
         state = self.getFunctionalState()
-        factory = self.__factories.get(state.ctrlTypeID)
-        result = False
-        if factory:
-            ctx = factory.createLeaveCtx(unlockCtx.getFlags())
-            if ctx:
-                meta = self.__collection.getConfirmDialogMeta(state.ctrlTypeID, unlockCtx)
-                if meta:
-                    result = yield DialogsInterface.showDialog(meta)
+        result = True
+        if not state.isIntroMode or not unlockCtx.hasFlags(FUNCTIONAL_FLAG.SWITCH):
+            factory = self.__factories.get(state.ctrlTypeID)
+            result = False
+            if factory:
+                ctx = factory.createLeaveCtx(unlockCtx.getFlags())
+                if ctx:
+                    meta = self.__collection.getConfirmDialogMeta(state.ctrlTypeID, unlockCtx)
+                    if meta:
+                        result = yield DialogsInterface.showDialog(meta)
+                    else:
+                        result = True
+                    if result:
+                        result = yield self.leave(ctx)
                 else:
-                    result = True
-                if result:
-                    result = yield self.leave(ctx)
+                    LOG_ERROR('Can not create leave ctx', state)
             else:
-                LOG_ERROR('Can not create leave ctx', state)
-        else:
-            LOG_ERROR('Factory is not found', state)
+                LOG_ERROR('Factory is not found', state)
         if callback is not None:
             callback(result)
         yield lambda callback = None: callback
@@ -257,7 +259,8 @@ class _PrebattleDispatcher(object):
     def canPlayerDoAction(self):
         canDo, restriction = self.__collection.canPlayerDoAction(False)
         if canDo:
-            if not g_currentVehicle.isReadyToFight():
+            isEventBattles = self.getFunctionalState().isQueueSelected(QUEUE_TYPE.EVENT_BATTLES)
+            if not g_currentVehicle.isReadyToFight() and not isEventBattles:
                 if not g_currentVehicle.isPresent():
                     canDo = False
                     restriction = PREBATTLE_RESTRICTION.VEHICLE_NOT_PRESENT

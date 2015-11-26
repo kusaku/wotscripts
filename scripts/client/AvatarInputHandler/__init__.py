@@ -686,6 +686,8 @@ class _Targeting():
 
     def enable(self, flag):
         if flag and not BigWorld.target.isEnabled:
+            player = BigWorld.player()
+            player.targetBlur(player.target)
             BigWorld.target.isEnabled = True
             BigWorld.target.source = self.__mouseMatProv
         elif not flag:

@@ -1,5 +1,7 @@
 # Embedded file name: scripts/client/gui/customization_2_0/elements/qualifier.py
+from gui.shared.gui_items.Vehicle import VEHICLE_CLASS_NAME
 from helpers.i18n import makeString as _ms
+from CurrentVehicle import g_currentVehicle as _g_currentVehicle
 _ICONS = {'16x16': {'main_skill': '../maps/icons/customization/qualifiers/16x16/{0}.png',
            'camouflage': '../maps/icons/customization/qualifiers/16x16/camouflage.png'},
  '42x42': {'main_skill': '../maps/icons/customization/qualifiers/42x42/{0}.png',
@@ -16,6 +18,11 @@ class QUALIFIER_TYPE:
 
 
 QUALIFIER_TYPE_NAMES = dict([ (v, k) for k, v in QUALIFIER_TYPE.__dict__.iteritems() if not k.startswith('_') ])
+_VEHICLE_CAMOUFLAGE_BONUS = {VEHICLE_CLASS_NAME.LIGHT_TANK: 3,
+ VEHICLE_CLASS_NAME.MEDIUM_TANK: 3,
+ VEHICLE_CLASS_NAME.HEAVY_TANK: 2,
+ VEHICLE_CLASS_NAME.AT_SPG: 4,
+ VEHICLE_CLASS_NAME.SPG: 2}
 
 def getNameByType(qualifierType):
     return _ms('#customization:bonusName/{0}'.format(qualifierType))
@@ -65,6 +72,11 @@ class QualifierBase(object):
 
 class CamouflageQualifier(QualifierBase):
 
+    def __init__(self, camouflageType):
+        super(CamouflageQualifier, self).__init__()
+        self.__camouflageType = camouflageType
+        self.__value = _VEHICLE_CAMOUFLAGE_BONUS[_g_currentVehicle.item.type]
+
     def getIcon16x16(self):
         return _ICONS['16x16']['camouflage']
 
@@ -72,10 +84,10 @@ class CamouflageQualifier(QualifierBase):
         return _ICONS['42x42']['camouflage']
 
     def getDescription(self):
-        return None
+        return _ms('#customization:qualifier/condition/map_kind_{0}'.format(self.__camouflageType))
 
     def getValue(self):
-        return 5
+        return self.__value
 
     def getType(self):
         return 'camouflage'

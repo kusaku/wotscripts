@@ -77,7 +77,7 @@ class ClanInvitesView(ClanInvitesViewMeta):
         return CLANS_ALIASES.INVITE_WINDOW_DUMMY_NO_INVITES_ALL
 
     def _getDefaultFilterName(self):
-        return CLANS_ALIASES.INVITE_WINDOW_FILTER_ACTUAL
+        return CLANS_ALIASES.INVITE_WINDOW_FILTER_PROCESSED
 
     def _getDefaultSortFields(self):
         if self.currentFilterName == CLANS_ALIASES.INVITE_WINDOW_FILTER_ALL:
@@ -102,7 +102,7 @@ class ClanInvitesView(ClanInvitesViewMeta):
          {'alias': CLANS_ALIASES.INVITE_WINDOW_FILTER_EXPIRED,
           'text': _ms(CLANS.CLANINVITESWINDOW_FILTERS_EXPIRED, value=self.formatInvitesCount(self.expiredInvitesPaginator))},
          {'alias': CLANS_ALIASES.INVITE_WINDOW_FILTER_PROCESSED,
-          'text': _ms(CLANS.CLANINVITESWINDOW_FILTERS_PROCESSED, value=self.formatInvitesCount(self.processedInvitesPaginator))}]
+          'text': _ms(CLANS.CLANINVITESWINDOW_FILTERS_HASANSWER, value=self.formatInvitesCount(self.processedInvitesPaginator))}]
 
     def _makeTexts(self):
         texts = super(ClanInvitesView, self)._makeTexts()

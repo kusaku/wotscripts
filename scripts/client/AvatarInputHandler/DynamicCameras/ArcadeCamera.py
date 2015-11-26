@@ -186,8 +186,7 @@ class ArcadeCamera(ICamera, CallbackDelayer, TimeDeltaMeter):
         modelsDesc = vehicleAppearance.modelsDesc
         self.__modelsToCollideWith.append(modelsDesc['hull']['model'])
         self.__modelsToCollideWith.append(modelsDesc['turret']['model'])
-        if BigWorld.camera() == self.__cam:
-            self.__setModelsToCollideWith(self.__modelsToCollideWith)
+        self.__setModelsToCollideWith(self.__modelsToCollideWith)
 
     def removeVehicleToCollideWith(self, vehicleAppearance):
         modelsDesc = vehicleAppearance.modelsDesc
@@ -196,8 +195,11 @@ class ArcadeCamera(ICamera, CallbackDelayer, TimeDeltaMeter):
                 if existingModel is model:
                     self.__modelsToCollideWith.remove(model)
 
-        if BigWorld.camera() == self.__cam:
-            self.__setModelsToCollideWith(self.__modelsToCollideWith)
+        self.__setModelsToCollideWith(self.__modelsToCollideWith)
+
+    def clearVehicleToCollideWith(self):
+        self.__modelsToCollideWith = []
+        self.__setModelsToCollideWith(self.__modelsToCollideWith)
 
     def __setModelsToCollideWith(self, models):
         self.__cam.setModelsToCollideWith(models)

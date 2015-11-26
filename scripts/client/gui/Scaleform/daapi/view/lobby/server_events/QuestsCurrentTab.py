@@ -85,7 +85,8 @@ class QuestsCurrentTab(QuestsCurrentTabMeta):
             result.append(formatters.packGroupBlock(QUESTS.QUESTS_TITLE_UNGOUPEDACTIONS))
             result.extend(ungroupedActions)
         self.as_setQuestsDataS({'quests': result,
-         'isSortable': True})
+         'isSortable': True,
+         'totalTasks': len(svrEvents)})
 
     def _dispose(self):
         g_clientUpdateManager.removeObjectCallbacks(self)

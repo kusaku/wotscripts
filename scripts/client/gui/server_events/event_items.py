@@ -8,7 +8,7 @@ import nations
 import constants
 from ConnectionManager import connectionManager
 from dossiers2.ui.achievements import ACHIEVEMENT_BLOCK
-from potapov_quests import PQ_STATE as _PQS
+from potapov_quests import PQ_STATE as _PQS, PQ_BRANCH
 from helpers import getLocalizedData, i18n, time_utils
 from predefined_hosts import g_preDefinedHosts
 from shared_utils import findFirst
@@ -395,6 +395,16 @@ class PQTile(object):
         else:
             return
 
+    def getChainMajorTag(self, chainID):
+        firstQuest = findFirst(None, self.__quests.get(chainID, {}).itervalues())
+        if firstQuest is not None:
+            return firstQuest.getMajorTag()
+        else:
+            return
+
+    def getChainSortKey(self, chainID):
+        return self.getChainMajorTag(chainID)
+
     def getChainTotalTokensCount(self, chainID, isMainBonuses = None):
         result = 0
         for q in self.__quests[chainID].itervalues():
@@ -595,6 +605,12 @@ class PotapovQuest(Quest):
     def getVehMinLevel(self):
         return self.__pqType.minLevel
 
+    def getQuestBranch(self):
+        return self.__pqType.branch
+
+    def getQuestBranchName(self):
+        return PQ_BRANCH.TYPE_TO_NAME[self.getQuestBranch()]
+
     def isUnlocked(self):
         return self.__pqProgress is not None and self.__pqProgress.unlocked
 
@@ -615,6 +631,9 @@ class PotapovQuest(Quest):
 
     def getVehicleClasses(self):
         return set(self.__pqType.vehClasses)
+
+    def getMajorTag(self):
+        return self.__pqType.getMajorTag()
 
     def isMainCompleted(self, isRewardReceived = None):
         if isRewardReceived is True:

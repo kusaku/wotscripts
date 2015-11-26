@@ -1,12 +1,11 @@
 # Embedded file name: scripts/client/gui/server_events/PQController.py
 import operator
 import BigWorld
-from constants import EVENT_TYPE
-from debug_utils import LOG_DEBUG
 from gui.shared.utils.requesters.QuestsProgressRequester import FalloutQuestsProgressRequester, RandomQuestsProgressRequester
 import potapov_quests
 from items import tankmen
 from gui.server_events import event_items
+from potapov_quests import PQ_BRANCH
 
 class _PotapovQuestsController(object):
 
@@ -20,12 +19,14 @@ class _PotapovQuestsController(object):
 
     def init(self):
         for _, potapovQuestID in potapov_quests.g_cache:
-            quest = self.__makeQuest(potapovQuestID)
-            tile = self.__makeTile(quest.getTileID())
-            tile._addQuest(quest)
-            season = self.__makeSeason(tile.getSeasonID())
-            season._addTile(tile)
-            quest.setSeasonID(season.getID())
+            questBranch = potapov_quests.g_cache.branchByPotapovQuestID(potapovQuestID)
+            if questBranch == self._pqType:
+                quest = self.__makeQuest(potapovQuestID)
+                tile = self.__makeTile(quest.getTileID())
+                tile._addQuest(quest)
+                season = self.__makeSeason(tile.getSeasonID())
+                season._addTile(tile)
+                quest.setSeasonID(season.getID())
 
     def fini(self):
         self.__clearCaches()
@@ -46,7 +47,8 @@ class _PotapovQuestsController(object):
     def getSelectedQuests(self):
         result = {}
         for qID in self.questsProgress.getSelectedPotapovQuestsIDs():
-            result[qID] = self.__quests[qID]
+            if qID in self.__quests:
+                result[qID] = self.__quests[qID]
 
         return result
 
@@ -62,6 +64,46 @@ class _PotapovQuestsController(object):
 
     def hasQuestsForReward(self):
         return self.__hasQuestsForReward
+
+    def update(self, eventsCache, diff = None):
+        if diff is not None:
+            potapovQuestsDiff = diff.get('potapovQuests', {})
+            if 'selected' in potapovQuestsDiff:
+                eventsCache.onSelectedQuestsChanged(potapovQuestsDiff['selected'], self._pqType)
+            if 'slots' in potapovQuestsDiff:
+                eventsCache.onSlotsCountChanged(potapovQuestsDiff['slots'], self._pqType)
+            isNeedToUpdateProgress = len(potapovQuestsDiff)
+        else:
+            isNeedToUpdateProgress = True
+        if isNeedToUpdateProgress:
+            self.__hasQuestsForSelect = False
+            self.__hasQuestsForReward = False
+            freeSlotsCount = self.questsProgress.getPotapovQuestsFreeSlots()
+            for qID, quest in self.__quests.iteritems():
+                quest.updateProgress(self.questsProgress)
+
+            selectedQuests = self.questsProgress.getSelectedPotapovQuestsIDs()
+            selectedChains = set()
+            for questID in selectedQuests:
+                if questID in self.__quests:
+                    selectedChains.add(self.__quests[questID].getChainID())
+
+            for qID, quest in self.__quests.iteritems():
+                if not self.__hasQuestsForSelect and freeSlotsCount and quest.canBeSelected() and quest.getChainID() not in selectedChains:
+                    self.__hasQuestsForSelect = True
+                if not self.__hasQuestsForReward and quest.needToGetReward():
+                    self.__hasQuestsForReward = True
+                if self.__hasQuestsForSelect and self.__hasQuestsForReward:
+                    break
+
+            for tile in self.__tiles.itervalues():
+                tile.updateProgress(eventsCache)
+
+            for season in self.__seasons.itervalues():
+                season.updateProgress()
+
+            eventsCache.onProgressUpdated(self._pqType)
+        return
 
     def _getQuestsCache(self):
         raise NotImplemented
@@ -99,52 +141,13 @@ class _PotapovQuestsController(object):
             quest = self.__quests[pqID]
         return quest
 
-    def _update(self, eventsCache, diff = None):
-        if diff is not None:
-            potapovQuestsDiff = diff.get('potapovQuests', {})
-            if 'selected' in potapovQuestsDiff:
-                eventsCache.onSelectedQuestsChanged(potapovQuestsDiff['selected'], self._pqType)
-            if 'slots' in potapovQuestsDiff:
-                eventsCache.onSlotsCountChanged(potapovQuestsDiff['slots'], self._pqType)
-            isNeedToUpdateProgress = len(potapovQuestsDiff)
-        else:
-            isNeedToUpdateProgress = True
-        if isNeedToUpdateProgress:
-            self.__hasQuestsForSelect = False
-            self.__hasQuestsForReward = False
-            freeSlotsCount = self.questsProgress.getPotapovQuestsFreeSlots()
-            for qID, quest in self.__quests.iteritems():
-                quest.updateProgress(self.questsProgress)
-
-            selectedQuests = self.questsProgress.getSelectedPotapovQuestsIDs()
-            selectedChains = set([ self.__quests[questID].getChainID() for questID in selectedQuests ])
-            for qID, quest in self.__quests.iteritems():
-                if not self.__hasQuestsForSelect and freeSlotsCount and quest.canBeSelected() and quest.getChainID() not in selectedChains:
-                    self.__hasQuestsForSelect = True
-                if not self.__hasQuestsForReward and quest.needToGetReward():
-                    self.__hasQuestsForReward = True
-                if self.__hasQuestsForSelect and self.__hasQuestsForReward:
-                    break
-
-            for tile in self.__tiles.itervalues():
-                tile.updateProgress(eventsCache)
-
-            for season in self.__seasons.itervalues():
-                season.updateProgress()
-
-            eventsCache.onProgressUpdated(self._pqType)
-        return
-
 
 class RandomPQController(_PotapovQuestsController):
 
     def __init__(self):
-        pqType = EVENT_TYPE.TYPE_TO_NAME[EVENT_TYPE.RANDOM_QUEST]
+        pqType = PQ_BRANCH.TYPE_TO_NAME[PQ_BRANCH.REGULAR]
         super(RandomPQController, self).__init__(pqType)
         self.questsProgress = RandomQuestsProgressRequester()
-
-    def update(self, eventsCache, diff = None):
-        self._update(eventsCache, diff)
 
     def _getQuestsCache(self):
         return potapov_quests.g_cache
@@ -159,12 +162,9 @@ class RandomPQController(_PotapovQuestsController):
 class FalloutPQController(_PotapovQuestsController):
 
     def __init__(self):
-        pqType = EVENT_TYPE.TYPE_TO_NAME[EVENT_TYPE.FALLOUT_QUEST]
+        pqType = PQ_BRANCH.TYPE_TO_NAME[PQ_BRANCH.FALLOUT]
         super(FalloutPQController, self).__init__(pqType)
         self.questsProgress = FalloutQuestsProgressRequester()
-
-    def update(self, eventsCache, diff = None):
-        self._update(eventsCache, diff)
 
     def _getQuestsCache(self):
         return potapov_quests.g_cache

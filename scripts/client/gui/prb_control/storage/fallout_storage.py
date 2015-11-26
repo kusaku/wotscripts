@@ -10,7 +10,9 @@ from gui.server_events import g_eventsCache
 from gui.shared import g_itemsCache
 _SETTINGS_DEFAULTS = {'isEnabled': False,
  'isAutomatch': False,
- 'falloutBattleType': FALLOUT_BATTLE_TYPE.UNDEFINED}
+ 'falloutBattleType': FALLOUT_BATTLE_TYPE.UNDEFINED,
+ 'hasVehicleLvl8': False,
+ 'hasVehicleLvl10': False}
 
 class FalloutLocalStorage(LocalStorage):
     __slots__ = ('__settings', '__invIDs')
@@ -98,3 +100,17 @@ class FalloutLocalStorage(LocalStorage):
 
     def isBattleTypeSelected(self):
         return self.isEnabled() and self.getBattleType() != FALLOUT_BATTLE_TYPE.UNDEFINED
+
+    def hasVehicleLvl8(self):
+        return bool(self.__settings['hasVehicleLvl8'])
+
+    def setHasVehicleLvl8(self):
+        self.__settings['hasVehicleLvl8'] = True
+        g_settingsCore.serverSettings.setSection(SETTINGS_SECTIONS.FALLOUT, self.__settings)
+
+    def hasVehicleLvl10(self):
+        return bool(self.__settings['hasVehicleLvl10'])
+
+    def setHasVehicleLvl10(self):
+        self.__settings['hasVehicleLvl10'] = True
+        g_settingsCore.serverSettings.setSection(SETTINGS_SECTIONS.FALLOUT, self.__settings)

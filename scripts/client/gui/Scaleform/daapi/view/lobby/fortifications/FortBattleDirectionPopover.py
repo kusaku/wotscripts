@@ -37,7 +37,7 @@ class FortBattleDirectionPopover(FortBattleDirectionPopoverMeta, FortViewHelper)
 
     def requestToJoin(self, battleID):
         currentBattleID = getBattleID()
-        if currentBattleID == battleID:
+        if currentBattleID == battleID and self.prbDispatcher.getUnitFunctional().hasEntity():
             fort_events.showFortBattleRoomWindow()
         else:
             battle = self.fortCtrl.getFort().getBattle(battleID)

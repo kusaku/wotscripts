@@ -44,7 +44,7 @@ class ModelStickers():
         if 'clan' in self.__texParamsBySlotType:
             self.__texParamsBySlotType[SlotTypes.CLAN] = [TextureParams('', '', False)]
         self.__stickerModel = BigWorld.WGStickerModel()
-        self.__stickerModel.setLODDistances(vDesc.type.emblemsLodDist, vDesc.type.damageStickersLodDist)
+        self.__stickerModel.setLODDistance(vDesc.type.emblemsLodDist)
         return
 
     def __calcTexParams(self, vDesc, emblemSlots, onHull, insigniaRank):
@@ -169,8 +169,8 @@ class ModelStickers():
                 self.attachStickers(self.__model, self.__parentNode, self.__isDamaged)
             return
 
-    def setAlphas(self, emblemAlpha, dmgStickerAlpha):
-        self.__stickerModel.setAlphas(emblemAlpha, dmgStickerAlpha)
+    def setAlpha(self, stickersAlpha):
+        self.__stickerModel.setAlpha(stickersAlpha)
 
     def __doAttachStickers(self, slotType):
         if self.__model is None or slotType == SlotTypes.CLAN and self.__clanID == 0:
@@ -241,7 +241,7 @@ class VehicleStickers(object):
         multipliedAlpha = alpha * self.__defaultAlpha
         for componentStickers in self.__stickers.itervalues():
             actualAlpha = multipliedAlpha if self.__show else 0.0
-            componentStickers.stickers.setAlphas(actualAlpha, actualAlpha)
+            componentStickers.stickers.setAlpha(actualAlpha)
             componentStickers.alpha = multipliedAlpha
 
     alpha = property(lambda self: self.__stickers[TankComponentNames.HULL].alpha, __setAlpha)
@@ -250,7 +250,7 @@ class VehicleStickers(object):
         self.__show = show
         for componentStickers in self.__stickers.itervalues():
             alpha = componentStickers.alpha if show else 0.0
-            componentStickers.stickers.setAlphas(alpha, alpha)
+            componentStickers.stickers.setAlpha(alpha)
 
     show = property(lambda self: self.__show, __setShow)
     COMPONENT_NAMES = (TankComponentNames.HULL, TankComponentNames.TURRET, TankComponentNames.GUN)

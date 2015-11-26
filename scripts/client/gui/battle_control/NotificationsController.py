@@ -2,9 +2,8 @@
 import weakref
 import BigWorld
 from CTFManager import g_ctfManager
-import FMOD
-import SoundGroups
 from gui.battle_control.arena_info import getIsMultiteam
+from gui import IngameSoundNotifications
 
 class NotificationsController(object):
 
@@ -17,19 +16,11 @@ class NotificationsController(object):
         self.__isTeamPlayer = False
         self.__captureSndName = 'take_flag'
         self.__deliveredSndName = 'deliver_flag'
-        self.__consumedSndName = 'delivery_flag'
+        self.__consumedSndName = 'consumed_flag'
         self.__enemyCaptureSndName = 'enemy_take_flag'
-        self.__allyCaptureSndName = 'ally_flag'
-        self.__allyDroppedSndName = 'drop_flag'
-        self.__allyDeliveredSndName = 'ally_captured'
-        if FMOD.enabled:
-            self.__captureSndName = '/ingame_voice/ingame_voice_flt/take_flag'
-            self.__deliveredSndName = '/ingame_voice/ingame_voice_flt/deliver_flag'
-            self.__consumedSndName = '/GUI/fallout/delivery_flag'
-            self.__enemyCaptureSndName = '/ingame_voice/ingame_voice_flt/enemy_take_flag'
-            self.__allyCaptureSndName = '/ingame_voice/ingame_voice_flt/ally_flag'
-            self.__allyDroppedSndName = '/ingame_voice/ingame_voice_flt/drop_flag'
-            self.__allyDeliveredSndName = '/ingame_voice/ingame_voice_flt/ally_captured'
+        self.__allyCaptureSndName = 'ally_take_flag'
+        self.__allyDroppedSndName = 'ally_drop_flag'
+        self.__allyDeliveredSndName = 'ally_deliver_flag'
         return
 
     def start(self, ui):
@@ -43,6 +34,7 @@ class NotificationsController(object):
         g_ctfManager.onFlagCapturedByVehicle += self.__onFlagCapturedByVehicle
         g_ctfManager.onFlagAbsorbed += self.__onFlagAbsorbed
         g_ctfManager.onFlagDroppedToGround += self.__onFlagDroppedToGround
+        g_ctfManager.onFlagRemoved += self.__onFlagRemoved
         if g_ctfManager.isFlagBearer(self.__playerVehicleID):
             self.__ui.showFlagCaptured()
 
@@ -52,33 +44,38 @@ class NotificationsController(object):
         g_ctfManager.onFlagCapturedByVehicle -= self.__onFlagCapturedByVehicle
         g_ctfManager.onFlagAbsorbed -= self.__onFlagAbsorbed
         g_ctfManager.onFlagDroppedToGround -= self.__onFlagDroppedToGround
+        g_ctfManager.onFlagRemoved -= self.__onFlagRemoved
         return
 
     def __onFlagCapturedByVehicle(self, flagID, flagTeam, vehicleID):
         vehInfo = self.__arenaDP.getVehicleInfo(vehicleID)
         if vehicleID == self.__playerVehicleID:
-            SoundGroups.g_instance.playSound2D(self.__captureSndName)
+            BigWorld.player().soundNotifications.play(self.__captureSndName)
             self.__ui.showFlagCaptured()
         elif vehInfo.team == self.__playerTeam:
-            SoundGroups.g_instance.playSound2D(self.__allyCaptureSndName)
+            BigWorld.player().soundNotifications.play(self.__allyCaptureSndName)
         else:
-            SoundGroups.g_instance.playSound2D(self.__enemyCaptureSndName)
+            BigWorld.player().soundNotifications.play(self.__enemyCaptureSndName)
 
     def __onFlagAbsorbed(self, flagID, flagTeam, vehicleID, respawnTime):
         vehInfo = self.__arenaDP.getVehicleInfo(vehicleID)
         if vehicleID == self.__playerVehicleID:
             if self.__isTeamPlayer:
-                SoundGroups.g_instance.playSound2D(self.__deliveredSndName)
+                BigWorld.player().soundNotifications.play(self.__deliveredSndName)
                 self.__ui.showFlagDelivered()
             else:
-                SoundGroups.g_instance.playSound2D(self.__consumedSndName)
+                BigWorld.player().soundNotifications.play(self.__consumedSndName)
                 self.__ui.showFlagAbsorbed()
         elif vehInfo.team == self.__playerTeam:
-            SoundGroups.g_instance.playSound2D(self.__allyDeliveredSndName)
+            BigWorld.player().soundNotifications.play(self.__allyDeliveredSndName)
 
     def __onFlagDroppedToGround(self, flagID, flagTeam, loserVehicleID, flagPos, respawnTime):
         vehInfo = self.__arenaDP.getVehicleInfo(loserVehicleID)
-        if loserVehicleID == BigWorld.player().playerVehicleID:
+        if loserVehicleID == self.__playerVehicleID:
             self.__ui.showFlagDropped()
         elif vehInfo.team == self.__playerTeam:
-            SoundGroups.g_instance.playSound2D(self.__allyDroppedSndName)
+            BigWorld.player().soundNotifications.play(self.__allyDroppedSndName)
+
+    def __onFlagRemoved(self, flagID, flagTeam, vehicleID):
+        if vehicleID == self.__playerVehicleID:
+            self.__ui.showFlagDropped()

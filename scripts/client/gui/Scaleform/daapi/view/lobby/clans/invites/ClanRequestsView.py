@@ -159,8 +159,8 @@ class RequestDataProvider(ClanInvitesAbstractDataProvider):
                       'dbID': item.getAccountDbID()},
          'personalRating': formatField(getter=item.getPersonalRating, formatter=BigWorld.wg_getIntegralFormat),
          'battlesCount': formatField(getter=item.getBattlesCount, formatter=BigWorld.wg_getIntegralFormat),
-         'wins': formatField(getter=item.getBattleXpAvg, formatter=lambda value: BigWorld.wg_getNiceNumberFormat(value) + '%'),
-         'awgExp': formatField(getter=item.getBattlesPerformanceAvg, formatter=BigWorld.wg_getIntegralFormat),
+         'wins': formatField(getter=item.getBattlesPerformanceAvg, formatter=lambda value: BigWorld.wg_getNiceNumberFormat(value) + '%'),
+         'awgExp': formatField(getter=item.getBattleXpAvg, formatter=BigWorld.wg_getIntegralFormat),
          'status': {'text': self._makeInviteStateString(item),
                     'tooltip': self._makeTooltip(body=self._makeRequestTooltip(status=item.getStatus(), user=formatField(getter=item.getSenderName), date=formatField(getter=item.getUpdatedAt, formatter=formatters.formatShortDateShortTimeString)))},
          'canShowContextMenu': True,
@@ -182,24 +182,19 @@ class RequestDataProvider(ClanInvitesAbstractDataProvider):
         inviteButtonTooltip = None
         acceptButtonTooltip = None
         clanHasFreeSpaces = self.proxy.clanInfo.hasFreePlaces()
-        clanAcceptJoinRequests = self.proxy.clanInfo.isOpened()
         if self.proxy.currentFilterName == CLANS_ALIASES.INVITE_WINDOW_FILTER_ACTUAL:
             if inviteStatus == CLAN_INVITE_STATES.ACTIVE:
                 declineButtonVisible = True
                 acceptButtonVisible = True
                 declineButtonEnabled = self.isActionsAllowed()
-                if not clanAcceptJoinRequests:
-                    acceptButtonTooltip = CLANS.CLANINVITESWINDOW_HEADER_TOOLTIPS_RECRUITEMENTSTOPPED
-                elif not clanHasFreeSpaces:
+                if not clanHasFreeSpaces:
                     acceptButtonTooltip = CLANS.CLANINVITESWINDOW_TOOLTIPS_TABLE_CANTSENDINVITE_BODY
                 else:
                     acceptButtonEnabled = self.isActionsAllowed()
         elif self.proxy.currentFilterName == CLANS_ALIASES.INVITE_WINDOW_FILTER_EXPIRED:
             if inviteStatus == CLAN_INVITE_STATES.EXPIRED:
                 inviteButtonVisible = True
-                if not clanAcceptJoinRequests:
-                    inviteButtonTooltip = CLANS.CLANINVITESWINDOW_HEADER_TOOLTIPS_RECRUITEMENTSTOPPED
-                elif not clanHasFreeSpaces:
+                if not clanHasFreeSpaces:
                     inviteButtonTooltip = CLANS.CLANINVITESWINDOW_TOOLTIPS_TABLE_CANTACCEPTREQUEST_BODY
                 else:
                     inviteButtonTooltip = CLANS.CLANINVITESWINDOW_TOOLTIPS_TABLE_INVITES_INVITEBUTTON
@@ -207,9 +202,7 @@ class RequestDataProvider(ClanInvitesAbstractDataProvider):
         elif self.proxy.currentFilterName == CLANS_ALIASES.INVITE_WINDOW_FILTER_PROCESSED:
             if inviteStatus == CLAN_INVITE_STATES.DECLINED:
                 inviteButtonVisible = True
-                if not clanAcceptJoinRequests:
-                    inviteButtonTooltip = CLANS.CLANINVITESWINDOW_HEADER_TOOLTIPS_RECRUITEMENTSTOPPED
-                elif not clanHasFreeSpaces:
+                if not clanHasFreeSpaces:
                     inviteButtonTooltip = CLANS.CLANINVITESWINDOW_TOOLTIPS_TABLE_CANTACCEPTREQUEST_BODY
                 else:
                     inviteButtonTooltip = CLANS.CLANINVITESWINDOW_TOOLTIPS_TABLE_INVITES_INVITEBUTTON

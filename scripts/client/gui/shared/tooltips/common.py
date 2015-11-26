@@ -465,14 +465,14 @@ class CustomizationItemTooltipData(ToolTipBaseData):
             typeText = ms(VEHICLE_CUSTOMIZATION.CAMOUFLAGE) + ' ' + ms(CAMOUFLAGES_KIND_TEXTS[item['kind']])
             descriptionText = text_styles.standard(ms(item['description'] + '/description'))
         elif type == CUSTOMIZATION_ITEM_TYPE.EMBLEM:
-            groupName, _, _, _, emblemName, _, _, allow, deny = item
+            groupName, _, _, _, emblemName, _, _, _, allow, deny = item
             groups, _, _ = vehicles.g_cache.playerEmblems()
             _, group, _, _, _, _ = groups.get(groupName)
             headerText = emblemName
             typeText = ms(VEHICLE_CUSTOMIZATION.EMBLEM) + ' ' + ms(group)
             descriptionText = ''
         elif type == CUSTOMIZATION_ITEM_TYPE.INSCRIPTION:
-            groupName, _, _, _, inscriptionName, _, _, allow, deny = item
+            groupName, _, _, _, inscriptionName, _, _, _, allow, deny = item
             groups = vehicles.g_cache.customization(nationId).get('inscriptionGroups', {})
             _, group, _, _, _ = groups.get(groupName)
             headerText = inscriptionName

@@ -1357,7 +1357,7 @@ class Requester(object):
     spa = RequestDescriptor(SpaAccessor)
 
     @classmethod
-    def create_requester(cls, url_fetcher, config_string):
+    def create_requester(cls, url_fetcher, config_string, client_lang = None):
         """
         create requester from config string.
         config string should have following form
@@ -1389,7 +1389,7 @@ class Requester(object):
         config = literal_eval(config_string)
         raise 'type' in config or AssertionError('config string should has type setting')
         raise config['type'] in cls.available_data_sources or AssertionError('%s data source is unknown' % config['type'])
-        data_accessor = cls.available_data_sources[config['type']](url_fetcher, config.get('accessor_config'))
+        data_accessor = cls.available_data_sources[config['type']](url_fetcher, config.get('accessor_config'), client_lang=client_lang)
         return cls(data_accessor)
 
     def __init__(self, data_source):

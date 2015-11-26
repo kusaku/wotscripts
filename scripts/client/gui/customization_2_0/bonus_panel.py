@@ -8,19 +8,23 @@ from elements.qualifier import getIcon42x42ByType as _getBonusIcon42x42ByType
 from elements.qualifier import QUALIFIER_TYPE_NAMES
 from shared import forEachSlotIn
 from data_aggregator import CUSTOMIZATION_TYPE
+from cart import Cart
 
 class BonusPanel(object):
 
     def __init__(self, aggregatedData):
-        self.__initAnimation = False
+        self.__animationStarted = False
         self.__aData = aggregatedData
         self.__bonusData = {}
         self.__initialSlotsData = None
         self.__initialTooltipData = None
+        self.__processingPurchase = False
         self.bonusesUpdated = Event()
+        Cart.purchaseProcessStarted += self.__onPurchaseProcessStarted
         return
 
     def fini(self):
+        Cart.purchaseProcessStarted -= self.__onPurchaseProcessStarted
         self.__aData = None
         self.__bonusData = None
         self.__initialSlotsData = None
@@ -32,7 +36,8 @@ class BonusPanel(object):
         return self.__bonusData
 
     def setInitialSlotsData(self, iSlotsData):
-        self.__initAnimation = False
+        if not self.__processingPurchase:
+            self.__animationStarted = False
         self.__initialSlotsData = iSlotsData
         self.__bonusData = {}
         for qTypeName in QUALIFIER_TYPE_NAMES.iterkeys():
@@ -59,6 +64,9 @@ class BonusPanel(object):
         forEachSlotIn(updatedSlotsData, self.__initialSlotsData, self.__recalculateBonusData)
         self.__setAnimations()
         self.bonusesUpdated(self.__bonusData)
+
+    def __onPurchaseProcessStarted(self):
+        self.__processingPurchase = True
 
     def __saveInitialTooltipData(self):
         self.__initialTooltipData = {}
@@ -124,12 +132,19 @@ class BonusPanel(object):
             bonusFormatter = text_styles.bonusAppliedText
             color = CUSTOMIZATION_BONUS_ANIMATION_TYPES.COLOR_GREEN
             additionalValue = ''
-            if oldBonusTotalCount != bonusTotalCount and self.__initAnimation:
-                animationType = CUSTOMIZATION_BONUS_ANIMATION_TYPES.BUY
+            if oldBonusTotalCount != bonusTotalCount:
+                if self.__animationStarted:
+                    animationType = CUSTOMIZATION_BONUS_ANIMATION_TYPES.BUY
+                else:
+                    animationType = CUSTOMIZATION_BONUS_ANIMATION_TYPES.NONE
                 bonusFormatter = text_styles.bonusLocalText
                 animationValue = bonusTotalCount
+                if appliedBonusValue > 0:
+                    additionalValue = text_styles.bonusAppliedText('+{0}%'.format(appliedBonusValue))
+                elif appliedBonusValue < 0:
+                    additionalValue = text_styles.error('{0}%'.format(appliedBonusValue))
                 if self.__bonusData[qTypeName]['bonusTotalDescriptionCount'] != 0:
-                    formattedString = formattedString + '*'
+                    formattedString += '*'
             elif appliedBonusValue == oldBonusAppliedCount:
                 animationType = CUSTOMIZATION_BONUS_ANIMATION_TYPES.NONE
                 bonusFormatter = text_styles.bonusLocalText
@@ -139,7 +154,7 @@ class BonusPanel(object):
                 elif appliedBonusValue < 0:
                     additionalValue = text_styles.error('{0}%'.format(appliedBonusValue))
                 if self.__bonusData[qTypeName]['bonusTotalDescriptionCount'] != 0:
-                    formattedString = formattedString + '*'
+                    formattedString += '*'
             elif appliedBonusValue == 0:
                 if oldBonusAppliedCount < 0:
                     formattedString = '{0}%'
@@ -148,7 +163,7 @@ class BonusPanel(object):
                 animationType = CUSTOMIZATION_BONUS_ANIMATION_TYPES.RESET
                 animationValue = oldBonusAppliedCount
                 if self.__bonusData[qTypeName]['bonusAppliedDescriptionCount'] != 0:
-                    formattedString = formattedString + '*'
+                    formattedString += '*'
             else:
                 if appliedBonusValue < 0:
                     formattedString = '{0}%'
@@ -157,7 +172,7 @@ class BonusPanel(object):
                 animationType = CUSTOMIZATION_BONUS_ANIMATION_TYPES.SET
                 animationValue = appliedBonusValue
                 if self.__bonusData[qTypeName]['bonusAppliedDescriptionCount'] != 0:
-                    formattedString = formattedString + '*'
+                    formattedString += '*'
             self.__bonusData[qTypeName]['oldBonusAppliedCount'] = appliedBonusValue
             self.__bonusData[qTypeName]['oldBonusTotalCount'] = bonusTotalCount
             self.__bonusData[qTypeName]['animationPanel'] = {'animationType': animationType,
@@ -166,4 +181,5 @@ class BonusPanel(object):
              'value1': bonusFormatter(formattedString.format(animationValue)),
              'value2': additionalValue}
 
-        self.__initAnimation = True
+        self.__animationStarted = True
+        self.__processingPurchase = False

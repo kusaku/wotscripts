@@ -94,12 +94,13 @@ class _UserDataStorage(_BaseDataStorage):
         return self.eventsStorage.getBattleType()
 
     def setBattleType(self, battleType):
-        self.eventsStorage.setBattleType(battleType)
-        self.eventsStorage.validateSelectedVehicles()
-        self._proxy.onSettingsChanged()
+        if battleType != self.getBattleType():
+            self.eventsStorage.setBattleType(battleType)
+            self.eventsStorage.validateSelectedVehicles()
+            self._proxy.onSettingsChanged()
 
     def addSelectedVehicle(self, vehInvID):
-        canSelect, _ = self._proxy.canSelectVehicle(g_itemsCache.items.getVehicle(vehInvID))
+        canSelect = self._proxy.canSelectVehicle(g_itemsCache.items.getVehicle(vehInvID))
         if not canSelect:
             LOG_ERROR('Selected vehicle in invalid!', vehInvID)
             return
@@ -140,8 +141,9 @@ class _UserDataStorage(_BaseDataStorage):
         return self.eventsStorage.isAutomatch()
 
     def setAutomatch(self, isAutomatch):
-        self.eventsStorage.setAutomatch(isAutomatch)
-        self._proxy.onSettingsChanged()
+        if isAutomatch != self.isAutomatch():
+            self.eventsStorage.setAutomatch(isAutomatch)
+            self._proxy.onAutomatchChanged()
 
     def __onItemsResync(self, updateReason, _):
         if updateReason in (CACHE_SYNC_REASON.INVENTORY_RESYNC, CACHE_SYNC_REASON.CLIENT_UPDATE):
@@ -178,13 +180,14 @@ class _SquadDataStorage(_BaseDataStorage, GlobalListener):
         return self.__battleType
 
     def setBattleType(self, battleType):
-        if not self.canChangeBattleType():
-            LOG_ERROR('Cannot change battle type!', battleType)
-            return
-        self.__setEventType(battleType)
+        if battleType != self.getBattleType():
+            if not self.canChangeBattleType():
+                LOG_ERROR('Cannot change battle type!', battleType)
+                return
+            self.__setEventType(battleType)
 
     def addSelectedVehicle(self, vehInvID):
-        canSelect, _ = self._proxy.canSelectVehicle(g_itemsCache.items.getVehicle(vehInvID))
+        canSelect = self._proxy.canSelectVehicle(g_itemsCache.items.getVehicle(vehInvID))
         if not canSelect:
             LOG_ERROR('Selected vehicle in invalid!', vehInvID)
             return
@@ -221,9 +224,15 @@ class _SquadDataStorage(_BaseDataStorage, GlobalListener):
     def onUnitExtraChanged(self, extra):
         if self.__battleType != self.__getExtra().eventType:
             self.__battleType = self.__getExtra().eventType
+            self.__updateVehicles()
             self._proxy.onSettingsChanged()
+            return
         if self.__updateVehicles():
             self._proxy.onVehiclesChanged()
+
+    def onUnitPlayerRolesChanged(self, pInfo, pPermissions):
+        if pInfo.isCurrentPlayer():
+            self._proxy.onSettingsChanged()
 
     @process
     def __setVehicles(self, vehsList):
@@ -260,6 +269,7 @@ class FalloutController(Controller, GlobalListener):
         super(FalloutController, self).__init__(proxy)
         self.__evtManager = Event.EventManager()
         self.onSettingsChanged = Event.Event(self.__evtManager)
+        self.onAutomatchChanged = Event.Event(self.__evtManager)
         self.onVehiclesChanged = Event.Event(self.__evtManager)
         self.__dataStorage = None
         return
@@ -348,12 +358,26 @@ class FalloutController(Controller, GlobalListener):
 
     def canSelectVehicle(self, vehicle):
         if not self.isSelected():
-            return (False, '')
-        else:
-            cfg = self.getConfig()
-            if findFirst(lambda v: v.level == cfg.vehicleLevelRequired, self.getSelectedVehicles()) is None and vehicle.level != cfg.vehicleLevelRequired:
-                return (False, i18n.makeString(FALLOUT.TANKCAROUSELSLOT_SELECTIONBUTTONTOOLTIP, requiredLevel=int2roman(cfg.vehicleLevelRequired), level=toRomanRangeString(list(cfg.allowedLevels - {cfg.vehicleLevelRequired}), 1)))
-            return (True, '')
+            return False
+        cfg = self.getConfig()
+        if not cfg.hasRequiredVehicles():
+            return False
+        if vehicle.intCD not in cfg.allowedVehicles:
+            return False
+        if self.mustSelectRequiredVehicle() and vehicle.level != cfg.vehicleLevelRequired:
+            return False
+        return True
+
+    def mustSelectRequiredVehicle(self):
+        return len(self.getEmptySlots()) == 1 and not self.requiredVehicleSelected()
+
+    def requiredVehicleSelected(self):
+        cfg = self.getConfig()
+        return findFirst(lambda v: v.level == cfg.vehicleLevelRequired, self.getSelectedVehicles()) is not None
+
+    def carouselSelectionButtonTooltip(self):
+        cfg = self.getConfig()
+        return i18n.makeString(FALLOUT.TANKCAROUSELSLOT_SELECTIONBUTTONTOOLTIP, requiredLevel=int2roman(cfg.vehicleLevelRequired), level=toRomanRangeString(list(cfg.allowedLevels), 1))
 
     def canChangeBattleType(self):
         return self.__dataStorage.canChangeBattleType()

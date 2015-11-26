@@ -700,6 +700,9 @@ class ClansSetting(MessengerSetting):
         else:
             return None
 
+    def getDefaultValue(self):
+        return True
+
 
 class GameplaySetting(StorageAccountSetting):
 

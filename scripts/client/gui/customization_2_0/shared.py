@@ -2,6 +2,7 @@
 from gui.customization_2_0.data_aggregator import CUSTOMIZATION_TYPE
 from gui.shared.ItemsCache import g_itemsCache
 from gui.shared.formatters import text_styles, icons
+CAMOUFLAGE_GROUP_MAPPING = ('winter', 'summer', 'desert')
 
 def formatPriceGold(value):
     if g_itemsCache.items.stats.gold >= value:
@@ -46,11 +47,3 @@ def forEachSlotIn(newSlotsData, oldSlotsData, functionToRun):
             newSlotItem = newSlotsData['data'][cType]['data'][slotIdx]
             oldSlotItem = oldSlotsData['data'][cType]['data'][slotIdx]
             functionToRun(newSlotItem, oldSlotItem, cType, slotIdx)
-
-
-def isConditional(item):
-    if item.qualifier.getDescription() is None:
-        return ''
-    else:
-        return '*'
-        return

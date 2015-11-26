@@ -1,5 +1,6 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/fortifications/FortClanBattleRoom.py
 import ArenaType
+from debug_utils import LOG_DEBUG, LOG_ERROR
 from helpers import i18n, int2roman
 from UnitBase import UNIT_OP
 from adisp import process
@@ -19,7 +20,7 @@ from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.prb_control.context.unit_ctx import LeaveUnitCtx
 from gui.prb_control.prb_helpers import UnitListener
 from gui.prb_control import settings
-from gui.prb_control.prb_getters import getBattleID
+from gui.prb_control import prb_getters
 from gui.prb_control.settings import CTRL_ENTITY_TYPE, FUNCTIONAL_FLAG
 from gui import SystemMessages
 from gui.shared import events
@@ -158,12 +159,15 @@ class FortClanBattleRoom(FortClanBattleRoomMeta, UnitListener, FortViewHelper):
 
     def __initData(self):
         fort = self.fortCtrl.getFort()
-        self.__battleID = getBattleID()
+        self.__battleID = prb_getters.getBattleID()
         self.__battle = fort.getBattle(self.__battleID)
+        if self.__battleID is None:
+            LOG_ERROR('Initialization Error! battle ID must not be None!')
         self.__allBuildings = self.__battle.getAllBuildList()
         if self.__allBuildings:
             self.__prevBuilding = self.__allBuildings[self.__battle.getPrevBuildNum()]
             self.__currentBuilding = self.__allBuildings[self.__battle.getCurrentBuildNum()]
+        return
 
     def __makeData(self):
         self.__makeMainVO()

@@ -10,6 +10,7 @@ from gui.prb_control.ctrl_events import g_prbCtrlEvents
 from gui.prb_control.events_dispatcher import g_eventDispatcher
 from gui.prb_control.formatters import messages
 from gui.prb_control.functional import interfaces
+from gui.prb_control.restrictions.permissions import PreQueuePermissions
 from gui.prb_control.settings import FUNCTIONAL_FLAG, CTRL_ENTITY_TYPE
 from gui.prb_control.settings import REQUEST_TYPE
 from gui.shared.utils.ListenersCollection import ListenersCollection
@@ -108,6 +109,10 @@ class PreQueueFunctional(ListenersCollection, interfaces.IPreQueueFunctional):
 
     def getEntityType(self):
         return self._queueType
+
+    def getPermissions(self, pID = None, **kwargs):
+        raise pID is None or AssertionError('Current player has no any player in that mode')
+        return PreQueuePermissions(self.isInQueue())
 
     def getConfirmDialogMeta(self, ctx):
         meta = None

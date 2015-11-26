@@ -397,6 +397,7 @@ class AmmoReplayPlayer(AmmoController):
             self.__percent = percent
             self.onGunReloadTimeSetInPercent(self.getCurrentShellCD(), percent)
 
+    @MethodsRules.delayable('setShells')
     def __onAmmoSettingChanged(self, idx):
         if idx >= len(self._order) or idx < 0:
             return

@@ -8,6 +8,7 @@ from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui.Scaleform.genConsts.CLANS_ALIASES import CLANS_ALIASES
 from gui.clans import contexts as clan_ctxs
 from gui.clans.clan_controller import g_clanCtrl
+from gui.clans.settings import showAcceptClanInviteDialog
 from gui.clubs import contexts as club_ctx, events_dispatcher as club_events
 from gui.clubs.club_helpers import ClubListener
 from gui.Scaleform.genConsts.FORTIFICATION_ALIASES import FORTIFICATION_ALIASES
@@ -222,7 +223,10 @@ class _AcceptClanInviteHandler(_ClanInviteHandler):
     @process
     def handleAction(self, model, entityID, action):
         super(_AcceptClanInviteHandler, self).handleAction(model, entityID, action)
-        yield g_clanCtrl.sendRequest(clan_ctxs.AcceptInviteCtx(self._getInviteID(model, entityID)), allowDelay=True)
+        entity = model.getNotification(self.getNotType(), entityID).getEntity()
+        result = yield showAcceptClanInviteDialog(entity.getClanName(), entity.getClanTag())
+        if result:
+            yield g_clanCtrl.sendRequest(clan_ctxs.AcceptInviteCtx(self._getInviteID(model, entityID)), allowDelay=True)
 
 
 class _DeclineClanInviteHandler(_ClanInviteHandler):

@@ -3,6 +3,7 @@ from functools import partial
 import types
 import weakref
 from debug_utils import LOG_WARNING, LOG_DEBUG
+from gui.clans.contexts import GetFrontsCtx
 from shared_utils import makeTupleByDict
 from client_request_lib.exceptions import ResponseCodes
 from gui.clans import formatters as clan_fmts, contexts, items
@@ -50,11 +51,11 @@ class ClanRequester(ClientRequestsByIDProcessor):
             if not requestID in self._requests:
                 raise AssertionError('There is no context has been registered for given request. Probably you call callback at the same frame as request')
                 ctx = self._requests[requestID]
-                response = responseCode == ResponseCodes.NO_ERRORS and self._makeResponse(responseCode, '', data, ctx)
+                response = responseCode == ResponseCodes.NO_ERRORS and self._makeResponse(responseCode, '', data, ctx, extraCode=statusCode)
             else:
                 errStr = data.pop('description', '')
                 data = None
-                response = self._makeResponse(responseCode, errStr, data, ctx)
+                response = self._makeResponse(responseCode, errStr, data, ctx, extraCode=statusCode)
             self._onResponseReceived(requestID, response)
             return
 
@@ -165,10 +166,10 @@ class ClanRequestsController(RequestsController):
         return self._requester.doRequestEx(ctx, callback, 'get_alive_status')
 
     def __getClanInfo(self, ctx, callback = None):
-        return self._requester.doRequestEx(ctx, callback, ('clans', 'get_clans_info'), (ctx.getClanID(),))
+        return self._requester.doRequestEx(ctx, callback, ('clans', 'get_clans_info'), (ctx.getClanID(),), fields=ctx.getFields())
 
     def __getClansInfo(self, ctx, callback = None):
-        return self._requester.doRequestEx(ctx, callback, ('clans', 'get_clans_info'), ctx.getClanIDs())
+        return self._requester.doRequestEx(ctx, callback, ('clans', 'get_clans_info'), ctx.getClanIDs(), fields=ctx.getFields())
 
     def __getClanRatings(self, ctx, callback = None):
         return self._requester.doRequestEx(ctx, callback, ('ratings', 'get_clans_ratings'), ctx.getClanIDs())
@@ -180,7 +181,29 @@ class ClanRequestsController(RequestsController):
         return self.__doClanRequest(ctx, callback, ('strongholds', 'get_statistics'))
 
     def __getProvinces(self, ctx, callback = None):
-        return self.__doClanRequest(ctx, callback, ('global_map', 'get_provinces'))
+
+        def __onProvincesReceived(response):
+            if response.isSuccess():
+                frontsCtx = GetFrontsCtx(map(lambda v: v['front_name'], response.data))
+
+                def __onFrontsReceived(frontsResponse):
+                    if frontsResponse.isSuccess():
+                        fronts = frontsCtx.getDataObj(frontsResponse.data)
+                    else:
+                        fronts = {}
+                    for province in response.data:
+                        province['frontInfo'] = fronts.get(province['front_name'], frontsCtx.getDefDataObj())
+
+                    callback(response)
+
+                self.__getGMFronts(frontsCtx, __onFrontsReceived)
+            else:
+                callback(response)
+
+        return self.__doClanRequest(ctx, __onProvincesReceived, ('global_map', 'get_provinces'))
+
+    def __getGMFronts(self, ctx, callback = None):
+        return self._requester.doRequestEx(ctx, callback, ('global_map', 'get_fronts_info'), ctx.getProvincesIDs())
 
     def __getClanAccounts(self, ctx, callback = None):
         return self._requester.doRequestEx(ctx, callback, ('clans', 'get_accounts_clans'), ctx.getAccountsIDs())

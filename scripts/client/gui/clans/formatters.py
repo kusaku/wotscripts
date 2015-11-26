@@ -2,7 +2,9 @@
 import BigWorld
 from gui import makeHtmlString
 from helpers.i18n import doesTextExist, makeString
-from gui.clans.settings import CLAN_REQUESTED_DATA_TYPE, CLAN_MEMBERS
+from gui.clans.settings import ERROR_CODES as ERROR
+from gui.clans.settings import CLAN_REQUESTED_DATA_TYPE as REQUEST_TYPE
+from gui.clans.settings import CLAN_MEMBERS
 ERROR_SYS_MSG_TPL = '#system_messages:clans/request/errors/%s'
 DUMMY_UNAVAILABLE_DATA = '--'
 DUMMY_NULL_DATA = '--'
@@ -40,22 +42,30 @@ def formatShortDateShortTimeString(timestamp):
     return str(' ').join((BigWorld.wg_getShortDateFormat(timestamp), '  ', BigWorld.wg_getShortTimeFormat(timestamp)))
 
 
-_CUSTOM_ERR_MESSAGES = {}
+_CUSTOM_ERR_MESSAGES_BY_REQUEST = {REQUEST_TYPE.CREATE_INVITES: lambda result, ctx: ''}
+_CUSTOM_ERR_MESSAGES = {(REQUEST_TYPE.CLAN_GLOBAL_MAP_STATS, ERROR.GLOBAL_MAP_UNAVAILABLE): ''}
 
 def getRequestErrorMsg(result, ctx):
+    msgReqKey = ctx.getRequestType()
     msgKey = (ctx.getRequestType(), result.code)
-    if msgKey in _CUSTOM_ERR_MESSAGES:
+    if msgReqKey in _CUSTOM_ERR_MESSAGES_BY_REQUEST:
+        errorMsg = _CUSTOM_ERR_MESSAGES_BY_REQUEST[msgReqKey]
+    elif msgKey in _CUSTOM_ERR_MESSAGES:
         errorMsg = _CUSTOM_ERR_MESSAGES[msgKey]
     else:
         errorMsg = result.errStr
-    key = ERROR_SYS_MSG_TPL % errorMsg
-    if doesTextExist(key):
-        return makeString(key)
-    return ''
+    msg = ''
+    if callable(errorMsg):
+        msg = errorMsg(result, ctx)
+    else:
+        key = ERROR_SYS_MSG_TPL % errorMsg
+        if doesTextExist(key):
+            msg = makeString(key)
+    return msg
 
 
 def getRequestUserName(rqTypeID):
-    return _sysMsg('clan/request/name/%s' % CLAN_REQUESTED_DATA_TYPE.getKeyByValue(rqTypeID))
+    return _sysMsg('clan/request/name/%s' % REQUEST_TYPE.getKeyByValue(rqTypeID))
 
 
 def getClanRoleString(position):

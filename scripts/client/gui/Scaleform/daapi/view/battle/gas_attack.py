@@ -54,6 +54,7 @@ class _SafeZoneTimer(object):
     def __init__(self, battleUI):
         self.__flashObject = weakref.proxy(battleUI.movie.safeZoneTimer.instance)
         self.__flashObject.as_setMessage(FALLOUT.SAFEZONE_MESSAGE)
+        self._isShowed = False
 
     def destroy(self):
         self.__flashObject = None
@@ -65,11 +66,16 @@ class _SafeZoneTimer(object):
 
     def showTimer(self, timeStr):
         if self.__flashObject is not None:
-            self.__flashObject.as_showTime(timeStr)
+            if not self._isShowed:
+                self._isShowed = True
+                self.__flashObject.as_show(timeStr)
+            else:
+                self.__flashObject.as_updateTimer(timeStr)
         return
 
     def hideTimer(self):
         if self.__flashObject is not None:
+            self._isShowed = False
             self.__flashObject.as_hide()
         return
 

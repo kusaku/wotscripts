@@ -614,7 +614,7 @@ class Token(_Requirement):
                         counterDescr = i18n.makeString('#quests:quests/table/battlesLeft')
                     groupID = quest.getGroupID()
                     group = self.__getGroup(groupID)
-                    if group is not None and tokensCountNeed > 1:
+                    if group is not None and tokensCountNeed > 1 and self.__getUniqueGroupTokensCount(svrEvents, group) == 1:
                         groupName = group.getUserName()
                         label = i18n.makeString('#quests:details/requirements/group/token/N', groupName=groupName, count=BigWorld.wg_getIntegralFormat(tokensCountNeed))
                         groupedResult[groupID, group.getPriority()] = formatters.packTextBlock(label, isAvailable=isAvailable, counterValue=battlesLeft, counterDescr=counterDescr)
@@ -633,6 +633,14 @@ class Token(_Requirement):
     def __getTokensCount(self):
         from gui.server_events import g_eventsCache
         return g_eventsCache.questsProgress.getTokenCount(self._id)
+
+    def __getUniqueGroupTokensCount(self, svrEvents, group):
+        uniqueTokens = set()
+        for qID in group.getGroupEvents():
+            quest = svrEvents.get(qID)
+            uniqueTokens |= set(quest.getChildren().keys())
+
+        return len(uniqueTokens)
 
     def __getGroup(self, groupID):
         from gui.server_events import g_eventsCache

@@ -80,16 +80,16 @@ class PrbCtrlRequestCtx(RequestCtx):
         return ', '.join(convertFlagsToNames(self.__flags))
 
 
-class PrebattleAction(object):
-    __slots__ = ('actionName', 'mapID')
+@ReprInjector.simple('actionName', 'mapID', 'accountsToInvite')
 
-    def __init__(self, actionName, mapID = 0):
+class PrebattleAction(object):
+    __slots__ = ('actionName', 'mapID', 'accountsToInvite')
+
+    def __init__(self, actionName, mapID = 0, accountsToInvite = None):
         self.actionName = actionName if actionName is not None else ''
         self.mapID = mapID
+        self.accountsToInvite = accountsToInvite or ()
         return
-
-    def __repr__(self):
-        return 'PrebattleAction(name = {0:>s}, mapID = {1:n}'.format(self.actionName, self.mapID)
 
 
 class SendInvitesCtx(PrbCtrlRequestCtx):

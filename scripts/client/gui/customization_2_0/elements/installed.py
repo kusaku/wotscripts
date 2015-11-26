@@ -3,10 +3,9 @@ import time
 from helpers import time_utils
 
 class Item(object):
-    __slots__ = ('_rawData', '_spot', '_qualifier')
+    __slots__ = ('_rawData', '_spot')
 
-    def __init__(self, rawData, spot, qualifier):
-        self._qualifier = qualifier
+    def __init__(self, rawData, spot):
         self._rawData = rawData
         self._spot = spot
 
@@ -23,10 +22,6 @@ class Item(object):
     def getSpot(self):
         raise NotImplementedError
 
-    @property
-    def qualifier(self):
-        return self._qualifier
-
     def getNumberOfDaysLeft(self):
         timeLeft = (time.time() - self.timeOfApplication()) / time_utils.ONE_DAY
         term = self.duration
@@ -35,8 +30,8 @@ class Item(object):
 
 class Emblem(Item):
 
-    def __init__(self, rawData, spot, qualifier):
-        Item.__init__(self, rawData, spot, qualifier)
+    def __init__(self, rawData, spot):
+        Item.__init__(self, rawData, spot)
 
     def getID(self):
         return self._rawData[0]
@@ -54,8 +49,8 @@ class Emblem(Item):
 
 class Inscription(Item):
 
-    def __init__(self, rawData, spot, qualifier):
-        Item.__init__(self, rawData, spot, qualifier)
+    def __init__(self, rawData, spot):
+        Item.__init__(self, rawData, spot)
 
     def getID(self):
         return self._rawData[0]
@@ -73,8 +68,8 @@ class Inscription(Item):
 
 class Camouflage(Item):
 
-    def __init__(self, rawData, spot, qualifier):
-        Item.__init__(self, rawData, spot, qualifier)
+    def __init__(self, rawData, spot):
+        Item.__init__(self, rawData, spot)
 
     def getID(self):
         return self._rawData[0]

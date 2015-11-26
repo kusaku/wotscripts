@@ -19,3 +19,7 @@ class FalloutBattleSelectorWindowMeta(AbstractWindowView):
     def as_setBtnStatesS(self, data):
         if self._isDAAPIInited():
             return self.flashObject.as_setBtnStates(data)
+
+    def as_setTooltipsS(self, data):
+        if self._isDAAPIInited():
+            return self.flashObject.as_setTooltips(data)

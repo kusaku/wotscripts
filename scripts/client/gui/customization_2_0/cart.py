@@ -2,12 +2,10 @@
 import functools
 import BigWorld
 from Event import Event
-from debug_utils import LOG_DEBUG
 from gui import SystemMessages, g_tankActiveCamouflage
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.Scaleform.locale.SYSTEM_MESSAGES import SYSTEM_MESSAGES
 from data_aggregator import CUSTOMIZATION_TYPE
-from gui.customization_2_0 import shared
 from items import vehicles
 from helpers.i18n import makeString as _ms
 from shared import forEachSlotIn
@@ -35,6 +33,7 @@ _DROP_MESSAGE = {CUSTOMIZATION_TYPE.CAMOUFLAGE: {'error': SYSTEM_MESSAGES.CUSTOM
                                   'removedSuccess': SYSTEM_MESSAGES.CUSTOMIZATION_INSCRIPTION_DROP_SUCCESS}}
 
 class Cart(object):
+    purchaseProcessStarted = Event()
 
     def __init__(self, aggregatedData):
         self.__elementsToProcess = 1
@@ -87,13 +86,18 @@ class Cart(object):
             self.filled()
             self.__isShown = True
 
-    def buyItems(self, excludedItems):
-        excludedItems = set(excludedItems)
-        cartItems = set([ (item['itemID'], item['type']) for item in self.__purchaseData ])
-        self.__elementsToProcess = len(cartItems - excludedItems)
-        for item in self.__purchaseData:
-            if (item['itemID'], item['type']) not in excludedItems:
-                self.buyItem(item['type'], item['spot'], self.__calculateVehicleIndex(item['idx'], item['type']), item['itemID'], item['duration'], item['price'], item['currencyIcon'])
+    def buyItems(self, purchaseWindowItems):
+        sortedItems = sorted(purchaseWindowItems, cmp=lambda i, j: cmp(j['price'], i['price']))
+        self.__elementsToProcess = 0
+        for item in sortedItems:
+            if item['selected']:
+                self.__elementsToProcess += 1
+
+        self.purchaseProcessStarted()
+        for item in sortedItems:
+            itemIndex = purchaseWindowItems.index(item)
+            if item['selected']:
+                self.buyItem(item['cType'], self.__purchaseData[itemIndex]['spot'], self.__calculateVehicleIndex(item['slotIdx'], item['cType']), item['id'], self.__purchaseData[itemIndex]['duration'], item['price'], item['imgCurrency'])
 
     def buyItem(self, cType, cSpot, slotIdx, cItemID, duration, price = -1, currencyIcon = RES_ICONS.MAPS_ICONS_LIBRARY_GOLDICON_2):
         purchaseFunction = {CUSTOMIZATION_TYPE.CAMOUFLAGE: BigWorld.player().inventory.changeVehicleCamouflage,
@@ -120,6 +124,7 @@ class Cart(object):
             cItem = self.__aData.available[cType][newSlotItem['itemID']]
             self.__purchaseData.append({'type': cType,
              'idx': slotIdx,
+             'object': cItem,
              'itemID': newSlotItem['itemID'],
              'price': newSlotItem['price'],
              'bonus': newSlotItem['bonus'],
@@ -129,7 +134,8 @@ class Cart(object):
              'bonusIcon': cItem.qualifier.getIcon16x16(),
              'duration': newSlotItem['duration'],
              'spot': newSlotItem['spot'],
-             'isConditional': shared.isConditional(cItem)})
+             'isConditional': '' if cItem.qualifier.getDescription() is None else '*'})
+        return
 
     def __synchronizeDossierIfRequired(self):
         self.__elementsToProcess -= 1

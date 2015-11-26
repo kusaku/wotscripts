@@ -124,6 +124,7 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
         BigWorld.target.maxDistance = 700
         BigWorld.target.skeletonCheckEnabled = True
         BigWorld.target.caps()
+        BigWorld.target.isEnabled = True
         return
 
     def onBecomeNonPlayer(self):
@@ -763,11 +764,14 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
         self._doCmdStr(AccountCommands.CMD_SET_LANGUAGE, language, None)
         return
 
-    def selectPotapovQuests(self, potapovQuestIDs, callback):
-        self._doCmdIntArr(AccountCommands.CMD_SELECT_POTAPOV_QUESTS, potapovQuestIDs, lambda requestID, resultID, errorCode: callback(resultID, errorCode))
+    def selectPotapovQuests(self, potapovQuestIDs, questType, callback):
+        args = [questType]
+        args.extend(potapovQuestIDs)
+        self._doCmdIntArr(AccountCommands.CMD_SELECT_POTAPOV_QUESTS, args, lambda requestID, resultID, errorCode: callback(resultID, errorCode))
 
-    def getPotapovQuestReward(self, potapovQuestID, needTamkman = False, tmanNation = 0, tmanInnation = 0, roleID = 1, callback = None):
-        arr = [potapovQuestID,
+    def getPotapovQuestReward(self, potapovQuestID, questType, needTamkman = False, tmanNation = 0, tmanInnation = 0, roleID = 1, callback = None):
+        arr = [questType,
+         potapovQuestID,
          needTamkman,
          tmanNation,
          tmanInnation,

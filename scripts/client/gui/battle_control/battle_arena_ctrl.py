@@ -18,7 +18,7 @@ from gui.prb_control.prb_helpers import prbInvitesProperty
 from messenger.storage import storage_getter
 from unit_roster_config import SquadRoster
 from gui.LobbyContext import g_lobbyContext
-from gui.battle_control.arena_info import hasResourcePoints
+from gui.battle_control.arena_info import hasResourcePoints, isRandomBattle
 PLAYERS_PANEL_LENGTH = 24
 
 def _getRoster(user):
@@ -293,7 +293,7 @@ class BattleArenaController(IArenaVehiclesController):
         isInvitesForbidden = inviteSendingProhibited or himself or playerVO.forbidInBattleInvitations or isIgnored or isActionsDisabled
         isPlayerInSquad = playerAccountID == dbID and vInfoVO.isSquadMan()
         squadNoSound = False
-        if isPlayerInSquad and not IS_CHINA:
+        if isPlayerInSquad and isRandomBattle() and not IS_CHINA:
             squadNoSound = not g_settingsCore.getSetting(SOUND.VOIP_ENABLE)
         return {'position': index + 1,
          'label': playerFullName,

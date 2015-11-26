@@ -3,7 +3,7 @@ import BigWorld
 from adisp import process
 from constants import CLAN_MEMBER_FLAGS
 from debug_utils import LOG_ERROR, LOG_WARNING
-from gui.shared.utils import sortByFields
+from gui.shared.utils import sortByFields, weightedAvg
 from helpers import i18n
 from account_helpers import getAccountDatabaseID
 from gui.Scaleform.daapi.view.lobby.clans.profile import MAX_MEMBERS_IN_CLAN
@@ -18,6 +18,7 @@ from gui.shared.view_helpers import UsersInfoHelper
 from gui.clans.settings import CLIENT_CLAN_RESTRICTIONS as RES, DATA_UNAVAILABLE_PLACEHOLDER
 from gui.clans import items
 from gui.clans import formatters as clans_fmts
+from gui.clans.clan_controller import SYNC_KEYS
 from helpers.i18n import makeString as _ms
 from messenger.gui.Scaleform.data.contacts_vo_converter import ContactConverter
 from messenger.proto.bw.find_criteria import BWClanChannelFindCriteria
@@ -47,13 +48,13 @@ class _SORT_IDS:
     DAYS_IN_CLAN = 'daysInClan'
 
 
-def _packStat(text, description, tooltip, icon):
+def _packStat(description, tooltip, icon, isEnabled, text):
     return {'type': HeaderItemsTypes.COMMON,
      'text': text,
      'description': _ms(description),
      'iconPath': ProfileUtils.getIconPath(icon),
      'tooltip': tooltip,
-     'enabled': True}
+     'enabled': isEnabled}
 
 
 def _packColumn(columdID, label, buttonWidth, tooltip, icon = '', sortOrder = -1, showSeparator = True):
@@ -66,6 +67,45 @@ def _packColumn(columdID, label, buttonWidth, tooltip, icon = '', sortOrder = -1
      'defaultSortDirection': 'ascending',
      'buttonHeight': 34,
      'showSeparator': showSeparator}
+
+
+def _getAvgStringValue(dataList, key, formatter = None):
+    count = 0
+    total = 0
+    for item in dataList:
+        getter = getattr(item, key)
+        if items.isValueAvailable(getter):
+            count += 1
+            total += getter()
+        else:
+            return (False, clans_fmts.DUMMY_UNAVAILABLE_DATA)
+
+    if count > 0:
+        value = float(total) / count
+        return (True, formatter(value) if formatter else value)
+    else:
+        return (False, clans_fmts.DUMMY_UNAVAILABLE_DATA)
+
+
+def _getWeighedAvgStringValue(dataList, key, weightKey, formatter = None):
+    vals = []
+    weights = []
+    weightsSum = 0
+    for item in dataList:
+        valueGetter = getattr(item, key)
+        weightGetter = getattr(item, weightKey)
+        if items.isValueAvailable(valueGetter) and items.isValueAvailable(weightGetter):
+            weight = weightGetter()
+            vals.append(valueGetter())
+            weights.append(weight)
+            weightsSum += weight
+        else:
+            return (False, clans_fmts.DUMMY_UNAVAILABLE_DATA)
+
+    if weightsSum == 0:
+        return (False, clans_fmts.DUMMY_UNAVAILABLE_DATA)
+    outcome = weightedAvg(vals, weights)
+    return (True, formatter(outcome) if formatter else outcome)
 
 
 class ClanProfilePersonnelView(ClanProfilePersonnelViewMeta):
@@ -92,10 +132,10 @@ class ClanProfilePersonnelView(ClanProfilePersonnelViewMeta):
         self._updateClanInfo(clanInfo)
         membersCount = len(members)
         self.__membersDP.buildList(members, syncUserInfo=True)
-        statistics = [_packStat(self.__membersDP.getAvgGlobalRating(), CLANS.PERSONNELVIEW_CLANSTATS_AVGPERSONALRATING, CLANS.PERSONNELVIEW_CLANSTATS_AVGPERSONALRATING_TOOLTIP, 'avgPersonalRating40x32.png'),
-         _packStat(self.__membersDP.getAvgBattlesCount(), CLANS.PERSONNELVIEW_CLANSTATS_AVGBATTLESCOUNT, CLANS.PERSONNELVIEW_CLANSTATS_AVGBATTLESCOUNT_TOOLTIP, 'avgBattlesCount40x32.png'),
-         _packStat(self.__membersDP.getAvgPerformanceBattles(), CLANS.PERSONNELVIEW_CLANSTATS_AVGWINS, CLANS.PERSONNELVIEW_CLANSTATS_AVGWINS_TOOLTIP, 'avgWins40x32.png'),
-         _packStat(self.__membersDP.getAvgXp(), CLANS.PERSONNELVIEW_CLANSTATS_AVGEXP, CLANS.PERSONNELVIEW_CLANSTATS_AVGEXP_TOOLTIP, 'avgExp40x32.png')]
+        statistics = [_packStat(CLANS.PERSONNELVIEW_CLANSTATS_AVGPERSONALRATING, CLANS.PERSONNELVIEW_CLANSTATS_AVGPERSONALRATING_TOOLTIP, 'avgPersonalRating40x32.png', *self.__membersDP.getAvgGlobalRating()),
+         _packStat(CLANS.PERSONNELVIEW_CLANSTATS_AVGBATTLESCOUNT, CLANS.PERSONNELVIEW_CLANSTATS_AVGBATTLESCOUNT_TOOLTIP, 'avgBattlesCount40x32.png', *self.__membersDP.getAvgBattlesCount()),
+         _packStat(CLANS.PERSONNELVIEW_CLANSTATS_AVGWINS, CLANS.PERSONNELVIEW_CLANSTATS_AVGWINS_TOOLTIP, 'avgWins40x32.png', *self.__membersDP.getAvgPerformanceBattles()),
+         _packStat(CLANS.PERSONNELVIEW_CLANSTATS_AVGEXP, CLANS.PERSONNELVIEW_CLANSTATS_AVGEXP_TOOLTIP, 'avgExp40x32.png', *self.__membersDP.getAvgXp())]
         headers = [_packColumn(_SORT_IDS.USER_NAME, CLANS.PERSONNELVIEW_TABLE_PLAYER, 223, CLANS.PERSONNELVIEW_TABLE_PLAYER_TOOLTIP),
          _packColumn(_SORT_IDS.POST, CLANS.PERSONNELVIEW_TABLE_POST, 275, CLANS.PERSONNELVIEW_TABLE_POST_TOOLTIP),
          _packColumn(_SORT_IDS.RATING, '', 100, CLANS.PERSONNELVIEW_TABLE_PERSONALRATING_TOOLTIP, RES_ICONS.MAPS_ICONS_STATISTIC_RATING24),
@@ -134,12 +174,12 @@ class ClanProfilePersonnelView(ClanProfilePersonnelViewMeta):
     def _updateHeaderState(self):
         limits = self.clansCtrl.getLimits()
         if limits.canAcceptApplication(self._clanDossier).success or limits.canDeclineApplication(self._clanDossier).success:
-            vo = self._getHeaderButtonStateVO(False, None, True, True, False, OPEN_INVITES_ACTION_ID)
-            if self._clanDossier.isSynced('appsCount'):
-                vo['iconBtnLabel'] = '  ' + clans_fmts.formatDataToString(self._clanDossier.getAppsCount())
+            vo = self._getHeaderButtonStateVO(False, None, True, True, False, OPEN_INVITES_ACTION_ID, topTF=i18n.makeString(CLANS.CLAN_HEADER_INVITESANDREQUESTS))
+            if self._clanDossier.isSynced(SYNC_KEYS.APPS) and self._clanDossier.getAppsCount() == 0:
+                envelopeIcon = RES_ICONS.MAPS_ICONS_BUTTONS_ENVELOPEOPENED
             else:
-                vo['iconBtnLabel'] = DATA_UNAVAILABLE_PLACEHOLDER
-            vo['iconBtnIcon'] = 'envelope.png'
+                envelopeIcon = RES_ICONS.MAPS_ICONS_BUTTONS_ENVELOPE
+            vo['iconBtnIcon'] = envelopeIcon
             self.as_setHeaderStateS(vo)
         else:
             super(ClanProfilePersonnelView, self)._updateHeaderState()
@@ -159,7 +199,7 @@ class _ClanMembersDataProvider(SortableDAAPIDataProvider, UsersInfoHelper):
         self.__mapping = {}
         self.__selectedID = None
         self.__accountsList = []
-        self.__sortMapping = {_SORT_IDS.USER_NAME: self.__getMemberName,
+        self.__sortMapping = {_SORT_IDS.USER_NAME: lambda memberData: self.__getMemberName(memberData).lower(),
          _SORT_IDS.POST: self.__getMemberRole,
          _SORT_IDS.RATING: self.__getMemberRating,
          _SORT_IDS.BATTLES_COUNT: self.__getMemberBattlesCount,
@@ -242,22 +282,23 @@ class _ClanMembersDataProvider(SortableDAAPIDataProvider, UsersInfoHelper):
             self.refresh()
 
     def getAvgGlobalRating(self):
-        return self.__getAvgStringValue('getGlobalRating', formatter=BigWorld.wg_getIntegralFormat)
+        return _getAvgStringValue(self.__accountsList, 'getGlobalRating', formatter=BigWorld.wg_getIntegralFormat)
 
     def getAvgBattlesCount(self):
-        return self.__getAvgStringValue('getBattlesCount', formatter=BigWorld.wg_getIntegralFormat)
+        return _getAvgStringValue(self.__accountsList, 'getBattlesCount', formatter=BigWorld.wg_getIntegralFormat)
 
     def getAvgPerformanceBattles(self):
-        return self.__getAvgStringValue('getBattlesPerformanceAvg', formatter=lambda v: BigWorld.wg_getNiceNumberFormat(v) + '%')
+        return _getWeighedAvgStringValue(self.__accountsList, 'getBattlesPerformanceAvg', 'getBattlesCount', formatter=lambda v: BigWorld.wg_getNiceNumberFormat(v) + '%')
 
     def getAvgXp(self):
-        return self.__getAvgStringValue('getXp', formatter=BigWorld.wg_getIntegralFormat)
+        return _getWeighedAvgStringValue(self.__accountsList, 'getBattleXpAvg', 'getBattlesCount', formatter=BigWorld.wg_getIntegralFormat)
 
     def _makeVO(self, memberData):
         memberDBID = memberData.getDbID()
         contactEntity = self.userStorage.getUser(memberDBID)
         if contactEntity:
             userVO = ContactConverter().makeVO(contactEntity)
+            userVO['userProps']['clanAbbrev'] = ''
         else:
             userVO = {}
         return {'dbID': memberDBID,
@@ -267,7 +308,7 @@ class _ClanMembersDataProvider(SortableDAAPIDataProvider, UsersInfoHelper):
          'personalRating': items.formatField(getter=memberData.getGlobalRating, formatter=BigWorld.wg_getIntegralFormat),
          'battlesCount': items.formatField(getter=memberData.getBattlesCount, formatter=BigWorld.wg_getIntegralFormat),
          'wins': items.formatField(getter=memberData.getBattlesPerformanceAvg, formatter=lambda x: BigWorld.wg_getNiceNumberFormat(x) + '%'),
-         'awgExp': items.formatField(getter=memberData.getXp, formatter=BigWorld.wg_getIntegralFormat),
+         'awgExp': items.formatField(getter=memberData.getBattleXpAvg, formatter=BigWorld.wg_getIntegralFormat),
          'daysInClan': items.formatField(getter=memberData.getDaysInClan, formatter=BigWorld.wg_getIntegralFormat),
          'canShowContextMenu': memberDBID != getAccountDatabaseID(),
          'contactItem': userVO}
@@ -298,21 +339,3 @@ class _ClanMembersDataProvider(SortableDAAPIDataProvider, UsersInfoHelper):
 
     def __getMemberDaysInClan(self, memberData):
         return memberData.getDaysInClan()
-
-    def __getAvgStringValue(self, key, formatter = None):
-        count = 0
-        total = 0
-        for item in self.__accountsList:
-            getter = getattr(item, key)
-            if items.isValueAvailable(getter):
-                count += 1
-                total += getter()
-
-        value = 0
-        if count > 0:
-            value = total / count
-        elif len(self.__accountsList):
-            return items.formatField(getter=getattr(self.__accountsList[0], key))
-        if formatter:
-            return formatter(value)
-        return value

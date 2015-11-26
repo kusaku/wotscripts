@@ -511,7 +511,7 @@ class FalloutSquadActionValidator(SquadActionValidator):
     def validateVehicles(self, vInfo, flags):
         from gui.shared.gui_items.Vehicle import Vehicle
         if vInfo.isEmpty():
-            return (False, UNIT_RESTRICTION.FALLOUT_VEHICLE_LEVEL_REQUIRED)
+            return (False, UNIT_RESTRICTION.FALLOUT_VEHICLE_MIN)
         else:
             for vehicle in vInfo.getVehicles():
                 if vehicle is None:

@@ -1,5 +1,9 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/clans/profile/ClanProfileBaseView.py
 import BigWorld
+from adisp import process
+from gui import SystemMessages
+from gui.clans.clan_controller import g_clanCtrl
+from gui.clans.contexts import CreateApplicationCtx
 from helpers import i18n
 from gui.shared.view_helpers.emblems import ClanEmblemsHelper
 from gui.clans import items
@@ -26,7 +30,7 @@ class ClanProfileBaseView(ClanProfileBaseViewMeta, ClanEmblemsHelper, ClanListen
 
     def onHeaderButtonClick(self, actionID):
         if actionID == _JOIN_BTN_ACTION_ID:
-            pass
+            self._sendApplication()
 
     def onClanEmblem128x128Received(self, clanDbID, emblem):
         self.as_setClanEmblemS(self.getMemoryTexturePath(emblem))
@@ -46,6 +50,20 @@ class ClanProfileBaseView(ClanProfileBaseViewMeta, ClanEmblemsHelper, ClanListen
         super(ClanProfileBaseView, self)._dispose()
         return
 
+    @process
+    def _sendApplication(self):
+        self.as_showWaitingS(True)
+        context = CreateApplicationCtx([self._clanDossier.getDbID()])
+        result = yield g_clanCtrl.sendRequest(context, allowDelay=True)
+        if result.isSuccess():
+            clanInfo = yield self._clanDossier.requestClanInfo()
+            SystemMessages.pushMessage(clans_fmts.getAppSentSysMsg(clanInfo.getClanName(), clanInfo.getTag()))
+            self._onAppSuccessfullySent()
+        self.as_showWaitingS(False)
+
+    def _onAppSuccessfullySent(self):
+        self._updateHeaderState()
+
     def _updateClanInfo(self, clanInfo):
         creationDate = i18n.makeString(CLANS.CLAN_HEADER_CREATIONDATE, creationDate=items.formatField(getter=clanInfo.getCreatedAt, formatter=BigWorld.wg_getLongDateFormat))
         self.as_setClanInfoS({'name': items.formatField(getter=clanInfo.getFullName),
@@ -59,7 +77,7 @@ class ClanProfileBaseView(ClanProfileBaseViewMeta, ClanEmblemsHelper, ClanListen
         canSendApplication = self.clansCtrl.getLimits().canSendApplication(self._clanDossier)
         self.as_setHeaderStateS(self.__headerBtnStates.get(canSendApplication.reason) or self._getHeaderButtonStateVO())
 
-    def _getHeaderButtonStateVO(self, actionBtnVisible = False, actionBtnLabel = None, iconBtnVisible = False, topTFVisible = False, middleTFVisible = False, actionId = None, actionBtnTooltip = None, middleTF = None):
+    def _getHeaderButtonStateVO(self, actionBtnVisible = False, actionBtnLabel = None, iconBtnVisible = False, topTFVisible = False, middleTFVisible = False, actionId = None, actionBtnTooltip = None, middleTF = None, topTF = None):
         return {'actionBtnVisible': actionBtnVisible,
          'iconBtnVisible': iconBtnVisible,
          'topTFVisible': topTFVisible,
@@ -67,7 +85,8 @@ class ClanProfileBaseView(ClanProfileBaseViewMeta, ClanEmblemsHelper, ClanListen
          'actionId': actionId,
          'middleTF': middleTF,
          'actionBtnTooltip': actionBtnTooltip,
-         'actionBtnLabel': actionBtnLabel}
+         'actionBtnLabel': actionBtnLabel,
+         'topTF': topTF}
 
     def _initHeaderBtnStates(self):
         self.__headerBtnStates = {RES.NO_RESTRICTIONS: self._getHeaderButtonStateVO(True, i18n.makeString(CLANS.CLAN_HEADER_SENDREQUESTBTN), actionId=_JOIN_BTN_ACTION_ID, actionBtnTooltip=CLANS.CLAN_HEADER_SENDREQUESTBTN_TOOLTIP),
@@ -84,9 +103,12 @@ class ClanProfileBaseView(ClanProfileBaseViewMeta, ClanEmblemsHelper, ClanListen
         if self.clansCtrl.isAvailable():
             self.as_hideDummyS()
         else:
-            self.as_showDummyS({'iconSource': RES_ICONS.MAPS_ICONS_LIBRARY_ALERTBIGICON,
-             'htmlText': str().join((text_styles.middleTitle(i18n.makeString(CLANS.CLANPROFILE_MAINWINDOW_DUMMY_HEADER)), clans_fmts.getHtmlLineDivider(3), text_styles.main(i18n.makeString(CLANS.CLANPROFILE_MAINWINDOW_DUMMY_BODY)))),
-             'alignCenter': False,
-             'btnVisible': False,
-             'btnLabel': '',
-             'btnTooltip': ''})
+            self._showDefDummy()
+
+    def _showDefDummy(self):
+        self.as_showDummyS({'iconSource': RES_ICONS.MAPS_ICONS_LIBRARY_ALERTBIGICON,
+         'htmlText': str().join((text_styles.middleTitle(i18n.makeString(CLANS.CLANPROFILE_MAINWINDOW_DUMMY_HEADER)), clans_fmts.getHtmlLineDivider(3), text_styles.main(i18n.makeString(CLANS.CLANPROFILE_MAINWINDOW_DUMMY_BODY)))),
+         'alignCenter': False,
+         'btnVisible': False,
+         'btnLabel': '',
+         'btnTooltip': ''})

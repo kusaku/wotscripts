@@ -1,6 +1,7 @@
 # Embedded file name: scripts/client/gui/shared/utils/requesters/QuestsProgressRequester.py
 from collections import namedtuple
 import BigWorld
+from debug_utils import LOG_DEBUG
 import potapov_quests
 from adisp import async
 from gui.shared.utils.requesters.abstract import AbstractSyncDataRequester
@@ -47,21 +48,21 @@ class _PotapovQuestsProgressRequester(_QuestsProgressRequester):
         return
 
     def getPotapovQuestProgress(self, pqType, potapovQuestID):
-        potapovQuestsProgress = self.__getPotapovQuestsData()
+        potapovQuestsProgress = self.__getQuestsData()
         return self.PotapovQuestProgress(self.__pqStorage.get(potapovQuestID, (0, potapov_quests.PQ_STATE.NONE))[1], potapovQuestID in potapovQuestsProgress['selected'], potapovQuestsProgress['rewards'].get(potapovQuestID, {}), pqType.maySelectQuest(self.__pqStorage.keys()))
 
     def getPotapovQuestsStorage(self):
         return self.__pqStorage
 
     def getPotapovQuestsFreeSlots(self, removedCount = 0):
-        pqProgress = self.__getPotapovQuestsData()
+        pqProgress = self.__getQuestsData()
         return pqProgress['slots'] - len(pqProgress['selected']) + removedCount
 
     def getSelectedPotapovQuestsIDs(self):
-        return self.__getPotapovQuestsData()['selected']
+        return self.__getQuestsData()['selected']
 
     def getTankmanLastIDs(self, nationID):
-        return self.__getPotapovQuestsData()['lastIDs'].get(nationID, (-1, -1, -1))
+        return self.__getQuestsData()['lastIDs'].get(nationID, (-1, -1, -1))
 
     def _response(self, resID, value, callback):
         self.__pqStorage = potapov_quests.PQStorage(value['potapovQuests']['compDescr'])
@@ -70,11 +71,14 @@ class _PotapovQuestsProgressRequester(_QuestsProgressRequester):
     def __getPotapovQuestsData(self):
         return self.getCacheValue('potapovQuests', {})
 
+    def __getQuestsData(self):
+        return self.__getPotapovQuestsData().get(self._questsType, {})
+
 
 class RandomQuestsProgressRequester(_PotapovQuestsProgressRequester):
 
     def __init__(self):
-        super(RandomQuestsProgressRequester, self).__init__('random')
+        super(RandomQuestsProgressRequester, self).__init__('regular')
 
 
 class FalloutQuestsProgressRequester(_PotapovQuestsProgressRequester):

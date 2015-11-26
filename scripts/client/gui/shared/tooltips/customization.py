@@ -65,11 +65,17 @@ class CustomizationItemTooltip(BlocksTooltipData):
             items.append(self._packWayToBuyBlock(item))
         if item['description'] is not None:
             items.append(self._packDescBlock(item))
+        if item['conditional'] is not None:
+            items.append(self._packConditionsBlock(item))
         items.append(self._packStatusBlock(item))
         return items
 
     def _packTitleBlock(self, item):
-        return formatters.packTitleDescBlock(title=text_styles.highTitle(item['title']), padding={'top': -5})
+        title = item['title']
+        itemsCount = self.__cItem.numberOfItems
+        if itemsCount is not None:
+            title += _ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_TOOLTIP_ALREADYHAVE_COUNT, count=itemsCount)
+        return formatters.packTitleDescBlock(title=text_styles.highTitle(title), padding={'top': -5})
 
     def _packIconBlock(self, item):
         actualWidth = 84
@@ -78,7 +84,7 @@ class CustomizationItemTooltip(BlocksTooltipData):
         return formatters.packImageBlockData(img=item['icon'], align=BLOCKS_TOOLTIP_TYPES.ALIGN_CENTER, width=actualWidth, height=84)
 
     def _packBonusBlock(self, item):
-        bonusTitleLocal = makeHtmlString('html_templates:lobby/textStyle', 'bonusLocalText', {'message': '{0}{1}'.format(item['bonus_title_local'], item['isConditional'])})
+        bonusTitleLocal = makeHtmlString('html_templates:lobby/textStyle', 'bonusLocalText', {'message': '{0}{1}'.format(item['bonus_title_local'], '' if item['conditional'] is None else '*')})
         return formatters.packBuildUpBlockData([formatters.packImageTextBlockData(title=text_styles.concatStylesWithSpace(bonusTitleLocal, text_styles.stats(item['bonus_title_global'])), desc=text_styles.main(item['bonus_desc']), img=item['bonus_icon'], imgPadding={'left': 11,
           'top': 3}, txtGap=-4, txtOffset=70, padding={'top': -1,
           'left': 7})], 0, BLOCKS_TOOLTIP_TYPES.TOOLTIP_BUILDUP_BLOCK_WHITE_BG_LINKAGE)
@@ -119,12 +125,11 @@ class CustomizationItemTooltip(BlocksTooltipData):
 
         return formatters.packBuildUpBlockData(subBlocks, 0, BLOCKS_TOOLTIP_TYPES.TOOLTIP_BUILDUP_BLOCK_LINKAGE, {'left': 3})
 
+    def _packConditionsBlock(self, item):
+        return formatters.packImageTextBlockData(title=text_styles.middleTitle(_ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_TOOLTIP_DESCRIPTION_CONDITIONS_TITLE)), desc=text_styles.standard('*{0}'.format(item['conditional'])), txtGap=8)
+
     def _packDescBlock(self, item):
-        if self.__cItemType == CUSTOMIZATION_TYPE.CAMOUFLAGE:
-            descriptionMsgID = VEHICLE_CUSTOMIZATION.CUSTOMIZATION_TOOLTIP_DESCRIPTION_HISTORY_TITLE
-        else:
-            descriptionMsgID = VEHICLE_CUSTOMIZATION.CUSTOMIZATION_TOOLTIP_DESCRIPTION_CONDITIONS_TITLE
-        return formatters.packImageTextBlockData(title=text_styles.middleTitle(_ms(descriptionMsgID)), desc=text_styles.standard('{0}{1}'.format(item['isConditional'], item['description'])), txtGap=8)
+        return formatters.packImageTextBlockData(title=text_styles.middleTitle(_ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_TOOLTIP_DESCRIPTION_HISTORY_TITLE)), desc=text_styles.standard(item['description']), txtGap=8)
 
     def _packStatusBlock(self, item):
         status = ''
@@ -199,14 +204,8 @@ class CustomizationItemTooltip(BlocksTooltipData):
          'buyItems': buyItems,
          'status': status,
          'description': self.__cItem.getDescription(),
-         'isConditional': self.__isSituationBonus(self.__cItem)}
+         'conditional': self.__cItem.qualifier.getDescription()}
         return item
-
-    def __isSituationBonus(self, item):
-        if self.__cItemType != CUSTOMIZATION_TYPE.CAMOUFLAGE:
-            return shared.isConditional(item)
-        else:
-            return ''
 
     def __isSale(self, wayToBuy):
         if wayToBuy == BUY_ITEM_TYPE.WAYS_TO_BUY_FOREVER:

@@ -111,7 +111,7 @@ class GatewayDataAccessor(base.BaseDataAccessor):
 
         return wrapper
 
-    def __init__(self, url_fetcher, gateway_host):
+    def __init__(self, url_fetcher, gateway_host, client_lang = None):
         """
         url_fetcher is fetch_url method with following signature
         staging_hosts is dict of staging hosts for example
@@ -130,6 +130,7 @@ class GatewayDataAccessor(base.BaseDataAccessor):
         ... )
         
         """
+        self.client_lang = client_lang
         self._session_id = None
         self.url_fetcher = url_fetcher
         self.gateway_host = gateway_host
@@ -157,8 +158,18 @@ class GatewayDataAccessor(base.BaseDataAccessor):
         get_data = {k:v for k, v in get_data.iteritems() if v}
         url = '/'.join([self.gateway_host.strip('/'), url.strip('/'), ''])
         if get_data:
-            url = '{}?{}'.format(url, urlencode(get_data, doseq=True))
+            values = []
+            for k, val in get_data.iteritems():
+                if not isinstance(val, (list, tuple)):
+                    val = [val]
+                for v in val:
+                    values.append('{}={}'.format(k, urllib.quote(str(v))))
+
+            urlencoded_string = '&'.join(values)
+            url = '{}?{}'.format(url, urlencoded_string)
         default_headers = {}
+        if self.client_lang:
+            default_headers['Accept-Language'] = self.client_lang
         default_headers.update(headers or {})
         if self._session_id:
             default_headers['COOKIE'] = 'session=%s' % self._session_id
@@ -368,8 +379,7 @@ class GatewayDataAccessor(base.BaseDataAccessor):
         
                 .. _clans API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/api-common/clans.html
         """
-        encoded_search = urllib.quote(search.encode('utf-8'))
-        get_params = {'search': encoded_search,
+        get_params = {'search': search.encode('utf-8'),
          'fields': fields}
         if get_total_count:
             get_params['get_total_count'] = 'true'

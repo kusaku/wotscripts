@@ -33,8 +33,8 @@ class ClanProfileMainWindow(ClanProfileMainWindowMeta, ClanListener):
         super(ClanProfileMainWindow, self)._populate()
         self.addListener(ClanProfileEvent.CLOSE_CLAN_PROFILE, self.__closeClanProfileHandler, scope=EVENT_BUS_SCOPE.LOBBY)
         self.startClanListening()
-        self.clansCtrl.getAccountProfile().resync(force=True)
-        self.__clanDossier = weakref.proxy(self.clansCtrl.getClanDossier(self.__clanDBID))
+        self.clansCtrl.getAccountProfile().resync()
+        self.__clanDossier = weakref.proxy(self.clansCtrl.getClanDossier(self.__clanDBID, useCached=False))
         self.as_setDataS({'windowTitle': CLANS.CLANPROFILE_MAINWINDOW_TITLE,
          'waitingMsg': WAITING.GETCLUBINFO,
          'tabDataProvider': [{'label': CLANS.CLANPROFILE_MAINWINDOWTAB_SUMMARY,

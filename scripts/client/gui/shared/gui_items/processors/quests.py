@@ -4,11 +4,13 @@ import BigWorld
 from debug_utils import LOG_DEBUG
 from items import tankmen
 from gui.shared.gui_items.processors import Processor, makeI18nError, makeI18nSuccess, plugins
+from potapov_quests import PQ_BRANCH
 
 class _PotapovQuestsSelect(Processor):
 
-    def __init__(self, potapovQuestItems, events_cache):
+    def __init__(self, potapovQuestItems, events_cache, questBranch):
         self.__quests = potapovQuestItems
+        self.__questBranch = questBranch
         deselectedQuests = set(events_cache.getSelectedQuests().values()).difference(set(potapovQuestItems))
         super(_PotapovQuestsSelect, self).__init__((plugins.PotapovQuestValidator(potapovQuestItems), self._getLockedByVehicleValidator()(deselectedQuests)))
 
@@ -31,7 +33,7 @@ class _PotapovQuestsSelect(Processor):
     def _request(self, callback):
         questIDs = self.__getQuestsData(methodcaller=operator.methodcaller('getID'))
         LOG_DEBUG('Make server request to select potapov quests', questIDs)
-        BigWorld.player().selectPotapovQuests(questIDs, lambda code, errStr: self._response(code, callback, errStr=errStr))
+        BigWorld.player().selectPotapovQuests(questIDs, self.__questBranch, lambda code, errStr: self._response(code, callback, errStr=errStr))
 
     def __getQuestsData(self, methodcaller):
         return [ methodcaller(q) for q in self.__quests ]
@@ -42,9 +44,9 @@ class _PotapovQuestsSelect(Processor):
 
 class PotapovQuestSelect(_PotapovQuestsSelect):
 
-    def __init__(self, quest, events_cache):
+    def __init__(self, quest, events_cache, questsBranch):
         quests, oldQuest = self._removeFromSameChain(events_cache.getSelectedQuests().values(), quest)
-        super(PotapovQuestSelect, self).__init__(quests, events_cache)
+        super(PotapovQuestSelect, self).__init__(quests, events_cache, questsBranch)
         self.addPlugins([plugins.PotapovQuestSlotsValidator(events_cache.questsProgress, removedCount=int(oldQuest is not None)), plugins.PotapovQuestSelectConfirmator(quest, oldQuest, isEnabled=oldQuest is not None)])
         return
 
@@ -65,12 +67,18 @@ class PotapovQuestSelect(_PotapovQuestsSelect):
 
 class RandomQuestSelect(PotapovQuestSelect):
 
+    def __init__(self, quest, events_cache):
+        super(RandomQuestSelect, self).__init__(quest, events_cache, PQ_BRANCH.REGULAR)
+
     @staticmethod
     def _getLockedByVehicleValidator():
         return plugins.RandomQuestsLockedByVehicle
 
 
 class FalloutQuestSelect(PotapovQuestSelect):
+
+    def __init__(self, quest, events_cache):
+        super(FalloutQuestSelect, self).__init__(quest, events_cache, PQ_BRANCH.FALLOUT)
 
     @staticmethod
     def _getLockedByVehicleValidator():
@@ -79,10 +87,10 @@ class FalloutQuestSelect(PotapovQuestSelect):
 
 class _PotapovQuestRefuse(_PotapovQuestsSelect):
 
-    def __init__(self, quest, events_cache):
+    def __init__(self, quest, events_cache, questBranch):
         selectedQuests = events_cache.getSelectedQuests()
         selectedQuests.pop(quest.getID(), None)
-        super(_PotapovQuestRefuse, self).__init__(selectedQuests.values(), events_cache)
+        super(_PotapovQuestRefuse, self).__init__(selectedQuests.values(), events_cache, questBranch)
         return
 
     def _getMessagePrefix(self):
@@ -91,12 +99,18 @@ class _PotapovQuestRefuse(_PotapovQuestsSelect):
 
 class RandomQuestRefuse(_PotapovQuestRefuse):
 
+    def __init__(self, quest, events_cache):
+        super(RandomQuestRefuse, self).__init__(quest, events_cache, PQ_BRANCH.REGULAR)
+
     @staticmethod
     def _getLockedByVehicleValidator():
         return plugins.RandomQuestsLockedByVehicle
 
 
 class FalloutQuestRefuse(_PotapovQuestRefuse):
+
+    def __init__(self, quest, events_cache):
+        super(FalloutQuestRefuse, self).__init__(quest, events_cache, PQ_BRANCH.FALLOUT)
 
     @staticmethod
     def _getLockedByVehicleValidator():
@@ -126,7 +140,7 @@ class _PotapovQuestsGetReward(Processor):
 
     def _request(self, callback):
         LOG_DEBUG('Make server request to get reward', self.__quest, self.__needTankman, self.__nationID, self.__inNationID, self.__role)
-        BigWorld.player().getPotapovQuestReward(self.__quest.getID(), self.__needTankman, self.__nationID, self.__inNationID, tankmen.SKILL_INDICES[self.__role], lambda code, errStr: self._response(code, callback, errStr=errStr))
+        BigWorld.player().getPotapovQuestReward(self.__quest.getID(), self.__quest.getQuestBranch(), self.__needTankman, self.__nationID, self.__inNationID, tankmen.SKILL_INDICES[self.__role], lambda code, errStr: self._response(code, callback, errStr=errStr))
 
 
 class PotapovQuestsGetTankwomanReward(_PotapovQuestsGetReward):

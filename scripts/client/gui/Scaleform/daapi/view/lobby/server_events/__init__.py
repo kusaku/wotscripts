@@ -14,7 +14,7 @@ def getViewSettings():
     from gui.Scaleform.daapi.view.lobby.server_events.QuestsSeasonAwardsWindow import QuestsSeasonAwardsWindow
     from gui.Scaleform.daapi.view.lobby.server_events.QuestsContentTabs import QuestsContentTabs
     from gui.Scaleform.daapi.view.lobby.server_events.QuestsSeasonsView import QuestsSeasonsView
-    from gui.Scaleform.daapi.view.lobby.server_events.QuestsTileChainsView import QuestsTileChainsView
+    from gui.Scaleform.daapi.view.lobby.server_events.QuestsTileChainsView import FalloutQuestsTileChainsView, RandomQuestsTileChainsView
     from gui.Scaleform.daapi.view.lobby.server_events.TutorialHangarQuestDetails import TutorialHangarQuestDetails
     from gui.Scaleform.daapi.view.lobby.server_events.TutorialQuestsTab import TutorialQuestsTab
     from gui.Scaleform.genConsts.QUESTS_ALIASES import QUESTS_ALIASES
@@ -25,7 +25,8 @@ def getViewSettings():
      ViewSettings(QUESTS_ALIASES.LADDER_QUESTS_VIEW_ALIAS, QuestsLadderTab, None, ViewTypes.COMPONENT, None, ScopeTemplates.DEFAULT_SCOPE),
      ViewSettings(QUESTS_ALIASES.PERSONAL_WELCOME_VIEW_ALIAS, QuestsPersonalWelcomeView, None, ViewTypes.COMPONENT, None, ScopeTemplates.DEFAULT_SCOPE),
      ViewSettings(QUESTS_ALIASES.SEASONS_VIEW_ALIAS, QuestsSeasonsView, None, ViewTypes.COMPONENT, None, ScopeTemplates.DEFAULT_SCOPE),
-     ViewSettings(QUESTS_ALIASES.TILE_CHAINS_VIEW_ALIAS, QuestsTileChainsView, None, ViewTypes.COMPONENT, None, ScopeTemplates.DEFAULT_SCOPE),
+     ViewSettings(QUESTS_ALIASES.RANDOM_TILE_CHAINS_VIEW_ALIAS, RandomQuestsTileChainsView, None, ViewTypes.COMPONENT, None, ScopeTemplates.DEFAULT_SCOPE),
+     ViewSettings(QUESTS_ALIASES.FALLOUT_TILE_CHAINS_VIEW_ALIAS, FalloutQuestsTileChainsView, None, ViewTypes.COMPONENT, None, ScopeTemplates.DEFAULT_SCOPE),
      ViewSettings(QUESTS_ALIASES.TUTORIAL_HANGAR_QUEST_DETAILS_PY_ALIAS, TutorialHangarQuestDetails, None, ViewTypes.COMPONENT, None, ScopeTemplates.DEFAULT_SCOPE),
      ViewSettings(QUESTS_ALIASES.QUESTS_CONTENT_TABS_PY_ALIAS, QuestsContentTabs, None, ViewTypes.COMPONENT, None, ScopeTemplates.DEFAULT_SCOPE))
 
@@ -43,8 +44,7 @@ class _PackageBusinessHandler(PackageBusinessHandler):
     def __showEventWindow(self, event):
         container = self._app.containerManager.getContainer(ViewTypes.WINDOW)
         window = container.getView(criteria={POP_UP_CRITERIA.VIEW_ALIAS: VIEW_ALIAS.EVENTS_WINDOW})
-        if window is None:
-            self.loadViewByCtxEvent(event)
-        else:
+        self.loadViewByCtxEvent(event)
+        if window is not None:
             window.navigate(event.ctx.get('eventType'), event.ctx.get('eventID'))
         return

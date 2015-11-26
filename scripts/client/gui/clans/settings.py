@@ -1,12 +1,18 @@
 # Embedded file name: scripts/client/gui/clans/settings.py
 import re
+from adisp import async
 from collections import namedtuple
 from constants import CLAN_MEMBER_FLAGS
+from gui.Scaleform.daapi.view.dialogs import I18nConfirmDialogMeta
+from gui.Scaleform.locale.DIALOGS import DIALOGS
+from gui.Scaleform.locale.RES_ICONS import RES_ICONS
+from gui.shared.formatters import icons, text_styles
 from shared_utils import CONST_CONTAINER
+from helpers import i18n
 DEFAULT_COOLDOWN = 1.0
 SEND_INVITES_COOLDOWN = 5.0
-MAX_ACCOUNT_APPLICATIONS_COUNT = 10
-MAX_CLAN_INVITES_COUNT = 10
+MAX_ACCOUNT_APPLICATIONS_COUNT = 100
+MAX_CLAN_INVITES_COUNT = 100
 MAX_CLAN_MEMBERS_COUNT = 100
 COUNT_THRESHOLD = 2000
 PERSONAL_INVITES_COUNT_THRESHOLD = 500
@@ -48,6 +54,10 @@ class CLAN_CONTROLLER_STATES(CONST_CONTAINER):
     STATE_UNAVAILABLE = 2
     STATE_ROAMING = 3
     STATE_DISABLED = 4
+
+
+class ERROR_CODES:
+    GLOBAL_MAP_UNAVAILABLE = 7
 
 
 class CLAN_INVITE_STATES(CONST_CONTAINER):
@@ -116,6 +126,7 @@ class CLAN_REQUESTED_DATA_TYPE(CONST_CONTAINER):
     CLANS_INFO = 27
     CLAN_FAVOURITE_ATTRS = 28
     PING = 29
+    CLAN_GM_FRONTS = 30
 
 
 class CLIENT_CLAN_RESTRICTIONS(CONST_CONTAINER):
@@ -139,6 +150,14 @@ class CLIENT_CLAN_RESTRICTIONS(CONST_CONTAINER):
 
 
 _RestrResult = namedtuple('_RestrResult', 'success reason')
+
+@async
+def showAcceptClanInviteDialog(clanName, clanAbbrev, callback):
+    from gui import DialogsInterface
+    DialogsInterface.showDialog(I18nConfirmDialogMeta('clanConfirmJoining', messageCtx={'icon': icons.makeImageTag(RES_ICONS.MAPS_ICONS_LIBRARY_ATTENTIONICON, 16, 16, -4, 0),
+     'clanName': text_styles.stats(i18n.makeString(DIALOGS.CLANCONFIRMJOINING_MESSAGE_CLANNAME, clanAbbr=clanAbbrev, clanName=clanName)),
+     'clanExit': text_styles.standard(i18n.makeString(DIALOGS.CLANCONFIRMJOINING_MESSAGE_CLANEXIT))}), callback)
+
 
 def error(reason):
     return _RestrResult(False, reason)

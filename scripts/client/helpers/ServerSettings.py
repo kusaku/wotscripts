@@ -134,17 +134,23 @@ class _ESportCurrentSeason(namedtuple('_ESportSeason', ['eSportSeasonID', 'eSpor
         return cls(0, 0, 0)
 
 
-class _ClanProfile(namedtuple('_ClanProfile', ['enabled', 'settingsJSON'])):
+class _ClanProfile(namedtuple('_ClanProfile', ['enabled', 'url', 'type'])):
 
     def isEnabled(self):
         return bool(self.enabled and len(self.getSettingsJSON()))
 
+    def getAccessorType(self):
+        return self.type
+
+    def getGateUrl(self):
+        return self.url
+
     def getSettingsJSON(self):
-        return self.settingsJSON
+        return '{"type": "%s", "accessor_config": "%s"}' % (self.getAccessorType(), self.getGateUrl())
 
     @classmethod
     def defaults(cls):
-        return cls(False, '')
+        return cls(False, '', '')
 
 
 class ServerSettings(object):
@@ -245,6 +251,6 @@ class ServerSettings(object):
     def __updateClanProfile(self, targetSettings):
         if 'clanProfile' in targetSettings:
             cProfile = targetSettings['clanProfile']
-            self.__clanProfile = _ClanProfile(cProfile.get('isEnabled', False), cProfile.get('gateUrl', ''))
+            self.__clanProfile = _ClanProfile(cProfile.get('isEnabled', False), cProfile.get('gateUrl', ''), cProfile.get('type', 'gateway'))
         else:
             self.__clanProfile = _ClanProfile.defaults()

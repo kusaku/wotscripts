@@ -5,6 +5,7 @@ import continue_download as _continue_download
 import contacts as _contacts
 import dynamic_squads as _dynamic_squads
 import promo_controller as _promo_controller
+import fallout_controller as _fallout_controller
 from lobby import configure_pointcuts as _configure_lobby_pointcuts
 from tech_tree import configure_pointcuts as _configure_tech_tree_pointcuts
 from invitations import configure_pointcuts as _configure_invitation_pointcuts
@@ -32,6 +33,7 @@ def configure_state():
         _dynamic_squads.DisableGameSettingPointcut()
         _dynamic_squads.InviteReceivedMessagePointcut()
         _promo_controller.ShowPromoBrowserPointcut()
+        _fallout_controller.InitFalloutPointcut()
 
 
 def _get_config(content_type):

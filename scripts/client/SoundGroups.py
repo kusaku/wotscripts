@@ -219,10 +219,10 @@ class SoundModes():
         if FMOD.enabled:
             languageSet = FMOD.setLanguage(modeDesc.voiceLanguage, self.modifiedSoundGroups)
         if not languageSet:
-            LOG_DEBUG('Internal FMOD error in FMOD::setLanguage')
+            LOG_WARNING('Sound: Internal FMOD error in FMOD::setLanguage')
             return False
         if not self.__modes[self.__currentMode].loadBanksManually():
-            LOG_DEBUG('Error while manual banks loading')
+            LOG_WARNING('Sound: Error while manual banks loading')
             return False
         if FMOD.enabled:
             loadedSoundBanks = FMOD.getSoundBanks()
@@ -234,7 +234,7 @@ class SoundModes():
                         break
 
                 if not found:
-                    LOG_DEBUG('Bank %s was not loaded while loading %s sound mode' % (bankName, modeName))
+                    LOG_WARNING('Sound: Bank %s was not loaded while loading %s sound mode' % (bankName, modeName))
                     return False
 
         return True
@@ -259,10 +259,10 @@ class SoundModes():
         for soundModeName in nationToSoundModeMapping.itervalues():
             soundModeDesc = self.__modes.get(soundModeName)
             if soundModeDesc is None:
-                LOG_DEBUG("SoundMode '%s' is not found" % soundModeName)
+                LOG_WARNING("SoundMode '%s' is not found" % soundModeName)
                 return False
             if not soundModeDesc.getIsValid(self):
-                LOG_DEBUG("SoundMode '%s' has invalid banks" % soundModeName)
+                LOG_WARNING("SoundMode '%s' has invalid banks" % soundModeName)
                 return False
 
         self.__nationToSoundModeMapping = nationToSoundModeMapping

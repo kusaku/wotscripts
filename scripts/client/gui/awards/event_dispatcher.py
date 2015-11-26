@@ -24,3 +24,7 @@ def showPremiumDiscountAward(researchLvl, premiumPacket, discount):
 
 def showBoosterAward(booster):
     showAwardWindow(specialAwards.BoosterAward(booster))
+
+
+def showFalloutAward(lvls, isRequiredVehicle = False):
+    showAwardWindow(specialAwards.FalloutAwardWindow(lvls, isRequiredVehicle))

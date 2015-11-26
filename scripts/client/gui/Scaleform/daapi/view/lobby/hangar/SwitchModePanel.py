@@ -20,10 +20,12 @@ class SwitchModePanel(SwitchModePanelMeta):
         super(SwitchModePanel, self)._populate()
         self.__falloutCtrl = getFalloutCtrl()
         self.__falloutCtrl.onSettingsChanged += self.__updateFalloutSettings
+        self.__falloutCtrl.onAutomatchChanged += self.__updateFalloutSettings
         self.__updateFalloutSettings()
 
     def _dispose(self):
         self.__falloutCtrl.onSettingsChanged -= self.__updateFalloutSettings
+        self.__falloutCtrl.onAutomatchChanged -= self.__updateFalloutSettings
         self.__falloutCtrl = None
         super(SwitchModePanel, self)._dispose()
         return
@@ -34,7 +36,7 @@ class SwitchModePanel(SwitchModePanelMeta):
     def onSelectCheckBoxAutoSquad(self, isSelected):
         self.__falloutCtrl.setAutomatch(isSelected)
 
-    def __updateFalloutSettings(self, *args):
+    def __updateFalloutSettings(self):
         battleType = self.__falloutCtrl.getBattleType()
         isVisible = self.__falloutCtrl.canChangeBattleType() and self.__falloutCtrl.isSelected()
         if isVisible:
@@ -43,6 +45,6 @@ class SwitchModePanel(SwitchModePanelMeta):
              'label': text_styles.middleTitle('#fallout:hangarSwitch/%d' % battleType),
              'autoSquadEnabled': self.__falloutCtrl.isAutomatch(),
              'autoSquadLabel': FALLOUT.FALLOUTBATTLESELECTORWINDOW_AUTOSQUAD_LABEL,
-             'autoSquadInfoTooltip': makeTooltip(TOOLTIPS.FALLOUTBATTLESELECTORWINDOW_INFO_HEADER, TOOLTIPS.FALLOUTBATTLESELECTORWINDOW_INFO_BODY),
+             'autoSquadInfoTooltip': makeTooltip(TOOLTIPS.FALLOUTBATTLESELECTORWINDOW_INFO_HEADER, TOOLTIPS.FALLOUTBATTLESELECTORWINDOW_INFO_BODY, attention=TOOLTIPS.FALLOUTBATTLESELECTORWINDOW_INFO_ALERT),
              'autoSquadIsVisible': self.__falloutCtrl.canAutomatch()})
         self.as_setVisibleS(isVisible)

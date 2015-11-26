@@ -37,8 +37,7 @@ class Manager(object):
         self._preferences['password_length'] = len(password)
         self._preferences['remember_user'] = rememberUser
         self._preferences['login'] = email
-        if constants.IS_DEVELOPMENT:
-            self._preferences['server_name'] = serverName
+        self._preferences['server_name'] = serverName
         loginParams = {'login': self._preferences['login'],
          'session': self._preferences['session'],
          'temporary': str(int(not rememberUser)),
@@ -61,9 +60,6 @@ class Manager(object):
     def clearToken2Preference(self):
         self._preferences['token2'] = ''
 
-    def clearLogin(self):
-        self._preferences['login'] = ''
-
     def writePreferences(self):
         self._preferences.writeLoginInfo()
 
@@ -78,14 +74,18 @@ class Manager(object):
         if self._preferences['remember_user']:
             self._preferences['name'] = name
             self._preferences['token2'] = token2
+            if not constants.IS_DEVELOPMENT:
+                del self._preferences['server_name']
         else:
             email = self._preferences['login']
             serverName = self._preferences['server_name']
+            session = self._preferences['session']
             self._preferences.clear()
-            if not constants.IS_SINGAPORE:
+            if not constants.IS_SINGAPORE and not GUI_SETTINGS.igrCredentialsReset:
                 self._preferences['login'] = email
             if constants.IS_DEVELOPMENT:
                 self._preferences['server_name'] = serverName
+            self._preferences['session'] = session
         self._preferences.writeLoginInfo()
         self._showSecurityMessage(responseData)
 

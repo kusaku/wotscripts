@@ -69,6 +69,15 @@ def getCurrentVehicleLevel():
         return None
 
 
+def getCurrentVehicleState():
+    if g_currentVehicle.isPresent():
+        state, _ = g_currentVehicle.item.getState()
+        return state
+    else:
+        return None
+        return None
+
+
 def isCurrentVehiclePremium():
     if g_currentVehicle.isPresent():
         return g_currentVehicle.item.isPremium

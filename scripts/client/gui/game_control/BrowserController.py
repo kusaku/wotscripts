@@ -1,6 +1,7 @@
 # Embedded file name: scripts/client/gui/game_control/BrowserController.py
 import Event
 from WebBrowser import WebBrowser
+from debug_utils import LOG_WARNING
 from gui.app_loader import g_appLoader
 from gui.game_control.controllers import Controller
 from gui.game_control.gc_constants import BROWSER
@@ -75,8 +76,15 @@ class BrowserController(Controller):
                 self.__clearCallback(browserID)
                 self.__showBrowser(browserID, ctx)
 
+            def browserAsyncCallback(url, isLoaded):
+                self.__clearCallback(browserID)
+                if isLoaded:
+                    self.__showBrowser(browserID, ctx)
+                else:
+                    LOG_WARNING('Browser async request url was not loaded!', url)
+
             self.__browsersCallbacks[browserID] = isAsync and (None, browserCallback)
-            self.__browsers[browserID].onLoadEnd += browserCallback
+            self.__browsers[browserID].onLoadEnd += browserAsyncCallback
         else:
             self.__browsersCallbacks[browserID] = (browserCallback, None)
             self.__browsers[browserID].onLoadStart += browserCallback

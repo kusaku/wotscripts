@@ -41,6 +41,8 @@ class ARENAS(object):
     C_01_KARELIA_DESCRIPTION = '#arenas:01_karelia/description'
     C_02_MALINOVKA_NAME = '#arenas:02_malinovka/name'
     C_02_MALINOVKA_DESCRIPTION = '#arenas:02_malinovka/description'
+    C_03_CAMPANIA_NAME = '#arenas:03_campania/name'
+    C_03_CAMPANIA_DESCRIPTION = '#arenas:03_campania/description'
     C_04_HIMMELSDORF_NAME = '#arenas:04_himmelsdorf/name'
     C_04_HIMMELSDORF_DESCRIPTION = '#arenas:04_himmelsdorf/description'
     C_86_HIMMELSDORF_WINTER_NAME = '#arenas:86_himmelsdorf_winter/name'

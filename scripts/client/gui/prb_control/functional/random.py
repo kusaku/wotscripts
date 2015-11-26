@@ -50,7 +50,7 @@ class RandomQueueFunctional(prequeue.AccountQueueFunctional):
         newEntry = None
         name = action.actionName
         if name == PREBATTLE_ACTION_NAME.SQUAD:
-            newEntry = unit.SquadEntry()
+            newEntry = unit.SquadEntry(accountsToInvite=action.accountsToInvite)
             isProcessed = True
         elif name == PREBATTLE_ACTION_NAME.RANDOM_QUEUE:
             isProcessed = True

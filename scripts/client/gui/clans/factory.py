@@ -14,7 +14,7 @@ class _ClanFactory(object):
     def __init__(self):
         super(_ClanFactory, self).__init__()
 
-    def createWebRequester(self, settings):
+    def createWebRequester(self, settings, *args, **kwargs):
         raise NotImplementedError
 
     def createTokenRequester(self):
@@ -32,8 +32,8 @@ class WebClanFactory(_ClanFactory):
     def __init__(self):
         super(WebClanFactory, self).__init__()
 
-    def createWebRequester(self, settings):
-        return WebRequester.create_requester(_webUrlFetcher, settings)
+    def createWebRequester(self, settings, *args, **kwargs):
+        return WebRequester.create_requester(_webUrlFetcher, settings, *args, **kwargs)
 
     def createTokenRequester(self):
         return TokenRequester(TOKEN_TYPE.WGNI, cache=False)
@@ -50,8 +50,8 @@ class FakeClanFactory(_ClanFactory):
     def __init__(self):
         super(FakeClanFactory, self).__init__()
 
-    def createWebRequester(self, settings):
-        return WebRequester.create_requester(_webUrlFetcher, settings)
+    def createWebRequester(self, settings, *args, **kwargs):
+        return WebRequester.create_requester(_webUrlFetcher, settings, *args, **kwargs)
 
     def createTokenRequester(self):
         return TokenRequester(TOKEN_TYPE.WGNI, cache=False)

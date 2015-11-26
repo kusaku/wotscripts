@@ -134,7 +134,6 @@ class AccountPopover(AccountPopoverMeta, GlobalListener, MyClubListener, ClanLis
         self.startClanListening()
         AccountSettings.setFilter(BOOSTERS, {'wasShown': True})
         g_playerEvents.onCenterIsLongDisconnected += self.__onCenterIsLongDisconnected
-        self.clansCtrl.getAccountProfile().resync(force=True)
 
     def _getMyInvitesBtnParams(self):
         if self.clansCtrl.isAvailable():
@@ -142,7 +141,7 @@ class AccountPopover(AccountPopoverMeta, GlobalListener, MyClubListener, ClanLis
             inviteBtnTooltip = TOOLTIPS.HEADER_ACCOUNTPOPOVER_INVITEBTN
         else:
             inviteBtnEnabled = False
-            inviteBtnTooltip = TOOLTIPS.HEADER_ACCOUNTPOPOVER_UNAVAILABLE
+            inviteBtnTooltip = TOOLTIPS.HEADER_ACCOUNTPOPOVER_INVITEBTN_UNAVAILABLE
         return {'inviteBtnEnabled': inviteBtnEnabled,
          'inviteBtnTooltip': inviteBtnTooltip}
 
@@ -154,12 +153,14 @@ class AccountPopover(AccountPopoverMeta, GlobalListener, MyClubListener, ClanLis
             btnTooltip = str()
         else:
             isAvailable = False
-            searchClanTooltip = TOOLTIPS.HEADER_ACCOUNTPOPOVER_UNAVAILABLE
-            requestInviteBtnTooltip = TOOLTIPS.HEADER_ACCOUNTPOPOVER_UNAVAILABLE
-            btnTooltip = TOOLTIPS.HEADER_ACCOUNTPOPOVER_UNAVAILABLE
+            searchClanTooltip = TOOLTIPS.HEADER_ACCOUNTPOPOVER_SEARCHCLAN_UNAVAILABLE
+            requestInviteBtnTooltip = TOOLTIPS.HEADER_ACCOUNTPOPOVER_INVITEREQUESTBTN_UNAVAILABLE
+            btnTooltip = str()
         btnEnabled = not BigWorld.player().isLongDisconnectedFromCenter and self.__infoBtnEnabled
         if self.clansCtrl.isEnabled():
             btnEnabled = self.clansCtrl.isAvailable()
+            if not btnEnabled:
+                btnTooltip = TOOLTIPS.HEADER_ACCOUNTPOPOVER_CLANPROFILE_UNAVAILABLE
         return {'searchClanTooltip': searchClanTooltip,
          'btnEnabled': btnEnabled,
          'requestInviteBtnTooltip': requestInviteBtnTooltip,
@@ -242,15 +243,18 @@ class AccountPopover(AccountPopoverMeta, GlobalListener, MyClubListener, ClanLis
         if isInClan:
             permissions = ClanMemberPermissions(g_clanCache.clanRole)
             isOpenInviteBtnVisible = isClanFeaturesEnabled and permissions.canHandleClanInvites()
-            appsCount = clans_fmts.formatDataToString(clanDossier.getAppsCount())
+            appsCount = clanDossier.getAppsCount() or 0
             clanBtnsParams = self._getClanBtnsParams(appsCount)
             self.requestClanEmblem32x32(profile.getClanDbID())
+            if appsCount == 0:
+                envelopeIcon = RES_ICONS.MAPS_ICONS_BUTTONS_ENVELOPEOPENED
+            else:
+                envelopeIcon = RES_ICONS.MAPS_ICONS_BUTTONS_ENVELOPE
             self.__clanData = {'formation': makeString(MENU.HEADER_ACCOUNT_POPOVER_CLAN_HEADER),
              'formationName': profile.getClanFullName(),
              'position': profile.getRoleUserString(),
              'btnLabel': btnLabel,
-             'inviteBtnIcon': 'envelope.png',
-             'inviteBtnCount': appsCount,
+             'inviteBtnIcon': envelopeIcon,
              'clanResearchIcon': RES_ICONS.MAPS_ICONS_BUTTONS_SEARCH,
              'clanResearchTFText': MENU.HEADER_ACCOUNT_POPOVER_CLAN_SEARCHCLAN2}
             self.__clanData.update(clanBtnsParams)
@@ -264,7 +268,9 @@ class AccountPopover(AccountPopoverMeta, GlobalListener, MyClubListener, ClanLis
              'searchClanTooltip': clanBtnsParams['searchClanTooltip'],
              'isSearchClanBtnEnabled': clanBtnsParams['isSearchClanBtnEnabled']}
             self.as_setClanEmblemS(getNoClanEmblem32x32())
-        self.__clanData.update({'isDoActionBtnVisible': isInClan,
+        self.__clanData.update({'isInClan': isInClan,
+         'isClanFeaturesEnabled': isClanFeaturesEnabled,
+         'isDoActionBtnVisible': isInClan,
          'isOpenInviteBtnVisible': isOpenInviteBtnVisible,
          'isSearchClanBtnVisible': isClanFeaturesEnabled,
          'isTextFieldNameVisible': isInClan,
@@ -289,18 +295,20 @@ class AccountPopover(AccountPopoverMeta, GlobalListener, MyClubListener, ClanLis
 
     def __syncUserInfo(self):
         clanProfile = self.clansCtrl.getAccountProfile()
-        invitesCount = clans_fmts.formatDataToString(None)
+        invitesCount = 0
         if not clanProfile.isInClan():
-            invitesCount = clans_fmts.formatDataToString(clanProfile.getInvitesCount())
+            invitesCount = clanProfile.getInvitesCount() or 0
+        if invitesCount == 0:
+            envelopeIcon = RES_ICONS.MAPS_ICONS_BUTTONS_ENVELOPEOPENED
+        else:
+            envelopeIcon = RES_ICONS.MAPS_ICONS_BUTTONS_ENVELOPE
         userVO = {'userData': self.__userData,
          'isInClan': clanProfile.isInClan() or not self.clansCtrl.isEnabled(),
-         'openInviteBtnIconLbl': invitesCount,
          'isTeamKiller': g_itemsCache.items.stats.isTeamKiller,
-         'openInviteBtnIcon': 'envelope.png',
+         'openInviteBtnIcon': envelopeIcon,
          'boostersBlockTitle': text_styles.middleTitle(MENU.HEADER_ACCOUNT_POPOVER_BOOSTERS_BLOCKTITLE)}
         userVO.update(self._getMyInvitesBtnParams())
         self.as_setDataS(userVO)
-        return
 
     def __setInfoButtonState(self):
         self.__infoBtnEnabled = True

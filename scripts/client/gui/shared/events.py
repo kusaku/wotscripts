@@ -254,6 +254,8 @@ class TutorialEvent(SharedEvent):
     ON_COMPONENT_FOUND = 'onComponentFound'
     ON_COMPONENT_LOST = 'onComponentLost'
     ON_TRIGGER_ACTIVATED = 'onTriggerActivated'
+    SIMPLE_WINDOW_CLOSED = 'simpleWindowClosed'
+    SIMPLE_WINDOW_PROCESSED = 'simpleWindowProcessed'
 
     def __init__(self, eventType, settingsID = '', targetID = '', reloadIfRun = False, initialChapter = None, restoreIfRun = False, isStopForced = False, isAfterBattle = False):
         super(TutorialEvent, self).__init__(eventType)
@@ -442,10 +444,3 @@ class WGNCShowItemEvent(SharedEvent):
 
     def getTarget(self):
         return self.__target
-
-
-class EventsWindowContentTabsEvent(HasCtxEvent):
-    TAB_SELECTED = 'tabSelected'
-
-    def __init__(self, eventType = None, ctx = None):
-        super(EventsWindowContentTabsEvent, self).__init__(eventType, ctx)

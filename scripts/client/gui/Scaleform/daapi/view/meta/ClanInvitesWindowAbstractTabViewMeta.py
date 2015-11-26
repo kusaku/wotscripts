@@ -6,13 +6,6 @@ class ClanInvitesWindowAbstractTabViewMeta(ClanInvitesViewWithTable):
     def filterBy(self, filterName):
         self._printOverrideError('filterBy')
 
-    def refreshTable(self):
-        self._printOverrideError('refreshTable')
-
     def as_updateFilterStateS(self, data):
         if self._isDAAPIInited():
             return self.flashObject.as_updateFilterState(data)
-
-    def as_updateButtonRefreshStateS(self, enabled, tooltip):
-        if self._isDAAPIInited():
-            return self.flashObject.as_updateButtonRefreshState(enabled, tooltip)

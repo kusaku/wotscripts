@@ -2,6 +2,7 @@
 from adisp import process
 from gui.Scaleform.daapi.view.lobby.clans.profile.ClanProfileBaseView import ClanProfileBaseView
 from gui.Scaleform.genConsts.CLANS_ALIASES import CLANS_ALIASES
+from gui.clans.items import isValueAvailable
 
 class ClanProfileGlobalMapView(ClanProfileBaseView):
 
@@ -14,11 +15,14 @@ class ClanProfileGlobalMapView(ClanProfileBaseView):
         if self.isDisposed():
             return
         self._updateClanInfo(clanInfo)
-        if globalMapStats.hasGlobalMap():
-            linkage = CLANS_ALIASES.CLAN_PROFILE_GLOBALMAP_INFO_VIEW_LINKAGE
+        if isValueAvailable(globalMapStats.hasGlobalMap):
+            if globalMapStats.hasGlobalMap():
+                linkage = CLANS_ALIASES.CLAN_PROFILE_GLOBALMAP_INFO_VIEW_LINKAGE
+            else:
+                linkage = CLANS_ALIASES.CLAN_PROFILE_GLOBALMAP_PROMO_VIEW_LINKAGE
+            self.as_setDataS(linkage)
         else:
-            linkage = CLANS_ALIASES.CLAN_PROFILE_GLOBALMAP_PROMO_VIEW_LINKAGE
-        self.as_setDataS(linkage)
+            self._showDefDummy()
         self._updateHeaderState()
         self._hideWaiting()
 

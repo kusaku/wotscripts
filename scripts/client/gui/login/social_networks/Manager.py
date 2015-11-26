@@ -1,6 +1,5 @@
 # Embedded file name: scripts/client/gui/login/social_networks/Manager.py
 import BigWorld
-import constants
 from gui import GUI_SETTINGS
 from ConnectionManager import CONNECTION_METHOD
 from gui.login.Manager import Manager as CredentialsLoginManager
@@ -38,8 +37,7 @@ class Manager(CredentialsLoginManager):
         self._preferences['session'] = BigWorld.wg_cpsalt(self._preferences['session'])
         self._preferences['remember_user'] = rememberUser
         self._preferences['login_type'] = socialNetworkName
-        if constants.IS_DEVELOPMENT:
-            self._preferences['server_name'] = serverName
+        self._preferences['server_name'] = serverName
         loginParams = {'login': self._preferences['login'],
          'session': self._preferences['session'],
          'temporary': str(int(not rememberUser)),

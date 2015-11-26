@@ -198,6 +198,7 @@ class TechnicalMaintenance(TechnicalMaintenanceMeta):
              'name': module.userName,
              'desc': module.fullDescription,
              'target': module.getTarget(vehicle),
+             'compactDescr': module.intCD,
              'prices': price,
              'currency': priceCurrency,
              'icon': module.icon,

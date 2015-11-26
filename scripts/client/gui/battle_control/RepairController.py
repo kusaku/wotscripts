@@ -2,9 +2,7 @@
 import weakref
 import BigWorld
 import Event
-import SoundGroups
 from constants import REPAIR_POINT_ACTION
-import FMOD
 from gui.Scaleform.locale.INGAME_GUI import INGAME_GUI
 
 class _REPAIR_STATE(object):
@@ -20,8 +18,6 @@ class RepairController(object):
         self.onRepairPointStateChanged = Event.Event(self.__eManager)
         self.__ui = None
         self.__repairSndName = 'point_repair'
-        if FMOD.enabled:
-            self.__repairSndName = '/ingame_voice/ingame_voice_flt/repair'
         return
 
     def start(self, ui):
@@ -42,7 +38,7 @@ class RepairController(object):
                 self.__ui.showTimer(timeLeft, _REPAIR_STATE.PROGRESS, INGAME_GUI.REPAIRPOINT_TITLE, None)
             elif action == REPAIR_POINT_ACTION.COMPLETE_REPAIR:
                 self.__ui.showTimer(timeLeft, _REPAIR_STATE.COOLDOWN, INGAME_GUI.REPAIRPOINT_TITLE, INGAME_GUI.REPAIRPOINT_UNAVAILABLE)
-                SoundGroups.g_instance.playSound2D(self.__repairSndName)
+                BigWorld.player().soundNotifications.play(self.__repairSndName)
             elif action == REPAIR_POINT_ACTION.ENTER_WHILE_CD:
                 self.__ui.showTimer(timeLeft, _REPAIR_STATE.COOLDOWN, INGAME_GUI.REPAIRPOINT_TITLE, INGAME_GUI.REPAIRPOINT_UNAVAILABLE)
             elif action in (REPAIR_POINT_ACTION.LEAVE_WHILE_CD, REPAIR_POINT_ACTION.CANCEL_REPAIR, REPAIR_POINT_ACTION.BECOME_DISABLED):

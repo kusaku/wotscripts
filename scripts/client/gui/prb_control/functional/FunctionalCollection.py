@@ -174,3 +174,10 @@ class FunctionalCollection(object):
                 return True
 
         return False
+
+    def canCreateSquad(self):
+        for func in self.getIterator():
+            if func.getPermissions().canCreateSquad():
+                return True
+
+        return False

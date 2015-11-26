@@ -3,7 +3,6 @@ import weakref
 import operator
 from collections import namedtuple
 from adisp import async
-from gui.Scaleform.daapi.view.lobby.server_events.events_helpers import getEventTypeByTabAlias
 from gui.server_events.EventsCache import g_eventsCache
 from helpers import int2roman
 from helpers.i18n import makeString as _ms
@@ -23,6 +22,7 @@ from gui.Scaleform.genConsts.QUEST_TASK_FILTERS_TYPES import QUEST_TASK_FILTERS_
 from gui.Scaleform.daapi.view.meta.QuestsTileChainsViewMeta import QuestsTileChainsViewMeta
 from gui.Scaleform.daapi.view.lobby.server_events import events_helpers
 from gui.shared.formatters import text_styles, icons
+from potapov_quests import PQ_BRANCH
 
 class _QuestsFilter(object):
     VEH_TYPE_DEFAULT = -1
@@ -65,14 +65,20 @@ def _makeNoBtn(descr = ''):
     return DetailsBtnInfo(False, False, False, '', '', descr)
 
 
-class QuestsTileChainsView(QuestsTileChainsViewMeta):
+class _QuestsTileChainsView(QuestsTileChainsViewMeta):
+    DEFAULT_FILTERS = {QUESTS_ALIASES.SEASON_VIEW_TAB_RANDOM: (-1, QUEST_TASK_FILTERS_TYPES.ALL),
+     QUESTS_ALIASES.SEASON_VIEW_TAB_FALLOUT: (-1, QUEST_TASK_FILTERS_TYPES.ALL)}
     _HEADER_ICON_PATH = '../maps/icons/quests/headers/%s.png'
 
     def __init__(self):
-        super(QuestsTileChainsView, self).__init__()
+        super(_QuestsTileChainsView, self).__init__()
         self._navInfo = caches.getNavInfo()
         self.__proxy = None
         self.__tile = events_helpers.getPotapovQuestsCache().getTiles()[self._navInfo.selectedPQ.tileID]
+        self._tasksProgressLinkage = None
+        self._tooltipType = None
+        self._showVehicleFilter = True
+        self._lockedMessageStrKey = None
         return
 
     def getTileData(self, vehType, questState):
@@ -118,11 +124,11 @@ class QuestsTileChainsView(QuestsTileChainsViewMeta):
             shared_events.showHangar()
             self.__proxy.destroy()
         except:
-            LOG_WARNING('Error while getting event window to slose it')
+            LOG_WARNING('Error while getting event window to close it')
             LOG_CURRENT_EXCEPTION()
 
     def _populate(self):
-        super(QuestsTileChainsView, self)._populate()
+        super(_QuestsTileChainsView, self)._populate()
         g_eventsCache.onProgressUpdated += self._onProgressUpdated
         vehTypeFilter, qStateFilter = self.__getCurrentFilters()
         self.as_setHeaderDataS({'noTasksText': _ms(QUESTS.TILECHAINSVIEW_NOTASKSLABEL_TEXT),
@@ -132,10 +138,10 @@ class QuestsTileChainsView(QuestsTileChainsViewMeta):
                     'backBtnTooltip': TOOLTIPS.PRIVATEQUESTS_BACKBUTTON,
                     'backgroundImagePath': self._HEADER_ICON_PATH % self.__tile.getIconID(),
                     'tasksProgressLabel': text_styles.main(QUESTS.TILECHAINSVIEW_TASKSPROGRESS_TEXT),
-                    'tasksProgressLinkage': QUESTS_ALIASES.QUEST_TASKS_PROGRESS_RANDOM,
-                    'tooltipType': TOOLTIPS_CONSTANTS.PRIVATE_QUESTS_TILE},
+                    'tasksProgressLinkage': self._tasksProgressLinkage,
+                    'tooltipType': self._tooltipType},
          'filters': {'filtersLabel': _ms(QUESTS.TILECHAINSVIEW_FILTERSLABEL_TEXT),
-                     'showVehicleTypeFilterData': True,
+                     'showVehicleTypeFilterData': self._showVehicleFilter,
                      'vehicleTypeFilterData': formatters._packVehicleTypesFilter(_QuestsFilter.VEH_TYPE_DEFAULT),
                      'taskTypeFilterData': self.__packQuestStatesFilter(),
                      'defVehicleType': vehTypeFilter,
@@ -145,11 +151,12 @@ class QuestsTileChainsView(QuestsTileChainsViewMeta):
     def _dispose(self):
         g_eventsCache.onProgressUpdated -= self._onProgressUpdated
         self.__proxy = None
-        super(QuestsTileChainsView, self)._dispose()
+        super(_QuestsTileChainsView, self)._dispose()
         return
 
     def _onProgressUpdated(self, pqType):
-        if getEventTypeByTabAlias(self._navInfo.selectedPQType) == pqType:
+        targetTab = events_helpers.getTabAliasByQuestBranchName(pqType)
+        if targetTab == self._navInfo.selectedPQType:
             self._populateTileData()
 
     def _populateTileData(self):
@@ -160,17 +167,18 @@ class QuestsTileChainsView(QuestsTileChainsViewMeta):
     def _setMainView(self, eventsWindow):
         self.__proxy = weakref.proxy(eventsWindow)
 
-    def __updateTileData(self, vehType, questState, selectItemID = -1):
-        questsByChains = {}
-        qFilter = _QuestsFilter(vehType, questState)
-        self._navInfo.changePQFilters(vehType, questState)
-        for quest in self.__tile.getQuestsByFilter(qFilter).itervalues():
-            questsByChains.setdefault(quest.getChainID(), []).append(quest)
+    def _formatChainsProgress(self, *args):
+        return NotImplemented
 
-        questsByChains = map(lambda (chID, qs): (chID, self.__tile.getChainVehicleClass(chID), qs), questsByChains.iteritems())
-        questsByChains = sorted(questsByChains, key=operator.itemgetter(1), cmp=Vehicle.compareByVehTypeName)
+    def _sortChains(self, questsByChains):
+        return events_helpers.sortWithQuestType(questsByChains, key=operator.itemgetter(0))
+
+    def __updateTileData(self, vehType, questState, selectItemID = -1):
+        self._navInfo.changePQFilters(vehType, questState)
+        questsByChains = self.__getQuestsByChains(vehType, questState)
         chains = []
-        for chainID, _, quests in questsByChains:
+        newSelectedItemID = -1
+        for _, chainID, quests in questsByChains:
             completedQuestsCount = len(self.__tile.getQuestsInChainByFilter(chainID, lambda q: q.isCompleted()))
             chain = {'name': text_styles.highTitle(self.__getChainUserName(chainID)),
              'progressText': text_styles.main('%d/%d' % (completedQuestsCount, self.__tile.getChainSize())),
@@ -178,13 +186,16 @@ class QuestsTileChainsView(QuestsTileChainsViewMeta):
              'enabled': True}
             for quest in sorted(quests, key=operator.methodcaller('getID')):
                 stateName, stateIcon = self.__getQuestStatusData(quest)
+                questID = quest.getID()
                 chain['tasks'].append({'name': text_styles.main(quest.getUserName()),
                  'stateName': stateName,
                  'stateIconPath': stateIcon,
                  'arrowIconPath': RES_ICONS.MAPS_ICONS_LIBRARY_ARROWORANGERIGHTICON8X8,
                  'tooltip': TOOLTIPS.PRIVATEQUESTS_TASKLISTITEM_BODY,
-                 'id': quest.getID(),
+                 'id': questID,
                  'enabled': True})
+                if questID == selectItemID:
+                    newSelectedItemID = questID
 
             chains.append(chain)
 
@@ -196,7 +207,16 @@ class QuestsTileChainsView(QuestsTileChainsViewMeta):
             self.getChainProgress()
         else:
             self.as_updateChainProgressS(self.__makeChainsProgressData())
-        self.as_setSelectedTaskS(selectItemID)
+        self.as_setSelectedTaskS(newSelectedItemID)
+
+    def __getQuestsByChains(self, vehType, questState):
+        questsByChains = {}
+        qFilter = _QuestsFilter(vehType, questState)
+        for quest in self.__tile.getQuestsByFilter(qFilter).itervalues():
+            questsByChains.setdefault(quest.getChainID(), []).append(quest)
+
+        questsByChains = map(lambda (chID, qs): (self.__tile.getChainSortKey(chID), chID, qs), questsByChains.iteritems())
+        return self._sortChains(questsByChains)
 
     @async
     @decorators.process('updating')
@@ -216,7 +236,10 @@ class QuestsTileChainsView(QuestsTileChainsViewMeta):
         return
 
     def __getCurrentFilters(self):
-        return self._navInfo.selectedPQ.filters or (-1, QUEST_TASK_FILTERS_TYPES.ALL)
+        return self._navInfo.selectedPQ.filters or self.__getDefaultFilters()
+
+    def __getDefaultFilters(self):
+        return self.DEFAULT_FILTERS[self._navInfo.selectedPQType]
 
     def __makeChainsProgressData(self):
         return {'progressItems': self.__makeChainsProgressItems()}
@@ -230,11 +253,10 @@ class QuestsTileChainsView(QuestsTileChainsViewMeta):
                 completedCountStr = text_styles.main(str(completedCount))
             else:
                 completedCountStr = str(completedCount)
-            value = text_styles.standard(_ms(QUESTS.QUESTSCHAINPROGRESSVIEW_CHAINPROGRESSCOUNT, count=completedCountStr, total=str(totalCount)))
-            result.append((self.__tile.getChainVehicleClass(chainID), {'chainID': chainID,
-              'value': value}))
+            result.append((self.__tile.getChainSortKey(chainID), {'chainID': chainID,
+              'value': self._formatChainsProgress(completedCountStr, totalCount, chainID)}))
 
-        return map(lambda (_, data): data, sorted(result, key=operator.itemgetter(0), cmp=Vehicle.compareByVehTypeName))
+        return map(operator.itemgetter(1), self._sortChains(result))
 
     def __makeQuestDetailsInfo(self, questID):
         quest = events_helpers.getPotapovQuestsCache().getQuests()[questID]
@@ -243,7 +265,12 @@ class QuestsTileChainsView(QuestsTileChainsViewMeta):
         vehMinLevel, vehClasses = quest.getVehMinLevel(), quest.getVehicleClasses()
         if vehMinLevel > 1:
             reqsHeader = text_styles.middleTitle(_ms(QUESTS.QUESTTASKDETAILSVIEW_REQUIREMENTS))
-            reqs = _ms('#quests:QuestTaskDetailsView/requirements/text', level=int2roman(vehMinLevel), vehType=', '.join([ Vehicle.getTypeShortUserName(vc) for vc in vehClasses ]))
+            if quest.getQuestBranch() == PQ_BRANCH.REGULAR:
+                reqs = _ms(QUESTS.QUESTTASKDETAILSVIEW_REQUIREMENTS_TEXT, level=int2roman(vehMinLevel), vehType=', '.join([ Vehicle.getTypeShortUserName(vc) for vc in vehClasses ]))
+            elif vehMinLevel < 10:
+                reqs = _ms(QUESTS.QUESTTASKDETAILSVIEW_REQUIREMENTS_MORE8LVL)
+            else:
+                reqs = _ms(QUESTS.QUESTTASKDETAILSVIEW_REQUIREMENTS_ONLY10LVL)
         else:
             reqsHeader = reqs = ''
         condition = makeHtmlString('html_templates:lobby/quests/potapov', 'questDetails', ctx={'mainCondHeader': text_styles.middleTitle(_ms(QUESTS.QUESTTASKDETAILSVIEW_MAINCONDITIONS)),
@@ -256,7 +283,7 @@ class QuestsTileChainsView(QuestsTileChainsViewMeta):
          'advise': quest.getUserAdvice(),
          'descr': quest.getUserDescription()})
         if not quest.isUnlocked():
-            btnInfo = _makeSelectBtn(QUESTS.QUESTTASKDETAILSVIEW_BTNLABEL_BEGIN, enabled=False, descr=text_styles.error(icons.notAvailableRed() + ' ' + _ms(QUESTS.QUESTTASKDETAILSVIEW_TASKDESCRIPTION_DOPREVTASKS)))
+            btnInfo = _makeSelectBtn(QUESTS.QUESTTASKDETAILSVIEW_BTNLABEL_BEGIN, enabled=False, descr=text_styles.error(icons.notAvailableRed() + ' ' + _ms(self._lockedMessageStrKey)))
         elif quest.needToGetReward():
             btnInfo = _makeSelectBtn(QUESTS.QUESTTASKDETAILSVIEW_BTNLABEL_TAKEAWARD, TOOLTIPS.PRIVATEQUESTS_ACTIONPANNEL_RECEIVETHEAWARD, _ms(QUESTS.QUESTTASKDETAILSVIEW_TASKDESCRIPTION_TAKEAWARD))
         elif quest.isInProgress():
@@ -301,8 +328,33 @@ class QuestsTileChainsView(QuestsTileChainsViewMeta):
           'data': QUEST_TASK_FILTERS_TYPES.ALL}]
 
     def __getChainUserName(self, chainID):
-        vehType = self.__tile.getChainVehicleClass(chainID)
-        if vehType is not None:
-            return _ms('#quests:tileChainsView/chainName/%s' % vehType)
+        chainType = self.__tile.getChainMajorTag(chainID)
+        if chainType is not None:
+            return _ms('#quests:tileChainsView/chainName/%s' % chainType)
         else:
             return ''
+
+
+class RandomQuestsTileChainsView(_QuestsTileChainsView):
+
+    def __init__(self):
+        super(RandomQuestsTileChainsView, self).__init__()
+        self._tasksProgressLinkage = QUESTS_ALIASES.QUEST_TASKS_PROGRESS_RANDOM
+        self._tooltipType = TOOLTIPS_CONSTANTS.PRIVATE_QUESTS_TILE
+        self._lockedMessageStrKey = QUESTS.QUESTTASKDETAILSVIEW_TASKDESCRIPTION_DOPREVTASKS
+
+    def _formatChainsProgress(self, completedCountStr, totalCount, _):
+        return text_styles.standard(_ms(QUESTS.QUESTSCHAINPROGRESSVIEW_CHAINPROGRESSCOUNT, count=completedCountStr, total=str(totalCount)))
+
+
+class FalloutQuestsTileChainsView(_QuestsTileChainsView):
+
+    def __init__(self):
+        super(FalloutQuestsTileChainsView, self).__init__()
+        self._tasksProgressLinkage = QUESTS_ALIASES.QUEST_TASKS_PROGRESS_FALLOUT
+        self._tooltipType = TOOLTIPS_CONSTANTS.PRIVATE_QUESTS_FALLOUT_TILE
+        self._showVehicleFilter = False
+        self._lockedMessageStrKey = QUESTS.QUESTTASKDETAILSVIEW_FALLOUT_TASKDESCRIPTION_DOPREVTASKS
+
+    def _formatChainsProgress(self, completedCountStr, totalCount, chainID):
+        return _ms(QUESTS.QUESTSCHAINPROGRESSVIEW_FALLOUTCHAINPROGRESSCOUNT, name=text_styles.neutral(_ms('#potapov_quests:chain_%s_fallout' % chainID)), count=text_styles.stats(completedCountStr), total=text_styles.standard(str(totalCount)))

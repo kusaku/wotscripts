@@ -264,7 +264,7 @@ class Minimap(IDynSquadEntityClient):
         self.__ownUI.entryInvoke(self.__ownEntry['handle'], ('showSector', [math.degrees(yawLimits[0]), math.degrees(yawLimits[1])]))
 
     def __hideSector(self):
-        self.__ownUI.entryInvoke(self.__ownEntry['handle'], ('hideSector', []))
+        self.__ownUI.entryInvoke(self.__ownEntry['handle'], ('hideSector',))
 
     def onScaleMarkers(self, callbackID, scale, normalScale):
         self.__markerScale = scale

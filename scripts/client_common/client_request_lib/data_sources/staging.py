@@ -77,12 +77,8 @@ def translate_field_names(response, field_mapping, requested_fields = None):
                     inner_mapping[our.split('.', 1)[1]] = their.split('.', 1)[1]
                 else:
                     sibling_mapping[our] = their.split('.', 1)[1]
-            else:
-                if isinstance(response, int):
-                    import ipdb
-                    ipdb.set_trace()
-                if their in response:
-                    result[our] = response[their]
+            elif their in response:
+                result[our] = response[their]
 
         if key in response and sibling_mapping:
             siblings = translate_field_names(response[key], sibling_mapping)
@@ -275,7 +271,7 @@ class StagingDataAccessor(base.BaseDataAccessor):
     """
     requests_before_logout = -1
 
-    def __init__(self, url_fetcher, staging_hosts = {}):
+    def __init__(self, url_fetcher, staging_hosts = {}, client_lang = None):
         """
         url_fetcher is fetch_url method with following signature
         staging_hosts is dict of staging hosts for example
@@ -302,6 +298,7 @@ class StagingDataAccessor(base.BaseDataAccessor):
         ... )
         
         """
+        self.client_lang = client_lang
         self._account = None
         self.url_fetcher = url_fetcher
         self.staging_hosts = staging_hosts
@@ -723,7 +720,7 @@ class StagingDataAccessor(base.BaseDataAccessor):
          'fields': ','.join(fields),
          'limit': limit,
          'offset': offset}
-        url = '/clans/?%s' % urlencode(get_params)
+        url = '/clans/search/?%s' % urlencode(get_params)
         return self._request_data(preprocess_callback(callback, 'clans'), 'clans', url)
 
     @convert_data({'created_at': from_iso}, paginated=True)
@@ -842,11 +839,11 @@ class StagingDataAccessor(base.BaseDataAccessor):
     @convert_data({'prime_time': lambda x: x and datetime.strptime(x, '%H:%M').time()})
     @mapped_fields({'front_name': 'frontname',
      'province_id': 'province_id',
-     'revenue': 'revenue',
+     'revenue': 'daily_revenue',
      'hq_connected': 'hq_connected',
      'prime_time': 'primetime',
      'game_map': 'game_map',
-     'periphery': 'periphery',
+     'periphery': 'periphery_id',
      'turns_owned': 'turns_owned'})
     def get_clan_provinces(self, callback, clan_id, fields = None):
         """

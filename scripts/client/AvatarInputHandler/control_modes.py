@@ -1016,6 +1016,7 @@ class PostMortemControlMode(IControlMode):
         self.__connectToArena()
         _setCameraFluency(self.__cam.camera, self.__CAM_FLUENCY)
         self.__isEnabled = True
+        BigWorld.player().consistentMatrices.onVehicleMatrixBindingChanged += self.__onMatrixBound
         if self.__isObserverMode:
             self.__switchViewpoint(False)
             return
@@ -1026,7 +1027,6 @@ class PostMortemControlMode(IControlMode):
             else:
                 self.__switchToVehicle(None)
             g_postProcessing.enable('postmortem')
-            BigWorld.player().consistentMatrices.onVehicleMatrixBindingChanged += self.__onMatrixBound
             return
 
     def disable(self):
@@ -1117,6 +1117,7 @@ class PostMortemControlMode(IControlMode):
             raise AssertionError
             return self.__postmortemDelay is not None and None
         else:
+            self.__doPreBind()
             BigWorld.player().positionControl.switchViewpoint(toPrevious)
             return None
 
@@ -1125,25 +1126,31 @@ class PostMortemControlMode(IControlMode):
             return
         else:
             raise not toId or isinstance(toId, int) and toId >= 0 or AssertionError
+            self.__doPreBind()
             BigWorld.player().positionControl.bindToVehicle(vehicleID=toId)
             return
 
-    def onSwitchViewpoint(self, vehicleID, cameraPos):
-        player = BigWorld.player()
-        replayCtrl = BattleReplay.g_replayCtrl
-        prevVehicleAppearance = None
+    def __doPreBind(self):
         if self.__curVehicleID is not None:
             prevVehicleAppearance = getattr(BigWorld.entity(self.__curVehicleID), 'appearance', None)
             if prevVehicleAppearance is not None:
                 self.__cam.removeVehicleToCollideWith(prevVehicleAppearance)
+            else:
+                LOG_ERROR('Possible memory leak! Cannot find current vehicle with id %s, erasing all collision models instead!' % self.__curVehicleID)
+                self.__cam.clearVehicleToCollideWith()
+        return
+
+    def onSwitchViewpoint(self, vehicleID, cameraPos):
+        player = BigWorld.player()
+        replayCtrl = BattleReplay.g_replayCtrl
         self.__curVehicleID = vehicleID if vehicleID != -1 else self.__selfVehicleID
         self.__aim.changeVehicle(self.__curVehicleID)
         self.__aih.onPostmortemVehicleChanged(self.__curVehicleID)
+        if self.__curVehicleID in BigWorld.entities.keys():
+            self.__aih.onCameraChanged('postmortem', self.__curVehicleID)
         if self.__curVehicleID != player.playerVehicleID and self.__curVehicleID is not None and BigWorld.entity(self.__curVehicleID) is None and not replayCtrl.isPlaying and not self.__isObserverMode and player.arena.positions.get(self.__curVehicleID) is None:
             self.__switchViewpoint(False)
-            return
-        else:
-            return
+        return
 
     def __onPeriodChange(self, period, *args):
         if period != constants.ARENA_PERIOD.AFTERBATTLE:
@@ -1171,7 +1178,6 @@ class PostMortemControlMode(IControlMode):
 
     def __onMatrixBound(self, isStatic):
         if isStatic:
-            self.__aih.onCameraChanged('postmortem', self.__selfVehicleID)
             return
         else:
             vehicle = BigWorld.player().vehicle

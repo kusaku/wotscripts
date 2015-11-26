@@ -10,6 +10,7 @@ from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.Scaleform.locale.CYBERSPORT import CYBERSPORT
 from gui.Scaleform.locale.FORTIFICATIONS import FORTIFICATIONS
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
+from gui.game_control import getFalloutCtrl
 from gui.prb_control import settings
 from gui.prb_control.items.sortie_items import getDivisionNameByType, getDivisionLevel
 from gui.prb_control.settings import UNIT_RESTRICTION
@@ -299,16 +300,18 @@ def _getSlotsData(unitIdx, unit, unitState, pInfo, slotsIter, app = None, levels
                 dbID = player.dbID
                 isCurrentPlayer = player.isCurrentPlayer()
                 if isCurrentPlayer:
+                    falloutCtrl = getFalloutCtrl()
+                    statusTemplate = None
                     if falloutBattleType == FALLOUT_BATTLE_TYPE.MULTITEAM:
-                        vehiclesNotify[0] = [i18n.makeString(MESSENGER.DIALOGS_FALLOUTSQUADCHANNEL_VEHICLENOTIFYMULTITEAM)]
+                        if len(falloutCtrl.getSelectedVehicles()) < falloutCfg.minVehiclesPerPlayer:
+                            statusTemplate = i18n.makeString(MESSENGER.DIALOGS_FALLOUTSQUADCHANNEL_VEHICLENOTIFYMULTITEAM)
+                    elif falloutCtrl.mustSelectRequiredVehicle():
+                        statusTemplate = i18n.makeString(MESSENGER.DIALOGS_FALLOUTSQUADCHANNEL_VEHICLENOTIFY, level=text_styles.main(int2roman(falloutCfg.vehicleLevelRequired)))
                     else:
-                        vehiclesNotify[0] = [i18n.makeString(MESSENGER.DIALOGS_FALLOUTSQUADCHANNEL_VEHICLENOTIFY, level=text_styles.main(int2roman(falloutCfg.vehicleLevelRequired)))]
-                    if len(falloutCfg.allowedLevels) > 1:
                         statusTemplate = i18n.makeString(MESSENGER.DIALOGS_FALLOUTSQUADCHANNEL_VEHICLENOTIFYRANGE, level=text_styles.main(toRomanRangeString(list(falloutCfg.allowedLevels), 1)))
-                    else:
-                        statusTemplate = i18n.makeString(MESSENGER.DIALOGS_FALLOUTSQUADCHANNEL_VEHICLENOTIFYMULTITEAM)
-                    for slotIdx in range(1, falloutCfg.minVehiclesPerPlayer):
-                        vehiclesNotify[slotIdx] = statusTemplate
+                    if statusTemplate is not None:
+                        for slotIdx in range(falloutCfg.minVehiclesPerPlayer):
+                            vehiclesNotify[slotIdx] = statusTemplate
 
                 for idx, (vInvID, vehIntCD) in enumerate(unit.getExtra().accountVehicles.get(dbID, ())):
                     selectedVehicles[idx] = makeVehicleVO(vehicleGetter(vehIntCD), falloutCfg.allowedLevels, isCurrentPlayer=isCurrentPlayer)

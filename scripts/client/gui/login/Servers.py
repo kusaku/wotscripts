@@ -1,19 +1,29 @@
 # Embedded file name: scripts/client/gui/login/Servers.py
 import BigWorld
 import Settings
+from constants import IS_DEVELOPMENT
 from gui import GUI_SETTINGS
+from Event import Event
 from predefined_hosts import g_preDefinedHosts, HOST_AVAILABILITY, REQUEST_RATE
 
 class Servers(object):
+    onServersStatusChanged = Event()
 
     def __init__(self, loginPreferences):
         self._loginPreferences = loginPreferences
         g_preDefinedHosts.readScriptConfig(Settings.g_instance.scriptConfig)
+        g_preDefinedHosts.onCsisQueryStart += self.__onCsisUpdate
+        g_preDefinedHosts.onCsisQueryComplete += self.__onCsisUpdate
+        if GUI_SETTINGS.csisRequestRate == REQUEST_RATE.ALWAYS:
+            g_preDefinedHosts.startCSISUpdate()
         self._serverList = []
         self._selectedServerIdx = 0
         self.updateServerList()
 
     def fini(self):
+        g_preDefinedHosts.stopCSISUpdate()
+        g_preDefinedHosts.onCsisQueryStart -= self.__onCsisUpdate
+        g_preDefinedHosts.onCsisQueryComplete -= self.__onCsisUpdate
         self._serverList = None
         return
 
@@ -25,7 +35,7 @@ class Servers(object):
         self._selectedServerIdx = 0
         serverName = self._loginPreferences['server_name']
         for idx, (hostName, friendlyName, csisStatus, peripheryID) in enumerate(baseServerList):
-            if serverName == hostName:
+            if serverName == hostName and IS_DEVELOPMENT:
                 self._selectedServerIdx = idx
             self._serverList.append({'label': friendlyName,
              'data': hostName,
@@ -45,6 +55,10 @@ class Servers(object):
     @property
     def selectedServerIdx(self):
         return self._selectedServerIdx
+
+    def __onCsisUpdate(self, response = None):
+        self.updateServerList()
+        self.onServersStatusChanged(self._serverList)
 
 
 class DevelopmentServers(Servers):

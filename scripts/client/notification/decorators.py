@@ -546,8 +546,8 @@ class _ClanSingleDecorator(_ClanDecorator):
 
 class ClanSingleAppDecorator(_ClanSingleDecorator):
 
-    def __init__(self, entityID, entity = None, ctx = None, settings = None):
-        self.__userName = ctx
+    def __init__(self, entityID, entity = None, userName = None, settings = None):
+        self.__userName = userName
         super(ClanSingleAppDecorator, self).__init__(entityID, entity, settings)
 
     def getType(self):
@@ -569,8 +569,10 @@ class ClanSingleAppDecorator(_ClanSingleDecorator):
         return ClanSingleNotificationHtmlTextFormatter('appTitle', 'appComment', 'showUserProfileAction')
 
     def _getButtonsStates(self, entity):
-        if self._state in (CLAN_APPLICATION_STATES.ACCEPTED, CLAN_APPLICATION_STATES.DECLINED) or not g_clanCtrl.getAccountProfile().getMyClanPermissions().canHandleClanInvites() or not g_clanCtrl.isAvailable() or not g_clanCtrl.isEnabled():
+        if self._state in (CLAN_APPLICATION_STATES.ACCEPTED, CLAN_APPLICATION_STATES.DECLINED) or not g_clanCtrl.getAccountProfile().getMyClanPermissions().canHandleClanInvites() or not g_clanCtrl.isEnabled():
             submit = cancel = NOTIFICATION_BUTTON_STATE.HIDDEN
+        elif not g_clanCtrl.isAvailable():
+            submit = cancel = NOTIFICATION_BUTTON_STATE.VISIBLE
         else:
             submit = cancel = NOTIFICATION_BUTTON_STATE.DEFAULT
         return {'submit': submit,
@@ -583,7 +585,7 @@ class ClanSingleAppDecorator(_ClanSingleDecorator):
 
 class ClanSingleInviteDecorator(_ClanSingleDecorator):
 
-    def __init__(self, entityID, entity = None, ctx = None, settings = None):
+    def __init__(self, entityID, entity = None, settings = None):
         super(ClanSingleInviteDecorator, self).__init__(entityID, entity, settings)
 
     def getInviteID(self):
@@ -605,8 +607,10 @@ class ClanSingleInviteDecorator(_ClanSingleDecorator):
         return ClanSingleNotificationHtmlTextFormatter('inviteTitle', 'inviteComment', 'showClanProfileAction')
 
     def _getButtonsStates(self, entity):
-        if self._state in (CLAN_INVITE_STATES.ACCEPTED, CLAN_INVITE_STATES.DECLINED) or g_clanCtrl.getAccountProfile().isInClan() or not g_clanCtrl.isAvailable() or not g_clanCtrl.isEnabled():
+        if self._state in (CLAN_INVITE_STATES.ACCEPTED, CLAN_INVITE_STATES.DECLINED) or g_clanCtrl.getAccountProfile().isInClan() or not g_clanCtrl.isEnabled():
             submit = cancel = NOTIFICATION_BUTTON_STATE.HIDDEN
+        elif not g_clanCtrl.isAvailable():
+            submit = cancel = NOTIFICATION_BUTTON_STATE.VISIBLE
         else:
             submit = cancel = NOTIFICATION_BUTTON_STATE.DEFAULT
         return {'submit': submit,
@@ -620,8 +624,10 @@ class ClanSingleInviteDecorator(_ClanSingleDecorator):
 class _ClanMultiDecorator(_ClanDecorator):
 
     def _getButtonsStates(self, entity):
-        if not g_clanCtrl.isAvailable() or not g_clanCtrl.isEnabled():
+        if not g_clanCtrl.isEnabled():
             submit = NOTIFICATION_BUTTON_STATE.HIDDEN
+        elif not g_clanCtrl.isAvailable():
+            submit = NOTIFICATION_BUTTON_STATE.VISIBLE
         else:
             submit = NOTIFICATION_BUTTON_STATE.DEFAULT
         return {'submit': submit}
@@ -653,9 +659,9 @@ class ClanInvitesDecorator(_ClanMultiDecorator):
 
 class _ClassBaseActionDecorator(_ClanBaseDecorator):
 
-    def __init__(self, entityID, actionType, entity = None, settings = None):
+    def __init__(self, entityID, actionType, userName = None, settings = None):
         self._actionType = actionType
-        super(_ClassBaseActionDecorator, self).__init__(entityID, entity, settings)
+        super(_ClassBaseActionDecorator, self).__init__(entityID, userName, settings)
 
     def _getName(self, entity):
         raise NotImplementedError

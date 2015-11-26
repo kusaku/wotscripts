@@ -1,6 +1,10 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/customization_2_0/purchase_window.py
+import copy
 from Event import Event
-from debug_utils import LOG_ERROR
+from adisp import process
+from debug_utils import LOG_ERROR, LOG_DEBUG
+from gui import DialogsInterface
+from gui.Scaleform.daapi.view.lobby.customization_2_0.shared import getDialogReplaceElement, getDialogReplaceElements
 from gui.Scaleform.daapi.view.meta.CustomizationBuyWindowMeta import CustomizationBuyWindowMeta
 from gui.Scaleform.framework.entities.DAAPIDataProvider import SortableDAAPIDataProvider
 from gui.Scaleform.locale.CUSTOMIZATION import CUSTOMIZATION
@@ -18,28 +22,43 @@ class PurchaseWindow(CustomizationBuyWindowMeta):
     def __init__(self, ctx = None):
         super(PurchaseWindow, self).__init__()
 
-    def selectItem(self, idx):
-        self.__searchDP.setSelectFlag(idx, True)
+    def selectItem(self, itemIdx):
+        self.__searchDP.setSelectFlag(itemIdx, True)
 
-    def deselectItem(self, idx):
-        self.__searchDP.setSelectFlag(idx, False)
+    def deselectItem(self, itemIdx):
+        self.__searchDP.setSelectFlag(itemIdx, False)
 
     def onWindowClose(self):
         self.destroy()
 
+    @process
     def buy(self):
-        excludedItems = []
+        isContinue = True
+        replaceElementsName = []
         for item in self.__searchDP.collection:
-            if not item['selected']:
-                excludedItems.append((item['id'], item['cType']))
+            cType = item['cType']
+            if item['selected']:
+                installedItem = g_customizationController.carousel.slots.getInstalledItem(item['slotIdx'], cType)
+                if installedItem.duration > 0:
+                    availableItem = g_customizationController.carousel.slots.getItemById(cType, installedItem.getID())
+                    replaceElementsName.append(availableItem.getName())
 
-        g_customizationController.carousel.slots.cart.buyItems(excludedItems)
+        replaceElementsCount = len(replaceElementsName)
+        if replaceElementsCount > 0:
+            if replaceElementsCount == 1:
+                isContinue = yield DialogsInterface.showDialog(getDialogReplaceElement(replaceElementsName[0]))
+            else:
+                isContinue = yield DialogsInterface.showDialog(getDialogReplaceElements(replaceElementsName))
+        if isContinue:
+            g_customizationController.carousel.slots.cart.buyItems(copy.deepcopy(self.__searchDP.collection))
 
     def _dispose(self):
         self.__searchDP.selectionChanged -= self.__setTotalData
         self.__searchDP.fini()
-        g_customizationController.carousel.slots.cart.purchaseProcessed -= self.destroy
+        if g_customizationController.carousel is not None:
+            g_customizationController.carousel.slots.cart.purchaseProcessed -= self.destroy
         super(PurchaseWindow, self)._dispose()
+        return
 
     def _populate(self):
         super(PurchaseWindow, self)._populate()
@@ -89,7 +108,8 @@ class PurchaseWindow(CustomizationBuyWindowMeta):
          'sortOrder': sortOrder,
          'defaultSortDirection': 'ascending',
          'buttonHeight': 50,
-         'showSeparator': showSeparator}
+         'showSeparator': showSeparator,
+         'enabled': False}
 
 
 class PurchaseDataProvider(SortableDAAPIDataProvider):
@@ -98,6 +118,7 @@ class PurchaseDataProvider(SortableDAAPIDataProvider):
         super(PurchaseDataProvider, self).__init__()
         self._listMapping = {}
         self._list = []
+        self.__cartItems = cartItems
         self.__mapping = {}
         self.__selectedID = None
         self.__totalPrice = totalPrice
@@ -153,19 +174,38 @@ class PurchaseDataProvider(SortableDAAPIDataProvider):
 
         return vo
 
-    def setSelectFlag(self, idx, flag):
+    def setSelectFlag(self, itemIdx, selected):
         for item in self._list:
-            if item['id'] == idx:
-                item['selected'] = flag
-                if item['imgCurrency'] == RES_ICONS.MAPS_ICONS_LIBRARY_CREDITSICON_2:
-                    if flag:
-                        self.__totalPrice['credits'] += item['price']
-                    else:
-                        self.__totalPrice['credits'] -= item['price']
-                elif flag:
-                    self.__totalPrice['gold'] += item['price']
-                else:
-                    self.__totalPrice['gold'] -= item['price']
+            if self._list.index(item) == itemIdx:
+                item['selected'] = selected
+                for cartItem in self.__cartItems:
+                    cartItemIdx = self.__cartItems.index(cartItem)
+                    if cartItem['object'].getID() == item['id'] and cartItemIdx != itemIdx:
+                        anotherCartItem = cartItem
+                        thisCartItem = self.__cartItems[itemIdx]
+                        anotherItem = self._list[cartItemIdx]
+                        if anotherItem['imgCurrency'] == RES_ICONS.MAPS_ICONS_LIBRARY_CREDITSICON_2:
+                            anotherPriceFormatter = text_styles.credits
+                        else:
+                            anotherPriceFormatter = text_styles.gold
+                        if item['imgCurrency'] == RES_ICONS.MAPS_ICONS_LIBRARY_CREDITSICON_2:
+                            thisPriceFormatter = text_styles.credits
+                        else:
+                            thisPriceFormatter = text_styles.gold
+                        if thisCartItem['duration'] == 0 and thisCartItem['price'] > anotherCartItem['price']:
+                            if not selected:
+                                anotherItem['price'] = anotherCartItem['object'].getPrice(anotherCartItem['duration'])
+                                anotherItem['lblPrice'] = anotherPriceFormatter(anotherItem['price'])
+                                item['price'] = 0
+                                item['lblPrice'] = thisPriceFormatter(item['price'])
+                            else:
+                                anotherItem['price'] = 0
+                                anotherItem['lblPrice'] = anotherPriceFormatter(anotherItem['price'])
+                                item['price'] = thisCartItem['object'].getPrice(thisCartItem['duration'])
+                                item['lblPrice'] = thisPriceFormatter(item['price'])
+
+                self.__recalculateTotalPrice()
+                self.refresh()
                 self.selectionChanged()
                 return None
 
@@ -198,3 +238,13 @@ class PurchaseDataProvider(SortableDAAPIDataProvider):
                 isGold = item['currencyIcon'] != RES_ICONS.MAPS_ICONS_LIBRARY_CREDITSICON_2
                 dpItem['salePrice'] = getSalePriceString(isGold, item['price'])
             self._list.append(dpItem)
+
+    def __recalculateTotalPrice(self):
+        self.__totalPrice['gold'] = 0
+        self.__totalPrice['credits'] = 0
+        for item in self._list:
+            if item['imgCurrency'] == RES_ICONS.MAPS_ICONS_LIBRARY_CREDITSICON_2:
+                if item['selected']:
+                    self.__totalPrice['credits'] += item['price']
+            elif item['selected']:
+                self.__totalPrice['gold'] += item['price']

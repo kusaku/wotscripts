@@ -6,6 +6,9 @@ class ClanInvitesViewWithTableMeta(BaseDAAPIComponent):
     def showMore(self):
         self._printOverrideError('showMore')
 
+    def refreshTable(self):
+        self._printOverrideError('refreshTable')
+
     def as_setDataS(self, data):
         if self._isDAAPIInited():
             return self.flashObject.as_setData(data)
@@ -25,3 +28,7 @@ class ClanInvitesViewWithTableMeta(BaseDAAPIComponent):
     def as_hideDummyS(self):
         if self._isDAAPIInited():
             return self.flashObject.as_hideDummy()
+
+    def as_updateButtonRefreshStateS(self, enabled, tooltip):
+        if self._isDAAPIInited():
+            return self.flashObject.as_updateButtonRefreshState(enabled, tooltip)

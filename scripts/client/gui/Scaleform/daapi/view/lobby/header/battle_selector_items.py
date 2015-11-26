@@ -27,7 +27,7 @@ _LARGER_ICON_PATH = '../maps/icons/battleTypes/64x64/{0}.png'
 class _SelectorItem(object):
     __slots__ = ('_label', '_data', '_order', '_isSelected', '_isNew', '_isDisabled', '_isLocked', '_isVisible', '_selectorType')
 
-    def __init__(self, label, data, order, selectorType = None, _isVisible = True):
+    def __init__(self, label, data, order, selectorType = None, isVisible = True):
         super(_SelectorItem, self).__init__()
         self._label = label
         self._data = data
@@ -36,7 +36,7 @@ class _SelectorItem(object):
         self._isNew = False
         self._isLocked = False
         self._isDisabled = True
-        self._isVisible = _isVisible
+        self._isVisible = isVisible
         self._selectorType = selectorType
 
     def __cmp__(self, other):
@@ -348,10 +348,8 @@ def _createItems():
         _addTutorialBattleType(items, isInRoaming)
     if g_eventsCache.isEventEnabled():
         _addFalloutBattleType(items)
-    if settings.isSandboxEnabled():
-        _addSandboxType(items, isInRoaming)
-    if g_eventsCache.isEventEnabled():
-        _addFalloutBattleType(items)
+    if settings.isSandboxEnabled() and not isInRoaming:
+        _addSandboxType(items)
     return _BattleSelectorItems(items)
 
 
@@ -387,8 +385,8 @@ def _addFalloutBattleType(items):
     items.append(_FalloutItem(MENU.HEADERBUTTONS_BATTLE_TYPES_FALLOUT, PREBATTLE_ACTION_NAME.FALLOUT, 1))
 
 
-def _addSandboxType(items, isInRoaming):
-    items.append((_DisabledSelectorItem if isInRoaming else _SandboxItem)(MENU.HEADERBUTTONS_BATTLE_TYPES_BATTLETEACHING, PREBATTLE_ACTION_NAME.SANDBOX, 9))
+def _addSandboxType(items):
+    items.append(_SandboxItem(MENU.HEADERBUTTONS_BATTLE_TYPES_BATTLETEACHING, PREBATTLE_ACTION_NAME.SANDBOX, 9))
 
 
 def create():

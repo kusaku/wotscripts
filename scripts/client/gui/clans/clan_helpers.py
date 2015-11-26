@@ -2,6 +2,7 @@
 from datetime import datetime
 from adisp import async, process
 import Event
+from helpers.local_cache import FileLocalCache
 from gui.shared.utils import sortByFields
 from collections import namedtuple
 from debug_utils import LOG_DEBUG, LOG_WARNING
@@ -9,11 +10,12 @@ from gui.clans import interfaces, items
 from gui.clans.contexts import SearchClansCtx, GetRecommendedClansCtx, AccountInvitesCtx, ClanRatingsCtx
 from gui.clans.contexts import ClansInfoCtx, AcceptInviteCtx, DeclineInviteCtx, DeclineInvitesCtx
 from gui.clans.items import ClanInviteWrapper, ClanPersonalInviteWrapper
-from gui.clans.settings import COUNT_THRESHOLD, PERSONAL_INVITES_COUNT_THRESHOLD
+from gui.clans.settings import COUNT_THRESHOLD, PERSONAL_INVITES_COUNT_THRESHOLD, showAcceptClanInviteDialog
 from gui.clans.settings import CLAN_INVITE_STATES, DATA_UNAVAILABLE_PLACEHOLDER
 from gui.shared.utils.ListPaginator import ListPaginator
 from gui.shared.utils import getPlayerDatabaseID
 from gui.shared.view_helpers import UsersInfoHelper
+from shared_utils import CONST_CONTAINER
 _RequestData = namedtuple('_RequestData', ['pattern',
  'offset',
  'count',
@@ -46,6 +48,7 @@ class ClanFinder(ListPaginator, UsersInfoHelper):
         self.__isRecommended = False
         self.__lastSuccessRequestData = None
         self.__isSynced = False
+        self.__hasNextPage = False
         return
 
     def isSynced(self):
@@ -82,7 +85,7 @@ class ClanFinder(ListPaginator, UsersInfoHelper):
         return self.__lastStatus and self._offset > 0
 
     def canMoveRight(self):
-        return self.__lastStatus and self.__totalCount > self._offset + self._count
+        return self.__lastStatus and self.__hasNextPage
 
     def hasSuccessRequest(self):
         return self.__lastSuccessRequestData is not None
@@ -100,14 +103,18 @@ class ClanFinder(ListPaginator, UsersInfoHelper):
     @process
     def _request(self, isReset = False):
         self._offset = max(self._offset, 0)
-        if self._offset > 0 and self._offset >= self.__totalCount:
-            self._offset = self._offset - self._count
+        count = self._count + 1
         if self.__isRecommended:
-            ctx = GetRecommendedClansCtx(self._offset, self._count, True)
+            ctx = GetRecommendedClansCtx(self._offset, count, True)
         else:
-            ctx = SearchClansCtx(self.__pattern, self._offset, self._count, True)
+            ctx = SearchClansCtx(self.__pattern, self._offset, count, True)
         result = yield self._requester.sendRequest(ctx, allowDelay=True)
         self.__lastResult = ctx.getDataObj(result.data)
+        if self.__lastResult and len(self.__lastResult) == count:
+            self.__hasNextPage = True
+            self.__lastResult.pop()
+        else:
+            self.__hasNextPage = False
         self.__lastStatus = result.isSuccess()
         self.__totalCount = ctx.getTotalCount(result.data)
         self._invalidateMapping()
@@ -348,7 +355,8 @@ class ClanInvitesPaginator(ListPaginator, UsersInfoHelper):
         self.onListItemsUpdated(self, [item])
 
     def __updateInvite(self, inviteWrapper, status, sender, senderName):
-        invite = inviteWrapper.invite.update(status=status, sender_id=sender.getAccountDbID(), created_at=datetime.now(), updated_at=datetime.now())
+        utc = datetime.utcnow()
+        invite = inviteWrapper.invite.update(status=status, sender_id=sender.getAccountDbID(), created_at=utc, updated_at=utc)
         inviteWrapper.setInvite(invite)
         inviteWrapper.setSender(sender)
         inviteWrapper.setSenderName(senderName)
@@ -432,8 +440,16 @@ class ClanPersonalInvitesPaginator(ListPaginator, UsersInfoHelper):
         self._request(isReset=True, sort=sort)
         return
 
+    @process
     def accept(self, inviteID):
-        self.__sendADRequest(AcceptInviteCtx(inviteID), CLAN_INVITE_STATES.ACCEPTED)
+        inviteWrapper = self.getInviteByDbID(inviteID)
+        if inviteWrapper:
+            clanInfo = inviteWrapper.clanInfo
+            result = yield showAcceptClanInviteDialog(clanInfo.getClanName(), clanInfo.getTag())
+            if result:
+                self.__sendADRequest(AcceptInviteCtx(inviteID), CLAN_INVITE_STATES.ACCEPTED)
+        else:
+            LOG_WARNING("Couldn't find invite by id = " + str(inviteID))
 
     def decline(self, inviteID):
         self.__sendADRequest(DeclineInviteCtx(inviteID), CLAN_INVITE_STATES.DECLINED)
@@ -575,3 +591,40 @@ class ClanPersonalInvitesPaginator(ListPaginator, UsersInfoHelper):
 
         if updatedInvites:
             self.onListItemsUpdated(self, updatedInvites)
+
+
+class ClanCache(FileLocalCache):
+
+    class KEYS(CONST_CONTAINER):
+        VERSION = ('VERSION',)
+        CLAN_APPS = ('CLAN_APPS_COUNT',)
+        CLAN_INVITES = ('CLAN_INVITES_COUNT',)
+        PERSONAL_APPS = ('PERSONAL_APPS_COUNT',)
+        PERSONAL_INVITES = ('PERSONAL_INVITES_COUNT',)
+
+    def __init__(self, accountName):
+        super(ClanCache, self).__init__('clan_cache', ('invites', accountName))
+        self.__cache = {}
+
+    def __repr__(self):
+        return 'ClanCache({0:s}): {1!r:s}'.format(hex(id(self)), self.__cache)
+
+    def get(self, key):
+        return self.__cache.get(key, None)
+
+    def set(self, key, value):
+        self.__cache[key] = value
+
+    def write(self):
+        self.__cache[ClanCache.KEYS.VERSION] = 0
+        super(ClanCache, self).write()
+
+    def clear(self):
+        self.__cache.clear()
+        super(ClanCache, self).clear()
+
+    def _getCache(self):
+        return self.__cache.copy()
+
+    def _setCache(self, data):
+        self.__cache = data

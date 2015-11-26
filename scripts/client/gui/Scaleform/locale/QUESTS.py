@@ -714,6 +714,8 @@ class QUESTS(object):
     QUESTTASKDETAILSVIEW_ADDITIONALCONDITIONS = '#quests:QuestTaskDetailsView/additionalConditions'
     QUESTTASKDETAILSVIEW_REQUIREMENTS = '#quests:QuestTaskDetailsView/requirements'
     QUESTTASKDETAILSVIEW_REQUIREMENTS_TEXT = '#quests:QuestTaskDetailsView/requirements/text'
+    QUESTTASKDETAILSVIEW_REQUIREMENTS_MORE8LVL = '#quests:QuestTaskDetailsView/requirements/more8lvl'
+    QUESTTASKDETAILSVIEW_REQUIREMENTS_ONLY10LVL = '#quests:QuestTaskDetailsView/requirements/only10lvl'
     QUESTTASKDETAILSVIEW_DESCRIPTION = '#quests:QuestTaskDetailsView/description'
     QUESTTASKDETAILSVIEW_BTNLABEL_BEGIN = '#quests:QuestTaskDetailsView/btnLabel/begin'
     QUESTTASKDETAILSVIEW_BTNLABEL_CANCEL = '#quests:QuestTaskDetailsView/btnLabel/cancel'
@@ -722,14 +724,18 @@ class QUESTS(object):
     QUESTTASKDETAILSVIEW_TASKDESCRIPTION_DONE = '#quests:QuestTaskDetailsView/taskDescription/done'
     QUESTTASKDETAILSVIEW_TASKDESCRIPTION_EXCELLENTDONE = '#quests:QuestTaskDetailsView/taskDescription/excellentDone'
     QUESTTASKDETAILSVIEW_TASKDESCRIPTION_DOPREVTASKS = '#quests:QuestTaskDetailsView/taskDescription/doPrevTasks'
+    QUESTTASKDETAILSVIEW_FALLOUT_TASKDESCRIPTION_DOPREVTASKS = '#quests:QuestTaskDetailsView/fallout/taskDescription/doPrevTasks'
     QUESTTASKDETAILSVIEW_TASKDESCRIPTION_AVAILABLE = '#quests:QuestTaskDetailsView/taskDescription/available'
     QUESTTASKDETAILSVIEW_TASKDESCRIPTION_INPROGRESS = '#quests:QuestTaskDetailsView/taskDescription/inProgress'
     QUESTTASKDETAILSVIEW_TASKDESCRIPTION_TAKEAWARD = '#quests:QuestTaskDetailsView/taskDescription/takeAward'
     QUESTTASKDETAILSVIEW_FORADDITIONALAWARD = '#quests:QuestTaskDetailsView/forAdditionalAward'
+    TILECHAINSVIEW_CHAINNAME_MULTITEAM = '#quests:tileChainsView/chainName/multiteam'
+    TILECHAINSVIEW_CHAINNAME_CLASSIC = '#quests:tileChainsView/chainName/classic'
     BEGINNERQUESTS_DETAILS_CONDITIONSTITLE = '#quests:beginnerQuests/details/conditionsTitle'
     BEGINNERQUESTS_DETAILS_DESCRIPTIONTITLE = '#quests:beginnerQuests/details/descriptionTitle'
     BEGINNERQUESTS_DETAILS_BUTTONSHOWVIDEOTIP = '#quests:beginnerQuests/details/buttonShowVideoTip'
     BEGINNERQUESTS_DETAILS_BUTTONSTARTQUEST = '#quests:beginnerQuests/details/buttonStartQuest'
+    BEGINNERQUESTS_DETAILS_NOAWARD = '#quests:beginnerQuests/details/noAward'
     QUESTSCONTROL_ADDITIONALTITLE_ENUM = (QUESTSCONTROL_ADDITIONALTITLE_NEEDRECEIVEDAWARD,
      QUESTSCONTROL_ADDITIONALTITLE_FREESLOTSANDFREEQUESTS,
      QUESTSCONTROL_ADDITIONALTITLE_FIRSTRUN,

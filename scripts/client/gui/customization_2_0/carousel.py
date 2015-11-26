@@ -2,13 +2,13 @@
 import copy
 import time
 from Event import Event
-from filter import Filter
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.shared.utils.HangarSpace import g_hangarSpace
-from data_aggregator import CUSTOMIZATION_TYPE
 from gui.shared.utils.functions import makeTooltip
+from data_aggregator import CUSTOMIZATION_TYPE
 from slots import Slots
-import shared
+from filter import Filter, FILTER_TYPE
+from shared import CAMOUFLAGE_GROUP_MAPPING
 _RENDERER_WIDTH = {CUSTOMIZATION_TYPE.EMBLEM: 100,
  CUSTOMIZATION_TYPE.INSCRIPTION: 176,
  CUSTOMIZATION_TYPE.CAMOUFLAGE: 100}
@@ -21,7 +21,7 @@ class Carousel(object):
         self.__currentSlotIdx = 0
         self.__currentDuration = 0
         self.__carouselItems = []
-        self.filter = Filter()
+        self.filter = Filter(self.__aData.availableGroupNames)
         self.filter.changed += self.__updateCarouselData
         self.slots = Slots(self.__aData)
         self.slots.selected += self.__onSlotSelected
@@ -78,26 +78,38 @@ class Carousel(object):
     def __onSlotSelected(self, newType, newSlotIdx):
         self.__currentType = newType
         self.__currentSlotIdx = newSlotIdx
-        self.filter.setType(newType)
+        self.filter.setTypeAndIdx(newType, newSlotIdx)
         if newType == CUSTOMIZATION_TYPE.CAMOUFLAGE:
-            self.filter.set(1, newSlotIdx)
+            self.filter.set(FILTER_TYPE.GROUP, CAMOUFLAGE_GROUP_MAPPING[newSlotIdx])
         self.filter.apply()
 
-    def __getBtnTooltip(self):
-        tooltip = makeTooltip(TOOLTIPS.CUSTOMIZATION_CAROUSEL_SLOT_SELECT_HEADER, TOOLTIPS.CUSTOMIZATION_CAROUSEL_SLOT_SELECT_BODY)
-        return tooltip
+    def __getBtnTooltip(self, installedInSlot):
+        if installedInSlot:
+            params = (TOOLTIPS.CUSTOMIZATION_CAROUSEL_SLOT_REMOVE_HEADER, TOOLTIPS.CUSTOMIZATION_CAROUSEL_SLOT_REMOVE_BODY)
+        else:
+            params = (TOOLTIPS.CUSTOMIZATION_CAROUSEL_SLOT_SELECT_HEADER, TOOLTIPS.CUSTOMIZATION_CAROUSEL_SLOT_SELECT_BODY)
+        return makeTooltip(*params)
 
     def __onSlotUpdated(self, newSlotData):
         self.__updateCarouselData()
 
     def __updateCarouselData(self):
+        oldItemsCount = len(self.__carouselItems)
         del self.__carouselItems[:]
         appliedItems = []
         purchasedItems = []
         otherItems = []
-        installedItemID = self.slots.getInstalledItem(self.__currentSlotIdx, self.__currentType).getID()
         currentSlotItem = None
-        for itemID, item in self.__aData.available[self.__currentType].iteritems():
+        installedItemID = self.slots.getInstalledItem(self.__currentSlotIdx, self.__currentType).getID()
+        if self.__currentType == CUSTOMIZATION_TYPE.CAMOUFLAGE:
+            displayedItems = {}
+            for itemID, item in self.__aData.displayed[self.__currentType].iteritems():
+                if item.getGroup() == CAMOUFLAGE_GROUP_MAPPING[self.__currentSlotIdx]:
+                    displayedItems[itemID] = item
+
+        else:
+            displayedItems = self.__aData.displayed[self.__currentType]
+        for itemID, item in displayedItems.iteritems():
             if not self.filter.check(item):
                 continue
             appliedToCurrentSlot = itemID == self.slots.getSelectedSlotItemID()
@@ -108,7 +120,7 @@ class Carousel(object):
              'price': item.getPrice(self.__currentDuration),
              'priceIsGold': item.priceIsGold(self.__currentDuration),
              'isInDossier': item.isInDossier,
-             'buttonTooltip': self.__getBtnTooltip(),
+             'buttonTooltip': self.__getBtnTooltip(installedInSlot),
              'duration': self.__currentDuration,
              'installedInSlot': installedInSlot}
             if appliedToCurrentSlot:
@@ -122,12 +134,13 @@ class Carousel(object):
 
         self.__carouselItems = appliedItems + purchasedItems + otherItems
         if currentSlotItem is not None:
-            currentSlotCarouselItemIdx = self.__carouselItems.index(currentSlotItem)
+            goToIndex = currentSlotCarouselItemIdx = self.__carouselItems.index(currentSlotItem)
         else:
             currentSlotCarouselItemIdx = -1
+            goToIndex = -1 if oldItemsCount == len(self.__carouselItems) else 0
         self.updated({'items': self.__carouselItems,
          'rendererWidth': _RENDERER_WIDTH[self.__currentType],
          'selectedIndex': currentSlotCarouselItemIdx,
-         'goToIndex': currentSlotCarouselItemIdx,
-         'unfilteredLength': len(self.__aData.available[self.__currentType])})
+         'goToIndex': goToIndex,
+         'unfilteredLength': len(displayedItems)})
         return

@@ -2,6 +2,7 @@
 from adisp import process, async
 import BigWorld
 from client_request_lib.exceptions import ResponseCodes
+from helpers import getClientLanguage
 from ConnectionManager import connectionManager
 from gui.LobbyContext import g_lobbyContext
 from gui.clans.restrictions import AccountClanLimits, DefaultAccountClanLimits
@@ -10,14 +11,12 @@ from gui.clans.factory import g_clanFactory
 from gui.clans.settings import CLAN_CONTROLLER_STATES, LOGIN_STATE, CLAN_REQUESTED_DATA_TYPE
 from gui.clans.requests import ClanRequestResponse
 from gui.shared.utils.decorators import ReprInjector
-from gui.shared.utils import getPlayerDatabaseID
+from gui.shared.utils import getPlayerDatabaseID, backoff
 from debug_utils import LOG_WARNING, LOG_DEBUG
-_PING_TIME_INTERVAL = 2
-_BACK_OFF_MIN_DELAY = 10
-_BACK_OFF_MAX_DELAY = 5120
-_BACK_OFF_MODIFIER = 10
-_BACK_OFF_EXP_RANDOM_FACTOR = 1
-_MAX_REQ_TOKEN_TRIES = 10
+_PING_BACK_OFF_MIN_DELAY = 60
+_PING_BACK_OFF_MAX_DELAY = 1200
+_PING_BACK_OFF_MODIFIER = 30
+_PING_BACK_OFF_EXP_RANDOM_FACTOR = 5
 
 @ReprInjector.simple(('getStateID', 'state'))
 
@@ -66,7 +65,7 @@ class _ClanState(object):
         pass
 
     def _changeState(self, state):
-        if state is not None and state.getStateID() != self.getStateID():
+        if state is not None and self._clanCtrl is not None and state.getStateID() != self._clanCtrl.getStateID():
             clanCtrl = self._clanCtrl
             self.fini()
             state.init()
@@ -99,7 +98,7 @@ class ClanUndefinedState(_ClanState):
     def _getNextState(self):
         state = super(ClanUndefinedState, self)._getNextState()
         if state is None:
-            state = ClanUnavailableState(self._clanCtrl)
+            state = ClanAvailableState(self._clanCtrl)
         return state
 
 
@@ -113,7 +112,7 @@ class ClanRoamingState(_ClanState):
     def _getNextState(self):
         state = super(ClanRoamingState, self)._getNextState()
         if state is None:
-            state = ClanUnavailableState(self._clanCtrl)
+            state = ClanAvailableState(self._clanCtrl)
         return state
 
 
@@ -127,7 +126,7 @@ class ClanDisabledState(_ClanState):
     def _getNextState(self):
         state = super(ClanDisabledState, self)._getNextState()
         if state is None:
-            state = ClanUnavailableState(self._clanCtrl)
+            state = ClanAvailableState(self._clanCtrl)
         return state
 
 
@@ -143,7 +142,7 @@ class _ClanWebState(_ClanState):
 
     def init(self):
         super(_ClanWebState, self).init()
-        self.__webRequester = g_clanFactory.createWebRequester(g_lobbyContext.getServerSettings().clanProfile.getSettingsJSON())
+        self.__webRequester = g_clanFactory.createWebRequester(g_lobbyContext.getServerSettings().clanProfile.getSettingsJSON(), client_lang=getClientLanguage())
         self.__requestsCtrl = g_clanFactory.createClanRequestsController(self._clanCtrl, g_clanFactory.createClanRequester(self.__webRequester))
 
     def fini(self):
@@ -174,6 +173,7 @@ class ClanUnavailableState(_ClanWebState):
         self.__bwCbId = None
         self.__ctx = contexts.PingCtx()
         self.__isPingRunning = False
+        self.__backOff = backoff.ExpBackoff(_PING_BACK_OFF_MIN_DELAY, _PING_BACK_OFF_MAX_DELAY, _PING_BACK_OFF_MODIFIER, _PING_BACK_OFF_EXP_RANDOM_FACTOR)
         return
 
     def init(self):
@@ -181,6 +181,7 @@ class ClanUnavailableState(_ClanWebState):
 
     def fini(self):
         self._cancelPingCB()
+        self.__backOff.reset()
         super(ClanUnavailableState, self).fini()
 
     def invalidate(self):
@@ -211,7 +212,8 @@ class ClanUnavailableState(_ClanWebState):
 
     def _schedulePingCB(self):
         if self.__bwCbId is None:
-            self.__bwCbId = BigWorld.callback(_PING_TIME_INTERVAL, self._ping)
+            delay = self.__backOff.next()
+            self.__bwCbId = BigWorld.callback(delay, self._ping)
         return
 
     def _cancelPingCB(self):
@@ -261,7 +263,7 @@ class ClanAvailableState(_ClanWebState):
              allowDelay))
             self.login()
         else:
-            if self._clanCtrl.simWGCGEnabled():
+            if self._clanCtrl and self._clanCtrl.simWGCGEnabled():
                 result = yield super(ClanAvailableState, self).sendRequest(ctx, allowDelay=allowDelay)
             else:
                 result = ClanRequestResponse(ResponseCodes.WGCG_ERROR, 'Simulated WGCG error!', None)

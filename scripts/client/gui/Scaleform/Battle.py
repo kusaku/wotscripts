@@ -41,6 +41,7 @@ from gui.battle_control.battle_arena_ctrl import battleArenaControllerFactory
 from gui.battle_control.battle_constants import VEHICLE_VIEW_STATE
 from gui.prb_control.formatters import getPrebattleFullDescription
 from gui.shared import g_eventBus, events, EVENT_BUS_SCOPE
+from gui.shared.formatters import text_styles
 from gui.shared.utils.TimeInterval import TimeInterval
 from gui.shared.utils.plugins import PluginsCollection
 from messenger import MessengerEntry, g_settings
@@ -63,7 +64,6 @@ from gui.Scaleform.ingame_help import IngameHelp
 from gui.Scaleform import SCALEFORM_SWF_PATH
 from gui.battle_control.arena_info import isEventBattle, getArenaIcon, hasFlags, hasRespawns, hasResourcePoints, getIsMultiteam, hasRepairPoints, isFalloutBattle, hasGasAttack
 from gui.battle_control import avatar_getter
-from gui import makeHtmlString
 
 def _isVehicleEntity(entity):
     import Vehicle
@@ -84,13 +84,12 @@ def _getQuestsTipData(arena, arenaDP):
             quest = pQuests[0]
             pqTipData = [quest.getUserName(), _getQuestConditionsMessage(INGAME_GUI.POTAPOVQUESTS_TIP_MAINHEADER, quest.getUserMainCondition()), _getQuestConditionsMessage(INGAME_GUI.POTAPOVQUESTS_TIP_ADDITIONALHEADER, quest.getUserAddCondition())]
         else:
-            pqTipData = [i18n.makeString(INGAME_GUI.POTAPOVQUESTS_TIP), None, None]
+            pqTipData = [i18n.makeString(INGAME_GUI.POTAPOVQUESTS_TIP_NOQUESTS_BATTLETYPE if isFalloutBattle() else INGAME_GUI.POTAPOVQUESTS_TIP_NOQUESTS_VEHICLETYPE), None, None]
     return pqTipData
 
 
 def _getQuestConditionsMessage(header, text):
-    return makeHtmlString('html_templates:battle/statsDialog', 'questConditions', {'header': i18n.makeString(header),
-     'text': text})
+    return i18n.makeString(text_styles.middleTitle(header) + '\n' + text_styles.main(text))
 
 
 _CONTOUR_ICONS_MASK = '../maps/icons/vehicle/contour/%(unicName)s.png'

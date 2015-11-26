@@ -4,7 +4,7 @@ from PlayerEvents import g_playerEvents
 import account_helpers
 from constants import PREBATTLE_ACCOUNT_STATE, REQUEST_COOLDOWN
 from debug_utils import LOG_ERROR, LOG_DEBUG, LOG_CURRENT_EXCEPTION
-from gui import prb_control, SystemMessages
+from gui import SystemMessages
 from gui.Scaleform.daapi.view.dialogs import rally_dialog_meta
 from gui.prb_control import restrictions, prb_cooldown, prb_getters
 from gui.prb_control.context import prb_ctx
@@ -12,9 +12,9 @@ from gui.prb_control.ctrl_events import g_prbCtrlEvents
 from gui.prb_control.formatters import messages
 from gui.prb_control.functional import interfaces
 from gui.prb_control.items import prb_items, prb_seqs
-import gui.prb_control.prb_getters
 from gui.prb_control.restrictions.limits import DefaultLimits
 from gui.prb_control.restrictions.permissions import DefaultPrbPermissions
+from gui.prb_control.restrictions.permissions import IntroPrbPermissions
 from gui.prb_control.settings import FUNCTIONAL_FLAG, CTRL_ENTITY_TYPE, PREBATTLE_ROSTER, REQUEST_TYPE, PREBATTLE_INIT_STEP
 from gui.shared.utils.ListenersCollection import ListenersCollection
 from prebattle_shared import decodeRoster
@@ -33,8 +33,8 @@ class PrbIntro(interfaces.IPrbEntry):
         raise Exception('PrbIntro is not create entity')
 
     def join(self, ctx, callback = None):
-        if not gui.prb_control.prb_getters.hasModalEntity() or ctx.isForced():
-            g_prbCtrlEvents.onPrebattleIntroModeJoined(ctx.getEntityType(), gui.prb_control.prb_getters.hasModalEntity())
+        if not prb_getters.hasModalEntity() or ctx.isForced():
+            g_prbCtrlEvents.onPrebattleIntroModeJoined(ctx.getEntityType(), prb_getters.hasModalEntity())
             if callback:
                 callback(True)
         else:
@@ -157,6 +157,9 @@ class IntroPrbFunctional(_PrbFunctional):
 
     def hasEntity(self):
         return self._hasEntity
+
+    def getPermissions(self, pID = None):
+        return IntroPrbPermissions()
 
     def getConfirmDialogMeta(self, ctx):
         return rally_dialog_meta.createPrbIntroLeaveMeta(ctx, self.getEntityType())

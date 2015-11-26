@@ -3,12 +3,11 @@ import weakref
 import operator
 from debug_utils import LOG_WARNING, LOG_CURRENT_EXCEPTION
 from gui.Scaleform.daapi.view.lobby.server_events import events_helpers
-from gui.Scaleform.daapi.view.lobby.server_events.events_helpers import getEventTypeByTabAlias
 from gui.Scaleform.genConsts.TEXT_MANAGER_STYLES import TEXT_MANAGER_STYLES
 from gui.shared.formatters import icons, text_styles
 from helpers import i18n
 from gui.ClientUpdateManager import g_clientUpdateManager
-from gui.server_events import event_items
+from gui.server_events import event_items, caches
 from gui.shared.gui_items import Vehicle
 from gui.server_events import g_eventsCache, events_dispatcher as quest_events, settings as quest_settings, formatters as quests_fmts
 from gui.Scaleform.daapi.view.meta.QuestsSeasonsViewMeta import QuestsSeasonsViewMeta
@@ -16,6 +15,7 @@ from gui.Scaleform.locale.QUESTS import QUESTS
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.Scaleform.genConsts.TOOLTIPS_CONSTANTS import TOOLTIPS_CONSTANTS
+from gui.Scaleform.genConsts.QUESTS_ALIASES import QUESTS_ALIASES
 
 def _getQuestsCache():
     return events_helpers.getPotapovQuestsCache()
@@ -23,6 +23,10 @@ def _getQuestsCache():
 
 def _getQuestsProgress():
     return events_helpers.getPotapovQuestsProgress()
+
+
+def _sortWithQuestType(items, key):
+    return events_helpers.sortWithQuestType(items, key)
 
 
 def _packTabDataItem(label, tabID):
@@ -35,10 +39,11 @@ class QuestsSeasonsView(QuestsSeasonsViewMeta):
     def __init__(self):
         super(QuestsSeasonsView, self).__init__()
         self.__proxy = None
+        self.__navInfo = caches.getNavInfo()
         return
 
     def onShowAwardsClick(self):
-        quest_events.showPQSeasonAwardsWindow(self._selectedPQType)
+        quest_events.showPQSeasonAwardsWindow(self.__navInfo.selectedPQType)
 
     def onTileClick(self, tileID):
         try:
@@ -55,17 +60,26 @@ class QuestsSeasonsView(QuestsSeasonsViewMeta):
             LOG_WARNING('Error while getting event window for showing quests list window')
             LOG_CURRENT_EXCEPTION()
 
-    def onSelectTab(self, tabId):
-        super(QuestsSeasonsView, self).onSelectTab(tabId)
+    def _onRegisterFlashComponent(self, viewPy, alias):
+        super(QuestsSeasonsView, self)._onRegisterFlashComponent(viewPy, alias)
+        if alias == QUESTS_ALIASES.QUESTS_CONTENT_TABS_PY_ALIAS:
+            viewPy.selectTab(self.__navInfo.selectedPQType)
+            viewPy.onTabSelected += self.__onTabSelected
+
+    def __onTabSelected(self, tabId):
+        self.__navInfo.setPQTypeByTabID(tabId)
         self.__populateSeasonsData()
         self.__populateSlotsData()
+
+    @property
+    def _contentTabs(self):
+        return self.components.get(QUESTS_ALIASES.QUESTS_CONTENT_TABS_PY_ALIAS)
 
     def _populate(self):
         super(QuestsSeasonsView, self)._populate()
         g_eventsCache.onSelectedQuestsChanged += self._onSelectedQuestsChanged
         g_eventsCache.onProgressUpdated += self._onProgressUpdated
         self.__populateViewData()
-        self.selectCurrentTab()
         self.__populateSeasonsData()
         self.__populateSlotsData()
 
@@ -74,18 +88,20 @@ class QuestsSeasonsView(QuestsSeasonsViewMeta):
         g_eventsCache.onProgressUpdated -= self._onProgressUpdated
         g_clientUpdateManager.removeObjectCallbacks(self)
         self.__proxy = None
-        super(QuestsSeasonsView, self)._populate()
+        super(QuestsSeasonsView, self)._dispose()
         return
 
     def _setMainView(self, eventsWindow):
         self.__proxy = weakref.proxy(eventsWindow)
 
     def _onSelectedQuestsChanged(self, _, pqType):
-        if getEventTypeByTabAlias(self._selectedPQType) == pqType:
+        targetTab = events_helpers.getTabAliasByQuestBranchName(pqType)
+        if targetTab == self.__navInfo.selectedPQType:
             self.__populateSlotsData()
 
     def _onProgressUpdated(self, pqType):
-        if getEventTypeByTabAlias(self._selectedPQType) == pqType:
+        targetTab = events_helpers.getTabAliasByQuestBranchName(pqType)
+        if targetTab == self.__navInfo.selectedPQType:
             self.__populateSeasonsData()
             self.__populateSlotsData()
 
@@ -96,6 +112,7 @@ class QuestsSeasonsView(QuestsSeasonsViewMeta):
 
     def __populateSeasonsData(self):
         seasons = []
+        pqType = self.__navInfo.selectedPQType
         for seasonID, season in _getQuestsCache().getSeasons().iteritems():
             tiles = []
             for tile in sorted(season.getTiles().values(), key=operator.methodcaller('getID')):
@@ -115,7 +132,7 @@ class QuestsSeasonsView(QuestsSeasonsViewMeta):
                 else:
                     vehicleBonusLabel = ''
                 tokenIcon = icons.makeImageTag(RES_ICONS.MAPS_ICONS_QUESTS_TOKEN16, 16, 16, -3, 0)
-                if isUnlocked and not isCompleted:
+                if isUnlocked and not isCompleted and pqType == QUESTS_ALIASES.SEASON_VIEW_TAB_RANDOM:
                     gottenTokensCount, totalTokensCount = tile.getTokensCount()
                     progress = text_styles.standard(i18n.makeString(QUESTS.PERSONAL_SEASONS_TILEPROGRESS, count=text_styles.gold(str(gottenTokensCount)), total=str(totalTokensCount), icon=tokenIcon))
                 else:
@@ -124,6 +141,10 @@ class QuestsSeasonsView(QuestsSeasonsViewMeta):
                     animation = event_items.getTileAnimationPath(iconID)
                 else:
                     animation = None
+                if pqType == QUESTS_ALIASES.SEASON_VIEW_TAB_RANDOM:
+                    tooltipType = TOOLTIPS_CONSTANTS.PRIVATE_QUESTS_TILE
+                else:
+                    tooltipType = TOOLTIPS_CONSTANTS.PRIVATE_QUESTS_FALLOUT_TILE
                 tiles.append({'id': tile.getID(),
                  'isNew': isUnlocked and quest_settings.isPQTileNew(tile.getID()),
                  'label': text_styles.standard(vehicleBonusLabel),
@@ -133,7 +154,7 @@ class QuestsSeasonsView(QuestsSeasonsViewMeta):
                  'image': bgImgUp,
                  'imageOver': bgImgOver,
                  'animation': animation,
-                 'tooltipType': TOOLTIPS_CONSTANTS.PRIVATE_QUESTS_TILE})
+                 'tooltipType': tooltipType})
 
             seasons.append({'id': seasonID,
              'title': quests_fmts.getFullSeasonUserName(season),
@@ -148,9 +169,9 @@ class QuestsSeasonsView(QuestsSeasonsViewMeta):
         slotIdx, slots = 0, []
         for slotIdx, quest in enumerate(selectedQuests):
             tile = _getQuestsCache().getTiles()[quest.getTileID()]
-            slots.append((tile.getChainVehicleClass(quest.getChainID()), self.__packQuestSlot(quest)))
+            slots.append((tile.getChainSortKey(quest.getChainID()), self.__packQuestSlot(quest)))
 
-        slots = map(lambda (_, slot): slot, sorted(slots, key=operator.itemgetter(0), cmp=Vehicle.compareByVehTypeName))
+        slots = map(lambda (_, slot): slot, _sortWithQuestType(slots, operator.itemgetter(0)))
         nextSlotIdx = slotIdx + 1
         for slotIdx in xrange(nextSlotIdx, nextSlotIdx + freeSlotsCount):
             slots.append(self.__packQuestSlot())

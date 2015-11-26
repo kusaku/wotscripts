@@ -1,9 +1,11 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/customization_2_0/main_view.py
 from gui import makeHtmlString, DialogsInterface
 from constants import IGR_TYPE
+from adisp import process
 from CurrentVehicle import g_currentVehicle
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
-from gui.Scaleform.daapi.view.dialogs import I18nConfirmDialogMeta
+from gui.Scaleform.daapi.view.dialogs import I18nConfirmDialogMeta, DIALOG_BUTTON_ID
+from gui.Scaleform.daapi.view.lobby.customization_2_0.shared import getDialogRemoveElement, getDialogReplaceElement
 from gui.Scaleform.daapi.view.meta.CustomizationMainViewMeta import CustomizationMainViewMeta
 from gui.Scaleform.locale.CUSTOMIZATION import CUSTOMIZATION
 from gui.Scaleform.locale.MENU import MENU
@@ -55,11 +57,25 @@ class MainView(CustomizationMainViewMeta):
             self.as_showSelectorItemS(type_)
             self.__carouselHidden = False
 
+    @process
     def removeSlot(self, cType, slotIdx):
-        g_customizationController.carousel.slots.updateSlot({'id': -1}, cType=cType, slotIdx=slotIdx)
+        isContinue = True
+        installedItem = g_customizationController.carousel.slots.getInstalledItem(slotIdx, cType)
+        slotItem = g_customizationController.carousel.slots.getSlotItem(slotIdx, cType)
+        if installedItem.getID() == slotItem.getID() and installedItem.duration > 0:
+            isContinue = yield DialogsInterface.showDialog(getDialogRemoveElement(slotItem.getName()))
+        if isContinue:
+            g_customizationController.carousel.slots.updateSlot({'id': -1}, cType=cType, slotIdx=slotIdx)
 
+    @process
     def uninstallCustomizationElement(self, idx):
-        g_customizationController.carousel.slots.updateSlot({'id': -1})
+        isContinue = True
+        installedItem = g_customizationController.carousel.slots.getInstalledItem()
+        slotItem = g_customizationController.carousel.slots.getSlotItem()
+        if installedItem.getID() == slotItem.getID() and installedItem.duration > 0:
+            isContinue = yield DialogsInterface.showDialog(getDialogRemoveElement(slotItem.getName()))
+        if isContinue:
+            g_customizationController.carousel.slots.updateSlot({'id': -1})
 
     def backToSelectorGroup(self):
         self.as_setBottomPanelHeaderS(g_customizationController.carousel.slots.getSummaryString())
@@ -67,8 +83,25 @@ class MainView(CustomizationMainViewMeta):
         g_customizationController.updateTank3DModel()
         self.__carouselHidden = True
 
+    @process
     def installCustomizationElement(self, idx):
-        g_customizationController.carousel.applyItem(idx)
+        isContinue = True
+        carouselItem = g_customizationController.carousel.items[idx]['object']
+        cType = g_customizationController.carousel.currentType
+        if carouselItem.isInDossier:
+            if g_customizationController.carousel.slots.getInstalledItem().getNumberOfDaysLeft() > 0:
+                slotItem = g_customizationController.carousel.slots.getSlotItem()
+                isContinue = yield DialogsInterface.showDialog(getDialogReplaceElement(slotItem.getName()))
+            if carouselItem.numberOfDays is not None:
+                isContinue = yield DialogsInterface.showDialog(self.__getInvoiceItemDialogMeta('temporary', cType, carouselItem, {'willBeDeleted': text_styles.error(_ms('#dialogs:customization/install_invoice_item/will_be_deleted'))}))
+            elif carouselItem.numberOfItems is not None:
+                if carouselItem.numberOfItems > 1:
+                    isContinue = yield DialogsInterface.showDialog(self.__getInvoiceItemDialogMeta('permanent', cType, carouselItem, {'numberLeft': carouselItem.numberOfItems - 1}))
+                else:
+                    isContinue = yield DialogsInterface.showDialog(self.__getInvoiceItemDialogMeta('permanent_last', cType, carouselItem, {}))
+        if isContinue:
+            g_customizationController.carousel.applyItem(idx)
+        return
 
     def selectCustomizationElement(self, idx):
         g_customizationController.carousel.previewItem(idx)
@@ -173,7 +206,7 @@ class MainView(CustomizationMainViewMeta):
     def __setBuyingPanelInitData(self):
         self.as_setBuyingPanelInitDataS({'totalPriceLabel': text_styles.highTitle(MENU.CUSTOMIZATION_LABELS_TOTALPRICE),
          'buyBtnLabel': MENU.CUSTOMIZATION_BUTTONS_APPLY,
-         'buyingListIcon': makeHtmlString('html_templates:lobby/customization', 'buyPopoverIcon', {'icon': getAbsoluteUrl(RES_ICONS.MAPS_ICONS_LIBRARY_ICON_BUTTON_LIST)}),
+         'buyingListIcon': RES_ICONS.MAPS_ICONS_LIBRARY_ICON_BUTTON_LIST,
          'goldIcon': RES_ICONS.MAPS_ICONS_LIBRARY_GOLDICON_1,
          'creditsIcon': RES_ICONS.MAPS_ICONS_LIBRARY_CREDITSICON_1,
          'purchasesBtnTooltip': makeTooltip(TOOLTIPS.CUSTOMIZATION_PURCHASESPOPOVERBTN_HEADER, TOOLTIPS.CUSTOMIZATION_PURCHASESPOPOVERBTN_BODY),
@@ -223,7 +256,7 @@ class MainView(CustomizationMainViewMeta):
              'bonusPower': text_styles.stats('+{0}%{1}'.format(item['object'].qualifier.getValue(), '*' if item['object'].qualifier.getDescription() is not None else '')),
              'label': label,
              'installed': item['appliedToCurrentSlot'],
-             'btnSelect': VEHICLE_CUSTOMIZATION.CUSTOMIZATIONITEMCAROUSEL_RENDERER_SELECT,
+             'btnSelect': self.__getLabelOfSelectBtn(item),
              'btnShoot': VEHICLE_CUSTOMIZATION.CUSTOMIZATIONITEMCAROUSEL_RENDERER_SHOOT,
              'btnTooltip': item['buttonTooltip'],
              'btnSelectEnable': enable,
@@ -244,3 +277,14 @@ class MainView(CustomizationMainViewMeta):
          'goToIndex': blData['goToIndex'],
          'selectedIndex': blData['selectedIndex']})
         return
+
+    def __getLabelOfSelectBtn(self, item):
+        if item['isInDossier']:
+            return VEHICLE_CUSTOMIZATION.CUSTOMIZATIONITEMCAROUSEL_RENDERER_APPLY
+        return VEHICLE_CUSTOMIZATION.CUSTOMIZATIONITEMCAROUSEL_RENDERER_SELECT
+
+    def __getInvoiceItemDialogMeta(self, dialogType, cType, carouselItem, l10nExtraParams):
+        l10nParams = {'cTypeName': _ms('#customization:typeSwitchScreen/typeName/{0}'.format(cType)),
+         'itemName': carouselItem.getName()}
+        l10nParams.update(l10nExtraParams)
+        return I18nConfirmDialogMeta('customization/install_invoice_item/' + dialogType, messageCtx=l10nParams, focusedID=DIALOG_BUTTON_ID.CLOSE)

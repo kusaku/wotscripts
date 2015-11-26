@@ -1488,6 +1488,27 @@ class VehicleAppearance(object):
         self.gunMatrix.target = target.gunMatrix
         return
 
+    def assembleStipple(self):
+        if self.__currentDamageState.model == 'destroyed':
+            return
+        try:
+            turretMatrix = Math.Matrix()
+            gunMatrix = Math.Matrix()
+            turret = self.modelsDesc['turret']
+            hull = self.modelsDesc['hull']
+            gun = self.modelsDesc['gun']
+            turret['_node'].detach(turret['model'])
+            gun['_node'].detach(gun['model'])
+            turretJointName = self.__typeDesc.hull['turretHardPoints'][0]
+            turretMatrix.set(self.turretMatrix)
+            turret['_node'] = hull['model'].node(turretJointName, turretMatrix)
+            turret['_node'].attach(turret['model'])
+            gunMatrix.set(self.gunMatrix)
+            gun['_node'] = turret['model'].node('HP_gunJoint', gunMatrix)
+            gun['_node'].attach(gun['model'])
+        except:
+            LOG_ERROR('Can not assemble stipple model for %s.' % self.__typeDesc.name)
+
 
 class StippleManager():
 

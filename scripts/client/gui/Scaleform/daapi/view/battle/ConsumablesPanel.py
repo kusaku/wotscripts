@@ -151,6 +151,7 @@ class ConsumablesPanel(object):
         eqCtrl = g_sessionProvider.getEquipmentsCtrl()
         eqCtrl.onEquipmentAdded += self.__onEquipmentAdded
         eqCtrl.onEquipmentUpdated += self.__onEquipmentUpdated
+        eqCtrl.onEquipmentCooldownInPercent += self.__onEquipmentCooldownInPercent
         optDevicesCtrl = g_sessionProvider.getOptDevicesCtrl()
         optDevicesCtrl.onOptionalDeviceAdded += self.__onOptionalDeviceAdded
         optDevicesCtrl.onOptionalDeviceUpdated += self.__onOptionalDeviceUpdated
@@ -172,6 +173,7 @@ class ConsumablesPanel(object):
         eqCtrl = g_sessionProvider.getEquipmentsCtrl()
         eqCtrl.onEquipmentAdded -= self.__onEquipmentAdded
         eqCtrl.onEquipmentUpdated -= self.__onEquipmentUpdated
+        eqCtrl.onEquipmentCooldownInPercent -= self.__onEquipmentCooldownInPercent
         optDevicesCtrl = g_sessionProvider.getOptDevicesCtrl()
         optDevicesCtrl.onOptionalDeviceAdded -= self.__onOptionalDeviceAdded
         optDevicesCtrl.onOptionalDeviceUpdated -= self.__onOptionalDeviceUpdated
@@ -335,15 +337,21 @@ class ConsumablesPanel(object):
     def __onEquipmentUpdated(self, intCD, item):
         if intCD in self.__cds:
             idx = self.__cds.index(intCD)
+            quantity = item.getQuantity()
+            currentTime = item.getTimeRemaining()
             maxTime = item.getTotalTime()
             if item.isAvatar():
-                self.__flashObject.setItemTimeQuantityInSlot(self.__cds.index(intCD), item.getQuantity(), item.getTimeRemaining(), maxTime)
+                self.__flashObject.setItemTimeQuantityInSlot(self.__cds.index(intCD), quantity, currentTime, maxTime)
                 self.__updateOrderSlot(idx, item)
             else:
-                self.__flashObject.setItemTimeQuantityInSlot(idx, item.getQuantity(), item.getTimeRemaining(), maxTime)
+                self.__flashObject.setItemTimeQuantityInSlot(idx, quantity, currentTime, maxTime)
                 self.onPopUpClosed()
         else:
             LOG_ERROR('Equipment is not found in panel', intCD, self.__cds)
+
+    def __onEquipmentCooldownInPercent(self, intCD, percent):
+        if intCD in self.__cds:
+            self.__flashObject.setCoolDownPosAsPercent(self.__cds.index(intCD), percent)
 
     def __addEquipmentSlot(self, intCD, item):
         idx = self.__genNextIdx(EQUIPMENT_FULL_MASK, EQUIPMENT_START_IDX)

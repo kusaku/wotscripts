@@ -139,7 +139,9 @@ class DamagePanel(DamagePanelMeta):
 
     def _switching(self, _):
         self.as_resetS()
-        self.as_hideGasAtackInfoS()
+        if self.__isHasGasAttack:
+            self.as_hideGasAtackInfoS()
+            self.__ui.movie.falloutItems.as_hidePostmortemGasAtackInfoS()
 
     def __changeVehicleSetting(self, tag, entityName):
         result, error = g_sessionProvider.getEquipmentsCtrl().changeSettingByTag(tag, entityName=entityName, avatar=BigWorld.player())

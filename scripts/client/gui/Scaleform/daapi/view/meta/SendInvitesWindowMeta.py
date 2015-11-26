@@ -42,3 +42,7 @@ class SendInvitesWindowMeta(AbstractWindowView):
     def as_enableDescriptionS(self, isEnabled):
         if self._isDAAPIInited():
             return self.flashObject.as_enableDescription(isEnabled)
+
+    def as_enableMassSendS(self, isEnabled, addAllTooltip):
+        if self._isDAAPIInited():
+            return self.flashObject.as_enableMassSend(isEnabled, addAllTooltip)

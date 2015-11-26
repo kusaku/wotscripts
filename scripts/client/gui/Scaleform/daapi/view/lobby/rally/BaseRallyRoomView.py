@@ -258,7 +258,7 @@ class BaseRallyRoomView(BaseRallyRoomViewMeta, UnitListener):
     def _updateVehiclesLabel(self, minVal, maxVal):
         vehicleLvl = text_styles.main(i18n.makeString(CYBERSPORT.WINDOW_UNIT_RANGEVALUE, minVal=minVal, maxVal=maxVal))
         vehicleLbl = text_styles.standard(i18n.makeString(CYBERSPORT.WINDOW_UNIT_TEAMVEHICLESLBL, levelsRange=vehicleLvl))
-        self.as_setVehiclesTitleS(vehicleLbl)
+        self.as_setVehiclesTitleS(vehicleLbl, {})
 
     def _closeSendInvitesWindow(self):
         self._destroyRelatedView(ViewTypes.WINDOW, PREBATTLE_ALIASES.SEND_INVITES_WINDOW_PY)

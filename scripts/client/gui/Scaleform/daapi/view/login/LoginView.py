@@ -1,13 +1,13 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/login/LoginView.py
 import json
 import random
+from collections import defaultdict, namedtuple
 import BigWorld
 import MusicController
 import ResMgr
 import Settings
 import constants
 from adisp import process
-from collections import defaultdict, namedtuple
 from gui import DialogsInterface, GUI_SETTINGS
 from gui.battle_control import g_sessionProvider
 from gui.Scaleform.Waiting import Waiting
@@ -123,6 +123,7 @@ class LoginView(LoginPageMeta):
     def _populate(self):
         View._populate(self)
         self.as_enableS(True)
+        self._servers.onServersStatusChanged += self.__updateServersList
         connectionManager.onRejected += self._onLoginRejected
         g_playerEvents.onLoginQueueNumberReceived += self._onHandleQueue
         g_playerEvents.onKickWhileLoginReceived += self._onKickedWhileLogin
@@ -144,6 +145,7 @@ class LoginView(LoginPageMeta):
             BigWorld.cancelCallback(self.__capsLockCallbackID)
             self.__capsLockCallbackID = None
         connectionManager.onRejected -= self._onLoginRejected
+        self._servers.onServersStatusChanged -= self.__updateServersList
         g_playerEvents.onLoginQueueNumberReceived -= self.__loginQueueDialogShown
         g_playerEvents.onKickWhileLoginReceived -= self._onKickedWhileLogin
         g_playerEvents.onAccountShowGUI -= self._clearLoginView
@@ -160,10 +162,11 @@ class LoginView(LoginPageMeta):
             password = '*' * g_loginManager.getPreference('password_length')
         else:
             password = ''
-        rememberPwd = GUI_SETTINGS.rememberPassVisible and self._rememberUser
-        if GUI_SETTINGS.clearLoginValue or not rememberPwd and GUI_SETTINGS.igrCredentialsReset:
-            g_loginManager.clearLogin()
-        self.as_setDefaultValuesS(g_loginManager.getPreference('login'), password, self._rememberUser, GUI_SETTINGS.rememberPassVisible, GUI_SETTINGS.igrCredentialsReset, not GUI_SETTINGS.isEmpty('recoveryPswdURL'))
+        if GUI_SETTINGS.clearLoginValue:
+            login = password = ''
+        else:
+            login = g_loginManager.getPreference('login')
+        self.as_setDefaultValuesS(login, password, self._rememberUser, GUI_SETTINGS.rememberPassVisible, GUI_SETTINGS.igrCredentialsReset, not GUI_SETTINGS.isEmpty('recoveryPswdURL'))
         self.as_setServersListS(self._servers.serverList, self._servers.selectedServerIdx)
 
     def _clearLoginView(self, *args):
@@ -360,3 +363,6 @@ class LoginView(LoginPageMeta):
     def __createNodeShowWallpaper(self):
         ds = Settings.g_instance.userPrefs[Settings.KEY_LOGINPAGE_PREFERENCES]
         ds.writeBool(self.__showLoginWallpaperNode, True)
+
+    def __updateServersList(self, *args):
+        self.as_setServersListS(self._servers.serverList, self._servers.selectedServerIdx)

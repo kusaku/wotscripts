@@ -52,7 +52,7 @@ class FunctionalExitQueueEffect(FunctionalEffect):
     def triggerEffect(self):
         dispatcher = g_prbLoader.getDispatcher()
         if dispatcher is not None:
-            self._doEffect()
+            self._doEffect(dispatcher)
         else:
             LOG_WARNING('Prebattle dispatcher is not defined')
         self._tutorial.getFlags().deactivateFlag(self._effect.getTargetID())

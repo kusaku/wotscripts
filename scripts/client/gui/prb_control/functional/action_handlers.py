@@ -3,11 +3,12 @@ import weakref
 from CurrentVehicle import g_currentVehicle
 from constants import PREBATTLE_TYPE, FALLOUT_BATTLE_TYPE
 from debug_utils import LOG_DEBUG
-from gui import DialogsInterface
+from gui import DialogsInterface, SystemMessages
 from gui.Scaleform.daapi.view.dialogs import I18nConfirmDialogMeta, rally_dialog_meta
 from gui.prb_control.context import unit_ctx, SendInvitesCtx
 from gui.prb_control.events_dispatcher import g_eventDispatcher
 from gui.prb_control.settings import REQUEST_TYPE, FUNCTIONAL_FLAG
+from messenger.storage import storage_getter
 
 class AbstractActionsHandler(object):
 
@@ -90,6 +91,10 @@ class CommonUnitActionsHandler(AbstractActionsHandler):
 
 class SquadActionsHandler(AbstractActionsHandler):
 
+    @storage_getter('users')
+    def usersStorage(self):
+        return None
+
     def setUnitChanged(self, flags):
         if flags.isInQueueChanged():
             if self._functional.getPlayerInfo().isReady and flags.isInQueue():
@@ -117,6 +122,7 @@ class SquadActionsHandler(AbstractActionsHandler):
                 if accountsToInvite:
                     showInvitesWindow = False
                     self._functional.request(SendInvitesCtx(accountsToInvite, ''))
+                    self.__showInviteSentMessage(accountsToInvite)
                 squadCtx = {'showInvitesWindow': showInvitesWindow}
         g_eventDispatcher.loadSquad(squadCtx, self.__getTeamReady())
         return initResult
@@ -181,3 +187,14 @@ class SquadActionsHandler(AbstractActionsHandler):
                 return False
 
         return True
+
+    def __showInviteSentMessage(self, accountsToInvite):
+        getUser = self.usersStorage.getUser
+        for dbID in accountsToInvite:
+            user = getUser(dbID)
+            if user is not None:
+                SystemMessages.pushI18nMessage('#system_messages:prebattle/invites/sendInvite/name', type=SystemMessages.SM_TYPE.Information, name=user.getFullName())
+            else:
+                SystemMessages.pushI18nMessage('#system_messages:prebattle/invites/sendInvite', type=SystemMessages.SM_TYPE.Information)
+
+        return

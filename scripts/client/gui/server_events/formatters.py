@@ -422,6 +422,12 @@ def packVehiclesBonusBlock(label, questID):
     return UiElement(blockData, 'label')
 
 
+def packIconAwardBonusBlock(awards):
+    blockData = {'linkage': 'QuestIconAwardsBlockUI',
+     'awards': awards}
+    return UiElement(blockData)
+
+
 def packTextCondition(label, value = None, relation = None, current = None, total = None, isCompleted = False):
     if current is None or total is None:
         progrBarType = PROGRESS_BAR_TYPE.NONE

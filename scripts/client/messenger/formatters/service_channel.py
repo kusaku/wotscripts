@@ -96,6 +96,24 @@ class ServiceChannelFormatter(object):
         return NotificationGuiSettings(self.isNotify(), priorityLevel, isAlert)
 
 
+class WaitItemsSyncFormatter(ServiceChannelFormatter):
+
+    def isAsync(self):
+        return True
+
+    @async
+    def _waitForSyncItems(self, callback):
+        if g_itemsCache.isSynced():
+            callback(g_itemsCache.isSynced())
+        else:
+
+            def _onSyncCompleted(*args):
+                g_itemsCache.onSyncCompleted -= _onSyncCompleted
+                callback(g_itemsCache.isSynced())
+
+            g_itemsCache.onSyncCompleted += _onSyncCompleted
+
+
 class ServerRebootFormatter(ServiceChannelFormatter):
 
     def format(self, message, *args):
@@ -298,7 +316,7 @@ class BattleResultsFormatter(ServiceChannelFormatter):
             if recordName in IGNORED_BY_BATTLE_RESULTS:
                 continue
             achieve = getAchievementFactory(recordName).create(value=value)
-            if achieve is not None and not achieve.isApproachable():
+            if achieve is not None and not achieve.isApproachable() and achieve not in result:
                 result.append(achieve)
 
         for markOfMastery in marksOfMastery:
@@ -487,7 +505,7 @@ class GiftReceivedFormatter(ServiceChannelFormatter):
         return (result, key)
 
 
-class InvoiceReceivedFormatter(ServiceChannelFormatter):
+class InvoiceReceivedFormatter(WaitItemsSyncFormatter):
     __assetHandlers = {INVOICE_ASSET.GOLD: '_InvoiceReceivedFormatter__formatAmount',
      INVOICE_ASSET.CREDITS: '_InvoiceReceivedFormatter__formatAmount',
      INVOICE_ASSET.PREMIUM: '_InvoiceReceivedFormatter__formatAmount',
@@ -559,7 +577,7 @@ class InvoiceReceivedFormatter(ServiceChannelFormatter):
     def __getVehicleInfo(cls, vehData, isWithdrawn):
         vInfo = []
         if isWithdrawn:
-            toBarracks = vehData.get('crewInBarracks', False)
+            toBarracks = not vehData.get('dismissCrew', False)
             action = cls.__i18nCrewDroppedString if toBarracks else cls.__i18nCrewWithdrawnString
             vInfo.append('{0:s} {1:s}'.format(cls.__i18nCrewString, action))
         else:
@@ -572,7 +590,7 @@ class InvoiceReceivedFormatter(ServiceChannelFormatter):
             if crewLvl > 50:
                 crewLvl = cls.__i18nCrewLvlString % crewLvl
                 crewLvl = '{0:s} {1:s}'.format(crewLvl, cls.__i18nCrewString)
-                if vehData.get('crewInBarracks', False):
+                if not vehData.get('dismissCrew', False):
                     if 'crewFreeXP' in vehData or 'crewLvl' in vehData or 'tankmen' in vehData:
                         crewLvl = '%s %s' % (crewLvl, cls.__i18nCrewDroppedString)
                 vInfo.append(crewLvl)
@@ -807,17 +825,22 @@ class InvoiceReceivedFormatter(ServiceChannelFormatter):
              'desc': self.__getL10nDescription(data),
              'op': '<br/>'.join(operations)})
 
-    def format(self, message, *args):
-        LOG_DEBUG('invoiceReceived', message)
-        data = message.data
-        assetType = data.get('assetType', -1)
-        handler = self.__assetHandlers.get(assetType)
-        if handler is not None:
-            formatted = getattr(self, handler)(assetType, data)
-        if formatted is not None:
-            return (formatted, self._getGuiSettings(message, self.__messageTemplateKeys[assetType]))
-        else:
-            return (None, None)
+    @async
+    @process
+    def format(self, message, callback):
+        yield lambda callback: callback(True)
+        isSynced = yield self._waitForSyncItems()
+        formatted, settings = (None, None)
+        if isSynced:
+            data = message.data
+            assetType = data.get('assetType', -1)
+            handler = self.__assetHandlers.get(assetType)
+            if handler is not None:
+                formatted = getattr(self, handler)(assetType, data)
+            if formatted is not None:
+                settings = self._getGuiSettings(message, self.__messageTemplateKeys[assetType])
+        callback((formatted, settings))
+        return
 
 
 class AdminMessageFormatter(ServiceChannelFormatter):
@@ -1356,20 +1379,26 @@ class BattleTutorialResultsFormatter(ClientSysMessageFormatter):
             return
 
 
-class TokenQuestsFormatter(ServiceChannelFormatter):
+class TokenQuestsFormatter(WaitItemsSyncFormatter):
 
     def __init__(self, asBattleFormatter = False):
         self._asBattleFormatter = asBattleFormatter
 
-    def format(self, message, *args):
-        formatted, settings = (None, None)
-        data = message.data or {}
-        completedQuestIDs = data.get('completedQuestIDs', set())
-        fmt = self._formatQuestAchieves(message)
-        if fmt is not None:
-            settings = self._getGuiSettings(message, self._getTemplateName(completedQuestIDs))
-            formatted = g_settings.msgTemplates.format(self._getTemplateName(completedQuestIDs), {'achieves': fmt})
-        return (formatted, settings)
+    @async
+    @process
+    def format(self, message, callback):
+        yield lambda callback: callback(True)
+        isSynced = yield self._waitForSyncItems()
+        if isSynced:
+            formatted, settings = (None, None)
+            data = message.data or {}
+            completedQuestIDs = data.get('completedQuestIDs', set())
+            fmt = self._formatQuestAchieves(message)
+            if fmt is not None:
+                settings = self._getGuiSettings(message, self._getTemplateName(completedQuestIDs))
+                formatted = g_settings.msgTemplates.format(self._getTemplateName(completedQuestIDs), {'achieves': fmt})
+            callback((formatted, settings))
+        return
 
     def _getTemplateName(self, completedQuestIDs = set()):
         if len(completedQuestIDs):
@@ -1909,17 +1938,22 @@ class PotapovQuestsFormatter(TokenQuestsFormatter):
         return 'potapovQuests'
 
 
-class GoodieRemovedFormatter(ServiceChannelFormatter):
+class GoodieRemovedFormatter(WaitItemsSyncFormatter):
 
-    def format(self, message, *args):
-        if message.data:
+    @async
+    @process
+    def format(self, message, callback):
+        yield lambda callback: callback(True)
+        isSynced = yield self._waitForSyncItems()
+        if message.data and isSynced:
             goodieID = message.data.get('gid', None)
             if goodieID is not None:
                 booster = g_goodiesCache.getBooster(goodieID)
                 if booster is not None:
                     formatted = g_settings.msgTemplates.format('boosterExpired', ctx={'boosterName': booster.userName})
-                    return (formatted, self._getGuiSettings(message, 'boosterExpired'))
-            return (None, None)
+                    callback((formatted, self._getGuiSettings(message, 'boosterExpired')))
+                    return
+            callback((None, None))
         else:
-            return (None, None)
-            return
+            callback((None, None))
+        return

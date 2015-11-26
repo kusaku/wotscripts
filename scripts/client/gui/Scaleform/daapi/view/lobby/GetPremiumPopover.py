@@ -1,6 +1,7 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/GetPremiumPopover.py
 import BigWorld
 from gui.Scaleform.daapi.view.meta.GetPremiumPopoverMeta import GetPremiumPopoverMeta
+from gui.prb_control.dispatcher import g_prbLoader
 from gui.shared import event_dispatcher
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.Scaleform.locale.BATTLE_RESULTS import BATTLE_RESULTS
@@ -27,6 +28,10 @@ class GetPremiumPopover(GetPremiumPopoverMeta):
         premStr = text_styles.neutral(BATTLE_RESULTS.GETPREMIUMPOPOVER_PREM)
         awardStr = text_styles.neutral(BATTLE_RESULTS.GETPREMIUMPOPOVER_AWARD)
         descriptionText = _ms(BATTLE_RESULTS.GETPREMIUMPOPOVER_DESCRIPTIONTEXT, prem=premStr, award=awardStr)
+        prbDispatcher = g_prbLoader.getDispatcher()
+        isNavigationEnabled = True
+        if prbDispatcher:
+            isNavigationEnabled = not prbDispatcher.getFunctionalState().isNavigationDisabled()
         result = {'arenaUniqueID': data.arenaUniqueID,
          'headerTF': {'htmlText': text_styles.highTitle(BATTLE_RESULTS.GETPREMIUMPOPOVER_HEADERTEXT)},
          'creditsTF': {'htmlText': text_styles.promoTitle(creditsDiff)},
@@ -34,5 +39,6 @@ class GetPremiumPopover(GetPremiumPopoverMeta):
          'xpTF': {'htmlText': text_styles.promoTitle(xpDiff)},
          'xpIcon': {'source': RES_ICONS.MAPS_ICONS_LIBRARY_XPICONBIG_1},
          'descriptionTF': {'htmlText': text_styles.main(descriptionText)},
-         'actionBtn': {'label': BATTLE_RESULTS.GETPREMIUMPOPOVER_ACTIONBTN_LABEL}}
+         'actionBtn': {'label': BATTLE_RESULTS.GETPREMIUMPOPOVER_ACTIONBTN_LABEL,
+                       'enabled': isNavigationEnabled}}
         return result

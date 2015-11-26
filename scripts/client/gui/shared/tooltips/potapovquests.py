@@ -119,9 +119,9 @@ class PrivateQuestsChainNameField(ToolTipDataField):
     def _getValue(self):
         tileID, chainID = self._tooltip.item
         tile = g_eventsCache.potapov.getTiles()[tileID]
-        chainVehType = tile.getChainVehicleClass(chainID)
-        if chainVehType is not None:
-            vehicleTypeStr = i18n.makeString('#tooltips:privateQuests/progress/type/%s' % chainVehType)
+        chainMajorTag = tile.getChainMajorTag(chainID)
+        if chainMajorTag is not None:
+            vehicleTypeStr = i18n.makeString('#tooltips:privateQuests/progress/type/%s' % chainMajorTag)
             return i18n.makeString('#tooltips:privateQuests/progress/header', type=vehicleTypeStr)
         else:
             return ''

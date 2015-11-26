@@ -44,7 +44,7 @@ class ClanInvitesWindow(ClanInvitesWindowMeta, ClanListener, ClanEmblemsHelper):
             pass
 
     def onAccountClanProfileChanged(self, profile):
-        if self.clanProfile.getClanDbID() != self.__clanDbID:
+        if not profile.isInClan() or not profile.getMyClanPermissions().canHandleClanInvites():
             self.destroy()
 
     def onClanInfoReceived(self, clanDbID, clanInfo):
@@ -73,8 +73,8 @@ class ClanInvitesWindow(ClanInvitesWindowMeta, ClanListener, ClanEmblemsHelper):
     def clanInfo(self):
         return self.__clanDossier.getClanInfo()
 
-    def resyncClanInfo(self):
-        self.__clanDossier.resync(force=True)
+    def resyncClanInfo(self, force = False):
+        self.__clanDossier.resyncClanInfo(force=force)
 
     def showWaiting(self, show):
         if show:
@@ -149,17 +149,14 @@ class ClanInvitesWindow(ClanInvitesWindowMeta, ClanListener, ClanEmblemsHelper):
 
     def _updateHeaderState(self):
         freePlaces = self.clanInfo.getFreePlaces()
-        canInvite = self.clanInfo.isOpened()
-        inviteButtonEnabled = True
-        inviteButtonTooltip = _ms(CLANS.CLANINVITESWINDOW_TOOLTIPS_HEADER_INVITEBUTTON)
         freePlacesInClanText = text_styles.concatStylesToSingleLine(text_styles.standard(_ms(CLANS.CLANINVITESWINDOW_HEADER_FREEPLACESINCLAN, count=text_styles.main(formatField(getter=self.clanInfo.getFreePlaces)))))
         if freePlaces == 0:
             inviteButtonEnabled = False
             inviteButtonTooltip = _ms(CLANS.CLANINVITESWINDOW_HEADER_TOOLTIPS_NOPLACES)
             freePlacesInClanText = gui.makeHtmlString('html_templates:lobby/research', 'warningMessage', {'text': freePlacesInClanText})
-        if not canInvite:
-            inviteButtonEnabled = False
-            inviteButtonTooltip = _ms(CLANS.CLANINVITESWINDOW_HEADER_TOOLTIPS_RECRUITEMENTSTOPPED)
+        else:
+            inviteButtonEnabled = True
+            inviteButtonTooltip = _ms(CLANS.CLANINVITESWINDOW_TOOLTIPS_HEADER_INVITEBUTTON)
         self.as_setHeaderStateS({'inviteButtonEnabled': inviteButtonEnabled,
          'inviteButtonText': CLANS.CLANINVITESWINDOW_HEADER_INVITEINCLAN,
          'inviteButtonTooltip': makeTooltip(body=inviteButtonTooltip),

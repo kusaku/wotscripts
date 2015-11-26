@@ -1,13 +1,15 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/server_events/events_helpers.py
+from functools import partial
 import time
 import operator
 import types
 import BigWorld
 import constants
-from constants import EVENT_TYPE
+from potapov_quests import PQ_BRANCH
 from gui import GUI_SETTINGS
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.server_events.EventsCache import g_eventsCache
+from gui.shared.gui_items import Vehicle
 from helpers import i18n, int2roman, time_utils
 from collections import namedtuple
 from shared_utils import CONST_CONTAINER
@@ -132,7 +134,7 @@ class _EventInfo(object):
             alertMsg = i18n.makeString('#quests:postBattle/progressReset')
         diffStr, awards = ('', None)
         if not isProgressReset and isCompleted:
-            awards = self._getBonuses(svrEvents)
+            awards = self._getBonuses(svrEvents, useIconFormat=False)
         return {'title': self.event.getUserName(),
          'awards': awards,
          'progressList': progresses,
@@ -190,7 +192,7 @@ class _EventInfo(object):
          formatters.PROGRESS_BAR_TYPE.NONE,
          None)
 
-    def _getBonuses(self, svrEvents, bonuses = None):
+    def _getBonuses(self, svrEvents, bonuses = None, useIconFormat = False):
         bonuses = bonuses or self.event.getBonuses()
         result = []
         for b in bonuses:
@@ -278,9 +280,10 @@ class _QuestInfo(_EventInfo):
     PROGRESS_TOOLTIP_MAX_ITEMS = 4
     SIMPLE_BONUSES_MAX_ITEMS = 5
 
-    def _getBonuses(self, svrEvents, bonuses = None):
+    def _getBonuses(self, svrEvents, bonuses = None, useIconFormat = False):
         bonuses = bonuses or self.event.getBonuses()
-        result, simpleBonusesList, customizationsList, vehiclesList = ([],
+        result, simpleBonusesList, customizationsList, vehiclesList, iconBonusesList = ([],
+         [],
          [],
          [],
          [])
@@ -297,18 +300,22 @@ class _QuestInfo(_EventInfo):
                     flist = b.formattedList()
                     if flist:
                         vehiclesList.extend(flist)
+                elif b.hasIconFormat() and useIconFormat:
+                    iconBonusesList.extend(b.getList())
                 else:
                     flist = b.formattedList()
                     if flist:
                         simpleBonusesList.extend(flist)
 
-        label, fullLabel = self._joinUpToMax(simpleBonusesList)
-        result.append(formatters.packTextBlock(label, fullLabel=fullLabel))
+        if len(customizationsList):
+            result.append(formatters.packCustomizations(customizationsList))
+        if len(iconBonusesList):
+            result.append(formatters.packIconAwardBonusBlock(iconBonusesList))
         if len(vehiclesList) > 0:
             vehiclesLbl, _ = self._joinUpToMax(vehiclesList)
             result.append(formatters.packVehiclesBonusBlock(vehiclesLbl, str(self.event.getID())))
-        if len(customizationsList):
-            result.append(formatters.packCustomizations(customizationsList))
+        label, fullLabel = self._joinUpToMax(simpleBonusesList)
+        result.append(formatters.packTextBlock(label, fullLabel=fullLabel))
         parents = [ qID for _, qIDs in self.event.getParents().iteritems() for qID in qIDs ]
         for qID, q in self._getEventsByIDs(parents, svrEvents or {}).iteritems():
             result.append(formatters.packTextBlock(i18n.makeString('#quests:bonuses/item/task', q.getUserName()), questID=qID))
@@ -563,10 +570,10 @@ class _ActionInfo(_EventInfo):
 
 class _PotapovQuestInfo(_QuestInfo):
 
-    def _getBonuses(self, svrEvents, _ = None):
+    def _getBonuses(self, svrEvents, _ = None, useIconFormat = True):
         mainBonuses = self.event.getBonuses(isMain=True)
         addBonuses = self.event.getBonuses(isMain=False)
-        return (_QuestInfo._getBonuses(self, None, bonuses=mainBonuses), _QuestInfo._getBonuses(self, None, bonuses=addBonuses))
+        return (_QuestInfo._getBonuses(self, None, bonuses=mainBonuses, useIconFormat=useIconFormat), _QuestInfo._getBonuses(self, None, bonuses=addBonuses, useIconFormat=False))
 
     def getPostBattleInfo(self, svrEvents, pCur, pPrev, isProgressReset, isCompleted):
 
@@ -618,7 +625,7 @@ def getEventPostBattleInfo(event, svrEvents = None, pCur = None, pPrev = None, i
 
 def getTutorialEventsDescriptor():
     try:
-        from tutorial.control.quests.context import getQuestsDescriptor
+        from tutorial.doc_loader import getQuestsDescriptor
     except ImportError:
         LOG_ERROR('Can not load package tutorial')
 
@@ -633,9 +640,10 @@ class _PotapovDependenciesResolver(object):
      'progress',
      'selectProcessor',
      'refuseProcessor',
-     'rewardsProcessor'])
-    _RANDOM_DEPENDENCIES = _DEPENDENCIES_LIST(g_eventsCache.random, g_eventsCache.randomQuestsProgress, quests_proc.RandomQuestSelect, quests_proc.RandomQuestRefuse, quests_proc.PotapovQuestsGetRegularReward)
-    _FALLOUT_DEPENDENCIES = _DEPENDENCIES_LIST(g_eventsCache.fallout, g_eventsCache.falloutQuestsProgress, quests_proc.FalloutQuestSelect, quests_proc.FalloutQuestRefuse, quests_proc.PotapovQuestsGetRegularReward)
+     'rewardsProcessor',
+     'sorter'])
+    _RANDOM_DEPENDENCIES = _DEPENDENCIES_LIST(g_eventsCache.random, g_eventsCache.randomQuestsProgress, quests_proc.RandomQuestSelect, quests_proc.RandomQuestRefuse, quests_proc.PotapovQuestsGetRegularReward, partial(sorted, cmp=Vehicle.compareByVehTypeName))
+    _FALLOUT_DEPENDENCIES = _DEPENDENCIES_LIST(g_eventsCache.fallout, g_eventsCache.falloutQuestsProgress, quests_proc.FalloutQuestSelect, quests_proc.FalloutQuestRefuse, quests_proc.PotapovQuestsGetRegularReward, sorted)
 
     @classmethod
     def chooseList(cls, questsType = None):
@@ -668,12 +676,20 @@ def getPotapovQuestsRewardProcessor(questsType = None):
     return _PotapovDependenciesResolver.chooseList(questsType).rewardsProcessor
 
 
+def sortWithQuestType(items, key, questsType = None):
+    return _PotapovDependenciesResolver.chooseList(questsType).sorter(items, key=key)
+
+
 def getSortedTableData(tableData):
     return formatters.packVehiclesList(*caches.sortVehTable(tableData.tableID, tableData.buttonID, tableData.sortingDirection, int(tableData.nation), int(tableData.vehType), int(tableData.level), tableData.cbSelected, tableData.isAction))
 
 
-_tabToEventMap = {QUESTS_ALIASES.SEASON_VIEW_TAB_RANDOM: EVENT_TYPE.TYPE_TO_NAME[EVENT_TYPE.RANDOM_QUEST],
- QUESTS_ALIASES.SEASON_VIEW_TAB_FALLOUT: EVENT_TYPE.TYPE_TO_NAME[EVENT_TYPE.FALLOUT_QUEST]}
+_questBranchToTabMap = {PQ_BRANCH.REGULAR: QUESTS_ALIASES.SEASON_VIEW_TAB_RANDOM,
+ PQ_BRANCH.FALLOUT: QUESTS_ALIASES.SEASON_VIEW_TAB_FALLOUT}
 
-def getEventTypeByTabAlias(tabAlias):
-    return _tabToEventMap[tabAlias]
+def getTabAliasByQuestBranchID(branchID):
+    return _questBranchToTabMap[branchID]
+
+
+def getTabAliasByQuestBranchName(branchName):
+    return getTabAliasByQuestBranchID(PQ_BRANCH.NAME_TO_TYPE[branchName])

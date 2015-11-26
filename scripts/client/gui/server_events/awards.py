@@ -8,6 +8,7 @@ from gui.Scaleform.genConsts.BOOSTER_CONSTANTS import BOOSTER_CONSTANTS
 from gui.shared.utils.functions import makeTooltip
 import potapov_quests
 from helpers import i18n
+from potapov_quests import PQ_BRANCH
 from shared_utils import findFirst
 from debug_utils import LOG_ERROR, LOG_CURRENT_EXCEPTION
 from gui.server_events import g_eventsCache
@@ -21,6 +22,8 @@ _BG_IMG_BY_VEH_TYPE = {'lightTank': RES_ICONS.MAPS_ICONS_QUESTS_LTAWARDBACK,
  'heavyTank': RES_ICONS.MAPS_ICONS_QUESTS_HTAWARDBACK,
  'AT-SPG': RES_ICONS.MAPS_ICONS_QUESTS_AT_SPGAWARDBACK,
  'SPG': RES_ICONS.MAPS_ICONS_QUESTS_SPGAWARDBACK}
+_BG_IMG_FALLOUT = {'classic': RES_ICONS.MAPS_ICONS_QUESTS_CLASSICFALLOUTAWARDBACK,
+ 'multiteam': RES_ICONS.MAPS_ICONS_QUESTS_MULTITEAMFALLOUTAWARDBACK}
 
 def _getNextQuestInTileByID(questID):
     quests = g_eventsCache.potapov.getQuests()
@@ -278,10 +281,12 @@ class RegularAward(FormattedAward):
         return i18n.makeString(MENU.AWARDWINDOW_TITLE_TASKCOMPLETE)
 
     def getBackgroundImage(self):
-        vehType = findFirst(None, self.__potapovQuest.getVehicleClasses())
-        if vehType in _BG_IMG_BY_VEH_TYPE:
-            return _BG_IMG_BY_VEH_TYPE[vehType]
+        if self.__potapovQuest.getQuestBranch() == PQ_BRANCH.FALLOUT:
+            return _BG_IMG_FALLOUT[self.__potapovQuest.getMajorTag()]
         else:
+            vehType = findFirst(None, self.__potapovQuest.getVehicleClasses())
+            if vehType in _BG_IMG_BY_VEH_TYPE:
+                return _BG_IMG_BY_VEH_TYPE[vehType]
             return random.choice(_BG_IMG_BY_VEH_TYPE.values())
 
     def getAwardImage(self):

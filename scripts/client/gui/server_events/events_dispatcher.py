@@ -21,8 +21,8 @@ def showEventsWindow(eventID = None, eventType = None):
      'eventType': eventType}), EVENT_BUS_SCOPE.LOBBY)
 
 
-def showTutorialTabInEventsWindow():
-    showEventsWindow('', constants.EVENT_TYPE.TUTORIAL)
+def showTutorialTabInEventsWindow(eventID = ''):
+    showEventsWindow(eventID, constants.EVENT_TYPE.TUTORIAL)
 
 
 def showAchievementsAward(achievements):

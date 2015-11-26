@@ -210,6 +210,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
             self.__lastKeyDown = Keys.KEY_NONE
             self.__numSimilarKeyDowns = 0
             self.__stippleMgr = StippleManager()
+            self.target = None
             self.__autoAimVehID = 0
             self.__shotWaitingTimerID = None
             self.__gunReloadCommandWaitEndTime = 0.0
@@ -495,7 +496,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                         self.moveVehicle(1, True)
                         return True
                     if key == Keys.KEY_R:
-                        self.base.setDevelopmentFeature('pickup', 0, '')
+                        self.base.setDevelopmentFeature('pickup', 0, 'straight')
                         return True
                     if key == Keys.KEY_T:
                         self.base.setDevelopmentFeature('log_tkill_ratings', 0, '')
@@ -505,6 +506,9 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                         return True
                     if key == Keys.KEY_K:
                         self.base.setDevelopmentFeature('respawn_vehicle', 0, '')
+                        return True
+                    if key == Keys.KEY_O:
+                        self.base.setDevelopmentFeature('pickup', 0, 'roll')
                         return True
                 if constants.IS_DEVELOPMENT and cmdMap.isFired(CommandMapping.CMD_SWITCH_SERVER_MARKER, key) and isDown:
                     self.gunRotator.showServerMarker = not self.gunRotator.showServerMarker
@@ -683,6 +687,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                 self.inputHandler.aim.clearTarget()
                 if not self.inputHandler.cursorDetached:
                     prevEntity.removeEdge()
+                    self.target = None
             TriggersManager.g_manager.deactivateTrigger(TRIGGER_TYPE.AIM_AT_VEHICLE)
             if self.__maySeeOtherVehicleDamagedDevices:
                 self.cell.monitorVehicleDamagedDevices(0)
@@ -695,6 +700,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
         if entity not in self.__vehicles:
             return
         else:
+            self.target = entity
             if self.inputHandler.aim:
                 self.inputHandler.aim.setTarget(entity)
             isInTutorial = self.arena is not None and self.arena.guiType == constants.ARENA_GUI_TYPE.TUTORIAL
@@ -743,6 +749,8 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
             g_sessionProvider.setPlayerVehicle(self.playerVehicleID, self.vehicleTypeDescriptor)
         if self.__initProgress & _INIT_STEPS.INIT_COMPLETED and not vehicle.isStarted:
             self.__startVehicleVisual(vehicle)
+        else:
+            self.consistentMatrices.notifyVehicleLoaded(self, vehicle)
         return
 
     def __startVehicleVisual(self, vehicle):
@@ -759,6 +767,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
         else:
             self.onVehicleLeaveWorld(vehicle)
             self.__vehicles.remove(vehicle)
+            vehicle.appearance.assembleStipple()
             vehicle.stopVisual()
             model = vehicle.model
             vehicle.model = None

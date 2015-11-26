@@ -2,7 +2,7 @@
 import BigWorld
 from gui.clans import formatters
 from gui.clans.clan_controller import g_clanCtrl
-from gui.clans.clan_helpers import ClanPersonalInvitesPaginator
+from gui.clans.clan_helpers import ClanPersonalInvitesPaginator, ClanListener
 from gui.clans.items import ClanCommonData, formatField, isValueAvailable
 from gui.clans.settings import CLAN_REQUESTED_DATA_TYPE, CLAN_INVITE_STATES
 from gui.Scaleform.daapi.view.lobby.clans.invites.ClanInvitesViewWithTable import ClanInvitesAbstractDataProvider
@@ -11,11 +11,12 @@ from gui.Scaleform.genConsts.CLANS_ALIASES import CLANS_ALIASES
 from gui.Scaleform.locale.CLANS import CLANS
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.shared.events import CoolDownEvent
+from gui.shared.utils.functions import makeTooltip
 from gui.shared.view_helpers import CooldownHelper
 from gui.shared.utils import getPlayerDatabaseID
 from helpers.i18n import makeString as _ms
 
-class ClanPersonalInvitesView(ClanPersonalInvitesViewMeta):
+class ClanPersonalInvitesView(ClanPersonalInvitesViewMeta, ClanListener):
     __coolDownRequests = [CLAN_REQUESTED_DATA_TYPE.ACCEPT_APPLICATION,
      CLAN_REQUESTED_DATA_TYPE.ACCEPT_INVITE,
      CLAN_REQUESTED_DATA_TYPE.DECLINE_APPLICATION,
@@ -56,20 +57,23 @@ class ClanPersonalInvitesView(ClanPersonalInvitesViewMeta):
             self.showWaiting(True)
             self._paginator.sort(sort + secondSort)
 
+    def onAccountInvitesReceived(self, invites):
+        super(ClanPersonalInvitesView, self).onAccountInvitesReceived(invites)
+        self._enableRefreshBtn(True)
+
     def showWaiting(self, show):
         if show:
-            self._parentWnd.as_showWaitingS(str(), {})
+            self._parentWnd.as_showWaitingS(CLANS.CLANPERSONALINVITESWINDOW_LOADING, {})
         elif not self._paginator.isInProgress():
             self._parentWnd.as_hideWaitingS()
 
-    def formatInvitesCount(self, paginator):
-        return formatters.formatInvitesCount(paginator.getTotalCount())
+    def refreshTable(self):
+        self._enableRefreshBtn(False)
+        self.showWaiting(True)
+        self._paginator.refresh()
 
     def _createSearchDP(self):
         return PersonalInvitesDataProvider(self)
-
-    def _populate(self):
-        super(ClanPersonalInvitesView, self)._populate()
 
     def _onAttachedToWindow(self):
         super(ClanPersonalInvitesView, self)._onAttachedToWindow()
@@ -81,11 +85,16 @@ class ClanPersonalInvitesView(ClanPersonalInvitesViewMeta):
         self._paginator.onListItemsUpdated += self._onListItemsUpdated
         self._paginator.reset()
 
+    def _populate(self):
+        super(ClanPersonalInvitesView, self)._populate()
+        self.startClanListening()
+
     def _dispose(self):
         self._paginator.onListUpdated -= self._onListUpdated
         self._paginator.onListItemsUpdated -= self._onListItemsUpdated
         self._cooldown.stop()
         self._cooldown = None
+        self.stopClanListening()
         g_clanCtrl.clearClanCommonDataCache()
         super(ClanPersonalInvitesView, self)._dispose()
         return
@@ -94,10 +103,10 @@ class ClanPersonalInvitesView(ClanPersonalInvitesViewMeta):
         self.showWaiting(isInCooldown)
 
     def _onListUpdated(self, selectedID, isFullUpdate, isReqInCoolDown, result):
-        self._parentWnd.updateActualInvites(self.formatInvitesCount(self._paginator))
         self._updateSortField(self._paginator.getLastSort())
         status, data = result
         if status is True:
+            self._enableRefreshBtn(False)
             if len(data) == 0:
                 self.as_showDummyS(CLANS_ALIASES.INVITE_WINDOW_DUMMY_NO_PERSONAL_INVITES)
                 self.dataProvider.rebuildList(None, False)
@@ -106,6 +115,7 @@ class ClanPersonalInvitesView(ClanPersonalInvitesViewMeta):
                 self.dataProvider.rebuildList(data, self._paginator.canMoveRight())
                 self.as_hideDummyS()
         else:
+            self._enableRefreshBtn(True, toolTip=CLANS.CLANINVITESWINDOW_TOOLTIPS_REFRESHBUTTON_ENABLEDTRYTOREFRESH)
             self.as_showDummyS(CLANS_ALIASES.INVITE_WINDOW_DUMMY_SERVER_ERROR)
         self._updateDeclineSelectedGroup()
         self.showWaiting(False)
@@ -143,6 +153,12 @@ class ClanPersonalInvitesView(ClanPersonalInvitesViewMeta):
         texts.append({'alias': CLANS_ALIASES.INVITE_WINDOW_DUMMY_NO_PERSONAL_INVITES,
          'title': CLANS.CLANPERSONALINVITESWINDOW_NOINVITES})
         return texts
+
+    def _enableRefreshBtn(self, enable, toolTip = None):
+        if enable:
+            self.as_updateButtonRefreshStateS(True, makeTooltip(body=_ms(toolTip or CLANS.CLANPERSONALINVITESWINDOW_TOOLTIPS_REFRESHBUTTON_ENABLED)))
+        else:
+            self.as_updateButtonRefreshStateS(False, makeTooltip(body=_ms(toolTip or CLANS.CLANPERSONALINVITESWINDOW_TOOLTIPS_REFRESHBUTTON_DISABLED)))
 
 
 class PersonalInvitesDataProvider(ClanInvitesAbstractDataProvider):
@@ -213,7 +229,8 @@ class PersonalInvitesDataProvider(ClanInvitesAbstractDataProvider):
 
     def _makeVO(self, item, extraData):
         isChecked = extraData['checked']
-        return {'dbID': item.getDbID(),
+        status = item.getStatus()
+        outcome = {'dbID': item.getDbID(),
          'checked': isChecked,
          'clanVO': {'fullName': formatField(getter=item.getClanFullName),
                     'clanName': formatField(getter=item.getClanName),
@@ -226,10 +243,11 @@ class PersonalInvitesDataProvider(ClanInvitesAbstractDataProvider):
          'awgExp': formatField(getter=item.getBattlesPerformanceAvg, formatter=BigWorld.wg_getIntegralFormat),
          'status': {'text': self._makeInviteStateString(item),
                     'tooltip': self._makeTooltip(body=self._makeRequestTooltip(status=item.getStatus(), user=formatField(getter=item.getSenderName), date=formatField(getter=item.getUpdatedAt, formatter=formatters.formatShortDateShortTimeString)))},
-         'enabled': item.getStatus() == CLAN_INVITE_STATES.ACTIVE,
+         'enabled': status == CLAN_INVITE_STATES.ACTIVE or status == CLAN_INVITE_STATES.ERROR,
          'canShowContextMenu': True,
          'messageTooltip': self._makeTooltip(body=item.getComment() if isValueAvailable(getter=item.getComment) else str()),
          'actions': self.__buildActionsSection(item.getStatus())}
+        return outcome
 
     def __buildActionsSection(self, inviteStatus):
         acceptButtonEnabled = False

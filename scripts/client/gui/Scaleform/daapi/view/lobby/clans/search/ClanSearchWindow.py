@@ -1,6 +1,6 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/clans/search/ClanSearchWindow.py
 import BigWorld
-from debug_utils import LOG_ERROR
+from debug_utils import LOG_ERROR, LOG_DEBUG
 from gui.clans.clan_helpers import ClanListener, ClanFinder
 from gui.clans.items import ClanCommonData, formatField
 from gui.clans import formatters as clans_fmts
@@ -18,6 +18,7 @@ from gui.shared.view_helpers import ClanEmblemsHelper
 from gui.clans.clan_controller import g_clanCtrl
 from helpers.i18n import makeString as _ms
 _SEARCH_LIMIT = 18
+_SEARCH_MAX_CHARS = 70
 
 def _packHeaderColumnData(columnID, label, buttonWidth, tooltip, showSeparator = True, textAlign = 'center'):
     return {'id': columnID,
@@ -161,6 +162,7 @@ class ClanSearchWindow(ClanSearchWindowMeta, ClanListener):
          'searchBtnLabel': CLANS.SEARCH_SEARCHBTN,
          'searchBtnTooltip': CLANS.SEARCH_SEARCHBTN_TOOLTIP,
          'searchInputPrompt': CLANS.SEARCH_SEARCHINPUTPROMPT,
+         'searchInputMaxChars': _SEARCH_MAX_CHARS,
          'nextBtnLabel': CLANS.SEARCH_NEXTBTN,
          'nextBtnTooltip': CLANS.SEARCH_NEXTBTN_TOOLTIP,
          'previousBtnLabel': CLANS.SEARCH_PREVIOUSBTN,
@@ -278,8 +280,11 @@ class _ClanSearchDataProvider(SortableDAAPIDataProvider, ClanEmblemsHelper):
                 item['clanInfo']['iconSource'] = 'img://' + self.getMemoryTexturePath(emblem)
                 self.refreshSingleItem(index, item)
 
+    def refreshRandomItems(self, indexes, items):
+        self.flashObject.invalidateItems(indexes, items)
+
     def refreshSingleItem(self, index, item):
-        self.refresh()
+        self.flashObject.invalidateItem(index, item)
 
     def _rebuildMapping(self):
         pass
@@ -297,6 +302,12 @@ class _ClanSearchDataProvider(SortableDAAPIDataProvider, ClanEmblemsHelper):
                       'showIcon': True,
                       'iconSource': None}}
         return vo
+
+    def requestItemAtHandler(self, idx):
+        item = super(_ClanSearchDataProvider, self).requestItemAtHandler(idx)
+        if item is None:
+            LOG_DEBUG(idx, item)
+        return item
 
     def _requestIcons(self):
         for clanID in self._listMapping:

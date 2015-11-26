@@ -17,6 +17,12 @@ def _getTimestamp(datetimeValue):
     return time_utils.getTimestampFromUTC(datetimeValue.timetuple())
 
 
+def _toPercents(value):
+    if value:
+        return 100 * value
+    return value
+
+
 _defDateTime = datetime.fromtimestamp(0)
 
 def formatField(getter, dummy = None, formatter = None):
@@ -327,6 +333,9 @@ class ClanRatingsData(_ClanRatingsData, FieldsCheckerMixin):
     def isSortiesOutdated(self):
         return self.fs_battles_count_10_28d <= 0
 
+    def hasFortRating(self):
+        return bool(self.fs_battles_count_28d) or bool(self.fb_battles_count_28d) or self.fb_elo_rating_10 != 1000 or self.fb_elo_rating_8 != 1000
+
     def _getCriticalFields(self):
         return _ClanRatingsDataCriticalFields
 
@@ -346,6 +355,7 @@ _ClanGlobalMapStatsData.__new__.__defaults__ = tuple([0] * len(_ClanGlobalMapSta
 
 class ClanGlobalMapStatsData(_ClanGlobalMapStatsData, FieldsCheckerMixin):
 
+    @fmtUnavailableValue(fields=('battles_played', 'provinces_captured'))
     def hasGlobalMap(self):
         return self.battles_played > 0 or self.provinces_captured > 0
 
@@ -678,7 +688,7 @@ class ClanMemberData(_ClanMemberData, FieldsCheckerMixin):
 
     @fmtUnavailableValue(fields=('joined_at',))
     def getDaysInClan(self):
-        getTimeDeltaTilNow(self.getJoiningTime()) / ONE_DAY
+        return getTimeDeltaTilNow(self.getJoiningTime()) / ONE_DAY
 
     @fmtDelegat(path='ratings.getGlobalRating')
     def getGlobalRating(self):
@@ -695,6 +705,10 @@ class ClanMemberData(_ClanMemberData, FieldsCheckerMixin):
     @fmtDelegat(path='ratings.getXp')
     def getXp(self):
         return self.ratings.getXp()
+
+    @fmtDelegat(path='ratings.getBattleXpAvg')
+    def getBattleXpAvg(self):
+        return self.ratings.getBattleXpAvg()
 
 
 _AccountClanRatingsData = namedtuple('_AccountClanRatingsData', ['account_id',
@@ -724,7 +738,7 @@ class AccountClanRatingsData(_AccountClanRatingsData, FieldsCheckerMixin):
 
     @fmtUnavailableValue(fields=('battle_avg_performance',))
     def getBattlesPerformanceAvg(self):
-        return self.battle_avg_performance
+        return _toPercents(self.battle_avg_performance)
 
     @fmtUnavailableValue(fields=('xp_amount',))
     def getXp(self):
@@ -738,7 +752,10 @@ _ClanProvinceData = namedtuple('_ClanProvinceData', ['front_name',
  'prime_time',
  'periphery',
  'game_map',
- 'turns_owned'])
+ 'turns_owned',
+ 'province_id_localized',
+ 'front_name_localized',
+ 'frontInfo'])
 _ClanProvinceData.__new__.__defaults__ = ('',
  0,
  0,
@@ -746,17 +763,23 @@ _ClanProvinceData.__new__.__defaults__ = ('',
  0,
  0,
  '',
- 0)
+ 0,
+ '',
+ None)
 
 class ClanProvinceData(_ClanProvinceData, FieldsCheckerMixin):
 
-    @fmtUnavailableValue(fields=('front_name',))
-    def getFrontName(self):
-        return self.front_name
+    @fmtUnavailableValue(fields=('front_name_localized',))
+    def getFrontLocalizedName(self):
+        return self.front_name_localized
 
-    @fmtUnavailableValue(fields=('province_id',))
-    def getName(self):
-        return self.province_id
+    @fmtDelegat(path='frontInfo.getMaxVehicleLevel')
+    def getFrontLevel(self):
+        return self.frontInfo.getMaxVehicleLevel()
+
+    @fmtUnavailableValue(fields=('province_id_localized',))
+    def getProvinceLocalizedName(self):
+        return self.province_id_localized
 
     @fmtUnavailableValue(fields=('revenue',))
     def getRevenue(self):
@@ -790,6 +813,24 @@ class ClanProvinceData(_ClanProvinceData, FieldsCheckerMixin):
     @fmtUnavailableValue(fields=('turns_owned',))
     def getTurnsOwned(self):
         return self.turns_owned
+
+
+_GlobalMapFrontInfoData = namedtuple('_GlobalMapFrontInfoData', ['front_name', 'min_vehicle_level', 'max_vehicle_level'])
+_GlobalMapFrontInfoData.__new__.__defaults__ = tuple([0] * len(_ClanRatingsData._fields))
+
+class GlobalMapFrontInfoData(_GlobalMapFrontInfoData, FieldsCheckerMixin):
+
+    @fmtUnavailableValue(fields=('front_name',))
+    def getFrontName(self):
+        return self.front_name
+
+    @fmtUnavailableValue(fields=('min_vehicle_level',))
+    def getMinVehicleLevel(self):
+        return self.min_vehicle_level
+
+    @fmtUnavailableValue(fields=('max_vehicle_level',))
+    def getMaxVehicleLevel(self):
+        return self.max_vehicle_level
 
 
 _ClanSearchData = namedtuple('_ClanSearchData', ['name',
@@ -891,7 +932,9 @@ _ClanInviteData.__new__.__defaults__ = (0,
  0,
  0,
  '',
- _defDateTime)
+ _defDateTime,
+ '',
+ '')
 
 class ClanInviteData(_ClanInviteData, FieldsCheckerMixin):
 
@@ -909,7 +952,7 @@ class ClanInviteData(_ClanInviteData, FieldsCheckerMixin):
 
     @fmtUnavailableValue(fields=('comment',))
     def getComment(self):
-        return passCensor(self.comment)
+        return passCensor(str(self.comment))
 
     @fmtUnavailableValue(fields=('status',))
     def getStatus(self):
@@ -930,6 +973,14 @@ class ClanInviteData(_ClanInviteData, FieldsCheckerMixin):
     def fromClanCreateInviteData(cls, data):
         return ClanInviteData(id=data.getDbID(), clan_id=data.getClanDbID(), account_id=data.getAccountDbID())
 
+    @classmethod
+    def fromClanInviteItem(cls, data):
+        return ClanInviteData(id=data.getInviteId(), clan_id=data.getClanId(), account_id=data.getAccountDbID())
+
+    @classmethod
+    def fromClanApplicationItem(cls, data, clanDbID):
+        return ClanInviteData(id=data.getApplicationID(), clan_id=clanDbID, account_id=data.getAccountID())
+
 
 _ClanCreateInviteData = namedtuple('_ClanCreateInviteData', ['clan_id', 'id', 'account_id'])
 _ClanCreateInviteData.__new__.__defaults__ = (0, 0, 0)
@@ -946,7 +997,7 @@ class ClanCreateInviteData(_ClanCreateInviteData, FieldsCheckerMixin):
         return self.clan_id
 
 
-_ClanADInviteData = namedtuple('_ClanADInviteData', ['id', 'transaction_id'])
+_ClanADInviteData = namedtuple('_ClanADInviteData', ['id', 'transaction_id', 'clan_id'])
 _ClanADInviteData.__new__.__defaults__ = (0, 0)
 
 class ClanADInviteData(_ClanADInviteData):
@@ -956,6 +1007,9 @@ class ClanADInviteData(_ClanADInviteData):
 
     def getTransactionID(self):
         return self.transaction_id
+
+    def getClanDbID(self):
+        return self.clan_id
 
 
 class ClanInviteWrapper(object):
@@ -1157,7 +1211,7 @@ class ClanPersonalInviteWrapper(object):
     def getBattleXpAvg(self):
         return self.__clanRatings.getWinsRatioAvg()
 
-    @fmtDelegat(path='clanRatings.getWinsRatioAvg')
+    @fmtDelegat(path='clanRatings.getBattlesPerformanceAvg')
     def getBattlesPerformanceAvg(self):
         return self.__clanRatings.getBattlesPerformanceAvg()
 

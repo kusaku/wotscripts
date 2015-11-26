@@ -277,13 +277,22 @@ class DataRequestsByIDProcessor(RequestsByIDProcessor):
         return requestID
 
 
-class Response(namedtuple('_Response', ['code', 'errStr', 'data'])):
+_Response = namedtuple('_Response', ['code',
+ 'errStr',
+ 'data',
+ 'extraCode'])
+_Response.__new__.__defaults__ = (0, '', None, 0)
+
+class Response(_Response):
 
     def isSuccess(self):
         return self.code == 0
 
     def getCode(self):
         return self.code
+
+    def getExtraCode(self):
+        return self.extraCode
 
     def getErrString(self):
         return self.errStr
@@ -312,8 +321,8 @@ class ClientRequestsByIDProcessor(RequestsByIDProcessor):
         method(callback=_callback, *args, **kwargs)
         return requestID
 
-    def _makeResponse(self, code = 0, errMsg = '', data = None, ctx = None):
-        response = self.__responseClass(code, errMsg, data)
+    def _makeResponse(self, code = 0, errMsg = '', data = None, ctx = None, extraCode = 0):
+        response = self.__responseClass(code, errMsg, data, extraCode)
         if not response.isSuccess():
             LOG_WARNING('Client request error', ctx, response)
         return response

@@ -1,6 +1,7 @@
 # Embedded file name: scripts/client/gui/wgnc/proxy_data.py
 from gui.wgnc.events import g_wgncEvents
 from gui.wgnc.settings import WGNC_DATA_PROXY_TYPE
+from account_helpers import getAccountDatabaseID
 
 class _ProxyDataItem(object):
 
@@ -72,6 +73,9 @@ class ClanInviteItem(_ClanBaseAooItem):
     def getID(self):
         return self.getInviteId()
 
+    def getAccountDbID(self):
+        return getAccountDatabaseID()
+
 
 class _ClanPersonalAppItem(_ProxyDataItem):
 
@@ -114,7 +118,7 @@ class _ClanInviteActionResultItem(_ProxyDataItem):
         self.__accountId = account_id
         self.__inviteId = invite_id
 
-    def getAccountId(self):
+    def getAccountID(self):
         return self.__accountId
 
     def getInviteId(self):

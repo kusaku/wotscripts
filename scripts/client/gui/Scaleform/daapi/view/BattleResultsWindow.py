@@ -12,6 +12,7 @@ from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.battle_control.arena_info import getArenaIcon, hasResourcePoints
 from gui.battle_results.VehicleProgressCache import g_vehicleProgressCache
 from gui.battle_results.VehicleProgressHelper import VehicleProgressHelper, PROGRESS_ACTION
+from gui.prb_control.dispatcher import g_prbLoader
 from gui.shared.event_dispatcher import showResearchView, showPersonalCase, showBattleResultsFromData
 from gui.shared.notifications import NotificationPriorityLevel
 from gui.shared.utils.functions import getArenaSubTypeName
@@ -36,7 +37,7 @@ from gui.shared import g_itemsCache, events
 from gui.shared.utils import isVehicleObserver
 from items import vehicles as vehicles_core, vehicles
 from items.vehicles import VEHICLE_CLASS_TAGS
-from shared_utils import findFirst
+from shared_utils import findFirst, isDefaultDict
 from gui.clubs import events_dispatcher as club_events
 from gui.clubs.club_helpers import ClubListener
 from gui.clubs.settings import getLeagueByDivision, getDivisionWithinLeague
@@ -267,6 +268,9 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
         return g_itemsCache.items.stats.denunciationsLeft
 
     def showEventsWindow(self, eID, eventType):
+        prbDispatcher = g_prbLoader.getDispatcher()
+        if prbDispatcher and prbDispatcher.getFunctionalState().isNavigationDisabled():
+            return SystemMessages.pushI18nMessage('#system_messages:queue/isInQueue', type=SystemMessages.SM_TYPE.Error)
         return quests_events.showEventsWindow(eID, eventType)
 
     def saveSorting(self, iconType, sortDirection, bonusType):
@@ -745,6 +749,17 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
         efficiencyDataSource = [(totalTechniquesGroup, totalEnemies, totalBasesGroup)]
         playerTeam = pCommonData.get('team')
         playerDBID = pCommonData.get('accountDBID')
+        emptyDetails = {'spotted': 0,
+         'deathReason': -1,
+         'directHits': 0,
+         'explosionHits': 0,
+         'piercings': 0,
+         'damageDealt': 0,
+         'damageAssistedTrack': 0,
+         'damageAssistedRadio': 0,
+         'crits': 0,
+         'fire': 0,
+         'targetKills': 0}
         totalVehsData = {}
         for vehIntCD, data in pData:
             enemiesGroup = []
@@ -755,6 +770,8 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
                     continue
                 team = pInfo.get('team', data.get('team') % 2 + 1)
                 if team == playerTeam:
+                    continue
+                if isDefaultDict(iInfo, emptyDetails):
                     continue
                 if (vId, vIntCD) not in totalVehsData:
                     totalVehsData[vId, vIntCD] = iInfo.copy()
@@ -1391,7 +1408,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
             if not (isPlayerObserver and isVehObserver):
                 stat[team].append(row)
 
-        processSquads = bonusType in (ARENA_BONUS_TYPE.REGULAR, ARENA_BONUS_TYPE.EVENT_BATTLES) and not (IS_DEVELOPMENT and squadManCount == len(playersData))
+        processSquads = bonusType in (ARENA_BONUS_TYPE.REGULAR, ARENA_BONUS_TYPE.EVENT_BATTLES)
         for team, data in stat.iteritems():
             data = sorted(data, cmp=self.__vehiclesComparator)
             sortIdx = len(data)
@@ -1519,8 +1536,8 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
         g_currentVehicle.selectVehicle(inventoryId)
         return g_currentVehicle.invID == inventoryId
 
-    def __parseQuestsProgress(self, personalData):
-        questsProgress = {}
+    def __parseQuestsProgress(self, personalData, avatarData):
+        questsProgress = avatarData.get('questsProgress', {})
         for _, data in personalData:
             questsProgress.update(data.get('questsProgress', {}))
 
@@ -1632,7 +1649,8 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
             commonDataOutput['battleResultsSharingIsAvailable'] = self._isSharingBtnEnabled()
             arenaType = self.dataProvider.getArenaType()
             arenaBonusType = self.dataProvider.getArenaBonusType()
-            self.__isFallout = self.dataProvider.getArenaGuiType() == ARENA_GUI_TYPE.EVENT_BATTLES
+            arenaGUIType = self.dataProvider.getArenaGuiType()
+            self.__isFallout = arenaGUIType == ARENA_GUI_TYPE.EVENT_BATTLES
             teams = {}
             for pInfo in playersData.itervalues():
                 team = pInfo['team']
@@ -1709,23 +1727,30 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
             textData = {'windowTitle': i18n.makeString(MENU.FINALSTATISTIC_WINDOW_TITLE),
              'shareButtonLabel': i18n.makeString(BATTLE_RESULTS.COMMON_RESULTSSHAREBTN),
              'shareButtonTooltip': i18n.makeString(TOOLTIPS.BATTLERESULTS_FORTRESOURCE_RESULTSSHAREBTN)}
-            if self.dataProvider.getArenaGuiType() == ARENA_GUI_TYPE.SANDBOX:
+            if arenaGUIType == ARENA_GUI_TYPE.SANDBOX:
                 personalDataOutput['showNoIncomeAlert'] = True
                 sandboxStrBuilder = text_styles.builder(delimiter='\n')
                 sandboxStrBuilder.addStyledText(text_styles.middleTitle, BATTLE_RESULTS.COMMON_NOINCOME_ALERT_TITLE)
                 sandboxStrBuilder.addStyledText(text_styles.standard, BATTLE_RESULTS.COMMON_NOINCOME_ALERT_TEXT)
                 personalDataOutput['noIncomeAlert'] = {'icon': RES_ICONS.MAPS_ICONS_LIBRARY_ALERTICON,
                  'text': sandboxStrBuilder.render()}
+            selectedTeamMemberId = -1
+            closingTeamMemberStatsEnabled = True
+            if arenaGUIType in ARENA_GUI_TYPE.SANDBOX_RANGE:
+                selectedTeamMemberId = personalCommonData.get('accountDBID')
+                closingTeamMemberStatsEnabled = False
             results = {'personal': personalDataOutput,
              'common': commonDataOutput,
              'team1': team1,
              'team2': team2,
              'textData': textData,
              'vehicles': resultingVehicles,
-             'quests': self.__parseQuestsProgress(personalData),
+             'quests': self.__parseQuestsProgress(personalData, playerAvatarData),
              'unlocks': self.__getVehicleProgress(self.dataProvider.getArenaUniqueID(), personalData),
              'tabInfo': tabInfo,
-             'isFreeForAll': isFFA}
+             'isFreeForAll': isFFA,
+             'closingTeamMemberStatsEnabled': closingTeamMemberStatsEnabled,
+             'selectedTeamMemberId': selectedTeamMemberId}
             if self.dataProvider.results:
                 self.dataProvider.results.updateViewData(results)
             callback(results)
@@ -1847,6 +1872,9 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
         return progressList
 
     def showUnlockWindow(self, itemId, unlockType):
+        prbDispatcher = g_prbLoader.getDispatcher()
+        if prbDispatcher and prbDispatcher.getFunctionalState().isNavigationDisabled():
+            return SystemMessages.pushI18nMessage('#system_messages:queue/isInQueue', type=SystemMessages.SM_TYPE.Error)
         if unlockType in (PROGRESS_ACTION.RESEARCH_UNLOCK_TYPE, PROGRESS_ACTION.PURCHASE_UNLOCK_TYPE):
             showResearchView(itemId)
             self.onWindowClose()

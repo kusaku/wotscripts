@@ -101,6 +101,7 @@ class BattleAvailabilityController(Notifiable):
         self._update()
 
     def stop(self):
+        self.clearNotification()
         self.onStatusChanged.clear()
         self.__periods = None
         g_clientUpdateManager.removeObjectCallbacks(self)

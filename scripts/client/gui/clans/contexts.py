@@ -5,6 +5,11 @@ from gui.clans.settings import CLAN_REQUESTED_DATA_TYPE, SEND_INVITES_COOLDOWN
 from gui.clubs.settings import DEFAULT_COOLDOWN
 from gui.shared.utils.decorators import ReprInjector
 from gui.shared.utils.requesters import RequestCtx
+from gui.shared import g_itemsCache
+
+def _getOwnClanDbID():
+    return g_itemsCache.items.stats.clanDBID
+
 
 @ReprInjector.withParent()
 
@@ -21,6 +26,9 @@ class CommonClanRequestCtx(RequestCtx):
 
     def isAuthorizationRequired(self):
         return False
+
+    def getFields(self):
+        return None
 
 
 @ReprInjector.withParent(('getTokenID', 'token'), ('getUserDatabaseID', 'dbID'))
@@ -73,9 +81,6 @@ class _ClanRequestBaseCtx(CommonClanRequestCtx):
     def getDefDataObj(self):
         raise NotImplementedError
 
-    def isAuthorizationRequired(self):
-        return True
-
 
 class ClanFavouriteAttributesCtx(CommonClanRequestCtx):
 
@@ -96,9 +101,6 @@ class ClanFavouriteAttributesCtx(CommonClanRequestCtx):
     def getDefDataObj(self):
         return items.ClanFavouriteAttrs
 
-    def isAuthorizationRequired(self):
-        return True
-
 
 @ReprInjector.withParent()
 
@@ -117,7 +119,16 @@ class ClanInfoCtx(_ClanRequestBaseCtx):
         return items.ClanExtInfoData()
 
     def isCaching(self):
-        return False
+        return True
+
+    def isAuthorizationRequired(self):
+        return self.getClanID() == _getOwnClanDbID()
+
+    def getFields(self):
+        fields = list(items.ClanExtInfoData._fields)
+        if self.getClanID() != _getOwnClanDbID():
+            fields.remove('treasury')
+        return fields
 
 
 @ReprInjector.withParent(('getClanIDs', 'clanIDs'))
@@ -140,6 +151,14 @@ class ClansInfoCtx(CommonClanRequestCtx):
 
     def getDefDataObj(self):
         return []
+
+    def isAuthorizationRequired(self):
+        return False
+
+    def getFields(self):
+        fields = list(items.ClanExtInfoData._fields)
+        fields.remove('treasury')
+        return fields
 
 
 @ReprInjector.withParent(('getClanIDs', 'clanIDs'))
@@ -179,7 +198,7 @@ class ClanGlobalMapStatsCtx(_ClanRequestBaseCtx):
         return items.ClanGlobalMapStatsData()
 
     def isAuthorizationRequired(self):
-        return True
+        return self.getClanID() == _getOwnClanDbID()
 
 
 @ReprInjector.withParent(('getAccountsIDs', 'ids'))
@@ -224,6 +243,9 @@ class GetClanInfoCtx(AccountsInfoCtx):
 
     def getDefDataObj(self):
         return self.__defDataObj
+
+    def isCaching(self):
+        return True
 
 
 @ReprInjector.withParent()
@@ -289,6 +311,31 @@ class GetProvincesCtx(_ClanRequestBaseCtx):
     def getDefDataObj(self):
         return []
 
+    def isAuthorizationRequired(self):
+        return self.getClanID() == _getOwnClanDbID()
+
+
+@ReprInjector.withParent()
+
+class GetFrontsCtx(CommonClanRequestCtx):
+
+    def __init__(self, provincesIDs, waitingID = ''):
+        super(GetFrontsCtx, self).__init__(waitingID)
+        self.__provincesIDs = provincesIDs
+
+    def getRequestType(self):
+        return CLAN_REQUESTED_DATA_TYPE.CLAN_GM_FRONTS
+
+    def getDataObj(self, incomeData):
+        incomeData = incomeData or []
+        return dict(map(lambda v: (v['front_name'], makeTupleByDict(items.GlobalMapFrontInfoData, v)), incomeData))
+
+    def getDefDataObj(self):
+        return items.GlobalMapFrontInfoData({})
+
+    def getProvincesIDs(self):
+        return self.__provincesIDs
+
 
 @ReprInjector.withParent()
 
@@ -324,9 +371,6 @@ class TotalInfoCtx(CommonClanRequestCtx):
     def getDefDataObj(self):
         return 0
 
-    def isAuthorizationRequired(self):
-        return True
-
 
 @ReprInjector.withParent()
 
@@ -335,6 +379,9 @@ class AccountApplicationsCountCtx(TotalInfoCtx):
     def getRequestType(self):
         return CLAN_REQUESTED_DATA_TYPE.ACCOUNT_APPLICATIONS_COUNT
 
+    def isAuthorizationRequired(self):
+        return True
+
 
 @ReprInjector.withParent()
 
@@ -342,6 +389,9 @@ class ClanInvitationsCountCtx(TotalInfoCtx):
 
     def getRequestType(self):
         return CLAN_REQUESTED_DATA_TYPE.CLAN_INVITATIONS_COUNT
+
+    def isAuthorizationRequired(self):
+        return True
 
 
 @ReprInjector.withParent(('getOffset', 'offset'), ('getLimit', 'limit'), ('isGetTotalCount', 'isGetTotalCount'), ('getFields', 'fields'))

@@ -263,13 +263,8 @@ class MarkersManager(Flash, IDynSquadEntityClient):
         self.invokeMarker(marker.id, 'setEntityName', [PLAYER_GUI_PROPS.teamKiller.name()])
 
     def invokeMarker(self, handle, function, args = None):
-        if handle == -1:
-            return
-        else:
-            if args is None:
-                args = []
+        if handle != -1:
             self.__ownUI.markerInvoke(handle, (function, args))
-            return
 
     def setMarkerSettings(self, settings):
         if self.__markersCanvasUI:
@@ -281,13 +276,13 @@ class MarkersManager(Flash, IDynSquadEntityClient):
     def updateMarkers(self):
         self.colorManager.update()
         for marker in self.__markers.itervalues():
-            self.invokeMarker(marker.id, 'update', [])
+            self.invokeMarker(marker.id, 'update')
 
         self.__plugins.update()
 
     def updateMarkerSettings(self):
         for marker in self.__markers.itervalues():
-            self.invokeMarker(marker.id, 'updateMarkerSettings', [])
+            self.invokeMarker(marker.id, 'updateMarkerSettings')
 
     def __invokeCanvas(self, function, args = None):
         if args is None:
@@ -730,7 +725,7 @@ class _ResourceMarkerPlugin(IPlugin):
         super(_ResourceMarkerPlugin, self).update()
         for point in self.__markers.itervalues():
             handle = point[0]
-            self._parentObj.invokeMarker(handle, 'as_onSettingsChanged', [])
+            self._parentObj.invokeMarker(handle, 'as_onSettingsChanged')
 
     def __onIsFree(self, pointID):
         handle, _, _, _ = self.__markers[pointID]
@@ -794,7 +789,7 @@ class _GasAttackSafeZonePlugin(IPlugin):
         return
 
     def __onGasAttackUpdate(self, state):
-        if state.state == GAS_ATTACK_STATE.INSIDE_SAFE_ZONE:
+        if state.state in (GAS_ATTACK_STATE.INSIDE_SAFE_ZONE, GAS_ATTACK_STATE.DEAD):
             self.__delSafeZoneMarker()
         else:
             self.__addSafeZoneMarker(state.center)

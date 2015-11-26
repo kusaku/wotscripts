@@ -47,7 +47,7 @@ class TankCarousel(TankCarouselMeta, GlobalListener):
         g_gameCtrl.rentals.onRentChangeNotify += self._updateRent
         g_gameCtrl.igr.onIgrTypeChanged += self._updateIgrType
         self.__falloutCtrl = getFalloutCtrl()
-        self.__falloutCtrl.onVehiclesChanged += self._updateFalloutSettings
+        self.__falloutCtrl.onVehiclesChanged += self._updateFalloutVehicles
         self.__falloutCtrl.onSettingsChanged += self._updateFalloutSettings
         self.__multiselectionMode = self.__falloutCtrl.isSelected()
         self.__setFilters()
@@ -60,7 +60,7 @@ class TankCarousel(TankCarouselMeta, GlobalListener):
             self.__updateVehiclesTimerId = None
         g_gameCtrl.rentals.onRentChangeNotify -= self._updateRent
         g_gameCtrl.igr.onIgrTypeChanged -= self._updateIgrType
-        self.__falloutCtrl.onVehiclesChanged -= self._updateFalloutSettings
+        self.__falloutCtrl.onVehiclesChanged -= self._updateFalloutVehicles
         self.__falloutCtrl.onSettingsChanged -= self._updateFalloutSettings
         self.__falloutCtrl = None
         self.__vehiclesFilter = None
@@ -96,21 +96,22 @@ class TankCarousel(TankCarouselMeta, GlobalListener):
 
     def _updateIgrType(self, *args):
         filterCriteria = REQ_CRITERIA.INVENTORY | REQ_CRITERIA.VEHICLE.IS_PREMIUM_IGR
-        items = g_itemsCache.items
-        filteredVehs = items.getVehicles(filterCriteria)
-        self.updateVehicles(filteredVehs)
+        self.updateVehicles(filterCriteria=filterCriteria)
 
     def _updateFallout(self):
         filterCriteria = REQ_CRITERIA.INVENTORY | REQ_CRITERIA.VEHICLE.FALLOUT.SELECTED
-        items = g_itemsCache.items
-        filteredVehs = items.getVehicles(filterCriteria)
-        self.updateVehicles(filteredVehs, updateFallout=False)
+        self.updateVehicles(filterCriteria=filterCriteria, updateFallout=False)
         self.__updateMultiselectionData()
 
     def _updateFalloutSettings(self, *args):
         self.__multiselectionMode = self.__falloutCtrl.isSelected()
         self.__setFilters()
         self.updateVehicles()
+        self.__updateMultiselectionData()
+
+    def _updateFalloutVehicles(self, *args):
+        filterCriteria = REQ_CRITERIA.INVENTORY | REQ_CRITERIA.VEHICLE.FALLOUT.AVAILABLE
+        self.updateVehicles(filterCriteria=filterCriteria, updateFallout=False)
         self.__updateMultiselectionData()
 
     def __getProviderObject(self, vehicleType):
@@ -169,9 +170,9 @@ class TankCarousel(TankCarouselMeta, GlobalListener):
         LOG_DEBUG('Showing carousel vehicles: ', vehsCDs)
         self.as_showVehiclesS(vehsCDs)
 
-    def updateVehicles(self, vehicles = None, updateFallout = True):
-        isSet = vehicles is None
-        filterCriteria = REQ_CRITERIA.INVENTORY
+    def updateVehicles(self, vehicles = None, filterCriteria = None, updateFallout = True):
+        isSet = vehicles is None and filterCriteria is None
+        filterCriteria = filterCriteria or REQ_CRITERIA.INVENTORY
         if vehicles is not None:
             filterCriteria |= REQ_CRITERIA.IN_CD_LIST(vehicles)
         items = g_itemsCache.items
@@ -181,8 +182,10 @@ class TankCarousel(TankCarouselMeta, GlobalListener):
         isSuitablePredicate = lambda vehIntCD: True
         hasEmptySlots = self.__multiselectionMode and len(self.__falloutCtrl.getEmptySlots()) > 0
         vehsData = {}
+        multiselectionsData = {}
         for intCD in vehicles:
             vehicle = filteredVehs.get(intCD)
+            vehData = None
             if vehicle is not None:
                 vState, vStateLvl = vehicle.getState()
                 isNotSuitableVeh = vState != Vehicle.VEHICLE_STATE.BATTLE and not isSuitablePredicate(vehicle.intCD)
@@ -190,13 +193,15 @@ class TankCarousel(TankCarouselMeta, GlobalListener):
                 isNotSuitableVeh |= vehicle.getCustomState() == Vehicle.VEHICLE_STATE.UNSUITABLE_TO_QUEUE
                 if isNotSuitableVeh:
                     vState, vStateLvl = Vehicle.VEHICLE_STATE.NOT_SUITABLE, Vehicle.VEHICLE_STATE_LEVEL.WARNING
-                canSelect, tooltip = self.__falloutCtrl.canSelectVehicle(vehicle)
                 rentInfoStr = RentLeftFormatter(vehicle.rentInfo, vehicle.isPremiumIGR).getRentLeftStr()
-                vehsData[intCD] = self._getVehicleData(vehicle, vState, vStateLvl, rentInfoStr, hasEmptySlots, canSelect, tooltip)
+                vehData = self._getVehicleData(vehicle, vState, vStateLvl, rentInfoStr)
+                multiselectionsData[intCD] = self.__packMultiselectionFlags(self.__multiselectionMode and vehicle.isFalloutSelected, self.__falloutCtrl.canSelectVehicle(vehicle) and hasEmptySlots, hasEmptySlots or vehicle.isFalloutSelected)
+            vehsData[intCD] = vehData
 
         LOG_DEBUG('Updating carousel vehicles: ', vehsData if not isSet else 'full sync')
         self.as_updateVehiclesS(vehsData, isSet)
-        self.showVehicles()
+        self.as_setMultiselectionButtonLabelsS(FALLOUT.TANKCAROUSELSLOT_ACTIVATEBUTTON, FALLOUT.TANKCAROUSELSLOT_DEACTIVATEBUTTON, self.__falloutCtrl.carouselSelectionButtonTooltip())
+        self.as_updateMultiselectionDataS(multiselectionsData)
         isVehTypeLock = sum((len(v) for v in items.stats.vehicleTypeLocks.itervalues()))
         isGlobalVehLock = sum((len(v) for v in items.stats.globalVehicleLocks.itervalues()))
         if self.__updateVehiclesTimerId is None and (isVehTypeLock or isGlobalVehLock):
@@ -204,6 +209,8 @@ class TankCarousel(TankCarouselMeta, GlobalListener):
             LOG_DEBUG('Lock timer updated')
         if self.__multiselectionMode and updateFallout and not isSet:
             self._updateFallout()
+        else:
+            self.showVehicles()
         return
 
     def setVehicleSelected(self, vehicleInventoryId, isSelected):
@@ -253,7 +260,7 @@ class TankCarousel(TankCarouselMeta, GlobalListener):
             return i18n.makeString('#menu:tankCarousel/vehicleStates/%s' % vState, icon=icon)
         return i18n.makeString('#menu:tankCarousel/vehicleStates/%s' % vState)
 
-    def _getVehicleData(self, vehicle, vState, vStateLvl, rentInfoStr, hasEmptySlots, canSelect, tooltip):
+    def _getVehicleData(self, vehicle, vState, vStateLvl, rentInfoStr):
         return {'id': vehicle.invID,
          'inventoryId': vehicle.invID,
          'label': vehicle.shortUserName if vehicle.isPremiumIGR else vehicle.userName,
@@ -273,12 +280,7 @@ class TankCarousel(TankCarouselMeta, GlobalListener):
          'current': 0,
          'enabled': True,
          'rentLeft': rentInfoStr,
-         'selectableForSlot': self.__multiselectionMode and vehicle.isFalloutAvailable and hasEmptySlots and not vehicle.isDisabledInPremIGR,
-         'selectedInSlot': self.__multiselectionMode and vehicle.isFalloutSelected,
-         'activateButtonLabel': FALLOUT.TANKCAROUSELSLOT_ACTIVATEBUTTON,
-         'deactivateButtonLabel': FALLOUT.TANKCAROUSELSLOT_DEACTIVATEBUTTON,
-         'activateButtonEnabled': canSelect,
-         'activateButtonTooltip': tooltip}
+         'selectableForSlot': self.__multiselectionMode and vehicle.isFalloutAvailable and not vehicle.isDisabledInPremIGR}
 
     def __getMultiselectionSlots(self):
         result = []
@@ -289,12 +291,16 @@ class TankCarousel(TankCarouselMeta, GlobalListener):
             selectedSlots = self.__falloutCtrl.getSelectedSlots()
             selectedSlotsNumber = len(selectedSlots)
             requiredSlots = self.__falloutCtrl.getRequiredSlots()
+            mustSelectRequiredVehicle = self.__falloutCtrl.mustSelectRequiredVehicle()
             for slotIdx in range(falloutCfg.maxVehiclesPerPlayer):
                 vehicle = None
                 if slotIdx < selectedSlotsNumber:
                     vehicle = g_itemsCache.items.getVehicle(selectedSlots[slotIdx])
                 if slotIdx in requiredSlots:
-                    formattedStatusStr = alert(FALLOUT.MULTISELECTIONSLOT_DOMINATION_VEHICLENOTACTIVATED)
+                    if mustSelectRequiredVehicle:
+                        formattedStatusStr = alert(i18n.makeString(FALLOUT.MULTISELECTIONSLOT_DOMINATION_REQUIREDVEHICLENOTACTIVATED, level=int2roman(falloutCfg.vehicleLevelRequired)))
+                    else:
+                        formattedStatusStr = alert(FALLOUT.MULTISELECTIONSLOT_DOMINATION_VEHICLENOTACTIVATED)
                 else:
                     formattedStatusStr = standard(FALLOUT.MULTISELECTIONSLOT_MULTITEAM_VEHICLENOTACTIVATED)
                 data = {'indexStr': i18n.makeString(FALLOUT.MULTISELECTIONSLOT_INDEX, index=slotIdx + 1),
@@ -331,8 +337,8 @@ class TankCarousel(TankCarouselMeta, GlobalListener):
             if falloutCfg.getAllowedVehicles():
                 levels = list(falloutCfg.allowedLevels)
                 topLevel = levels[-1]
-                header = highTitle(messageTemplate + '/descriptionTitle')
-                body = main(i18n.makeString(messageTemplate + '/message', topLevel=int2roman(topLevel), level=toRomanRangeString(levels, 1)))
+                header = highTitle(i18n.makeString(messageTemplate + '/descriptionTitle', topLevel=int2roman(topLevel)))
+                body = main(i18n.makeString(messageTemplate + '/message', level=toRomanRangeString(levels, 1)))
                 return (False, header + '\n' + body)
         return (False, '')
 
@@ -365,3 +371,14 @@ class TankCarousel(TankCarouselMeta, GlobalListener):
             filters['nation'] = -filters['nation']
         self.__vehiclesFilter = filters
         self.as_setCarouselFilterS(self.__vehiclesFilter)
+
+    def __packMultiselectionFlags(self, selected, enabled, visible):
+        value = 0
+        idx = 0
+        flags = (selected, enabled, visible)
+        for flag in flags:
+            if flag:
+                value |= 1 << idx
+            idx += 1
+
+        return value

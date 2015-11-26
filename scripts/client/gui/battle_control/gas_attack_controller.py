@@ -21,6 +21,7 @@ class GAS_ATTACK_STATE(object):
     NEAR_SAFE = 3
     NEAR_CLOUD = 4
     INSIDE_CLOUD = 5
+    DEAD = 6
 
 
 _GasAttackState = namedtuple('_GasAttackState', ('state', 'prevState', 'center', 'currentRadius', 'safeZoneRadius', 'centerDistance', 'safeZoneDistance', 'gasCloudDistance', 'timeLeft'))
@@ -109,6 +110,7 @@ class GasAttackController(object):
         self.__indicatorCtrl = None
         self.__panelUI = None
         self.__safeZoneUI = None
+        self.__isAlive = False
         self.__timerCallback = None
         self.__evtManager = Event.EventManager()
         self.onPreparing = Event.Event(self.__evtManager)
@@ -122,6 +124,7 @@ class GasAttackController(object):
         self.__gasAttackMgr.onAttackPreparing += self.__onAttackPreparing
         self.__gasAttackMgr.onAttackStarted += self.__onAttackStarted
         self.__gasAttackMgr.onAttackStopped += self.__onAttackStopped
+        self.__isAlive = BigWorld.player().isVehicleAlive
         self.__updateState()
         self.__startTimer()
 
@@ -139,12 +142,7 @@ class GasAttackController(object):
         return
 
     def clear(self):
-        self.stop()
-        if self.__panelUI is not None:
-            self.__panelUI.hide()
-        if self.__safeZoneUI is not None:
-            self.__safeZoneUI.hideTimer()
-        return
+        self.__isAlive = False
 
     def setPanel(self, panelUI):
         self.__panelUI = weakref.proxy(panelUI)
@@ -244,7 +242,9 @@ class GasAttackController(object):
             currentRadius = self.__getCurrentRadius()
             cloudDistance = self.__getCloudDistance(currentRadius)
             safeZoneDistance = self.__getSafeZoneDistance()
-            if safeZoneDistance == 0:
+            if not self.__isAlive:
+                state = GAS_ATTACK_STATE.DEAD
+            elif safeZoneDistance == 0:
                 state = GAS_ATTACK_STATE.INSIDE_SAFE_ZONE
             elif cloudDistance == 0:
                 state = GAS_ATTACK_STATE.INSIDE_CLOUD
@@ -292,10 +292,9 @@ class GasAttackController(object):
         return max(0, attackEndTime - BigWorld.serverTime())
 
     def __getCenterDistance(self):
-        player = BigWorld.player()
-        if player.isVehicleAlive:
+        if self.__isAlive:
             x0, y0, z0 = self.__gasAttackMgr.settings.position
-            x1, y1, z1 = player.vehicle.position
+            x1, y1, z1 = BigWorld.player().getVehicleAttached().position
             return math.sqrt(math.pow(x0 - x1, 2) + math.pow(z0 - z1, 2) + math.pow(y0 - y1, 2))
         return 0
 

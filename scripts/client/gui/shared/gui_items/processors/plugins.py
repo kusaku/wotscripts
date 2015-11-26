@@ -518,12 +518,13 @@ class _PotapovQuestsLockedByVehicle(SyncValidator):
 
     def __init__(self, quests):
         super(_PotapovQuestsLockedByVehicle, self).__init__()
+        self._messageKeyPrefix = ''
         self.quests = quests
 
     def _validate(self):
         for quest in self.quests:
             if len(self._findLockedVehicles(quest)):
-                return makeError('LOCKED_BY_VEHICLE_QUEST')
+                return makeError(self._messageKeyPrefix + 'LOCKED_BY_VEHICLE_QUEST')
 
         return makeSuccess()
 
@@ -540,6 +541,10 @@ class RandomQuestsLockedByVehicle(_PotapovQuestsLockedByVehicle):
 
 
 class FalloutQuestsLockedByVehicle(_PotapovQuestsLockedByVehicle):
+
+    def __init__(self, quests):
+        super(FalloutQuestsLockedByVehicle, self).__init__(quests)
+        self._messageKeyPrefix = 'fallout/'
 
     @classmethod
     def _findLockedVehicles(cls, falloutQuest):

@@ -1,5 +1,6 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/clans/invites/ClanInvitesViewWithTable.py
 import weakref
+import math
 from debug_utils import LOG_ERROR
 from gui.clans.settings import CLAN_INVITE_STATES, ACTIVE_INVITE_LIFE_TIME
 from gui.clans.items import isValueAvailable, formatField
@@ -246,9 +247,9 @@ class ClanInvitesAbstractDataProvider(SortableDAAPIDataProvider):
         createdAt = item.getCreatedAt()
         delta = time_utils.getTimeDeltaFromNow(createdAt + ACTIVE_INVITE_LIFE_TIME)
         if delta >= time_utils.ONE_DAY:
-            state = _ms(CLANS.CLANINVITESWINDOW_STATUS_DAYSLEFT, days=int(delta / time_utils.ONE_DAY))
+            state = _ms(CLANS.CLANINVITESWINDOW_STATUS_DAYSLEFT, days=int(math.ceil(float(delta) / time_utils.ONE_DAY)))
         elif delta >= time_utils.ONE_HOUR:
-            state = _ms(CLANS.CLANINVITESWINDOW_STATUS_HOURSLEFT, hours=int(delta / time_utils.ONE_HOUR))
+            state = _ms(CLANS.CLANINVITESWINDOW_STATUS_HOURSLEFT, hours=int(math.ceil(float(delta) / time_utils.ONE_HOUR)))
         else:
             mins = max(1, int(delta / time_utils.ONE_MINUTE))
             state = _ms(CLANS.CLANINVITESWINDOW_STATUS_MINUTESLEFT, min=mins)

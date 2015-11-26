@@ -67,6 +67,12 @@ class _NotificationVO(object):
         else:
             return None
 
+    def getProxyItemByType(self, itemType):
+        if self.proxyDataItems:
+            return self.proxyDataItems.getItemByType(itemType)
+        else:
+            return None
+
     def showItem(self, notID, target):
         if self.items:
             self.items.showItem(notID, target)
@@ -167,6 +173,13 @@ class _WGNCProvider(object):
         nots = sorted(self.__nots.itervalues(), key=lambda item: item.order)
         for notification in nots:
             if not notification.marked:
+                continue
+            yield notification
+
+    def getNotMarkedNots(self):
+        nots = sorted(self.__nots.itervalues(), key=lambda item: item.order)
+        for notification in nots:
+            if notification.marked:
                 continue
             yield notification
 

@@ -3,6 +3,7 @@ from gui.Scaleform.daapi.view.lobby.prb_windows.SquadActionButtonStateVO import 
 from gui.Scaleform.daapi.view.lobby.rally.vo_converters import makeVehicleVO
 from gui.Scaleform.genConsts.PREBATTLE_ALIASES import PREBATTLE_ALIASES
 from gui.Scaleform.locale.CYBERSPORT import CYBERSPORT
+from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.server_events import g_eventsCache
 from gui.shared.formatters import text_styles
 from gui.Scaleform.locale.MESSENGER import MESSENGER
@@ -14,7 +15,7 @@ from gui.prb_control.settings import CTRL_ENTITY_TYPE, REQUEST_TYPE, FUNCTIONAL_
 from gui.shared import events, EVENT_BUS_SCOPE
 from gui.shared.ItemsCache import g_itemsCache
 from gui.shared.formatters.ranges import toRomanRangeString
-from helpers import i18n
+from helpers import i18n, int2roman
 from gui.prb_control import settings
 
 class SquadView(SquadViewMeta):
@@ -164,5 +165,16 @@ class SquadView(SquadViewMeta):
 
     def __updateHeader(self):
         if self.__isFallout:
-            vehicleLbl = text_styles.standard(i18n.makeString(CYBERSPORT.WINDOW_UNIT_TEAMVEHICLESLBL, levelsRange=toRomanRangeString(list(self.__falloutCfg.allowedLevels), 1)))
-            self.as_setVehiclesTitleS(vehicleLbl)
+            allowedLevelsList = list(self.__falloutCfg.allowedLevels)
+            allowedLevelsStr = toRomanRangeString(allowedLevelsList, 1)
+            vehicleLbl = i18n.makeString(CYBERSPORT.WINDOW_UNIT_TEAMVEHICLESLBL, levelsRange=text_styles.main(allowedLevelsStr))
+            tooltipData = {}
+            if len(allowedLevelsList) > 1:
+                tooltipData = self.__dominationVehicleInfoTooltip(self.__falloutCfg.vehicleLevelRequired, allowedLevelsStr)
+            self.as_setVehiclesTitleS(vehicleLbl, tooltipData)
+
+    def __dominationVehicleInfoTooltip(self, requiredLevel, allowedLevelsStr):
+        return {'id': TOOLTIPS.SQUADWINDOW_DOMINATION_VEHICLESINFOICON,
+         'header': {},
+         'body': {'level': int2roman(requiredLevel),
+                  'allowedLevels': allowedLevelsStr}}

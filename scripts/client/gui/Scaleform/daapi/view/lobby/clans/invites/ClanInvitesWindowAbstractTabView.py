@@ -24,11 +24,15 @@ class ClanInvitesWindowAbstractTabView(ClanInvitesWindowAbstractTabViewMeta, Cla
     def clanInfo(self):
         return self._parentWnd.clanInfo
 
+    def resyncClanInfo(self, force = False):
+        return self._parentWnd.resyncClanInfo(force=force)
+
     def showMore(self):
         self._sendShowMoreRequest(self._getCurrentPaginator())
 
     def refreshTable(self):
         self._enableRefreshBtn(False)
+        self.resyncClanInfo(force=True)
         self.paginatorsController.markPanginatorsAsUnSynced()
         self._sendRefreshRequest(self._getCurrentPaginator())
 
@@ -47,6 +51,10 @@ class ClanInvitesWindowAbstractTabView(ClanInvitesWindowAbstractTabViewMeta, Cla
         self._sendSortRequest(self._getCurrentPaginator(), sort + secondSort)
 
     def onClanAppsCountReceived(self, clanDbID, appsCount):
+        super(ClanInvitesWindowAbstractTabView, self).onClanAppsCountReceived(clanDbID, appsCount)
+        self._enableRefreshBtn(True)
+
+    def onClanInvitesCountReceived(self, clanDbID, appsCount):
         super(ClanInvitesWindowAbstractTabView, self).onClanAppsCountReceived(clanDbID, appsCount)
         self._enableRefreshBtn(True)
 
@@ -74,7 +82,7 @@ class ClanInvitesWindowAbstractTabView(ClanInvitesWindowAbstractTabViewMeta, Cla
     def _onListUpdated(self, selectedID, isFullUpdate, isReqInCoolDown, result):
         self._updateFiltersState()
         paginator = self._getCurrentPaginator()
-        self._updateSortField(paginator.getLastSort())
+        self._updateSortField(paginator.getLastSort() or self._getDefaultSortFields())
         status, data = result
         if status is True:
             self._enableRefreshBtn(False)

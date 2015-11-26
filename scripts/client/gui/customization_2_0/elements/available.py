@@ -1,19 +1,24 @@
 # Embedded file name: scripts/client/gui/customization_2_0/elements/available.py
 import Math
+from constants import IGR_TYPE
+from gui.game_control import getIGRCtrl
 from gui.shared import g_itemsCache
 from helpers.i18n import makeString as _ms
 from CurrentVehicle import g_currentVehicle
 
 class Item(object):
-    __slots__ = ('_qualifier', '_rawData', '_price', '__isInDossier', '__itemID', '__allowedVehicles', '__notAllowedVehicles')
+    __slots__ = ('_qualifier', '_rawData', '_price', '__isInDossier', '__itemID', '__allowedVehicles', '__notAllowedVehicles', 'numberOfItems', 'numberOfDays')
 
     def __init__(self, itemID, rawData, qualifier, isInDossier, allowedVehicles, notAllowedVehicles):
         self.__isInDossier = isInDossier
         self.__itemID = itemID
         self.__allowedVehicles = allowedVehicles
         self.__notAllowedVehicles = notAllowedVehicles
+        self.numberOfItems = None
+        self.numberOfDays = None
         self._qualifier = qualifier
         self._rawData = rawData
+        return
 
     def getID(self):
         return self.__itemID
@@ -34,10 +39,6 @@ class Item(object):
         raise NotImplementedError
 
     @property
-    def isInShop(self):
-        raise NotImplementedError
-
-    @property
     def isAllowedForCurrentVehicle(self):
         intCD = g_currentVehicle.item.intCD
         if not self.__allowedVehicles and not self.__notAllowedVehicles:
@@ -50,7 +51,7 @@ class Item(object):
 
     @property
     def isInDossier(self):
-        return self.__isInDossier
+        return self.__isInDossier or self.getIgrType() == getIGRCtrl().getRoomType() and getIGRCtrl().getRoomType() != IGR_TYPE.NONE
 
     @property
     def qualifier(self):
@@ -58,6 +59,12 @@ class Item(object):
 
     def priceIsGold(self, duration):
         return not duration
+
+    def markIsInDossier(self):
+        self.__isInDossier = True
+
+    def setAllowedVehicles(self, allowedVehicles):
+        self.__allowedVehicles = allowedVehicles
 
 
 class Emblem(Item):
@@ -76,14 +83,10 @@ class Emblem(Item):
         return self._rawData[4]
 
     def getDescription(self):
-        return self._qualifier.getDescription()
+        return None
 
     def getIgrType(self):
         return self._rawData[1]
-
-    @property
-    def isInShop(self):
-        return self.getGroup() not in g_itemsCache.items.shop.getEmblemsGroupHiddens()
 
     def getPrice(self, duration):
         return int(round(self._price[duration][0] * g_currentVehicle.item.level * g_itemsCache.items.shop.getEmblemsGroupPriceFactors()[self.getGroup()]))
@@ -105,14 +108,10 @@ class Inscription(Item):
         return self._rawData[4]
 
     def getDescription(self):
-        return self._qualifier.getDescription()
+        return None
 
     def getIgrType(self):
         return self._rawData[1]
-
-    @property
-    def isInShop(self):
-        return self.getGroup() not in g_itemsCache.items.shop.getInscriptionsGroupHiddens(g_currentVehicle.item.nationID)
 
     def getPrice(self, duration):
         return int(round(self._price[duration][0] * g_currentVehicle.item.level * g_itemsCache.items.shop.getInscriptionsGroupPriceFactors(g_currentVehicle.item.nationID)[self.getGroup()]))
@@ -140,10 +139,6 @@ class Camouflage(Item):
 
     def getIgrType(self):
         return self._rawData['igrType']
-
-    @property
-    def isInShop(self):
-        return self.getID() not in g_itemsCache.items.shop.getCamouflagesHiddens(g_currentVehicle.item.nationID)
 
     def getPrice(self, duration):
         return int(round(self._price[duration][0] * g_itemsCache.items.shop.getVehCamouflagePriceFactor(g_currentVehicle.item.descriptor.type.compactDescr) * g_itemsCache.items.shop.getCamouflagesPriceFactors(g_currentVehicle.item.nationID)[self.getID()]))

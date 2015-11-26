@@ -2,8 +2,9 @@
 from collections import defaultdict
 from gui.clans import contexts
 from gui.clans.clan_account_profile import MyClanAccountProfile
-from gui.clans.settings import CLAN_INVITE_STATES, CLAN_REQUESTED_DATA_TYPE, CLAN_APPLICATION_STATES
+from gui.clans.settings import CLAN_INVITE_STATES, CLAN_REQUESTED_DATA_TYPE, CLAN_APPLICATION_STATES, COUNT_THRESHOLD
 from gui.clans.users import UserCache
+from gui.clans.clan_helpers import ClanCache
 from adisp import async, process
 from gui import SystemMessages
 from gui.LobbyContext import g_lobbyContext
@@ -11,12 +12,29 @@ from gui.ClientUpdateManager import g_clientUpdateManager
 from gui.clans import formatters as clan_formatters, items
 from gui.clans.states import ClanUndefinedState
 from gui.clans.subscriptions import ClansListeners
+from gui.wgnc.settings import WGNC_DATA_PROXY_TYPE
+from gui.wgnc import g_wgncEvents
+from shared_utils import CONST_CONTAINER
 
 def _showError(result, ctx):
     i18nMsg = clan_formatters.getRequestErrorMsg(result, ctx)
     if i18nMsg:
         SystemMessages.pushMessage(i18nMsg, type=SystemMessages.SM_TYPE.Error)
 
+
+class SYNC_KEYS(CONST_CONTAINER):
+    INVITES = 1
+    APPS = 2
+    CLAN_INFO = 4
+    ALL = INVITES | APPS | CLAN_INFO
+
+
+_CLAN_WGNC_NOTOFICATION_TYPES = (WGNC_DATA_PROXY_TYPE.CLAN_APP,
+ WGNC_DATA_PROXY_TYPE.CLAN_INVITE,
+ WGNC_DATA_PROXY_TYPE.CLAN_APP_DECLINED,
+ WGNC_DATA_PROXY_TYPE.CLAN_APP_ACCEPTED,
+ WGNC_DATA_PROXY_TYPE.CLAN_INVITE_ACCEPTED,
+ WGNC_DATA_PROXY_TYPE.CLAN_INVITE_DECLINED)
 
 class _ClanDossier(object):
 
@@ -28,24 +46,25 @@ class _ClanDossier(object):
         self.__processingRequests = defaultdict(list)
         self.__vitalInfo = defaultdict(lambda : None)
         self.__waitForSync = 0
-        self.__appsCountWaitForSync = 0
+        self._syncState = 0
 
     def fini(self):
         self._clansCtrl = None
         self.__cache.clear()
         self.__vitalInfo.clear()
         self.__waitForSync = 0
-        self.__appsCountWaitForSync = 0
+        self._syncState = 0
         return
 
     def isSynced(self, key = None):
         if key is None:
-            return len(self.__vitalInfo) and None not in self.__vitalInfo.values()
-        else:
-            return self.__vitalInfo[key] is not None
+            for key in self.__vitalInfo.keys():
+                if not self._syncState & key:
+                    return False
 
-    def isDataReceived(self, infoID):
-        return infoID in self.__cache
+            return True
+        else:
+            return self._syncState & key
 
     def getDbID(self):
         return self.__clanDbID
@@ -62,52 +81,65 @@ class _ClanDossier(object):
     def getLimits(self):
         return self._clansCtrl.getLimits()
 
-    @process
     def resync(self, force = False):
-        if self.__cantResync(force, self.__waitForSync):
-            return
-        else:
-            self.__waitForSync = True
-            clanInfo = yield self.requestClanInfo()
-            self.__changeWebInfo('clanInfo', clanInfo, 'onClanInfoReceived')
-            if self.__isMy and self.canIHandleClanInvites():
-                invitesCount = yield self.requestInvitationsCount()
-                self.__changeWebInfo('invitesCount', invitesCount, 'onClanInvitesCountReceived')
-                self.requestAppsCount(force)
-            else:
-                self.__vitalInfo['invitesCount'] = None
-            self.__waitForSync = False
-            return
+        self.resyncClanInfo(force=force)
+        self.resyncAppsCount(force=force)
+        self.resyncInvitesCount(force=force)
 
     @process
-    def requestAppsCount(self, force = False):
-        if self.__cantResync(force, self.__appsCountWaitForSync):
+    def resyncClanInfo(self, force = False):
+        if self.__waitForSync & SYNC_KEYS.CLAN_INFO:
             return
+        if self.isSynced(SYNC_KEYS.CLAN_INFO) and not force:
+            return
+        self.__waitForSync |= SYNC_KEYS.CLAN_INFO
+        if CLAN_REQUESTED_DATA_TYPE.CLAN_INFO in self.__cache:
+            del self.__cache[CLAN_REQUESTED_DATA_TYPE.CLAN_INFO]
+        clanInfo = yield self.requestClanInfo()
+        self._syncState |= SYNC_KEYS.CLAN_INFO
+        self.__changeWebInfo(SYNC_KEYS.CLAN_INFO, clanInfo, 'onClanInfoReceived')
+        self.__waitForSync ^= SYNC_KEYS.CLAN_INFO
+
+    def resyncAppsCount(self, force = False):
+        if self.__waitForSync & SYNC_KEYS.APPS:
+            return
+        if self.isSynced(SYNC_KEYS.APPS) and not force:
+            return
+        self.__waitForSync |= SYNC_KEYS.APPS
+        if self.__isMy and self.canIHandleClanInvites():
+            self._syncState |= SYNC_KEYS.APPS
         else:
-            if self.__isMy and self.canIHandleClanInvites():
-                appsCount = yield self.requestApplicationsCount(isForced=force)
-                appsCountName = 'appsCount'
-                if self.__vitalInfo[appsCountName] != appsCount:
-                    self.__changeWebInfo(appsCountName, appsCount, 'onClanAppsCountReceived')
-            else:
-                self.__vitalInfo['appsCount'] = None
-            self.__appsCountWaitForSync = False
+            self.__vitalInfo[SYNC_KEYS.APPS] = 0
+            self._syncState |= SYNC_KEYS.APPS
+        self.__waitForSync ^= SYNC_KEYS.APPS
+
+    def resyncInvitesCount(self, force = False):
+        if self.__waitForSync & SYNC_KEYS.INVITES:
             return
+        if self.isSynced(SYNC_KEYS.INVITES) and not force:
+            return
+        self.__waitForSync |= SYNC_KEYS.INVITES
+        if self.__isMy and self.canIHandleClanInvites():
+            self._syncState |= SYNC_KEYS.INVITES
+        else:
+            self.__vitalInfo[SYNC_KEYS.APPS] = 0
+            self._syncState |= SYNC_KEYS.INVITES
+        self.__waitForSync ^= SYNC_KEYS.INVITES
 
     def getClanInfo(self):
-        self.resync()
-        return self.__vitalInfo['clanInfo'] or items.ClanExtInfoData()
+        self.resyncClanInfo()
+        return self.__vitalInfo.get(SYNC_KEYS.CLAN_INFO, None) or items.ClanExtInfoData()
 
     def canAcceptsJoinRequests(self):
         return self.getClanInfo().isOpened()
 
     def getInvitesCount(self):
-        self.resync()
-        return self.__vitalInfo['invitesCount']
+        self.resyncInvitesCount()
+        return self.__vitalInfo[SYNC_KEYS.INVITES]
 
     def getAppsCount(self):
-        self.resync()
-        return self.__vitalInfo['appsCount']
+        self.resyncAppsCount()
+        return self.__vitalInfo[SYNC_KEYS.APPS]
 
     @async
     def requestClanInfo(self, callback):
@@ -184,15 +216,69 @@ class _ClanDossier(object):
         requestType = ctx.getRequestType()
         if response.isSuccess():
             if requestType == CLAN_REQUESTED_DATA_TYPE.DECLINE_APPLICATION or requestType == CLAN_REQUESTED_DATA_TYPE.ACCEPT_APPLICATION:
-                appsCountName = 'appsCount'
-                newVal = self.__vitalInfo[appsCountName] - 1
-                if newVal >= 0:
-                    self.__changeWebInfo(appsCountName, newVal, 'onClanAppsCountReceived')
+                count = self.__vitalInfo[SYNC_KEYS.APPS]
+                if count:
+                    self.__changeWebInfo(SYNC_KEYS.APPS, count - 1, 'onClanAppsCountReceived')
                 if requestType == CLAN_REQUESTED_DATA_TYPE.DECLINE_APPLICATION:
                     state = CLAN_APPLICATION_STATES.DECLINED
                 else:
                     state = CLAN_APPLICATION_STATES.ACCEPTED
                 self._clansCtrl.notify('onClanAppStateChanged', ctx.getApplicationDbID(), state)
+            elif requestType == CLAN_REQUESTED_DATA_TYPE.CREATE_INVITES:
+                count = len(response.data)
+                if count:
+                    invites = self.__vitalInfo[SYNC_KEYS.INVITES] or 0
+                    count = count + invites
+                    self.__changeWebInfo(SYNC_KEYS.INVITES, count, 'onClanInvitesCountReceived')
+            elif requestType == CLAN_REQUESTED_DATA_TYPE.CLAN_INVITES:
+                statuses = ctx.getStatuses() or []
+                if len(statuses) == 1 and statuses[0] == CLAN_INVITE_STATES.ACTIVE:
+                    count = ctx.getTotalCount(response.data)
+                    if count is not None and count != self.__vitalInfo[SYNC_KEYS.INVITES]:
+                        self.__changeWebInfo(SYNC_KEYS.INVITES, count, 'onClanInvitesCountReceived')
+            elif requestType == CLAN_REQUESTED_DATA_TYPE.CLAN_APPLICATIONS:
+                statuses = ctx.getStatuses() or []
+                if len(statuses) == 1 and statuses[0] == CLAN_INVITE_STATES.ACTIVE:
+                    count = ctx.getTotalCount(response.data)
+                    if count is not None and count != self.__vitalInfo[SYNC_KEYS.APPS]:
+                        self.__changeWebInfo(SYNC_KEYS.APPS, count, 'onClanAppsCountReceived')
+        return
+
+    def processWgncNotification(self, notifID, item):
+        """
+        Method handles actions received trough WGNC
+        :param notifID:
+        :param item: instance of gui.wgnc.proxy_data._ProxyDataItem
+        """
+        if item.getType() == WGNC_DATA_PROXY_TYPE.CLAN_APP:
+            count = item.getActiveApplicationsCount()
+            if count != self.__vitalInfo[SYNC_KEYS.APPS]:
+                self.__changeWebInfo(SYNC_KEYS.APPS, count, 'onClanAppsCountReceived')
+            self._syncState |= SYNC_KEYS.APPS
+        elif item.getType() == WGNC_DATA_PROXY_TYPE.CLAN_INVITE_DECLINED or item.getType() == WGNC_DATA_PROXY_TYPE.CLAN_INVITE_ACCEPTED:
+            if item.getType() == WGNC_DATA_PROXY_TYPE.CLAN_INVITE_ACCEPTED:
+                self._syncState &= ~SYNC_KEYS.CLAN_INFO
+            count = self.__vitalInfo[SYNC_KEYS.INVITES]
+            if count:
+                self.__changeWebInfo(SYNC_KEYS.INVITES, count - 1, 'onClanInvitesCountReceived')
+
+    def updateClanCache(self, cache):
+        apps = self.__vitalInfo[SYNC_KEYS.APPS] or 0
+        invites = self.__vitalInfo[SYNC_KEYS.INVITES] or 0
+        cache.set(ClanCache.KEYS.CLAN_APPS, apps)
+        cache.set(ClanCache.KEYS.CLAN_INVITES, invites)
+
+    def processClanCache(self, cache):
+        apps = cache.get(ClanCache.KEYS.CLAN_APPS) or 0
+        if apps:
+            count = self.__vitalInfo[SYNC_KEYS.APPS] or 0
+            count += apps
+            self.__changeWebInfo(SYNC_KEYS.APPS, count, 'onClanAppsCountReceived')
+        invites = cache.get(ClanCache.KEYS.CLAN_INVITES) or 0
+        if invites:
+            count = self.__vitalInfo[SYNC_KEYS.INVITES] or 0
+            count += invites
+            self.__changeWebInfo(SYNC_KEYS.INVITES, count, 'onClanInvitesCountReceived')
 
     def __changeWebInfo(self, fieldName, value, eventName):
         self.__vitalInfo[fieldName] = value
@@ -217,7 +303,8 @@ class _ClanController(ClansListeners):
         self.__searchDataCache = {}
         self.__state = None
         self.__profile = None
-        self.__userCache = UserCache(self)
+        self.__userCache = None
+        self.__clanCache = None
         self.__simWGCGEnabled = True
         return
 
@@ -229,7 +316,7 @@ class _ClanController(ClansListeners):
     def simEnableClan(self, enable):
         settings = g_lobbyContext.getServerSettings()
         clanSettings = {'clanProfile': {'isEnabled': enable,
-                         'gateUrl': settings.clanProfile.getSettingsJSON()}}
+                         'gateUrl': settings.clanProfile.getGateUrl()}}
         settings.update(clanSettings)
         g_clientUpdateManager.update({'serverSettings': clanSettings})
 
@@ -237,6 +324,7 @@ class _ClanController(ClansListeners):
         return self.__simWGCGEnabled
 
     def init(self):
+        self.__userCache = UserCache(self)
         self.__state = ClanUndefinedState(self)
         self.__state.init()
 
@@ -250,12 +338,22 @@ class _ClanController(ClansListeners):
 
     def start(self):
         self.__profile = MyClanAccountProfile(self)
+        self.__clanCache = ClanCache(self.__profile.getDbID())
+        self.__clanCache.onRead += self._onClanCacheRead
+        self.__clanCache.read()
+        self.invalidate()
         g_clientUpdateManager.addCallbacks({'stats.clanInfo': self.__onClanInfoChanged,
          'serverSettings.clanProfile.isEnabled': self.__onServerSettingChanged})
-        self.invalidate()
+        g_wgncEvents.onProxyDataItemShowByDefault += self._onProxyDataItemShowByDefault
 
     def stop(self):
+        g_wgncEvents.onProxyDataItemShowByDefault -= self._onProxyDataItemShowByDefault
         g_clientUpdateManager.removeObjectCallbacks(self)
+        if self.__clanCache is not None:
+            self.__clanCache.onRead -= self._onClanCacheRead
+            self.__profile.updateClanCache(self.__clanCache)
+            self.__clanCache.write()
+            self.__clanCache = None
         if self.__profile is not None:
             self.__profile.fini()
             self.__profile = None
@@ -265,11 +363,11 @@ class _ClanController(ClansListeners):
     def invalidate(self):
         self.__state.update()
 
-    def getClanDossier(self, clanDbID = None):
-        if clanDbID not in self.__cache:
-            dossier = self.__cache[clanDbID] = _ClanDossier(clanDbID, self, isMy=clanDbID == self.__profile.getClanDbID())
-        else:
+    def getClanDossier(self, clanDbID = None, useCached = True):
+        if useCached and clanDbID in self.__cache:
             dossier = self.__cache[clanDbID]
+        else:
+            dossier = self.__cache[clanDbID] = _ClanDossier(clanDbID, self, isMy=clanDbID == self.__profile.getClanDbID())
         return dossier
 
     def resyncLogin(self, forceLogin = False):
@@ -292,7 +390,11 @@ class _ClanController(ClansListeners):
         return self.__state.getStateID()
 
     def isEnabled(self):
-        return g_lobbyContext.getServerSettings().clanProfile.isEnabled()
+        settings = g_lobbyContext.getServerSettings()
+        if settings is not None:
+            return settings.clanProfile.isEnabled()
+        else:
+            return True
 
     def isAvailable(self):
         return self.__state.isAvailable()
@@ -305,6 +407,12 @@ class _ClanController(ClansListeners):
 
     def getLimits(self):
         return self.__state.getLimits(self.__profile)
+
+    def getClanDbID(self):
+        if self.__profile:
+            return self.__profile.getClanDbID()
+        else:
+            return None
 
     def changeState(self, state):
         oldState = self.__state
@@ -333,6 +441,23 @@ class _ClanController(ClansListeners):
     def requestUsers(self, dbIDs, callback):
         result = yield self.__userCache.requestUsers(dbIDs)
         callback(result)
+
+    def _onProxyDataItemShowByDefault(self, notifID, item):
+        """
+        Method handles notifications received trough WGNC
+        :param notifID:
+        :param item: instance of gui.wgnc.proxy_data._ProxyDataItem
+        """
+        if item.getType() in _CLAN_WGNC_NOTOFICATION_TYPES:
+            if self.__profile is not None:
+                self.__profile.processWgncNotification(notifID, item)
+            self.notify('onWgncNotificationReceived', notifID, item)
+        return
+
+    def _onClanCacheRead(self):
+        if self.__profile is not None and self.__clanCache is not None:
+            self.__profile.processClanCache(self.__clanCache)
+        return
 
     def __onClanInfoChanged(self, _):
         self.__profile.resyncBwInfo()

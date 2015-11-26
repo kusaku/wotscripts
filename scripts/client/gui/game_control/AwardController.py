@@ -3,17 +3,18 @@ import types
 import weakref
 from abc import ABCMeta, abstractmethod
 import ArenaType
-from ConnectionManager import connectionManager
 from goodies.goodie_constants import GOODIE_TARGET_TYPE
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui.gold_fish import isGoldFishActionActive, isTimeToShowGoldFishPromo
 from gui.goodies.GoodiesCache import g_goodiesCache
 from gui.prb_control.settings import BATTLES_TO_SELECT_RANDOM_MIN_LIMIT
+from gui.prb_control.storage import prequeue_storage_getter
 from gui.shared.economics import getPremiumCostActionPrc
 import potapov_quests
+from potapov_quests import PQ_BRANCH
 from shared_utils import findFirst
 import gui.awards.event_dispatcher as shared_events
-from constants import EVENT_TYPE
+from constants import EVENT_TYPE, QUEUE_TYPE
 from helpers import i18n
 from chat_shared import SYS_MESSAGE_TYPE
 from account_helpers.AccountSettings import AccountSettings, AWARDS
@@ -59,7 +60,8 @@ class AwardController(Controller, GlobalListener):
          PersonalDiscountHandler(self),
          QuestBoosterAwardHandler(self),
          BoosterAfterBattleAwardHandler(self),
-         GoldFishHandler(self)]
+         GoldFishHandler(self),
+         FalloutVehiclesBuyHandler(self)]
         self.__delayedHandlers = []
         self.__isLobbyLoaded = False
 
@@ -78,7 +80,7 @@ class AwardController(Controller, GlobalListener):
             self.__delayedHandlers.append((handler, ctx))
 
     def handlePostponed(self, *args):
-        if self.canShow:
+        if self.canShow():
             for handler, ctx in self.__delayedHandlers:
                 handler(ctx)
 
@@ -96,11 +98,15 @@ class AwardController(Controller, GlobalListener):
 
     def onDisconnected(self):
         self.__isLobbyLoaded = False
+        for handler in self.__handlers:
+            handler.stop()
 
     def onLobbyInited(self, *args):
         self.startGlobalListening()
         self.__isLobbyLoaded = True
         self.handlePostponed()
+        for handler in self.__handlers:
+            handler.start()
 
     def onPlayerStateChanged(self, functional, roster, accountInfo):
         self.handlePostponed()
@@ -122,6 +128,12 @@ class AwardHandler(object):
         pass
 
     def fini(self):
+        pass
+
+    def start(self):
+        pass
+
+    def stop(self):
         pass
 
     def handle(self, *args):
@@ -265,7 +277,7 @@ class PotapovQuestsBonusHandler(ServiceChannelHandler):
     @staticmethod
     def __tryToShowTokenAward(tID, tCount, completedQuestIDs):
         for q in g_eventsCache.getQuestsByTokenBonus(tID):
-            if q.getType() == EVENT_TYPE.POTAPOV_QUEST:
+            if q.getType() == EVENT_TYPE.POTAPOV_QUEST and q.getQuestBranch() == PQ_BRANCH.REGULAR:
                 pqType = q.getPQType()
                 if pqType.mainQuestID in completedQuestIDs or pqType.addQuestID in completedQuestIDs:
                     quests_events.showTokenAward(q, tID, tCount)
@@ -491,6 +503,48 @@ class VehiclesResearchHandler(SpecialAchievement):
         return shared_events.showResearchAward(achievementCount, messageNumber)
 
 
+class FalloutVehiclesBuyHandler(AwardHandler):
+
+    def init(self):
+        g_clientUpdateManager.addCallbacks({'inventory.1': self.__onVehsChanged})
+
+    def fini(self):
+        g_clientUpdateManager.removeObjectCallbacks(self)
+
+    def start(self):
+        if not self.eventsStorage.hasVehicleLvl8():
+            if g_itemsCache.items.getVehicles(REQ_CRITERIA.INVENTORY | ~REQ_CRITERIA.VEHICLE.EXPIRED_RENT | REQ_CRITERIA.VEHICLE.LEVELS(range(8, 10))):
+                self.eventsStorage.setHasVehicleLvl8()
+        if not self.eventsStorage.hasVehicleLvl10():
+            if g_itemsCache.items.getVehicles(REQ_CRITERIA.INVENTORY | ~REQ_CRITERIA.VEHICLE.EXPIRED_RENT | REQ_CRITERIA.VEHICLE.LEVEL(10)):
+                self.eventsStorage.setHasVehicleLvl10()
+
+    @prequeue_storage_getter(QUEUE_TYPE.EVENT_BATTLES)
+    def eventsStorage(self):
+        return None
+
+    def _needToShowAward(self, ctx = None):
+        return self._awardCtrl.canShow() is False or self._shouldBeShown()
+
+    def _shouldBeShown(self):
+        return not self.eventsStorage.hasVehicleLvl8() or not self.eventsStorage.hasVehicleLvl10()
+
+    def _showAward(self, ctx = None):
+        if self._shouldBeShown():
+            if not self.eventsStorage.hasVehicleLvl8():
+                for vehicle in g_itemsCache.items.getVehicles(REQ_CRITERIA.INVENTORY | ~REQ_CRITERIA.VEHICLE.EXPIRED_RENT | REQ_CRITERIA.VEHICLE.LEVELS(range(8, 10))).itervalues():
+                    self.eventsStorage.setHasVehicleLvl8()
+                    shared_events.showFalloutAward((vehicle.level,))
+                    break
+
+            if not self.eventsStorage.hasVehicleLvl10() and g_itemsCache.items.getVehicles(REQ_CRITERIA.INVENTORY | ~REQ_CRITERIA.VEHICLE.EXPIRED_RENT | REQ_CRITERIA.VEHICLE.LEVEL(10)):
+                self.eventsStorage.setHasVehicleLvl10()
+                shared_events.showFalloutAward((10,), True)
+
+    def __onVehsChanged(self, *args):
+        self.handle()
+
+
 class VictoryHandler(SpecialAchievement):
     VICTORY_AMOUNT = {5: 1,
      10: 2,
@@ -579,16 +633,8 @@ class PveBattlesCountHandler(BattlesCountHandler):
 
 class GoldFishHandler(AwardHandler):
 
-    def __init__(self, awardCtrl):
-        super(GoldFishHandler, self).__init__(awardCtrl)
-
-    def init(self):
+    def start(self):
         self.handle()
-        connectionManager.onConnected += self.__onLogin
-
-    def fini(self):
-        super(GoldFishHandler, self).fini()
-        connectionManager.onConnected -= self.__onLogin
 
     def _needToShowAward(self, ctx):
         return True
@@ -596,6 +642,3 @@ class GoldFishHandler(AwardHandler):
     def _showAward(self, ctx):
         if isGoldFishActionActive() and isTimeToShowGoldFishPromo():
             g_eventBus.handleEvent(events.LoadViewEvent(VIEW_ALIAS.GOLD_FISH_WINDOW))
-
-    def __onLogin(self):
-        self.handle()

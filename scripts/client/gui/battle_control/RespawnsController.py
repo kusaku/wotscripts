@@ -2,9 +2,7 @@
 import weakref
 import BigWorld
 from collections import namedtuple
-import FMOD
 from GasAttackSettings import GasAttackState
-import SoundGroups
 from gui.battle_control.arena_info import hasGasAttack
 from items import vehicles
 from gui.battle_control.arena_info.interfaces import IArenaRespawnController
@@ -13,7 +11,7 @@ _Vehicle = namedtuple('_Vehicle', ('intCD', 'type', 'vehAmmo'))
 _RespawnInfo = namedtuple('_RespawnInfo', ('vehicleID', 'respawnTime'))
 
 class RespawnsController(IArenaRespawnController):
-    __slots__ = ('__ui', '__vehicles', '__cooldowns', '__respawnInfo', '__timerCallback', '__battle', '__showUICallback', '__respawnSndName', '__gasAttackMgr')
+    __slots__ = ('__ui', '__vehicles', '__cooldowns', '__respawnInfo', '__timerCallback', '__battle', '__showUICallback', '__respawnSndName', '__soundNotifications', '__gasAttackMgr')
 
     def __init__(self, ctx):
         super(RespawnsController, self).__init__()
@@ -24,9 +22,7 @@ class RespawnsController(IArenaRespawnController):
         self.__respawnInfo = None
         self.__timerCallback = None
         self.__showUICallback = None
-        self.__respawnSndName = 'ready_for_action'
-        if FMOD.enabled:
-            self.__respawnSndName = '/ingame_voice/ingame_voice_flt/ready_for_action'
+        self.__respawnSndName = 'respawn'
         self.__gasAttackMgr = None
         if hasGasAttack():
             self.__gasAttackMgr = ctx.gasAttackMgr
@@ -72,13 +68,13 @@ class RespawnsController(IArenaRespawnController):
     def movingToRespawn(self):
         self.__respawnInfo = None
         self.__stopTimer()
+        BigWorld.player().soundNotifications.play(self.__respawnSndName)
         return
 
     def spawnVehicle(self, vehicleID):
         if self.__ui is not None:
             self.__ui.hide()
             self.__battle.minimap.useNormalSize()
-        SoundGroups.g_instance.playSound2D(self.__respawnSndName)
         return
 
     def updateRespawnVehicles(self, vehsList):

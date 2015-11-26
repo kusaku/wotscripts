@@ -42,3 +42,6 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.send_header('Location', kwargs['next'])
         self.end_headers()
         self.server.keepData(token, kwargs['account_id'])
+
+    def log_request(self, code = '-', size = '-'):
+        pass

@@ -337,12 +337,17 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
         elif state == UNIT_RESTRICTION.FALLOUT_NOT_ENOUGH_PLAYERS:
             header = i18n.makeString('#menu:headerButtons/fightBtn/tooltip/falloutNotEnoughPlayer/header')
             body = i18n.makeString('#menu:headerButtons/fightBtn/tooltip/falloutNotEnoughPlayer/body')
-        elif state == UNIT_RESTRICTION.FALLOUT_VEHICLE_LEVEL_REQUIRED:
+        elif state in (UNIT_RESTRICTION.FALLOUT_VEHICLE_LEVEL_REQUIRED, PREBATTLE_RESTRICTION.VEHICLE_GROUP_REQUIRED):
             header = i18n.makeString('#menu:headerButtons/fightBtn/tooltip/falloutVehLevelRequired/header')
             body = i18n.makeString('#menu:headerButtons/fightBtn/tooltip/falloutVehLevelRequired/body', level=int2roman(config.vehicleLevelRequired))
-        elif state == UNIT_RESTRICTION.FALLOUT_VEHICLE_MIN:
-            header = i18n.makeString('#menu:headerButtons/fightBtn/tooltip/falloutVehMin/header')
-            body = i18n.makeString('#menu:headerButtons/fightBtn/tooltip/falloutVehMin/body', min=str(config.minVehiclesPerPlayer), level=toRomanRangeString(list(config.allowedLevels), 1))
+        elif state in (UNIT_RESTRICTION.FALLOUT_VEHICLE_MIN, PREBATTLE_RESTRICTION.VEHICLE_GROUP_MIN):
+            allowedLevelsList = list(config.allowedLevels)
+            if len(allowedLevelsList) > 1:
+                header = i18n.makeString('#menu:headerButtons/fightBtn/tooltip/falloutVehMin/header')
+                body = i18n.makeString('#menu:headerButtons/fightBtn/tooltip/falloutVehMin/body', min=str(config.minVehiclesPerPlayer), level=toRomanRangeString(allowedLevelsList, 1))
+            else:
+                header = i18n.makeString('#menu:headerButtons/fightBtn/tooltip/falloutVehLevelRequired/header')
+                body = i18n.makeString('#menu:headerButtons/fightBtn/tooltip/falloutVehLevelRequired/body', level=int2roman(config.vehicleLevelRequired))
         else:
             return None
         return {'header': header,
@@ -366,8 +371,7 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
                 isInSquad = True
             else:
                 isInSquad = False
-                isSqaudDisabled = state.hasLockedState or self.__falloutCtrl.isEnabled() and not self.__falloutCtrl.getBattleType()
-                self.as_doDisableHeaderButtonS(self.BUTTONS.SQUAD, not isSqaudDisabled)
+                self.as_doDisableHeaderButtonS(self.BUTTONS.SQUAD, self.prbDispatcher.getFunctionalCollection().canCreateSquad())
             falloutCtrl = getFalloutCtrl()
             isFallout = falloutCtrl.isSelected()
             if isInSquad:

@@ -95,9 +95,13 @@ class GasCloud(object):
             import Flock
             d = Flock.DebugGizmo(BigWorld.player().spaceID, 'helpers/models/unit_cube.model')
             d.motor.signal = self.__cloud.cloudMatrixProvider
+        ctrlName = BigWorld.player().inputHandler.ctrlModeName
+        self.__cloud.enableEdgeFogEffects = ctrlName != 'postmortem' or BigWorld.player().vehicle is not None
+        BigWorld.player().inputHandler.onPostmortemVehicleChanged += self.__onPostmortemVehicleChanged
         return
 
     def destroy(self):
+        BigWorld.player().inputHandler.onPostmortemVehicleChanged -= self.__onPostmortemVehicleChanged
         self.__cloud = None
         if self.__model is not None:
             BigWorld.delModel(self.__model)
@@ -105,6 +109,10 @@ class GasCloud(object):
 
     def __onProximity(self, entered):
         pass
+
+    def __onPostmortemVehicleChanged(self, vehicleID):
+        self.__cloud.enableEdgeFogEffects = BigWorld.player().vehicle is not None
+        return
 
 
 class GasSoundManager(object):

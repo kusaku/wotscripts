@@ -35,7 +35,7 @@ class QuestsPersonalWelcomeView(QuestsPersonalWelcomeViewMeta):
          'showAnnouncement': True,
          'announcementIcon': ARENA_GUI_TYPE_LABEL.LABELS[ARENA_GUI_TYPE.EVENT_BATTLES],
          'announcementText': text_styles.promoSubTitle(QUESTS.QUESTSPERSONALWELCOMEVIEW_ANNOUNCEMENTTEXT),
-         'background': RES_ICONS.MAPS_ICONS_QUESTS_PROMOSCREEN_FALLOUT})
+         'background': RES_ICONS.MAPS_ICONS_QUESTS_PROMOSCREEN})
 
     def _dispose(self):
         self.__proxy = None

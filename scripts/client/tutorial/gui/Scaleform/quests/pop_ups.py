@@ -2,40 +2,14 @@
 from gui.Scaleform.daapi.view.lobby.AwardWindow import AwardWindow
 from gui.server_events.awards import FormattedAward
 from gui.server_events.bonuses import getTutorialBonusObj
+from gui.shared import events, g_eventBus
 from helpers import i18n
-from tutorial.control import TutorialProxyHolder
-from tutorial.data.events import ClickEvent
-from tutorial.gui import GUI_EFFECT_NAME
-from tutorial.logger import LOG_ERROR
 
-class TutorialQuestAwardWindow(AwardWindow, TutorialProxyHolder):
+class TutorialQuestAwardWindow(AwardWindow):
 
     def __init__(self, content):
         ctx = {'award': _TutorialQuestAward(content)}
-        self._content = content
         super(TutorialQuestAwardWindow, self).__init__(ctx)
-
-    def onWindowClose(self):
-        self._onMouseClicked('closeID')
-        self._stop()
-
-    def onTakeNextClick(self):
-        self._onMouseClicked('nextID')
-        self._stop()
-
-    def _stop(self):
-        self._content.clear()
-        self._gui.effects.stop(GUI_EFFECT_NAME.SHOW_WINDOW, effectID=self.uniqueName)
-
-    def _onMouseClicked(self, targetKey):
-        if targetKey in self._content:
-            targetID = self._content[targetKey]
-            if len(targetID):
-                self._gui.onGUIInput(ClickEvent(targetID))
-            else:
-                LOG_ERROR('ID of target is empty', targetKey)
-        else:
-            LOG_ERROR('Target not found in data', targetKey)
 
 
 class _TutorialQuestAward(FormattedAward):
@@ -74,3 +48,9 @@ class _TutorialQuestAward(FormattedAward):
             result.append(getTutorialBonusObj(n, v))
 
         return result
+
+    def handleCloseButton(self):
+        g_eventBus.handleEvent(events.TutorialEvent(events.TutorialEvent.SIMPLE_WINDOW_CLOSED, targetID=self.__content['chapterID']))
+
+    def handleBodyButton(self):
+        g_eventBus.handleEvent(events.TutorialEvent(events.TutorialEvent.SIMPLE_WINDOW_PROCESSED, targetID=self.__content['chapterID']))

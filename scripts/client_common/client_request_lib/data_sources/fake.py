@@ -139,8 +139,9 @@ class FakeDataAccessor(base.BaseDataAccessor):
     """
     requests_before_logout = -1
 
-    def __init__(self, url_fetcher = None, config = None):
+    def __init__(self, url_fetcher = None, config = None, client_lang = None):
         super(FakeDataAccessor, self).__init__()
+        self.client_lang = client_lang
         self._account = None
         self._storage = {}
         self.account = None

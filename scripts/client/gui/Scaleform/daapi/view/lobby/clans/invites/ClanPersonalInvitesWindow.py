@@ -1,6 +1,6 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/clans/invites/ClanPersonalInvitesWindow.py
 from gui.clans.clan_helpers import ClanListener
-from gui.clans.settings import CLAN_CONTROLLER_STATES
+from gui.clans import formatters
 from gui.Scaleform.daapi.view.meta.ClanPersonalInvitesWindowMeta import ClanPersonalInvitesWindowMeta
 from gui.Scaleform.locale.CLANS import CLANS
 from gui.shared.formatters import text_styles
@@ -17,12 +17,17 @@ class ClanPersonalInvitesWindow(ClanPersonalInvitesWindowMeta, ClanListener):
         if not self.clansCtrl.isAvailable():
             pass
 
-    def updateActualInvites(self, count):
-        self.as_setActualInvitesTextS(_ms(CLANS.CLANPERSONALINVITESWINDOW_ACTUALINVITES, count=text_styles.stats(count)))
+    def onAccountClanProfileChanged(self, profile):
+        if profile.isInClan():
+            self.destroy()
+
+    def onAccountInvitesReceived(self, invites):
+        self._updateActualInvites()
 
     def _populate(self):
         super(ClanPersonalInvitesWindow, self)._populate()
         self.startClanListening()
+        self._updateActualInvites()
 
     def _dispose(self):
         super(ClanPersonalInvitesWindow, self)._dispose()
@@ -34,3 +39,6 @@ class ClanPersonalInvitesWindow(ClanPersonalInvitesWindowMeta, ClanListener):
 
     def onWindowClose(self):
         self.destroy()
+
+    def _updateActualInvites(self):
+        self.as_setActualInvitesTextS(_ms(CLANS.CLANPERSONALINVITESWINDOW_ACTUALINVITES, count=text_styles.stats(formatters.formatInvitesCount(self.clansCtrl.getAccountProfile().getInvitesCount()))))

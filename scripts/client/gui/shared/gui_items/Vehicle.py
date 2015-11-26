@@ -500,17 +500,17 @@ class Vehicle(FittingItem, HasStrCD):
         return g_eventsCache.getEventVehicles()
 
     @classmethod
-    def __getFalloutSelectedVehicles(cls):
+    def __getFalloutSelectedVehInvIDs(cls):
         from gui.game_control import getFalloutCtrl
         if Vehicle.__isFalloutEnabled():
-            return getFalloutCtrl().getSelectedVehicles()
+            return getFalloutCtrl().getSelectedSlots()
         return ()
 
     @classmethod
-    def __getFalloutAvailableVehicles(cls):
+    def __getFalloutAvailableVehIDs(cls):
         from gui.game_control import getFalloutCtrl
         if Vehicle.__isFalloutEnabled():
-            return getFalloutCtrl().getConfig().getAllowedVehicles()
+            return getFalloutCtrl().getConfig().allowedVehicles
         return ()
 
     @classmethod
@@ -526,21 +526,20 @@ class Vehicle(FittingItem, HasStrCD):
         falloutCtrl = getFalloutCtrl()
         if not falloutCtrl.isSelected():
             return (True, '')
-        else:
-            selectedVehicles = falloutCtrl.getSelectedVehicles()
-            selectedVehiclesCount = len(selectedVehicles)
-            config = falloutCtrl.getConfig()
-            if findFirst(lambda v: v.level == config.vehicleLevelRequired, selectedVehicles) is None:
-                return (False, Vehicle.VEHICLE_STATE.FALLOUT_REQUIRED)
-            if selectedVehiclesCount < config.minVehiclesPerPlayer:
-                return (False, Vehicle.VEHICLE_STATE.FALLOUT_MIN)
-            if selectedVehiclesCount > config.maxVehiclesPerPlayer:
-                return (False, Vehicle.VEHICLE_STATE.FALLOUT_MAX)
-            for v in falloutCtrl.getSelectedVehicles():
-                if v.isBroken or not v.isCrewFull or v.isInBattle or v.rentalIsOver or v.isDisabledInPremIGR:
-                    return (False, Vehicle.VEHICLE_STATE.FALLOUT_BROKEN)
+        selectedVehicles = falloutCtrl.getSelectedVehicles()
+        selectedVehiclesCount = len(selectedVehicles)
+        config = falloutCtrl.getConfig()
+        if falloutCtrl.mustSelectRequiredVehicle():
+            return (False, Vehicle.VEHICLE_STATE.FALLOUT_REQUIRED)
+        if selectedVehiclesCount < config.minVehiclesPerPlayer:
+            return (False, Vehicle.VEHICLE_STATE.FALLOUT_MIN)
+        if selectedVehiclesCount > config.maxVehiclesPerPlayer:
+            return (False, Vehicle.VEHICLE_STATE.FALLOUT_MAX)
+        for v in selectedVehicles:
+            if v.isBroken or not v.isCrewFull or v.isInBattle or v.rentalIsOver or v.isDisabledInPremIGR:
+                return (False, Vehicle.VEHICLE_STATE.FALLOUT_BROKEN)
 
-            return (True, '')
+        return (True, '')
 
     def __getStateLevel(self, state):
         if state in (Vehicle.VEHICLE_STATE.CREW_NOT_FULL,
@@ -587,11 +586,11 @@ class Vehicle(FittingItem, HasStrCD):
 
     @property
     def isFalloutSelected(self):
-        return self in Vehicle.__getFalloutSelectedVehicles()
+        return self.invID in self.__getFalloutSelectedVehInvIDs()
 
     @property
     def isFalloutAvailable(self):
-        return self in Vehicle.__getFalloutAvailableVehicles()
+        return self.intCD in self.__getFalloutAvailableVehIDs()
 
     @property
     def isDisabledInRoaming(self):

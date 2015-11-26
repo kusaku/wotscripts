@@ -54,7 +54,7 @@ class ClubInviteHtmlTextFormatter(object):
         return makeHtmlString('html_templates:lobby/clubs', 'inviteTitle', ctx={'sender': creatorFullName})
 
     def getComment(self, invite):
-        return makeHtmlString('html_templates:lobby/clubs', 'inviteComment', {'eventType': 'showClubProfile'})
+        return makeHtmlString('html_templates:lobby/clubs', 'inviteComment') % {'eventType': 'showClubProfile'}
 
     def getNote(self, invite):
         note = ''
@@ -142,8 +142,7 @@ class ClanMultiNotificationsHtmlTextFormatter(_BaseClanAppHtmlTextFormatter):
         return makeHtmlString('html_templates:lobby/clans', self._titleKey, {'appsCount': entity})
 
     def getComment(self, entity):
-        return makeHtmlString('html_templates:lobby/clans', self._commentKey, {'eventType': self.__commentAction,
-         'icon': makeHtmlString('html_templates:lobby/iconText', 'arrowButton')})
+        return makeHtmlString('html_templates:lobby/clans', self._commentKey) % {'eventType': self.__commentAction}
 
 
 class ClanSingleNotificationHtmlTextFormatter(_BaseClanAppHtmlTextFormatter):
@@ -156,8 +155,7 @@ class ClanSingleNotificationHtmlTextFormatter(_BaseClanAppHtmlTextFormatter):
         return makeHtmlString('html_templates:lobby/clans', self._titleKey, {'name': uName})
 
     def getComment(self, _):
-        return makeHtmlString('html_templates:lobby/clans', self._commentKey, {'eventType': self.__commentAction,
-         'icon': makeHtmlString('html_templates:lobby/iconText', 'arrowButton')})
+        return makeHtmlString('html_templates:lobby/clans', self._commentKey) % {'eventType': self.__commentAction}
 
     def getText(self, data):
         userName, state = data

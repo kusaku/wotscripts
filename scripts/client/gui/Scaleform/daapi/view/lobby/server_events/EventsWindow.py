@@ -48,7 +48,7 @@ class EventsWindow(QuestsWindowMeta):
     def showTileChainsView(self, tileID, questID = None):
         self._navInfo.selectPotapovQuest(tileID, questID)
         quest_settings.markPQTileAsVisited(tileID)
-        return self._loadView(_QA.TILE_CHAINS_VIEW_LINKAGE, _QA.TILE_CHAINS_VIEW_ALIAS)
+        return self._loadView(_QA.TILE_CHAINS_VIEW_LINKAGE, self.__getChainsViewAlias())
 
     def _populate(self):
         super(EventsWindow, self)._populate()
@@ -78,17 +78,25 @@ class EventsWindow(QuestsWindowMeta):
         return tabID
 
     def _updateNavInfo(self, eventType = None, eventID = None):
-        if eventType is not None and eventID is not None:
-            if eventType == constants.EVENT_TYPE.POTAPOV_QUEST:
-                pQuest = g_eventsCache.potapov.getQuests()[int(eventID)]
-                self._navInfo.selectRandomQuest(pQuest.getTileID(), pQuest.getID())
-            elif eventType == constants.EVENT_TYPE.FALLOUT_QUEST:
-                pQuest = g_eventsCache.fallout.getQuests()[int(eventID)]
-                self._navInfo.selectFalloutQuest(pQuest.getTileID(), pQuest.getID())
-            elif eventType == constants.EVENT_TYPE.TUTORIAL:
-                self._navInfo.selectTutorialQuest(eventID)
+        if eventType is not None:
+            if eventID is not None:
+                if eventType == constants.EVENT_TYPE.POTAPOV_QUEST:
+                    pQuest = g_eventsCache.potapov.getQuests()[int(eventID)]
+                    targetQuestTab = events_helpers.getTabAliasByQuestBranchID(pQuest.getQuestBranch())
+                    if targetQuestTab == _QA.SEASON_VIEW_TAB_RANDOM:
+                        self._navInfo.selectRandomQuest(pQuest.getTileID(), pQuest.getID())
+                    else:
+                        self._navInfo.selectFalloutQuest(pQuest.getTileID(), pQuest.getID())
+                elif eventType in (constants.EVENT_TYPE.TUTORIAL, constants.EVENT_TYPE.MOTIVE_QUEST):
+                    self._navInfo.selectTutorialQuest(eventID)
+                else:
+                    self._navInfo.selectCommonQuest(eventID)
+            elif eventType == constants.EVENT_TYPE.POTAPOV_QUEST:
+                self._navInfo.selectTab(_QA.TAB_PERSONAL_QUESTS)
+            elif eventType in (constants.EVENT_TYPE.TUTORIAL, constants.EVENT_TYPE.MOTIVE_QUEST):
+                self._navInfo.selectTab(_QA.TAB_BEGINNER_QUESTS)
             else:
-                self._navInfo.selectCommonQuest(eventID)
+                self._navInfo.selectTab(_QA.TAB_COMMON_QUESTS)
             return True
         else:
             if self.__isTutorialTabEnabled():
@@ -101,7 +109,7 @@ class EventsWindow(QuestsWindowMeta):
             return False
 
     def _onRegisterFlashComponent(self, viewPy, alias):
-        if alias in (_QA.PERSONAL_WELCOME_VIEW_ALIAS, _QA.TILE_CHAINS_VIEW_ALIAS, _QA.SEASONS_VIEW_ALIAS):
+        if alias in (_QA.PERSONAL_WELCOME_VIEW_ALIAS, self.__getChainsViewAlias(), _QA.SEASONS_VIEW_ALIAS):
             viewPy._setMainView(self)
         self.as_hideWaitingS()
 
@@ -137,3 +145,9 @@ class EventsWindow(QuestsWindowMeta):
             if 'isTutorialEnabled' in serverSettings:
                 isTutorialEnabled = serverSettings['isTutorialEnabled']
         return g_settingsCore.serverSettings.getTutorialSetting(TUTORIAL.WAS_QUESTS_TUTORIAL_STARTED) and isTutorialEnabled
+
+    def __getChainsViewAlias(self):
+        if self._navInfo.selectedPQType == _QA.SEASON_VIEW_TAB_RANDOM:
+            return _QA.RANDOM_TILE_CHAINS_VIEW_ALIAS
+        else:
+            return _QA.FALLOUT_TILE_CHAINS_VIEW_ALIAS

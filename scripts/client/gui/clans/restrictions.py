@@ -117,8 +117,6 @@ class AccountClanLimits(BaseAccountClanLimits):
         return self.__checkPermissions('canExchangeMoney', clan)
 
     def canSendApplication(self, clan):
-        if not self.__profile.isSynced():
-            return error(_CCR.RESYNCHRONIZE)
         if self.__profile.isInClan():
             if self.__profile.getClanDbID() == clan.getDbID():
                 return error(_CCR.OWN_CLAN)

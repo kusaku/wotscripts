@@ -146,6 +146,7 @@ class RES_ICONS(object):
     MAPS_ICONS_BUTTONS_DESTROY = MAPS_ICONS_BUTTONS + '/destroy.png'
     MAPS_ICONS_BUTTONS_ENTERWHITE = MAPS_ICONS_BUTTONS + '/enterWhite.png'
     MAPS_ICONS_BUTTONS_ENVELOPE = MAPS_ICONS_BUTTONS + '/envelope.png'
+    MAPS_ICONS_BUTTONS_ENVELOPEOPENED = MAPS_ICONS_BUTTONS + '/envelopeOpened.png'
     MAPS_ICONS_BUTTONS_EXP_GATHERING = MAPS_ICONS_BUTTONS + '/exp_gathering.png'
     MAPS_ICONS_BUTTONS_EXPLORE = MAPS_ICONS_BUTTONS + '/explore.png'
     MAPS_ICONS_BUTTONS_FALLOUTSELECTORRENDERERBGEVENT = MAPS_ICONS_BUTTONS + '/falloutSelectorRendererBGEvent.png'
@@ -420,6 +421,7 @@ class RES_ICONS(object):
     MAPS_ICONS_LIBRARY_BASIC_BIG = '../maps/icons/library/basic_big.png'
     MAPS_ICONS_LIBRARY_BASIC_SMALL = '../maps/icons/library/basic_small.png'
     MAPS_ICONS_LIBRARY_BOOKMARKICON = '../maps/icons/library/bookmarkIcon.png'
+    MAPS_ICONS_LIBRARY_CLANINVITEICON_1 = '../maps/icons/library/clanInviteIcon-1.png'
     MAPS_ICONS_LIBRARY_CLUBINVITEICON_1 = '../maps/icons/library/clubInviteIcon-1.png'
     MAPS_ICONS_LIBRARY_CLUBSINVITEICON_1 = '../maps/icons/library/clubsInviteIcon-1.png'
     MAPS_ICONS_LIBRARY_COMMANDERICON = '../maps/icons/library/commanderIcon.png'
@@ -536,7 +538,6 @@ class RES_ICONS(object):
     MAPS_ICONS_LIBRARY_CYBERSPORT_EMBLEMS_STUB_24X24 = '../maps/icons/library/cybersport/emblems/stub_24x24.png'
     MAPS_ICONS_LIBRARY_CYBERSPORT_EMBLEMS_STUB_32X32 = '../maps/icons/library/cybersport/emblems/stub_32x32.png'
     MAPS_ICONS_LIBRARY_CYBERSPORT_EMBLEMS_STUB_64X64 = '../maps/icons/library/cybersport/emblems/stub_64x64.png'
-    MAPS_ICONS_LIBRARY_CYBERSPORT_FREEZEICON = '../maps/icons/library/cybersport/freezeIcon.png'
     MAPS_ICONS_LIBRARY_CYBERSPORT_ICONDOWN = '../maps/icons/library/cybersport/iconDown.png'
     MAPS_ICONS_LIBRARY_CYBERSPORT_ICONUP = '../maps/icons/library/cybersport/iconUp.png'
     MAPS_ICONS_LIBRARY_CYBERSPORT_LADDERICON = '../maps/icons/library/cybersport/ladderIcon.png'
@@ -946,8 +947,9 @@ class RES_ICONS(object):
     MAPS_ICONS_QUESTS_AWARDS_TILE_1_2_AWARD = '../maps/icons/quests/awards/tile_1_2_award.png'
     MAPS_ICONS_QUESTS_AWARDS_TILE_1_3_AWARD = '../maps/icons/quests/awards/tile_1_3_award.png'
     MAPS_ICONS_QUESTS_AWARDS_TILE_1_4_AWARD = '../maps/icons/quests/awards/tile_1_4_award.png'
-    MAPS_ICONS_QUESTS_AWARDS_TILE_FALLOUT_1_1_AWARD = '../maps/icons/quests/awards/tile_fallout_1_1_award.png'
+    MAPS_ICONS_QUESTS_AWARDS_TILE_2_5_AWARD = '../maps/icons/quests/awards/tile_2_5_award.png'
     MAPS_ICONS_QUESTS_AWARDS_BACKGROUND = '../maps/icons/quests/awards_background.png'
+    MAPS_ICONS_QUESTS_CLASSICFALLOUTAWARDBACK = '../maps/icons/quests/classicFalloutAwardBack.png'
     MAPS_ICONS_QUESTS_EVENTBACKGROUNDS_QUESTS_BACK_EXP = '../maps/icons/quests/eventBackgrounds/quests_back_exp.png'
     MAPS_ICONS_QUESTS_EVENTBACKGROUNDS_QUESTS_BACK_ITEMS = '../maps/icons/quests/eventBackgrounds/quests_back_items.png'
     MAPS_ICONS_QUESTS_EVENTBACKGROUNDS_QUESTS_BACK_PREMDAYS = '../maps/icons/quests/eventBackgrounds/quests_back_premdays.png'
@@ -956,9 +958,10 @@ class RES_ICONS(object):
     MAPS_ICONS_QUESTS_HEADERS_TILE_1_2 = '../maps/icons/quests/headers/tile_1_2.png'
     MAPS_ICONS_QUESTS_HEADERS_TILE_1_3 = '../maps/icons/quests/headers/tile_1_3.png'
     MAPS_ICONS_QUESTS_HEADERS_TILE_1_4 = '../maps/icons/quests/headers/tile_1_4.png'
+    MAPS_ICONS_QUESTS_HEADERS_TILE_2_5 = '../maps/icons/quests/headers/tile_2_5.png'
     MAPS_ICONS_QUESTS_INBATTLEHINT = '../maps/icons/quests/inBattleHint.png'
+    MAPS_ICONS_QUESTS_MULTITEAMFALLOUTAWARDBACK = '../maps/icons/quests/multiteamFalloutAwardBack.png'
     MAPS_ICONS_QUESTS_PROMOSCREEN = '../maps/icons/quests/promoscreen.png'
-    MAPS_ICONS_QUESTS_PROMOSCREEN_FALLOUT = '../maps/icons/quests/promoscreen_fallout.png'
     MAPS_ICONS_QUESTS_SEASONSVIEWBG = '../maps/icons/quests/seasonsViewBg.png'
     MAPS_ICONS_QUESTS_TANKMANFEMALEGRAY = '../maps/icons/quests/tankmanFemaleGray.png'
     MAPS_ICONS_QUESTS_TANKMANFEMALEORANGE = '../maps/icons/quests/tankmanFemaleOrange.png'
@@ -978,10 +981,10 @@ class RES_ICONS(object):
     MAPS_ICONS_QUESTS_TILES_TILE_1_4_COLOR_UP = MAPS_ICONS_QUESTS_TILES + '/tile_1_4_color_up.png'
     MAPS_ICONS_QUESTS_TILES_TILE_1_4_GRAY_OVER = MAPS_ICONS_QUESTS_TILES + '/tile_1_4_gray_over.png'
     MAPS_ICONS_QUESTS_TILES_TILE_1_4_GRAY_UP = MAPS_ICONS_QUESTS_TILES + '/tile_1_4_gray_up.png'
-    MAPS_ICONS_QUESTS_TILES_TILE_FALLOUT_1_1_COLOR_OVER = MAPS_ICONS_QUESTS_TILES + '/tile_fallout_1_1_color_over.png'
-    MAPS_ICONS_QUESTS_TILES_TILE_FALLOUT_1_1_COLOR_UP = MAPS_ICONS_QUESTS_TILES + '/tile_fallout_1_1_color_up.png'
-    MAPS_ICONS_QUESTS_TILES_TILE_FALLOUT_1_1_GRAY_OVER = MAPS_ICONS_QUESTS_TILES + '/tile_fallout_1_1_gray_over.png'
-    MAPS_ICONS_QUESTS_TILES_TILE_FALLOUT_1_1_GRAY_UP = MAPS_ICONS_QUESTS_TILES + '/tile_fallout_1_1_gray_up.png'
+    MAPS_ICONS_QUESTS_TILES_TILE_2_5_COLOR_OVER = MAPS_ICONS_QUESTS_TILES + '/tile_2_5_color_over.png'
+    MAPS_ICONS_QUESTS_TILES_TILE_2_5_COLOR_UP = MAPS_ICONS_QUESTS_TILES + '/tile_2_5_color_up.png'
+    MAPS_ICONS_QUESTS_TILES_TILE_2_5_GRAY_OVER = MAPS_ICONS_QUESTS_TILES + '/tile_2_5_gray_over.png'
+    MAPS_ICONS_QUESTS_TILES_TILE_2_5_GRAY_UP = MAPS_ICONS_QUESTS_TILES + '/tile_2_5_gray_up.png'
     MAPS_ICONS_QUESTS_TOKEN128 = '../maps/icons/quests/token128.png'
     MAPS_ICONS_QUESTS_TOKEN16 = '../maps/icons/quests/token16.png'
     MAPS_ICONS_QUESTS_TOKEN256 = '../maps/icons/quests/token256.png'
@@ -1056,6 +1059,7 @@ class RES_ICONS(object):
     MAPS_ICONS_VEHICLETYPES_RED_LIGHTTANK = '../maps/icons/vehicleTypes/red/lightTank.png'
     MAPS_ICONS_VEHICLETYPES_RED_MEDIUMTANK = '../maps/icons/vehicleTypes/red/mediumTank.png'
     MAPS_ICONS_VEHICLETYPES_RED_SPG = '../maps/icons/vehicleTypes/red/spg.png'
+    MAPS_ICONS_WINDOWS_FALLOUT_CONGRATULATIONS_BG = '../maps/icons/windows/fallout_congratulations_bg.png'
     MAPS_ICONS_WINDOWS_GOLDFISH_GOLDFISHBG = '../maps/icons/windows/goldFish/goldFishBg.png'
     MAPS_ICONS_WINDOWS_MINICLIENT_SQUAD_WINDOW_BACKGROUND = '../maps/icons/windows/miniclient_squad_window_background.png'
     MAPS_ICONS_WINDOWS_PREM_ICON_PREM180_256 = '../maps/icons/windows/prem/icon_prem180_256.png'
@@ -1072,21 +1076,6 @@ class RES_ICONS(object):
     MAPS_ICONS_WINDOWS_PREM_ICON_PREM7_98 = '../maps/icons/windows/prem/icon_prem7_98.png'
     MAPS_ICONS_WINDOWS_PREM_PREMHEADER = '../maps/icons/windows/prem/premHeader.png'
     MAPS_ICONS_WINDOWS_SWITCH_PERIPHERY_WINDOW_BG = '../maps/icons/windows/switch_periphery_window_bg.png'
-    MAPS_ICONS_ORDERS_SMALL_ENUM = (MAPS_ICONS_ORDERS_SMALL_ADDITIONALBRIEFING,
-     MAPS_ICONS_ORDERS_SMALL_ARTILLERY,
-     MAPS_ICONS_ORDERS_SMALL_BOMBER,
-     MAPS_ICONS_ORDERS_SMALL_COMBATPAYMENTS,
-     MAPS_ICONS_ORDERS_SMALL_EVACUATION,
-     MAPS_ICONS_ORDERS_SMALL_HEAVYTRANSPORT,
-     MAPS_ICONS_ORDERS_SMALL_MILITARYEXERCISES,
-     MAPS_ICONS_ORDERS_SMALL_REQUISITION,
-     MAPS_ICONS_ORDERS_SMALL_RESERVEROULETTE,
-     MAPS_ICONS_ORDERS_SMALL_TACTICALTRAINING)
-    MAPS_ICONS_VEHICLETYPES_ELITE_ENUM = (MAPS_ICONS_VEHICLETYPES_ELITE_AT_SPG,
-     MAPS_ICONS_VEHICLETYPES_ELITE_SPG,
-     MAPS_ICONS_VEHICLETYPES_ELITE_HEAVYTANK,
-     MAPS_ICONS_VEHICLETYPES_ELITE_LIGHTTANK,
-     MAPS_ICONS_VEHICLETYPES_ELITE_MEDIUMTANK)
     MAPS_ICONS_BUTTONS_ENUM = (MAPS_ICONS_BUTTONS_TANK_ICO,
      MAPS_ICONS_BUTTONS_BOOKMARK,
      MAPS_ICONS_BUTTONS_CALENDAR,
@@ -1096,6 +1085,7 @@ class RES_ICONS(object):
      MAPS_ICONS_BUTTONS_DESTROY,
      MAPS_ICONS_BUTTONS_ENTERWHITE,
      MAPS_ICONS_BUTTONS_ENVELOPE,
+     MAPS_ICONS_BUTTONS_ENVELOPEOPENED,
      MAPS_ICONS_BUTTONS_EXP_GATHERING,
      MAPS_ICONS_BUTTONS_EXPLORE,
      MAPS_ICONS_BUTTONS_FALLOUTSELECTORRENDERERBGEVENT,
@@ -1163,6 +1153,21 @@ class RES_ICONS(object):
      MAPS_ICONS_BUTTONS_TRANSPORTING,
      MAPS_ICONS_BUTTONS_TRANSPORTINGARROW,
      MAPS_ICONS_BUTTONS_TUNING)
+    MAPS_ICONS_VEHICLETYPES_ELITE_ENUM = (MAPS_ICONS_VEHICLETYPES_ELITE_AT_SPG,
+     MAPS_ICONS_VEHICLETYPES_ELITE_SPG,
+     MAPS_ICONS_VEHICLETYPES_ELITE_HEAVYTANK,
+     MAPS_ICONS_VEHICLETYPES_ELITE_LIGHTTANK,
+     MAPS_ICONS_VEHICLETYPES_ELITE_MEDIUMTANK)
+    MAPS_ICONS_ORDERS_SMALL_ENUM = (MAPS_ICONS_ORDERS_SMALL_ADDITIONALBRIEFING,
+     MAPS_ICONS_ORDERS_SMALL_ARTILLERY,
+     MAPS_ICONS_ORDERS_SMALL_BOMBER,
+     MAPS_ICONS_ORDERS_SMALL_COMBATPAYMENTS,
+     MAPS_ICONS_ORDERS_SMALL_EVACUATION,
+     MAPS_ICONS_ORDERS_SMALL_HEAVYTRANSPORT,
+     MAPS_ICONS_ORDERS_SMALL_MILITARYEXERCISES,
+     MAPS_ICONS_ORDERS_SMALL_REQUISITION,
+     MAPS_ICONS_ORDERS_SMALL_RESERVEROULETTE,
+     MAPS_ICONS_ORDERS_SMALL_TACTICALTRAINING)
     MAPS_ICONS_QUESTS_TILES_ENUM = (MAPS_ICONS_QUESTS_TILES_TILE_1_1_COLOR_OVER,
      MAPS_ICONS_QUESTS_TILES_TILE_1_1_COLOR_UP,
      MAPS_ICONS_QUESTS_TILES_TILE_1_1_GRAY_OVER,
@@ -1179,10 +1184,16 @@ class RES_ICONS(object):
      MAPS_ICONS_QUESTS_TILES_TILE_1_4_COLOR_UP,
      MAPS_ICONS_QUESTS_TILES_TILE_1_4_GRAY_OVER,
      MAPS_ICONS_QUESTS_TILES_TILE_1_4_GRAY_UP,
-     MAPS_ICONS_QUESTS_TILES_TILE_FALLOUT_1_1_COLOR_OVER,
-     MAPS_ICONS_QUESTS_TILES_TILE_FALLOUT_1_1_COLOR_UP,
-     MAPS_ICONS_QUESTS_TILES_TILE_FALLOUT_1_1_GRAY_OVER,
-     MAPS_ICONS_QUESTS_TILES_TILE_FALLOUT_1_1_GRAY_UP)
+     MAPS_ICONS_QUESTS_TILES_TILE_2_5_COLOR_OVER,
+     MAPS_ICONS_QUESTS_TILES_TILE_2_5_COLOR_UP,
+     MAPS_ICONS_QUESTS_TILES_TILE_2_5_GRAY_OVER,
+     MAPS_ICONS_QUESTS_TILES_TILE_2_5_GRAY_UP)
+    MAPS_ICONS_BUTTONS_SOCIAL_COLOR_ENUM = (MAPS_ICONS_BUTTONS_SOCIAL_COLOR_FACEBOOK,
+     MAPS_ICONS_BUTTONS_SOCIAL_COLOR_GOOGLE,
+     MAPS_ICONS_BUTTONS_SOCIAL_COLOR_NAVER,
+     MAPS_ICONS_BUTTONS_SOCIAL_COLOR_VKONTAKTE,
+     MAPS_ICONS_BUTTONS_SOCIAL_COLOR_WGNI,
+     MAPS_ICONS_BUTTONS_SOCIAL_COLOR_YAHOO)
     MAPS_ICONS_BUTTONS_SOCIAL_ENUM = (MAPS_ICONS_BUTTONS_SOCIAL_FACEBOOK,
      MAPS_ICONS_BUTTONS_SOCIAL_GOOGLE,
      MAPS_ICONS_BUTTONS_SOCIAL_NAVER,
@@ -1199,12 +1210,6 @@ class RES_ICONS(object):
      MAPS_ICONS_LIBRARY_USERSTATUS_SMALL_WOTG,
      MAPS_ICONS_LIBRARY_USERSTATUS_SMALL_WOWP,
      MAPS_ICONS_LIBRARY_USERSTATUS_SMALL_WOWS)
-    MAPS_ICONS_BUTTONS_SOCIAL_COLOR_ENUM = (MAPS_ICONS_BUTTONS_SOCIAL_COLOR_FACEBOOK,
-     MAPS_ICONS_BUTTONS_SOCIAL_COLOR_GOOGLE,
-     MAPS_ICONS_BUTTONS_SOCIAL_COLOR_NAVER,
-     MAPS_ICONS_BUTTONS_SOCIAL_COLOR_VKONTAKTE,
-     MAPS_ICONS_BUTTONS_SOCIAL_COLOR_WGNI,
-     MAPS_ICONS_BUTTONS_SOCIAL_COLOR_YAHOO)
     MAPS_ICONS_LIBRARY_PROFICIENCY_CLASS_ICONS_ENUM = (MAPS_ICONS_LIBRARY_PROFICIENCY_CLASS_ICONS_1,
      MAPS_ICONS_LIBRARY_PROFICIENCY_CLASS_ICONS_2,
      MAPS_ICONS_LIBRARY_PROFICIENCY_CLASS_ICONS_3,
@@ -1221,9 +1226,9 @@ class RES_ICONS(object):
      MAPS_ICONS_LIBRARY_USERSTATUS_WOWS)
 
     @staticmethod
-    def maps_icons_orders_small(key):
-        outcome = '../maps/icons/orders/small/%s' % key
-        if outcome not in RES_ICONS.MAPS_ICONS_ORDERS_SMALL_ENUM:
+    def maps_icons_buttons(key):
+        outcome = '../maps/icons/buttons/%s' % key
+        if outcome not in RES_ICONS.MAPS_ICONS_BUTTONS_ENUM:
             LOG_WARNING('locale key "' + outcome + '" was not found')
             return None
         else:
@@ -1239,9 +1244,9 @@ class RES_ICONS(object):
             return outcome
 
     @staticmethod
-    def maps_icons_buttons(key):
-        outcome = '../maps/icons/buttons/%s' % key
-        if outcome not in RES_ICONS.MAPS_ICONS_BUTTONS_ENUM:
+    def maps_icons_orders_small(key):
+        outcome = '../maps/icons/orders/small/%s' % key
+        if outcome not in RES_ICONS.MAPS_ICONS_ORDERS_SMALL_ENUM:
             LOG_WARNING('locale key "' + outcome + '" was not found')
             return None
         else:
@@ -1257,6 +1262,13 @@ class RES_ICONS(object):
             return outcome
 
     @staticmethod
+    def maps_icons_buttons_social_color(key):
+        outcome = '../maps/icons/buttons/social/color/%s' % key
+        if outcome not in RES_ICONS.MAPS_ICONS_BUTTONS_SOCIAL_COLOR_ENUM:
+            raise Exception, 'locale key "' + outcome + '" was not found'
+        return outcome
+
+    @staticmethod
     def maps_icons_buttons_social(key):
         outcome = '../maps/icons/buttons/social/%s' % key
         if outcome not in RES_ICONS.MAPS_ICONS_BUTTONS_SOCIAL_ENUM:
@@ -1267,13 +1279,6 @@ class RES_ICONS(object):
     def maps_icons_library_userstatus_small(key):
         outcome = '../maps/icons/library/userStatus/small/%s' % key
         if outcome not in RES_ICONS.MAPS_ICONS_LIBRARY_USERSTATUS_SMALL_ENUM:
-            raise Exception, 'locale key "' + outcome + '" was not found'
-        return outcome
-
-    @staticmethod
-    def maps_icons_buttons_social_color(key):
-        outcome = '../maps/icons/buttons/social/color/%s' % key
-        if outcome not in RES_ICONS.MAPS_ICONS_BUTTONS_SOCIAL_COLOR_ENUM:
             raise Exception, 'locale key "' + outcome + '" was not found'
         return outcome
 

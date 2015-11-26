@@ -78,7 +78,8 @@ class VehicleGunRotator(object):
                 self.__time = BigWorld.time()
                 if self.__showServerMarker:
                     self.__avatar.inputHandler.showGunMarker2(True)
-            self.__turretRotationSoundEffect = _PlayerTurretRotationSoundEffect()
+            if self.__turretRotationSoundEffect is None:
+                self.__turretRotationSoundEffect = _PlayerTurretRotationSoundEffect()
             BigWorld.player().inputHandler.onCameraChanged += self.__onCameraChanged
             return
 

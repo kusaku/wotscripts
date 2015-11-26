@@ -9,6 +9,7 @@ import clubs_quests
 from Event import Event, EventManager
 from adisp import async, process
 from constants import EVENT_TYPE, EVENT_CLIENT_DATA
+from potapov_quests import _POTAPOV_QUEST_XML_PATH
 from gui.shared.utils.requesters.QuestsProgressRequester import QuestsProgressRequester
 from helpers import isPlayerAccount
 from items import getTypeOfCompactDescr
@@ -24,6 +25,7 @@ from gui.server_events.event_items import EventBattles, createQuest, createActio
 from gui.server_events.event_items import CompanyBattles, ClubsQuest
 from gui.shared.utils.RareAchievementsCache import g_rareAchievesCache
 from gui.shared.gui_items import GUI_ITEM_TYPE
+from quest_cache_helpers import readQuestsFromFile
 from shared_utils import makeTupleByDict
 
 def _defaultQuestMaker(qID, qData, progress):
@@ -32,6 +34,38 @@ def _defaultQuestMaker(qID, qData, progress):
 
 def _clubsQuestMaker(qID, qData, progress, seasonID, questDescr):
     return ClubsQuest(seasonID, questDescr, progress.getQuestProgress(qID))
+
+
+class _PotapovComposer(object):
+
+    def __init__(self, random, fallout):
+        super(_PotapovComposer, self).__init__()
+        self.__composedObjects = [random, fallout]
+
+    def getQuests(self):
+        return self.__composeDict('getQuests')
+
+    def getTiles(self):
+        return self.__composeDict('getTiles')
+
+    def getSelectedQuests(self):
+        return self.__composeDict('getSelectedQuests')
+
+    def hasQuestsForReward(self):
+        return any((obj.hasQuestsForReward() for obj in self.__composedObjects))
+
+    def hasQuestsForSelect(self):
+        return any((obj.hasQuestsForSelect() for obj in self.__composedObjects))
+
+    def getNextTankwomanIDs(self, *args):
+        return self.__composedObjects[0].getNextTankwomanIDs(*args)
+
+    def __composeDict(self, getter):
+        result = {}
+        for obj in self.__composedObjects:
+            result.update(getattr(obj, getter)())
+
+        return result
 
 
 class _EventsCache(object):
@@ -46,10 +80,12 @@ class _EventsCache(object):
         self.__waitForSync = False
         self.__invalidateCbID = None
         self.__cache = defaultdict(dict)
+        self.__potapovHidden = {}
         self.__actionsCache = defaultdict(lambda : defaultdict(dict))
         self.__questsDossierBonuses = defaultdict(set)
         self.__random = RandomPQController()
         self.__fallout = FalloutPQController()
+        self.__potapovComposer = _PotapovComposer(self.__random, self.__fallout)
         self.__questsProgress = QuestsProgressRequester()
         self.__companies = CompanyBattleController(self)
         self.__em = EventManager()
@@ -106,7 +142,7 @@ class _EventsCache(object):
 
     @property
     def potapov(self):
-        return self.random
+        return self.__potapovComposer
 
     @property
     def companies(self):
@@ -521,6 +557,7 @@ class _EventsCache(object):
         questsData = self.__getQuestsData()
         questsData.update(self.__getFortQuestsData())
         questsData.update(self.__getPersonalQuestsData())
+        questsData.update(self.__getPotapovHiddenQuests())
         for qID, qData in questsData.iteritems():
             yield (qID, self._makeQuest(qID, qData))
 
@@ -545,6 +582,14 @@ class _EventsCache(object):
         self.__actionsCache.clear()
         for storage in self.__cache.itervalues():
             storage.clear()
+
+    def __getPotapovHiddenQuests(self):
+        if not self.__potapovHidden:
+            xmlPath = _POTAPOV_QUEST_XML_PATH + '/tiles.xml'
+            for quest in readQuestsFromFile(xmlPath, EVENT_TYPE.TOKEN_QUEST):
+                self.__potapovHidden[quest[0]] = quest[3]
+
+        return self.__potapovHidden.copy()
 
 
 g_eventsCache = _EventsCache()

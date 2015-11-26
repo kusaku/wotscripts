@@ -63,6 +63,10 @@ def isLowLevelBattle():
     return 0 < battleLevel < 4
 
 
+def isRandomBattle():
+    return getArenaGuiType() == constants.ARENA_GUI_TYPE.RANDOM
+
+
 def isEventBattle():
     return getArenaGuiType() == constants.ARENA_GUI_TYPE.EVENT_BATTLES
 
