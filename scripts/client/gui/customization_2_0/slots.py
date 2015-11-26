@@ -32,7 +32,7 @@ class Slots(object):
         self.__currentIdx = 0
         self.__data = None
         self.__initialData = None
-        self.__updateSlotsData()
+        self.__updateSlotsData(False)
         self.__aData.updated += self.__updateSlotsData
         return
 
@@ -186,17 +186,19 @@ class Slots(object):
             g_hangarSpace.space.updateVehicleSticker(self.__aData.viewModel[1:3])
         return
 
-    def __updateSlotsData(self):
+    def __updateSlotsData(self, resetSlots):
         newSlotsData = {'data': [{'header': self.__setSlotsHeader(CUSTOMIZATION_TYPE.CAMOUFLAGE),
                    'data': self.__setSlotsData(CUSTOMIZATION_TYPE.CAMOUFLAGE)}, {'header': self.__setSlotsHeader(CUSTOMIZATION_TYPE.EMBLEM),
                    'data': self.__setSlotsData(CUSTOMIZATION_TYPE.EMBLEM)}, {'header': self.__setSlotsHeader(CUSTOMIZATION_TYPE.INSCRIPTION),
                    'data': self.__setSlotsData(CUSTOMIZATION_TYPE.INSCRIPTION)}]}
-        if self.__initialData is not None:
+        if self.__initialData is not None and not resetSlots:
             self.__handleServerChange(newSlotsData)
             self.__initialData = newSlotsData
         else:
             self.__data = newSlotsData
             self.__initialData = copy.deepcopy(self.__data)
+            if resetSlots:
+                self.__resetSlots()
         self.cart.setInitialSlotsData(self.__initialData)
         self.cart.update(self.__data)
         self.bonusPanel.setInitialSlotsData(self.__initialData)
@@ -261,3 +263,10 @@ class Slots(object):
                     self.updated({'type': cType,
                      'idx': slotIdx,
                      'data': currentSlotItem})
+
+    def __resetSlots(self):
+        for cType in (CUSTOMIZATION_TYPE.CAMOUFLAGE, CUSTOMIZATION_TYPE.EMBLEM, CUSTOMIZATION_TYPE.INSCRIPTION):
+            for slotIdx in range(0, len(self.__data['data'][cType]['data'])):
+                self.updated({'type': cType,
+                 'idx': slotIdx,
+                 'data': self.__data['data'][cType]['data'][slotIdx]})

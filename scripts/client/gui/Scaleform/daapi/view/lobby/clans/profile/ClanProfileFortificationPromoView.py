@@ -10,11 +10,13 @@ class ClanProfileFortificationPromoView(ClanProfileFortificationPromoViewMeta):
         super(ClanProfileFortificationPromoView, self).__init__()
         self._clanDossier = None
         self._fortDP = None
+        self.proxy = None
         return
 
     def setProxy(self, proxy, fortDP, clanDossier):
         self._fortDP = fortDP
         self._clanDossier = clanDossier
+        self.proxy = proxy
 
     def _dispose(self):
         self._clanDossier = None
@@ -27,6 +29,7 @@ class ClanProfileFortificationPromoView(ClanProfileFortificationPromoViewMeta):
             viewPy.onFortCreationRequested += self.__fortCreationRequestedHandler
             viewPy.onFortCreationDone += self.__fortCreationDoneHandler
             viewPy.setMyClan(self._clanDossier.isMyClan())
+            self.proxy.hideWaiting()
 
     def _onUnregisterFlashComponent(self, viewPy, alias):
         if alias == VIEW_ALIAS.FORT_WELCOME_INFO:

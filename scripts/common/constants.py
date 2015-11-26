@@ -24,6 +24,7 @@ IS_DEVELOPMENT = CURRENT_REALM == 'DEV'
 IS_CHINA = CURRENT_REALM == 'CN'
 IS_KOREA = CURRENT_REALM == 'KR'
 IS_SINGAPORE = CURRENT_REALM == 'ASIA'
+IS_QUALIFIERS_ENABLED = False
 if CURRENT_REALM == 'NA':
     DEFAULT_LANGUAGE = 'en'
     AUTH_REALM = 'NA'
@@ -734,6 +735,12 @@ if not sum([IS_CHINA, IS_KOREA, IS_SINGAPORE]) <= 1:
         @staticmethod
         def IS_TURRET_DETACHED(health):
             return health < 0 and health | SPECIAL_VEHICLE_HEALTH.TURRET_DETACHED == SPECIAL_VEHICLE_HEALTH.TURRET_DETACHED
+
+
+    class AOI:
+        ENABLE_MANUAL_RULES = True
+        VEHICLE_CIRCULAR_AOI_RADIUS = 565.0
+        CIRCULAR_AOI_HYSTERESIS_MARGIN = 5.0
 
 
     ATTACK_REASONS = ('shot', 'fire', 'ramming', 'world_collision', 'death_zone', 'drowning', 'gas_attack')

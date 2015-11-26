@@ -50,6 +50,7 @@ class _FortBaseDataReceiver(object):
 
     def __init__(self, ratings, clanDossier, updateCallback):
         self.__fortLevel = None
+        self.__fortStats = None
         self.__fortLevelStr = clan_fmts.DUMMY_UNAVAILABLE_DATA
         self._clanDossier = clanDossier
         self.__ratings = ratings
@@ -59,11 +60,13 @@ class _FortBaseDataReceiver(object):
         return
 
     def __getStatsVO(self):
-        notActual = self.__ratings.getFbBattlesCount28d() <= 0
+        notActual = self.__fortStats and self.__fortStats.getFbBattlesCount28d() <= 0
         hasFortRating = self.__ratings.hasFortRating()
         if self.__fortLevel is None:
             self.__getFortLevel()
-        if not hasFortRating:
+        if self.__fortStats is None:
+            self.__getFortStatistics()
+        if not hasFortRating and not self.__has28dFortStatistics():
             if self.__fortLevel is None:
                 fortInfo = (False, CLANS.CLANPROFILE_SUMMARYVIEW_BLOCKLBL_HASNOBATTLES)
             elif self.__fortLevel > 0:
@@ -72,6 +75,11 @@ class _FortBaseDataReceiver(object):
                 fortInfo = (False, CLANS.CLANPROFILE_SUMMARYVIEW_BLOCKLBL_EMPTYFORT)
         else:
             fortInfo = (True, '')
+        if self.__fortStats:
+            fsBattleCount28d = formatField(getter=self.__fortStats.getFsBattlesCount28d, formatter=BigWorld.wg_getIntegralFormat)
+            fbBattleCount28d = formatField(getter=self.__fortStats.getFbBattlesCount28d, formatter=BigWorld.wg_getIntegralFormat)
+        else:
+            fsBattleCount28d, fbBattleCount28d = clan_fmts.DUMMY_UNAVAILABLE_DATA, clan_fmts.DUMMY_UNAVAILABLE_DATA
         return ([{'local': 'rageLevel10',
            'value': formatField(getter=self.__ratings.getEloRating10, formatter=BigWorld.wg_getIntegralFormat),
            'timeExpired': notActual,
@@ -81,10 +89,10 @@ class _FortBaseDataReceiver(object):
            'timeExpired': notActual,
            'tooltip': CLANS.CLANPROFILE_SUMMARYVIEW_TOOLTIP_FORT_ELO_RAGE_8_BODY},
           {'local': 'sortiesPerDay',
-           'value': formatField(getter=self.__ratings.getFsBattlesCount28d, formatter=BigWorld.wg_getIntegralFormat),
+           'value': fsBattleCount28d,
            'tooltip': CLANS.CLANPROFILE_SUMMARYVIEW_TOOLTIP_FORT_SORTIE_COUNT_28_BODY},
           {'local': 'battlesPerDay',
-           'value': formatField(getter=self.__ratings.getFbBattlesCount28d, formatter=BigWorld.wg_getIntegralFormat),
+           'value': fbBattleCount28d,
            'tooltip': CLANS.CLANPROFILE_SUMMARYVIEW_TOOLTIP_FORT_BATTLES_COUNT_28_BODY},
           {'local': 'fortLevel',
            'value': self.__fortLevelStr,
@@ -94,6 +102,7 @@ class _FortBaseDataReceiver(object):
         self.__updateCallback = None
         self.__ratings = None
         self._clanDossier = None
+        self.__fortStats = None
         return
 
     @async
@@ -105,6 +114,18 @@ class _FortBaseDataReceiver(object):
         self.__fortLevel, self.__fortLevelStr = yield self._requestFortLevel()
         if self.__updateCallback:
             self.__updateCallback(*self.__getStatsVO())
+
+    @process
+    def __getFortStatistics(self):
+        self.__fortStats = yield self._clanDossier.requestStrongholdStatistics()
+        if self.__updateCallback:
+            self.__updateCallback(*self.__getStatsVO())
+
+    def __has28dFortStatistics(self):
+        if self.__fortStats and (self.__fortStats.getFsBattlesCount28d() > 0 or self.__fortStats.getFbBattlesCount28d() > 0):
+            return True
+        else:
+            return False
 
 
 class _MyFortDataReceiver(_FortBaseDataReceiver):

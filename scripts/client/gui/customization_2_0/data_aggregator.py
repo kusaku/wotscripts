@@ -27,6 +27,7 @@ _ITEM_CLASS = {CUSTOMIZATION_TYPE.EMBLEM: AvailableEmblem,
  CUSTOMIZATION_TYPE.CAMOUFLAGE: AvailableCamouflage}
 _MAX_HULL_SLOTS = 2
 _MAX_TURRET_SLOTS = 2
+VEHICLE_CHANGED_EVENT = 'VEHICLE_CHANGED_EVENT'
 
 class DataAggregator(object):
 
@@ -38,14 +39,17 @@ class DataAggregator(object):
         self.__displayedItems = [{}, {}, {}]
         self.__initialViewModel = ()
         self.__cNationID = None
+        self.__vehicleInventoryID = None
         self.__displayIgrItems = getIGRCtrl().getRoomType() == 2 and GUI_SETTINGS.igrEnabled
         self.__availableGroupNames = []
         self.__gatherDataForVehicle(CACHE_SYNC_REASON.DOSSIER_RESYNC, None)
+        _g_currentVehicle.onChanged += self.__onCurrentVehicleChanged
         _g_itemsCache.onSyncCompleted += self.__gatherDataForVehicle
         return
 
     def fini(self):
         _g_currentVehicle.onChanged -= self.__gatherDataForVehicle
+        _g_currentVehicle.onChanged -= self.__onCurrentVehicleChanged
         self.__installed = None
         self.__availableItems = None
         self.__displayedItems = None
@@ -74,8 +78,14 @@ class DataAggregator(object):
     def availableGroupNames(self):
         return self.__availableGroupNames
 
+    def __onCurrentVehicleChanged(self):
+        if self.__vehicleInventoryID != g_currentVehicle.item.invID:
+            self.__gatherDataForVehicle(VEHICLE_CHANGED_EVENT, None)
+        return
+
     def __gatherDataForVehicle(self, updateReason, invalidItems):
-        if updateReason in (CACHE_SYNC_REASON.DOSSIER_RESYNC, CACHE_SYNC_REASON.SHOP_RESYNC):
+        if updateReason in (CACHE_SYNC_REASON.DOSSIER_RESYNC, CACHE_SYNC_REASON.SHOP_RESYNC, VEHICLE_CHANGED_EVENT):
+            self.__vehicleInventoryID = g_currentVehicle.item.invID
             curVehItem = _g_currentVehicle.item
             curVehDescr = curVehItem.descriptor
             self.__cNationID = curVehDescr.type.customizationNationID
@@ -93,7 +103,7 @@ class DataAggregator(object):
                 self.__fillDisplayedItems(cType, inventoryItems)
                 self.__fillDisplayedGroups(cType, inDossier, inventoryItems, itemGroups)
 
-            self.updated()
+            self.updated(updateReason == VEHICLE_CHANGED_EVENT)
 
     def __setInstalledCustomization(self, vehicleHullSlots, vehicleTurretSlots, installedRawItems):
         installedHullEmblems = []

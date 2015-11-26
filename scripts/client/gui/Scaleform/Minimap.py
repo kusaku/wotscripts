@@ -9,7 +9,7 @@ import CommandMapping
 import Keys
 from CTFManager import g_ctfManager
 from battleground.gas_attack import gasAttackManager
-from constants import REPAIR_POINT_ACTION, RESOURCE_POINT_STATE, FLAG_STATE
+from constants import REPAIR_POINT_ACTION, RESOURCE_POINT_STATE, FLAG_STATE, AOI
 from gui.battle_control.avatar_getter import getPlayerVehicleID
 from gui.battle_control.dyn_squad_functional import IDynSquadEntityClient
 from gui.shared import g_eventBus, EVENT_BUS_SCOPE
@@ -86,7 +86,7 @@ _CAPTURE_FROZEN_STATE_BY_TEAMS = {True: RESOURCE_POINT_TYPE.OWN_MINING,
 class Minimap(IDynSquadEntityClient):
     __MINIMAP_SIZE = (210, 210)
     __MINIMAP_CELLS = (10, 10)
-    __AOI_ESTIMATE = 450.0
+    __AOI_ESTIMATE = AOI.VEHICLE_CIRCULAR_AOI_RADIUS - 50.0 if AOI.ENABLE_MANUAL_RULES else 450.0
     __AOI_TO_FAR_TIME = 5.0
 
     def __init__(self, parentUI):
@@ -534,7 +534,10 @@ class Minimap(IDynSquadEntityClient):
                 if location == VehicleLocation.AOI:
                     ownPos = Math.Matrix(BigWorld.camera().invViewMatrix).translation
                     entryPos = Math.Matrix(entries[vehicleID]['matrix']).translation
-                    inAoI = bool(abs(ownPos.x - entryPos.x) < self.__AOI_ESTIMATE and abs(ownPos.z - entryPos.z) < self.__AOI_ESTIMATE)
+                    if AOI.ENABLE_MANUAL_RULES:
+                        inAoI = (ownPos.x - entryPos.x) ** 2 + (ownPos.y - entryPos.y) ** 2 + (ownPos.z - entryPos.z) ** 2 < self.__AOI_ESTIMATE ** 2
+                    else:
+                        inAoI = bool(abs(ownPos.x - entryPos.x) < self.__AOI_ESTIMATE and abs(ownPos.z - entryPos.z) < self.__AOI_ESTIMATE)
                     guiProps = g_sessionProvider.getCtx().getPlayerGuiProps(vehicleID, vInfo.team)
                     if self.__permanentNamesShow or self.__onAltNamesShow:
                         battleCtx = g_sessionProvider.getCtx()

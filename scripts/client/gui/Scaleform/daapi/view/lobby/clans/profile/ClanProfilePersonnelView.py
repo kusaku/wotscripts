@@ -220,6 +220,10 @@ class _ClanMembersDataProvider(SortableDAAPIDataProvider, UsersInfoHelper):
          _SORT_IDS.DAYS_IN_CLAN: self.__getMemberDaysInClan}
         return
 
+    def _dispose(self):
+        self.__sortMapping.clear()
+        super(_ClanMembersDataProvider, self)._dispose()
+
     @storage_getter('users')
     def userStorage(self):
         return None

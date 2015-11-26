@@ -51,7 +51,7 @@ def parseQualifier(section):
     if qualifierType not in _PARSERS:
         raise Exception, 'Qualifier "{0}" is not supported.'.format(qualifierType)
     res = _PARSERS[qualifierType](section)
-    if not res or not all((res.id, res.qualifierType, res.value)):
+    if not res or not all((res.id, res.qualifierType)) or res.value is None:
         raise Exception, 'Bonus attributes (id, type, value) are required.'
     return res
 

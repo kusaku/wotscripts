@@ -277,14 +277,17 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
         AccountSettings.setSettings('statsSorting' if bonusType != ARENA_BONUS_TYPE.SORTIE else 'statsSortingSortie', {'iconType': iconType,
          'sortDirection': sortDirection})
 
-    def __getPlayerName(self, playerDBID):
+    def __getPlayerName(self, playerDBID, bots, vID = None):
         playerNameRes = self.__playersNameCache.get(playerDBID)
         if playerNameRes is None:
-            player = self.dataProvider.getPlayerData(playerDBID)
-            playerNameRes = self.__playersNameCache[playerDBID] = (player.getFullName(), (player.name,
+            botName = bots.get(vID, (None, None))[1]
+            player = self.dataProvider.getPlayerData(playerDBID, botName)
+            playerNameRes = (player.getFullName(), (player.name,
               player.clanAbbrev,
               player.getRegionCode(),
               player.igrType))
+            if playerDBID is not None:
+                self.__playersNameCache[playerDBID] = playerNameRes
         return playerNameRes
 
     def __getVehicleData(self, vehicleCompDesc):
@@ -884,6 +887,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
 
     def __populateEfficiency(self, pData, pCommonData, playersData, commonData, personalDataOutput):
         valsStr = makeHtmlString('html_templates:lobby/battle_results', 'tooltip_params_style', {'text': i18n.makeString(BATTLE_RESULTS.COMMON_TOOLTIP_PARAMS_VAL)})
+        bots = commonData.get('bots', {})
         details = []
         for techniquesGroup, enemiesGroup, basesGroup in self.__buildEfficiencyDataSource(pData, pCommonData, playersData, commonData):
             enemies = []
@@ -891,6 +895,8 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
                 result = {}
                 accountDBID = self.dataProvider.getAccountDBID(vId)
                 vehsData = self.dataProvider.getVehiclesData(accountDBID)
+                if vIntCD is None and accountDBID is None and vId in bots:
+                    vIntCD = bots.get(vId, (None, None))[0]
                 deathReason = iInfo.get('deathReason', -1)
                 if vehsData:
                     vInfo = vehsData[0]
@@ -900,7 +906,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
                 result['spotted'] = iInfo.get('spotted', 0)
                 result['piercings'] = iInfo.get('piercings', 0)
                 result['damageDealt'] = iInfo.get('damageDealt', 0)
-                playerNameData = self.__getPlayerName(accountDBID)
+                playerNameData = self.__getPlayerName(accountDBID, bots, vId)
                 result['playerFullName'] = playerNameData[0]
                 result['playerName'], result['playerClan'], result['playerRegion'], _ = playerNameData[1]
                 result['vehicleId'] = vId
@@ -918,6 +924,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
             details.append(techniquesGroup + enemies + basesGroup)
 
         personalDataOutput['details'] = details
+        return
 
     def __getDamageInfo(self, iInfo, valsStr):
         piercings = iInfo['piercings']
@@ -1086,10 +1093,12 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
         commonDataOutput['resultStr'] = RESULT_.format(status)
         return
 
-    def __populateTankSlot(self, commonDataOutput, pData, pCommonData):
+    def __populateTankSlot(self, commonDataOutput, pData, pCommonData, commonData):
         vehsData = []
         vehNames = []
-        playerNameData = self.__getPlayerName(pCommonData.get('accountDBID', None))
+        bots = commonData.get('bots', {})
+        accountDBID = pCommonData.get('accountDBID', None)
+        playerNameData = self.__getPlayerName(accountDBID, bots, self.dataProvider.getVehicleID(accountDBID))
         commonDataOutput['playerNameStr'], commonDataOutput['clanNameStr'], commonDataOutput['regionNameStr'], _ = playerNameData[1]
         commonDataOutput['playerFullNameStr'] = playerNameData[0]
         if len(pData) > 1 or self.__isFallout:
@@ -1112,7 +1121,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
                     killerPlayerId = self.dataProvider.getAccountDBID(killerID)
                     curVeh['vehicleStatePrefixStr'] = '{0} ('.format(curVeh['vehicleStateStr'])
                     curVeh['vehicleStateSuffixStr'] = ')'
-                    playerNameData = self.__getPlayerName(killerPlayerId)
+                    playerNameData = self.__getPlayerName(killerPlayerId, bots, killerID)
                     curVeh['killerFullNameStr'] = playerNameData[0]
                     curVeh['killerNameStr'], curVeh['killerClanNameStr'], curVeh['killerRegionNameStr'], _ = playerNameData[1]
                 else:
@@ -1208,6 +1217,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
         bonusType = self.dataProvider.getArenaBonusType()
         winnerTeam = commonData.get('winnerTeam', 0)
         finishReason = commonData.get('finishReason', 0)
+        bots = commonData.get('bots', {})
         playerNamePosition = bonusType in (ARENA_BONUS_TYPE.FORT_BATTLE, ARENA_BONUS_TYPE.CYBERSPORT, ARENA_BONUS_TYPE.RATED_CYBERSPORT)
         isPlayerObserver = isVehicleObserver(pCommonData.get('typeCompDescr', 0))
         fairPlayViolationName = self.__getFairPlayViolationName(pCommonData)
@@ -1365,14 +1375,14 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
                         killerPlayerId = self.dataProvider.getAccountDBID(killerID)
                         row['vehicleStatePrefixStr'] = '{0} ('.format(row['vehicleStateStr'])
                         row['vehicleStateSuffixStr'] = ')'
-                        playerNameData = self.__getPlayerName(killerPlayerId)
+                        playerNameData = self.__getPlayerName(killerPlayerId, bots, killerID)
                         row['killerFullNameStr'] = playerNameData[0]
                         row['killerNameStr'], row['killerClanNameStr'], row['killerRegionNameStr'], _ = playerNameData[1]
                 else:
                     row['vehicleStateStr'] = BATTLE_RESULTS.COMMON_VEHICLESTATE_ALIVE
             row['playerId'] = pId
             row['userName'] = pInfo.get('name')
-            playerNameData = self.__getPlayerName(pId)
+            playerNameData = self.__getPlayerName(pId, bots, vId)
             playerName, playerClan, playerRegion, playerIgrType = playerNameData[1]
             row['playerName'] = playerName
             row['userVO'] = {'fullName': playerNameData[0],
@@ -1700,7 +1710,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
             self.__populatePersonalMedals(personalData, personalDataOutput)
             self.__populateArenaData(commonData, personalCommonData, commonDataOutput, isMultiTeamMode, isResource)
             self.__populateAccounting(commonData, personalCommonData, personalData, playersData, personalDataOutput)
-            self.__populateTankSlot(commonDataOutput, personalData, personalCommonData)
+            self.__populateTankSlot(commonDataOutput, personalData, personalCommonData, commonData)
             self.__populateEfficiency(personalData, personalCommonData, playersData, commonData, personalDataOutput)
             team1, team2 = self.__populateTeamsData(personalCommonData, playersData, commonData, commonDataOutput, avatarsData, isMultiTeamMode)
             resultingVehicles = []

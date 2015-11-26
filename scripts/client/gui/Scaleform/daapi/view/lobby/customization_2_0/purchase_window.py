@@ -183,9 +183,9 @@ class PurchaseDataProvider(SortableDAAPIDataProvider):
                 item['selected'] = selected
                 for cartItem in self.__cartItems:
                     cartItemIdx = self.__cartItems.index(cartItem)
-                    if cartItem['object'].getID() == item['id'] and cartItemIdx != itemIdx:
-                        anotherCartItem = cartItem
-                        thisCartItem = self.__cartItems[itemIdx]
+                    anotherCartItem = cartItem
+                    thisCartItem = self.__cartItems[itemIdx]
+                    if cartItem['object'].getID() == item['id'] and thisCartItem['type'] == anotherCartItem['type'] and cartItemIdx != itemIdx:
                         anotherItem = self._list[cartItemIdx]
                         if anotherItem['imgCurrency'] == RES_ICONS.MAPS_ICONS_LIBRARY_CREDITSICON_2:
                             anotherPriceFormatter = text_styles.credits

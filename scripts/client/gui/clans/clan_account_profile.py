@@ -285,6 +285,10 @@ class ClanAccountProfile(object):
         if self.isInClan():
             self.getClanDossier().processWgncNotification(notifID, item)
 
+    def processClanMembersListChange(self, memberIDs):
+        if self.isInClan():
+            self.getClanDossier().processClanMembersListChange(memberIDs)
+
     def updateClanCache(self, cache):
         if self.isInClan():
             cache.set(ClanCache.KEYS.PERSONAL_INVITES, 0)

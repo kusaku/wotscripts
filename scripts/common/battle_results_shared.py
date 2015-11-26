@@ -964,7 +964,11 @@ COMMON_RESULTS = Meta(('arenaTypeID',
  int,
  0,
  None,
- 'skip'), ('division', None, None, None, 'skip'))
+ 'skip'), ('division', None, None, None, 'skip'), ('bots',
+ dict,
+ {},
+ None,
+ 'skip'))
 raise not set(VEH_FULL_RESULTS.names()) & set(COMMON_RESULTS.names()) or AssertionError
 VEH_INTERACTIVE_STATS = ('xp', 'damageDealt', 'capturePts', 'flagActions', 'winPoints', 'deathCount', 'resourceAbsorbed', 'stopRespawn', 'equipmentDamage', 'equipmentKills')
 VEH_INTERACTIVE_STATS_INDICES = dict(((x[1], x[0]) for x in enumerate(VEH_INTERACTIVE_STATS)))

@@ -131,11 +131,13 @@ class MainView(CustomizationMainViewMeta):
         g_customizationController.carousel.slots.cart.emptied -= self.as_hideBuyingPanelS
         g_customizationController.carousel.slots.cart.filled -= self.as_showBuyingPanelS
         g_customizationController.carousel.slots.bonusPanel.bonusesUpdated -= self.__setBonusData
+        g_currentVehicle.onChanged -= self.__setHeaderInitData
         g_customizationController.fini()
         super(MainView, self)._dispose()
 
     def _populate(self):
         super(MainView, self)._populate()
+        g_currentVehicle.onChanged += self.__setHeaderInitData
         g_customizationController.carousel.updated += self.__setCarouselData
         g_customizationController.carousel.slots.updated += self.as_updateSlotS
         g_customizationController.carousel.slots.cart.totalPriceUpdated += self.__setBuyingPanelData

@@ -11,6 +11,8 @@ from client_request_lib import exceptions
 from client_request_lib.data_sources import base
 from base64 import b64encode
 import urllib
+import zlib
+from debug_utils import LOG_CURRENT_EXCEPTION
 EXAMPLES = {}
 DEFAULT_SINCE_DELAY = timedelta(days=1)
 SUCCESS_STATUSES = [200, 201]
@@ -79,12 +81,19 @@ class GatewayDataAccessor(base.BaseDataAccessor):
         def wrapper(something):
 
             def wrapped(response, func = something):
-                if response.responseCode not in SUCCESS_STATUSES:
+                try:
+                    data = response.body
                     try:
-                        data = json.loads(response.body)
-                    except:
-                        data = None
+                        data = zlib.decompress(data, 16 + zlib.MAX_WBITS)
+                    except zlib.error:
+                        pass
 
+                    data = json.loads(data)
+                except:
+                    LOG_CURRENT_EXCEPTION()
+                    data = None
+
+                if response.responseCode not in SUCCESS_STATUSES:
                     data = data or None
                     error = get_error_from_response(data and data['code'])
                     error_data = {'description': error.description}
@@ -95,7 +104,6 @@ class GatewayDataAccessor(base.BaseDataAccessor):
                         error_data['extra_data'] = response.body
                     return callback(error_data, error.status_code, error.response_code)
                 else:
-                    data = json.loads(response.body)
                     response_code = exceptions.ResponseCodes.NO_ERRORS
                     if func:
                         data = func(data)
@@ -164,7 +172,7 @@ class GatewayDataAccessor(base.BaseDataAccessor):
 
             urlencoded_string = urllib.urlencode(values)
             url = '{}?{}'.format(url, urlencoded_string)
-        default_headers = {}
+        default_headers = {'Accept-Encoding': 'compress, gzip'}
         if self.client_lang:
             default_headers['Accept-Language'] = self.client_lang
         default_headers.update(headers or {})

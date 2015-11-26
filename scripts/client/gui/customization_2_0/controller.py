@@ -10,11 +10,14 @@ class Controller(object):
         self.__carousel = None
         self.__header = None
         self.__cart = None
+        self.__hangarCameraLocation = None
         return
 
     def init(self):
         self.__aData = DataAggregator()
         self.__carousel = Carousel(self.__aData)
+        self.__hangarCameraLocation = g_hangarSpace.space.getCameraLocation()
+        g_hangarSpace.space.locateCameraToPreview()
 
     def fini(self):
         self.__carousel.fini()
@@ -30,10 +33,14 @@ class Controller(object):
         else:
             newViewData = self.__aData.viewModel[1:3]
         if g_hangarSpace.space is not None:
-            g_hangarSpace.space.updateVehicleCamouflage(camouflageID=self.__aData.installed[CUSTOMIZATION_TYPE.CAMOUFLAGE][0].getID())
-            g_hangarSpace.space.updateVehicleSticker(newViewData)
-            g_hangarSpace.space.locateCameraToPreview()
-            g_hangarSpace.space.clearSelectedEmblemInfo()
+            hangarSpace = g_hangarSpace.space
+            hangarSpace.updateVehicleCamouflage(camouflageID=self.__aData.installed[CUSTOMIZATION_TYPE.CAMOUFLAGE][0].getID())
+            hangarSpace.updateVehicleSticker(newViewData)
+            if self.__hangarCameraLocation is not None and isReset:
+                hangarSpace.setCameraLocation(**self.__hangarCameraLocation)
+            else:
+                hangarSpace.locateCameraToPreview()
+            hangarSpace.clearSelectedEmblemInfo()
         return
 
     @property

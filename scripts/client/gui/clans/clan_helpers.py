@@ -159,8 +159,8 @@ class ClanInvitesPaginator(ListPaginator, UsersInfoHelper):
         self.__totalCount = None
         self.__allInvitesCached = False
         self.__lastSort = tuple()
-        self.__isInProgress = False
         self.__isSynced = False
+        self.__sentRequestCount = 0
         self.onListItemsUpdated = Event.Event(self._eManager)
         return
 
@@ -180,7 +180,7 @@ class ClanInvitesPaginator(ListPaginator, UsersInfoHelper):
         return self.__lastStatus and self.__totalCount > self._offset + self._count
 
     def isInProgress(self):
-        return self.__isInProgress
+        return self.__sentRequestCount > 0
 
     def isSynced(self):
         return self.__isSynced
@@ -239,7 +239,7 @@ class ClanInvitesPaginator(ListPaginator, UsersInfoHelper):
 
     def getInviteByDbID(self, inviteDbID):
         index = self.__cacheMapping.get(inviteDbID, -1)
-        if index >= 0:
+        if 0 <= index < len(self.__invitesCache):
             return self.__invitesCache[index]
         else:
             return None
@@ -265,7 +265,7 @@ class ClanInvitesPaginator(ListPaginator, UsersInfoHelper):
 
     @process
     def _request(self, isReset = False, sort = tuple()):
-        self.__isInProgress = True
+        self.__sentRequestCount += 1
         self._offset = max(self._offset, 0)
         offset = 0
         count = self._offset + self._count
@@ -282,7 +282,7 @@ class ClanInvitesPaginator(ListPaginator, UsersInfoHelper):
                 self.__lastSort = sort
                 self.__rebuildMapping()
             self.__lastResult = self.__getSlice(offset, count)
-        self.__isInProgress = False
+        self.__sentRequestCount -= 1
         self.onListUpdated(self._selectedID, True, True, (self.__lastStatus, self.__lastResult))
         return
 
@@ -337,7 +337,7 @@ class ClanInvitesPaginator(ListPaginator, UsersInfoHelper):
 
     @process
     def __sendRequest(self, invite, context, sucessStatus):
-        self.__isInProgress = True
+        self.__sentRequestCount += 1
         userDbID = getPlayerDatabaseID()
         temp = self.__accountNameMapping.get(userDbID, set())
         temp.add(invite.getDbID())
@@ -352,7 +352,7 @@ class ClanInvitesPaginator(ListPaginator, UsersInfoHelper):
         senderName = self.getUserName(userDbID)
         item = self.__updateInvite(invite, status, sender, senderName)
         self.syncUsersInfo()
-        self.__isInProgress = False
+        self.__sentRequestCount -= 1
         self.onListItemsUpdated(self, [item])
 
     def __updateInvite(self, inviteWrapper, status, sender, senderName):
@@ -382,7 +382,6 @@ class ClanPersonalInvitesPaginator(ListPaginator, UsersInfoHelper):
         self.__totalCount = None
         self.__allInvitesCached = False
         self.__lastSort = tuple()
-        self.__isInProgress = False
         self.__isSynced = False
         self.__sentRequestCount = 0
         self.__senderNameMapping = {}
@@ -405,7 +404,7 @@ class ClanPersonalInvitesPaginator(ListPaginator, UsersInfoHelper):
         return self.__lastStatus and self.__totalCount > self._offset + self._count
 
     def isInProgress(self):
-        return self.__isInProgress
+        return self.__sentRequestCount > 0
 
     def isSynced(self):
         return self.__isSynced
@@ -460,7 +459,7 @@ class ClanPersonalInvitesPaginator(ListPaginator, UsersInfoHelper):
 
     def getInviteByDbID(self, inviteDbID):
         index = self.__cacheMapping.get(inviteDbID, -1)
-        if index >= 0:
+        if 0 <= index < len(self.__invitesCache):
             return self.__invitesCache[index]
         else:
             return None
@@ -498,7 +497,6 @@ class ClanPersonalInvitesPaginator(ListPaginator, UsersInfoHelper):
                 self.__rebuildMapping()
             self.__lastResult = self.__getSlice(offset, count)
         self.__sentRequestCount -= 1
-        self.__isInProgress = self.__sentRequestCount > 0
         self.onListUpdated(self._selectedID, True, True, (self.__lastStatus, self.__lastResult))
         return
 
@@ -555,7 +553,6 @@ class ClanPersonalInvitesPaginator(ListPaginator, UsersInfoHelper):
 
     @process
     def __sendADRequest(self, context, sucessStatus):
-        self.__isInProgress = True
         self.__sentRequestCount += 1
         result = yield self._requester.sendRequest(context, allowDelay=True)
         inviteDbID = context.getInviteDbID()
@@ -564,18 +561,15 @@ class ClanPersonalInvitesPaginator(ListPaginator, UsersInfoHelper):
         else:
             status = CLAN_INVITE_STATES.ERROR
         self.__sentRequestCount -= 1
-        self.__isInProgress = self.__sentRequestCount > 0
         self.__updateInvitesStatus([inviteDbID], status)
 
     @process
     def __sendADListRequest(self, context, sucessStatus):
-        self.__isInProgress = True
         self.__sentRequestCount += 1
         result = yield self._requester.sendRequest(context, allowDelay=True)
         sentInvites = [ item.getDbID() for item in context.getDataObj(result.data) ]
         failedInvites = set(context.getInviteDbIDs()) - set(sentInvites)
         self.__sentRequestCount -= 1
-        self.__isInProgress = self.__sentRequestCount > 0
         self.__updateInvitesStatus(sentInvites, sucessStatus)
         self.__updateInvitesStatus(failedInvites, CLAN_INVITE_STATES.ERROR)
 
@@ -605,6 +599,7 @@ class ClanCache(FileLocalCache):
 
     def __init__(self, accountName):
         super(ClanCache, self).__init__('clan_cache', ('invites', accountName))
+        self.__currentVersion = 1
         self.__cache = {}
 
     def __repr__(self):
@@ -617,7 +612,7 @@ class ClanCache(FileLocalCache):
         self.__cache[key] = value
 
     def write(self):
-        self.__cache[ClanCache.KEYS.VERSION] = 0
+        self.__cache[ClanCache.KEYS.VERSION] = self.__currentVersion
         super(ClanCache, self).write()
 
     def clear(self):
@@ -628,7 +623,11 @@ class ClanCache(FileLocalCache):
         return self.__cache.copy()
 
     def _setCache(self, data):
-        self.__cache = data
+        data = data or {}
+        if ClanCache.KEYS.VERSION in data and data[ClanCache.KEYS.VERSION] == self.__currentVersion:
+            self.__cache = data
+        else:
+            self.__cache = {}
 
 
 class CachedValue(object):

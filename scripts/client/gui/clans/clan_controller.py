@@ -1,11 +1,14 @@
 # Embedded file name: scripts/client/gui/clans/clan_controller.py
 from collections import defaultdict
+import BigWorld
 from client_request_lib.exceptions import ResponseCodes
+from PlayerEvents import g_playerEvents
 from gui.clans import contexts
 from gui.clans.clan_account_profile import MyClanAccountProfile
-from gui.clans.settings import CLAN_INVITE_STATES, CLAN_REQUESTED_DATA_TYPE, CLAN_APPLICATION_STATES
+from gui.clans.settings import CLAN_INVITE_STATES, CLAN_REQUESTED_DATA_TYPE
+from gui.clans.settings import CLAN_APPLICATION_STATES, CLAN_DOSSIER_LIFE_TIME
 from gui.clans.users import UserCache
-from gui.clans.clan_helpers import ClanCache
+from gui.clans.clan_helpers import ClanCache, CachedValue
 from adisp import async, process
 from gui import SystemMessages
 from gui.LobbyContext import g_lobbyContext
@@ -27,7 +30,7 @@ class SYNC_KEYS(CONST_CONTAINER):
     INVITES = 1
     APPS = 2
     CLAN_INFO = 4
-    ALL = INVITES | APPS | CLAN_INFO
+    ALL = INVITES | APPS
 
 
 class _CACHE_KEYS(CONST_CONTAINER):
@@ -108,15 +111,19 @@ class _ClanDossier(object):
     def resyncClanInfo(self, force = False):
         if self.__waitForSync & SYNC_KEYS.CLAN_INFO:
             return
-        if self.isSynced(SYNC_KEYS.CLAN_INFO) and not force:
+        else:
+            cachedValue = self.__webCache.get(CLAN_REQUESTED_DATA_TYPE.CLAN_INFO, None)
+            isSynced = cachedValue is not None and not cachedValue.isExpired()
+            if isSynced and not force:
+                return
+            self.__waitForSync |= SYNC_KEYS.CLAN_INFO
+            if CLAN_REQUESTED_DATA_TYPE.CLAN_INFO in self.__webCache:
+                del self.__webCache[CLAN_REQUESTED_DATA_TYPE.CLAN_INFO]
+            clanInfo = yield self.requestClanInfo()
+            self.__syncState |= SYNC_KEYS.CLAN_INFO
+            self.__changeWebInfo(SYNC_KEYS.CLAN_INFO, clanInfo, 'onClanInfoReceived')
+            self.__waitForSync ^= SYNC_KEYS.CLAN_INFO
             return
-        self.__waitForSync |= SYNC_KEYS.CLAN_INFO
-        if CLAN_REQUESTED_DATA_TYPE.CLAN_INFO in self.__webCache:
-            del self.__webCache[CLAN_REQUESTED_DATA_TYPE.CLAN_INFO]
-        clanInfo = yield self.requestClanInfo()
-        self.__syncState |= SYNC_KEYS.CLAN_INFO
-        self.__changeWebInfo(SYNC_KEYS.CLAN_INFO, clanInfo, 'onClanInfoReceived')
-        self.__waitForSync ^= SYNC_KEYS.CLAN_INFO
 
     def resyncAppsCount(self, force = False):
         if self.__waitForSync & SYNC_KEYS.APPS:
@@ -146,7 +153,11 @@ class _ClanDossier(object):
 
     def getClanInfo(self):
         self.resyncClanInfo()
-        return self.__vitalInfo.get(SYNC_KEYS.CLAN_INFO, None) or items.ClanExtInfoData()
+        cachedValue = self.__webCache.get(CLAN_REQUESTED_DATA_TYPE.CLAN_INFO, None)
+        if cachedValue is not None:
+            return cachedValue.getCachedValue()
+        else:
+            return items.ClanExtInfoData()
 
     def canAcceptsJoinRequests(self):
         return self.getClanInfo().isOpened()
@@ -214,14 +225,19 @@ class _ClanDossier(object):
     @process
     def __doRequest(self, ctx, callback):
         requestType = ctx.getRequestType()
-        if requestType not in self.__webCache:
+        cachedValue = self.__webCache.get(requestType, None)
+        if cachedValue is not None and cachedValue.isExpired():
+            cachedValue = None
+        if cachedValue is None:
             if requestType not in self.__processingRequests:
                 self.__processingRequests[requestType].append(callback)
                 result = yield self._clansCtrl.sendRequest(ctx)
                 if result.isSuccess():
                     formattedData = ctx.getDataObj(result.data)
                     if ctx.isCaching():
-                        self.__webCache[requestType] = formattedData
+                        cachedValue = CachedValue(CLAN_DOSSIER_LIFE_TIME)
+                        cachedValue.set(formattedData)
+                        self.__webCache[requestType] = cachedValue
                 else:
                     formattedData = ctx.getDefDataObj()
                 for cb in self.__processingRequests[requestType]:
@@ -231,7 +247,8 @@ class _ClanDossier(object):
             else:
                 self.__processingRequests[requestType].append(callback)
         else:
-            callback(self.__webCache[requestType])
+            callback(cachedValue.getCachedValue())
+        return
 
     def processRequestResponse(self, ctx, response):
         requestType = ctx.getRequestType()
@@ -324,9 +341,30 @@ class _ClanDossier(object):
             self.__cache[_CACHE_KEYS.INVITES] = cached
             if item.getType() == WGNC_DATA_PROXY_TYPE.CLAN_INVITE_ACCEPTED:
                 self.__syncState &= ~SYNC_KEYS.CLAN_INFO
+                if CLAN_REQUESTED_DATA_TYPE.CLAN_INFO in self.__webCache:
+                    del self.__webCache[CLAN_REQUESTED_DATA_TYPE.CLAN_INFO]
+                if CLAN_REQUESTED_DATA_TYPE.CLAN_MEMBERS in self.__webCache:
+                    del self.__webCache[CLAN_REQUESTED_DATA_TYPE.CLAN_MEMBERS]
             count = self.__vitalInfo[SYNC_KEYS.INVITES]
             if count:
                 self.__changeWebInfo(SYNC_KEYS.INVITES, count - 1, 'onClanInvitesCountReceived')
+
+    def processClanMembersListChange(self, memberIDs):
+        from debug_utils import LOG_DEBUG
+        LOG_DEBUG('IHAR processClanMembersListChange: memberIDs', memberIDs)
+        cachedValue = self.__webCache.get(CLAN_REQUESTED_DATA_TYPE.CLAN_INFO, None)
+        if cachedValue is not None:
+            needResync = cachedValue.getCachedValue().getMembersCount() != len(memberIDs)
+            LOG_DEBUG('IHAR Will clear cache: current member count-', cachedValue.getCachedValue().getMembersCount())
+        else:
+            needResync = True
+        if needResync:
+            self.__syncState &= ~SYNC_KEYS.CLAN_INFO
+            if CLAN_REQUESTED_DATA_TYPE.CLAN_INFO in self.__webCache:
+                del self.__webCache[CLAN_REQUESTED_DATA_TYPE.CLAN_INFO]
+            if CLAN_REQUESTED_DATA_TYPE.CLAN_MEMBERS in self.__webCache:
+                del self.__webCache[CLAN_REQUESTED_DATA_TYPE.CLAN_MEMBERS]
+        return
 
     def updateClanCache(self, cache):
         apps = self.__vitalInfo[SYNC_KEYS.APPS] or 0
@@ -411,8 +449,10 @@ class _ClanController(ClansListeners):
         g_clientUpdateManager.addCallbacks({'stats.clanInfo': self.__onClanInfoChanged,
          'serverSettings.clanProfile.isEnabled': self.__onServerSettingChanged})
         g_wgncEvents.onProxyDataItemShowByDefault += self._onProxyDataItemShowByDefault
+        g_playerEvents.onClanMembersListChanged += self._onClanMembersListChanged
 
     def stop(self):
+        g_playerEvents.onClanMembersListChanged -= self._onClanMembersListChanged
         g_wgncEvents.onProxyDataItemShowByDefault -= self._onProxyDataItemShowByDefault
         g_clientUpdateManager.removeObjectCallbacks(self)
         if self.__clanCache is not None:
@@ -518,6 +558,13 @@ class _ClanController(ClansListeners):
             if self.__profile is not None:
                 self.__profile.processWgncNotification(notifID, item)
             self.notify('onWgncNotificationReceived', notifID, item)
+        return
+
+    def _onClanMembersListChanged(self):
+        memberIDs = getattr(BigWorld.player(), 'clanMembers', {}).keys()
+        if self.__profile is not None:
+            self.__profile.processClanMembersListChange(memberIDs)
+        self.notify('onClanMembersListChanged', memberIDs)
         return
 
     def _onClanCacheRead(self):

@@ -8,7 +8,11 @@ class FakeResponse(object):
                 Create wrapper for response object
         """
         self.responseCode = r.status_code
-        self.body = r.content
+        self.body = r.raw.read()
+        self._headers = r.headers
+
+    def headers(self):
+        return self._headers
 
     def __repr__(self):
         return '[HTTP status: {}] {}'.format(self.responseCode, self.body)
@@ -30,17 +34,14 @@ def fetchURL(url, callback, headers = {}, timeout = 30, method = 'GET', postData
         headers = res
     if not isinstance(data, str) and data is not None:
         raise Exception('Unsupported parameter {}'.format(data))
-    if method == 'GET':
-        r = requests.get(url, headers=headers, data=data, verify=False)
-    elif method == 'PUT':
-        r = requests.put(url, headers=headers, data=data)
-    elif method == 'POST':
-        r = requests.post(url, headers=headers, data=data)
-    elif method == 'PATCH':
-        r = requests.patch(url, headers=headers, data=data)
-    elif method == 'DELETE':
-        r = requests.delete(url, headers=headers, data=data)
+    methods = {'GET': requests.get,
+     'PUT': requests.put,
+     'POST': requests.post,
+     'PATCH': requests.patch,
+     'DELETE': requests.delete}
+    if method in methods:
+        response = methods[method](url, headers=headers, data=data, verify=False, stream=True)
     else:
         raise Exception('Unsupported method {}'.format(method))
-    callback(FakeResponse(r))
+    callback(FakeResponse(response))
     return

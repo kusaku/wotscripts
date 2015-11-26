@@ -26,10 +26,12 @@ class FilterPopover(CustomizationFiltersPopoverMeta):
          QUALIFIER_TYPE.DRIVER: self.__createTooltip(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_TOOLTIP_BONUS_DRIVER),
          QUALIFIER_TYPE.RADIOMAN: self.__createTooltip(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_TOOLTIP_BONUS_RADIOMAN),
          QUALIFIER_TYPE.LOADER: self.__createTooltip(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_TOOLTIP_BONUS_LOADER)}
+        self.__enableGroupsFilter = True
+        self.__filterTypeGroup = self.__filter.currentGroup
         self.__groupsMap = [[('all_groups', CUSTOMIZATION.FILTER_POPOVER_GROUPS_ALL)], [('all_groups', CUSTOMIZATION.FILTER_POPOVER_GROUPS_ALL)], [('all_groups', CUSTOMIZATION.FILTER_POPOVER_GROUPS_ALL)]]
         for cType in (CUSTOMIZATION_TYPE.CAMOUFLAGE, CUSTOMIZATION_TYPE.EMBLEM, CUSTOMIZATION_TYPE.INSCRIPTION):
             for groupName, userName in self.__filter.availableGroupNames[cType]:
-                if groupName != 'group5':
+                if groupName != 'group5' and groupName != 'IGR':
                     self.__groupsMap[cType].append((groupName, userName))
 
         self.__purchaseTypeMap = {PURCHASE_TYPE.PURCHASE: CUSTOMIZATION.FILTER_POPOVER_WAYSTOBUY_BUY,
@@ -45,22 +47,38 @@ class FilterPopover(CustomizationFiltersPopoverMeta):
         self.as_setInitDataS(self.createInitVO())
         self.as_enableDefBtnS(not self.__filter.isDefaultFilterSet())
 
+    def __switchIGRFilter(self, value):
+        if self.__enableGroupsFilter == value:
+            self.__enableGroupsFilter = not value
+            self.as_enableGroupFilterS(self.__enableGroupsFilter)
+            if value:
+                self.__filterTypeGroup = self.__filter.currentGroup
+                self.__filter.set(FILTER_TYPE.GROUP, 'all_groups')
+            else:
+                self.__filter.set(FILTER_TYPE.GROUP, self.__filterTypeGroup)
+
     def changeFilter(self, filterGroup, filterGroupValue):
         if filterGroup == FILTER_TYPE.GROUP:
             filterGroupValue = self.__groupsMap[self.__filter.currentType][filterGroupValue][0]
         if filterGroup == FILTER_TYPE.PURCHASE_TYPE:
             filterGroupValue = self.__purchaseTypeList[filterGroupValue]
+            self.__switchIGRFilter(filterGroupValue == PURCHASE_TYPE.IGR)
         self.__filter.set(filterGroup, filterGroupValue)
         self.__filter.apply()
         self.as_enableDefBtnS(not self.__filter.isDefaultFilterSet())
 
     def createInitVO(self):
+        isTypeNotCamouflage = self.__filter.currentType != CUSTOMIZATION_TYPE.CAMOUFLAGE
         groupsUserNames = []
         groupsList = []
         for groupData in self.__groupsMap[self.__filter.currentType]:
             groupsUserNames.append(groupData[1])
             groupsList.append(groupData[0])
 
+        if isTypeNotCamouflage:
+            groupsSelectIndex = groupsList.index(self.__filter.currentGroup)
+        else:
+            groupsSelectIndex = 0
         return {'lblTitle': text_styles.highTitle(CUSTOMIZATION.FILTER_POPOVER_TITLE),
          'lblBonusType': text_styles.standard(CUSTOMIZATION.FILTER_POPOVER_BONUSTYPE_TITLE),
          'lblCustomizationType': text_styles.standard(CUSTOMIZATION.FILTER_POPOVER_GROUPS_TITLE),
@@ -68,11 +86,12 @@ class FilterPopover(CustomizationFiltersPopoverMeta):
          'btnDefault': CUSTOMIZATION.FILTER_POPOVER_GETDEFAULTSETTINGS,
          'bonusTypeId': FILTER_TYPE.QUALIFIER,
          'bonusType': self.__getBonusTypeVO(),
-         'customizationBonusTypeVisible': self.__filter.currentType != CUSTOMIZATION_TYPE.CAMOUFLAGE,
+         'customizationBonusTypeVisible': isTypeNotCamouflage,
          'customizationTypeId': FILTER_TYPE.GROUP,
          'customizationType': groupsUserNames,
-         'customizationTypeSelectedIndex': groupsList.index(self.__filter.currentGroup),
-         'customizationTypeVisible': self.__filter.currentType != CUSTOMIZATION_TYPE.CAMOUFLAGE,
+         'customizationTypeSelectedIndex': groupsSelectIndex,
+         'customizationTypeVisible': isTypeNotCamouflage,
+         'bonusTypeDisableTooltip': makeTooltip(CUSTOMIZATION.TOOLTIP_FILTER_GROUPS_DISABLED_HEADER, CUSTOMIZATION.TOOLTIP_FILTER_GROUPS_DISABLED_BODY),
          'refreshTooltip': makeTooltip(TOOLTIPS.CUSTOMIZATION_FILTERPOPOVER_REFRESH_HEADER, TOOLTIPS.CUSTOMIZATION_FILTERPOPOVER_REFRESH_BODY),
          'purchaseTypeId': FILTER_TYPE.PURCHASE_TYPE,
          'purchaseType': self.__getPurchaseTypeVO(),

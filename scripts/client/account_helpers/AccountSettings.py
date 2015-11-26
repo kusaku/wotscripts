@@ -243,7 +243,7 @@ def _unpack(value):
 
 class AccountSettings(object):
     onSettingsChanging = Event.Event()
-    version = 13
+    version = 15
     __cache = {'login': None,
      'section': None}
     __isFirstRun = True
@@ -440,6 +440,14 @@ class AccountSettings(object):
                     AccountSettings.__readSection(section, KEY_SETTINGS).write('enableVoIP', _pack(enableVoIPVal))
 
                 Settings.g_instance.userPrefs.deleteSection('enableVoIP')
+            if currVersion < 15:
+                for key, section in ads.items()[:]:
+                    if key == 'account':
+                        accSettings = AccountSettings.__readSection(section, KEY_SETTINGS)
+                        for key1, section1 in accSettings.items()[:]:
+                            if key1 == FALLOUT_VEHICLES:
+                                accSettings.deleteSection(key1)
+
             ads.writeInt('version', AccountSettings.version)
 
     @staticmethod

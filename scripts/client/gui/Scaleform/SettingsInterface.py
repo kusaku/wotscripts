@@ -328,7 +328,6 @@ class SettingsInterface(UIInterface):
          'enableVoIP': g_settingsCore.getSetting('enableVoIP'),
          'enablePostMortemEffect': g_settingsCore.getSetting('enablePostMortemEffect'),
          'enablePostMortemDelay': g_settingsCore.getSetting('enablePostMortemDelay'),
-         'nationalVoices': g_settingsCore.getSetting('nationalVoices'),
          'isColorBlind': g_settingsCore.getSetting('isColorBlind'),
          'graphicsQualityHDSD': g_settingsCore.getSetting('graphicsQualityHDSD'),
          'useServerAim': g_settingsCore.getSetting('useServerAim'),
@@ -523,7 +522,6 @@ class SettingsInterface(UIInterface):
         g_settingsCore.applySetting('fov', settings['fov'])
         g_settingsCore.applySetting('dynamicFov', settings['dynamicFov'])
         g_settingsCore.applySetting('enableOpticalSnpEffect', settings['enableOpticalSnpEffect'])
-        g_settingsCore.applySetting('nationalVoices', settings['nationalVoices'])
         g_settingsCore.applySetting('isColorBlind', settings['isColorBlind'])
         g_settingsCore.applySetting('useServerAim', settings['useServerAim'])
         g_settingsCore.applySetting('showVehiclesCounter', settings['showVehiclesCounter'])

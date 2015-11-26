@@ -505,19 +505,21 @@ class VehiclesResearchHandler(SpecialAchievement):
 
 class FalloutVehiclesBuyHandler(AwardHandler):
 
-    def init(self):
-        g_clientUpdateManager.addCallbacks({'inventory.1': self.__onVehsChanged})
-
-    def fini(self):
-        g_clientUpdateManager.removeObjectCallbacks(self)
-
     def start(self):
+        hasVehicleLvl8 = False
+        hasVehicleLvl10 = False
         if not self.eventsStorage.hasVehicleLvl8():
             if g_itemsCache.items.getVehicles(REQ_CRITERIA.INVENTORY | ~REQ_CRITERIA.VEHICLE.EXPIRED_RENT | REQ_CRITERIA.VEHICLE.LEVELS(range(8, 10))):
-                self.eventsStorage.setHasVehicleLvl8()
+                hasVehicleLvl8 = True
         if not self.eventsStorage.hasVehicleLvl10():
             if g_itemsCache.items.getVehicles(REQ_CRITERIA.INVENTORY | ~REQ_CRITERIA.VEHICLE.EXPIRED_RENT | REQ_CRITERIA.VEHICLE.LEVEL(10)):
-                self.eventsStorage.setHasVehicleLvl10()
+                hasVehicleLvl10 = True
+        if hasVehicleLvl8 or hasVehicleLvl10:
+            self.eventsStorage.setHasVehicleLvls(hasVehicleLvl8, hasVehicleLvl10)
+        g_clientUpdateManager.addCallbacks({'inventory.1': self.__onVehsChanged})
+
+    def stop(self):
+        g_clientUpdateManager.removeObjectCallbacks(self)
 
     @prequeue_storage_getter(QUEUE_TYPE.EVENT_BATTLES)
     def eventsStorage(self):

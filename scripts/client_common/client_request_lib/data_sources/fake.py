@@ -340,6 +340,7 @@ class FakeDataAccessor(base.BaseDataAccessor):
      'id': random.randrange(1, 1000000),
      'account_id': account_id,
      'clan_id': random.randrange(1, 10000),
+     'status_changer_id': random.randrange(1, 10000),
      'comment': 'Welcome {}!'.format(random.randrange(1, 10000)) if random.choice((1, 0)) else ''} for i in range(random.randrange(0, 1000)) ])
     @paginated_method
     def get_account_applications(self, fields = None, statuses = None):
@@ -355,6 +356,7 @@ class FakeDataAccessor(base.BaseDataAccessor):
      'id': random.randrange(1, 1000000),
      'account_id': random.randrange(1, 10000),
      'clan_id': clan_id,
+     'status_changer_id': random.randrange(1, 10000),
      'comment': 'Welcome {}!'.format(random.randrange(1, 10000)) if random.choice((1, 0)) else ''} for i in range(random.randrange(0, 1000)) ])
     @paginated_method
     def get_clan_applications(self, clan_id, fields = None, statuses = None):
@@ -416,6 +418,7 @@ class FakeDataAccessor(base.BaseDataAccessor):
      'id': random.randrange(1, 1000000),
      'account_id': account_id,
      'clan_id': random.randrange(1, 10000),
+     'status_changer_id': 2132,
      'comment': 'Welcome {}!'.format(random.randrange(1, 10000)) if random.choice((1, 0)) else ''} for i in range(random.randrange(0, 1000)) ])
     @paginated_method
     def get_account_invites(self, fields = None, statuses = None):
@@ -529,7 +532,7 @@ class FakeDataAccessor(base.BaseDataAccessor):
                     'level': 4,
                     'position': 7,
                     'direction': 1}],
-     'directions': ['A', 'B'],
+     'directions': [1, 2],
      'off_day': 3,
      'vacation_start': datetime.utcnow() + timedelta(days=1),
      'vacation_finish': datetime.utcnow() + timedelta(days=4),
@@ -539,7 +542,9 @@ class FakeDataAccessor(base.BaseDataAccessor):
      'clan_id': 21,
      'level': 2,
      'sortie_wins_period': 7,
-     'sortie_battles_wins_percentage_period': 20.0})
+     'sortie_battles_wins_percentage_period': 20.0,
+     'sortie_battles_count_period': 122,
+     'defence_battles_count_period': 21})
     def get_strongholds_statistics(self, clan_id, fields = None):
         """
         return fake data from `strongholds_statistics` section
@@ -595,20 +600,20 @@ class FakeDataAccessor(base.BaseDataAccessor):
      'id': obj_id,
      'account_id': 343,
      'clan_id': 17})
-    def accept_invite(self, application_id, fields = None):
+    def accept_invite(self, invite_id, fields = None):
         """
         return fake data from `accept_invite` section
         """
-        return self._request_data('accept_invite', application_id, fields=fields)
+        return self._request_data('accept_invite', invite_id, fields=fields)
 
     @fake_method(example=lambda obj_id: {'id': obj_id,
      'account_id': 343,
      'clan_id': 17})
-    def decline_invite(self, application_id, fields = None):
+    def decline_invite(self, invite_id, fields = None):
         """
         return fake data from `decline_invite` section
         """
-        return self._request_data('decline_invite', application_id, fields=fields)
+        return self._request_data('decline_invite', invite_id, fields=fields)
 
     @fake_method(example=[{'id': 991,
       'account_id': 1001,

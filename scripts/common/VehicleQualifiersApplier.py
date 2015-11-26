@@ -1,17 +1,16 @@
 # Embedded file name: scripts/common/VehicleQualifiersApplier.py
 import BigWorld
+from constants import IS_QUALIFIERS_ENABLED
 from debug_utils import LOG_ERROR
 from items import vehicles
 from items import qualifiers as Qualifiers
 from items.qualifiers import QUALIFIER_TYPE, QUALIFIER_TYPE_NAMES
-_POSITIVE_TEST_LIMIT = 5
 
 class _QualifiersChainApplier(object):
 
     def __init__(self, conditions, qualifiers):
         self.__qualifiers = qualifiers
         self.__conditions = conditions
-        self.qualifierIDs = tuple((q.id for q in qualifiers))
         self.__lastCheckCondition = {}
 
     def __call__(self, value):
@@ -55,8 +54,6 @@ _EMPTY_CHAIN_APPLIER = _QualifiersChainApplier({}, {})
 class _SubApplier(object):
 
     def __init__(self, conditions, qualifierType, qualifiersByType):
-        self.__positiveTestLastTime = 0.0
-        self.__positiveTestNumber = 0
         qualifiersBySubType = {}
         requiredParams = set()
         for qualifier in qualifiersByType:
@@ -72,21 +69,9 @@ class _SubApplier(object):
         for qualifierSubType, qualifiers in qualifiersBySubType.iteritems():
             qualifiersSubApplier[qualifierSubType] = _QualifiersChainApplier(conditions, qualifiers)
 
-    def __storePositiveTest(self, qualifierIDs):
-        positiveTestLastTime = self.__positiveTestLastTime
-        self.__positiveTestLastTime = now = BigWorld.time()
-        if now - positiveTestLastTime <= 1.0:
-            positiveTestNumber = self.__positiveTestNumber
-            if positiveTestNumber < _POSITIVE_TEST_LIMIT:
-                self.__positiveTestNumber = positiveTestNumber + 1
-                return
-            LOG_ERROR('POSITIVE_TEST_LIMIT has been exceeded. Qualifiers:%s' % qualifierIDs)
-        self.__positiveTestNumber = 0
-
     def isUpdateNecessary(self):
         for chainApplier in self.__qualifiersSubApplier.itervalues():
             if chainApplier.testConditionsChange():
-                self.__storePositiveTest(chainApplier.qualifierIDs)
                 return True
 
         return False
@@ -100,6 +85,8 @@ class VehicleQualifiersApplier(object):
     def __init__(self, conditions, vehDescr, arenaCamouflageKind = None):
         self.__requiredParams = requiredParams = set()
         self.__qualifiersApplier = qualifiersApplier = {}
+        if not IS_QUALIFIERS_ENABLED:
+            return
         qualifiersByType = {}
         activatedQualifierIDs = self.__activatedQualifierIDs(vehDescr, arenaCamouflageKind)
         for qualifierID in activatedQualifierIDs:

@@ -499,12 +499,18 @@ class _ClanBaseDecorator(_NotificationDecorator):
 
 class _ClanDecorator(_ClanBaseDecorator):
 
+    def __init__(self, entityID, entity = None, settings = None):
+        self._settings = None
+        super(_ClanDecorator, self).__init__(entityID, entity, settings)
+        return
+
     def update(self, entity):
         super(_ClanBaseDecorator, self).update(entity)
         self._make(entity)
 
     def _make(self, entity = None, settings = None):
-        self._settings = NotificationGuiSettings(True, NotificationPriorityLevel.MEDIUM, showAt=_makeShowTime())
+        if self._settings is None:
+            self._settings = NotificationGuiSettings(True, NotificationPriorityLevel.MEDIUM, showAt=_makeShowTime())
         formatter = self._getFormatter()
         message = g_settings.msgTemplates.format(self._getTemplateId(), ctx={'text': self._getText(formatter, entity)}, data={'timestamp': self._createdAt,
          'icon': makePathToIcon('clanInviteIcon'),
@@ -515,6 +521,7 @@ class _ClanDecorator(_ClanBaseDecorator):
          'message': message,
          'notify': self.isNotify(),
          'auxData': []}
+        return
 
     def _getFormatter(self):
         raise NotImplementedError
@@ -540,9 +547,6 @@ class _ClanSingleDecorator(_ClanDecorator):
 
     def _getDefState(self):
         raise NotImplementedError
-
-    def _make(self, entity = None, settings = None):
-        super(_ClanSingleDecorator, self)._make(entity, settings)
 
 
 class ClanSingleAppDecorator(_ClanSingleDecorator):

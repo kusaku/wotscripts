@@ -5,6 +5,7 @@ from gui import makeHtmlString
 from gui import SystemMessages
 from gui.Scaleform.daapi.view.meta.FortWelcomeInfoViewMeta import FortWelcomeInfoViewMeta
 from gui.Scaleform.daapi.view.lobby.fortifications.fort_utils.FortSoundController import g_fortSoundController
+from gui.shared.utils.functions import makeTooltip
 from gui.Scaleform.locale.FORTIFICATIONS import FORTIFICATIONS
 from gui.Scaleform.locale.SYSTEM_MESSAGES import SYSTEM_MESSAGES
 from gui.Scaleform.daapi.view.lobby.fortifications.fort_utils.FortViewHelper import FortViewHelper
@@ -98,7 +99,8 @@ class FortWelcomeInfoView(FortWelcomeInfoViewMeta, FortViewHelper):
         text = text_styles.alert(i18n.makeString(FORTIFICATIONS.FORTWELCOMEVIEW_WARNING, minClanSize=minClanSize))
         header = i18n.makeString(TOOLTIPS.FORTIFICATION_WELCOME_CANTCREATEFORT_HEADER)
         body = i18n.makeString(TOOLTIPS.FORTIFICATION_WELCOME_CANTCREATEFORT_BODY, minClanSize=minClanSize)
-        return (text, header, body)
+        tooltip = makeTooltip(header, body)
+        return (text, tooltip)
 
     def __getClanMemberWelcomeText(self, data):
         return ''.join((text_styles.standard(i18n.makeString(FORTIFICATIONS.FORTWELCOMEVIEW_REQUIREMENTCOMMANDER)), text_styles.neutral(data.get('clanCommanderName', ''))))

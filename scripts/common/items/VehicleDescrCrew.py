@@ -34,7 +34,7 @@ class VehicleDescrCrew(object):
 
     @property
     def _factorsDirty(self):
-        return self.__factorsDirty or self._mainSkillQualifiersApplier.isUpdateNecessary()
+        return self.__factorsDirty
 
     @_factorsDirty.setter
     def _factorsDirty(self, necessity):

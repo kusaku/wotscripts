@@ -20,3 +20,7 @@ class CustomizationFiltersPopoverMeta(SmartPopOverView):
     def as_enableDefBtnS(self, value):
         if self._isDAAPIInited():
             return self.flashObject.as_enableDefBtn(value)
+
+    def as_enableGroupFilterS(self, value):
+        if self._isDAAPIInited():
+            return self.flashObject.as_enableGroupFilter(value)

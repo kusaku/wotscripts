@@ -15,23 +15,23 @@ _SETTINGS_DEFAULTS = {'isEnabled': False,
  'hasVehicleLvl10': False}
 
 class FalloutLocalStorage(LocalStorage):
-    __slots__ = ('__settings', '__invIDs')
+    __slots__ = ('__settings', '__intCDs')
 
     def __init__(self):
         super(FalloutLocalStorage, self).__init__()
         self.__settings = {}
-        self.__invIDs = {}
+        self.__intCDs = {}
 
     def init(self):
         pass
 
     def fini(self):
         self.__settings.clear()
-        self.__invIDs.clear()
+        self.__intCDs.clear()
 
     def swap(self):
         self.__settings = g_settingsCore.serverSettings.getSection(SETTINGS_SECTIONS.FALLOUT, _SETTINGS_DEFAULTS)
-        self.__invIDs = AccountSettings.getFavorites(FALLOUT_VEHICLES)
+        self.__intCDs = AccountSettings.getFavorites(FALLOUT_VEHICLES)
         self.validateSelectedVehicles()
 
     def release(self):
@@ -62,32 +62,48 @@ class FalloutLocalStorage(LocalStorage):
         g_settingsCore.serverSettings.setSection(SETTINGS_SECTIONS.FALLOUT, self.__settings)
 
     def getVehiclesInvIDs(self, excludeEmpty = False):
-        vehicles = self.__invIDs[self.getBattleType()]
-        if excludeEmpty:
-            vehicles = filter(lambda invID: invID, vehicles)
-        return vehicles
+        vehiclesIntCDs = self.__intCDs[self.getBattleType()]
+        vehiclesInvIDs = []
+        for intCD in vehiclesIntCDs:
+            vehicle = g_itemsCache.items.getItemByCD(intCD)
+            if vehicle is None:
+                if not excludeEmpty:
+                    vehiclesInvIDs.append(INV_ID_CLEAR_VEHICLE)
+            else:
+                vehiclesInvIDs.append(vehicle.invID)
+
+        return vehiclesInvIDs
 
     def setVehiclesInvIDs(self, vehicles):
-        self.__invIDs[self.getBattleType()] = vehicles
-        AccountSettings.setFavorites(FALLOUT_VEHICLES, self.__invIDs)
+        vehiclesIntCDs = []
+        for invID in vehicles:
+            vehicle = g_itemsCache.items.getVehicle(invID)
+            if vehicle is None:
+                vehiclesIntCDs.append(INV_ID_CLEAR_VEHICLE)
+            else:
+                vehiclesIntCDs.append(vehicle.intCD)
+
+        self.__intCDs[self.getBattleType()] = vehiclesIntCDs
+        AccountSettings.setFavorites(FALLOUT_VEHICLES, self.__intCDs)
+        return
 
     def getSelectedVehicles(self):
-        return filter(None, map(g_itemsCache.items.getVehicle, self.getVehiclesInvIDs(excludeEmpty=True)))
+        return filter(None, map(g_itemsCache.items.getItemByCD, self.__intCDs[self.getBattleType()]))
 
     def validateSelectedVehicles(self):
         maxVehs = self.getConfig().maxVehiclesPerPlayer
         valid = [INV_ID_CLEAR_VEHICLE] * maxVehs
         battleType = self.getBattleType()
-        vehicles = self.__invIDs.get(battleType, ())
-        vehGetter = g_itemsCache.items.getVehicle
-        for idx, invID in enumerate(vehicles[:maxVehs]):
-            invVehicle = vehGetter(invID)
-            if invVehicle is not None:
-                valid[idx] = invID
+        vehicles = self.__intCDs.get(battleType, ())
+        vehGetter = g_itemsCache.items.getItemByCD
+        for idx, intCD in enumerate(vehicles[:maxVehs]):
+            invVehicle = vehGetter(intCD)
+            if invVehicle is not None and invVehicle.isInInventory:
+                valid[idx] = intCD
 
         if valid != vehicles:
-            self.__invIDs[battleType] = valid
-            AccountSettings.setFavorites(FALLOUT_VEHICLES, self.__invIDs)
+            self.__intCDs[battleType] = valid
+            AccountSettings.setFavorites(FALLOUT_VEHICLES, self.__intCDs)
             return True
         else:
             return False
@@ -113,4 +129,9 @@ class FalloutLocalStorage(LocalStorage):
 
     def setHasVehicleLvl10(self):
         self.__settings['hasVehicleLvl10'] = True
+        g_settingsCore.serverSettings.setSection(SETTINGS_SECTIONS.FALLOUT, self.__settings)
+
+    def setHasVehicleLvls(self, hasVehicleLvl8 = False, hasVehicleLvl10 = False):
+        self.__settings['hasVehicleLvl8'] = hasVehicleLvl8
+        self.__settings['hasVehicleLvl10'] = hasVehicleLvl10
         g_settingsCore.serverSettings.setSection(SETTINGS_SECTIONS.FALLOUT, self.__settings)

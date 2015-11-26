@@ -1,8 +1,9 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/clans/profile/ClanProfileTableStatisticsView.py
 import BigWorld
-from debug_utils import LOG_ERROR
+from debug_utils import LOG_ERROR, LOG_DEBUG
 from gui.Scaleform.daapi.view.lobby.clans.profile import getI18ArenaById
 from gui.Scaleform.daapi.view.lobby.fortifications.fort_utils import fort_formatters
+from gui.clans.clan_controller import g_clanCtrl
 from gui.clans.items import formatField
 from gui.shared.utils import sortByFields
 from helpers.i18n import makeString as _ms
@@ -48,12 +49,12 @@ class ClanProfileTableStatisticsView(ClanProfileTableStatisticsViewMeta):
     def setProxy(self, proxy, clanDossier):
         proxy.showWaiting()
         provinces = yield clanDossier.requestProvinces()
-        isMyClan = clanDossier.isMyClan()
+        showTreasury = clanDossier.isMyClan() and g_clanCtrl.getLimits().canSeeTreasury(clanDossier).success
         hasProvinces = len(provinces) > 0
         if self.isDisposed():
             return
-        headers = self._prepareHeaders(clanDossier.isMyClan(), hasProvinces)
-        if isMyClan:
+        headers = self._prepareHeaders(showTreasury, hasProvinces)
+        if showTreasury:
             listItemRendererLinkage = CLANS_ALIASES.CLAN_PROFILE_SELF_PROVINCE_RENDERER
         else:
             listItemRendererLinkage = CLANS_ALIASES.CLAN_PROFILE_PROVINCE_RENDERER
@@ -66,10 +67,10 @@ class ClanProfileTableStatisticsView(ClanProfileTableStatisticsViewMeta):
             data['defaultSortField'] = _SORT_IDS.PROVINCE
             data['defaultSortDirection'] = 'ascending'
         self.as_setDataS(data)
-        self.__provincesDP = _ClanProfileProvinceDataProvider(isMyClan)
+        self.__provincesDP = _ClanProfileProvinceDataProvider(showTreasury)
         self.__provincesDP.setFlashObject(self.as_getDPS())
         self.__provincesDP.buildList(provinces)
-        self.as_setAdditionalTextS(hasProvinces and isMyClan, text_styles.standard(_ms(CLANS.GLOBALMAPVIEW_TOTALINCOME, icon=icons.gold(), value=text_styles.gold(BigWorld.wg_getIntegralFormat(self.__provincesDP.getCommonRevenue())))))
+        self.as_setAdditionalTextS(hasProvinces and showTreasury, text_styles.standard(_ms(CLANS.GLOBALMAPVIEW_TOTALINCOME, icon=icons.gold(), value=text_styles.gold(BigWorld.wg_getIntegralFormat(self.__provincesDP.getCommonRevenue())))))
         proxy.hideWaiting()
 
     def _dispose(self):
@@ -79,9 +80,9 @@ class ClanProfileTableStatisticsView(ClanProfileTableStatisticsViewMeta):
         super(ClanProfileTableStatisticsView, self)._populate()
         return
 
-    def _prepareHeaders(self, isMyClan, enabled):
+    def _prepareHeaders(self, showTreasury, enabled):
         headers = [_packColumn(_SORT_IDS.FRONT, CLANS.GLOBALMAPVIEW_TABLE_FRONT, 200, CLANS.GLOBALMAPVIEW_TABLE_FRONT_TOOLTIP, enabled), _packColumn(_SORT_IDS.PROVINCE, CLANS.GLOBALMAPVIEW_TABLE_PROVINCE, 200, CLANS.GLOBALMAPVIEW_TABLE_PROVINCE_TOOLTIP, enabled), _packColumn(_SORT_IDS.MAP, CLANS.GLOBALMAPVIEW_TABLE_MAP, 200, CLANS.GLOBALMAPVIEW_TABLE_MAP_TOOLTIP, enabled)]
-        if isMyClan:
+        if showTreasury:
             headers.extend([_packColumn(_SORT_IDS.PRIMETIME, CLANS.GLOBALMAPVIEW_TABLE_PRIMETIME, 130, CLANS.GLOBALMAPVIEW_TABLE_PRIMETIME_TOOLTIP, enabled, textAlign='right'), _packColumn(_SORT_IDS.DAYS, CLANS.GLOBALMAPVIEW_TABLE_DAYS, 130, CLANS.GLOBALMAPVIEW_TABLE_DAYS_TOOLTIP, enabled, textAlign='right'), _packColumn(_SORT_IDS.INCOME, CLANS.GLOBALMAPVIEW_TABLE_INCOME, 118, CLANS.GLOBALMAPVIEW_TABLE_INCOME_TOOLTIP, enabled, textAlign='right')])
         else:
             headers.extend([_packColumn(_SORT_IDS.PRIMETIME, CLANS.GLOBALMAPVIEW_TABLE_PRIMETIME, 200, CLANS.GLOBALMAPVIEW_TABLE_PRIMETIME_TOOLTIP, enabled, textAlign='right'), _packColumn(_SORT_IDS.DAYS, CLANS.GLOBALMAPVIEW_TABLE_DAYS, 178, CLANS.GLOBALMAPVIEW_TABLE_DAYS_TOOLTIP, enabled, textAlign='right')])
@@ -90,12 +91,12 @@ class ClanProfileTableStatisticsView(ClanProfileTableStatisticsViewMeta):
 
 class _ClanProfileProvinceDataProvider(SortableDAAPIDataProvider):
 
-    def __init__(self, isMyClan):
+    def __init__(self, showTreasuryData):
         super(_ClanProfileProvinceDataProvider, self).__init__()
         self._list = []
         self.__mapping = {}
         self.__selectedID = None
-        self.__isMyClan = isMyClan
+        self.__showTreasuryData = showTreasuryData
         self.__dataList = []
         self.__commonRevenue = 0
         self.__sortMapping = {_SORT_IDS.FRONT: self.__getFront,
@@ -186,7 +187,7 @@ class _ClanProfileProvinceDataProvider(SortableDAAPIDataProvider):
          'map': self.__getMap(province),
          'primeTime': text_styles.main(province.getUserPrimeTime()),
          'days': text_styles.main(BigWorld.wg_getIntegralFormat(self.__getDays(province)))}
-        if self.__isMyClan:
+        if self.__showTreasuryData:
             result.update({'income': text_styles.gold(BigWorld.wg_getIntegralFormat(self.__getIncome(province))),
              'noIncomeIconVisible': not province.isHqConnected(),
              'noIncomeTooltip': CLANS.GLOBALMAPVIEW_NOINCOME_TOOLTIP})

@@ -1,7 +1,7 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/clans/profile/ClanProfileFortificationView.py
 import weakref
 from adisp import process
-from gui.Scaleform.daapi.view.lobby.clans.profile import data_receivers
+from gui.Scaleform.daapi.view.lobby.clans.profile import fort_data_receivers
 from gui.Scaleform.daapi.view.lobby.clans.profile.ClanProfileBaseView import ClanProfileBaseView
 from gui.Scaleform.genConsts.CLANS_ALIASES import CLANS_ALIASES
 
@@ -23,9 +23,9 @@ class ClanProfileFortificationView(ClanProfileBaseView):
             self._hideWaiting()
             return
         if clanDossier.isMyClan():
-            self._fortDP = data_receivers.OwnClanDataReceiver()
+            self._fortDP = fort_data_receivers.OwnClanDataReceiver()
         else:
-            self._fortDP = data_receivers.ClanDataReceiver()
+            self._fortDP = fort_data_receivers.ClanDataReceiver()
         hasFort = yield self._fortDP.hasFort(clanDossier)
         if self.isDisposed():
             return
@@ -36,7 +36,8 @@ class ClanProfileFortificationView(ClanProfileBaseView):
             linkage = CLANS_ALIASES.CLAN_PROFILE_FORT_PROMO_VIEW_LINKAGE
         self.as_setDataS(linkage)
         self._updateHeaderState()
-        self._hideWaiting()
+        if hasFort:
+            self._hideWaiting()
 
     def showWaiting(self):
         self._showWaiting()

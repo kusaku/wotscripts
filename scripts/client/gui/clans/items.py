@@ -302,15 +302,7 @@ class ClanRatingsData(_ClanRatingsData, FieldsCheckerMixin):
         return self.wins_ratio_avg
 
     def isActive(self):
-        return self.gm_battles_count_28d > 0 or self.fs_battles_count_28d > 0 or self.fb_battles_count_28d > 0
-
-    @fmtUnavailableValue(fields=('fs_battles_count_28d',))
-    def getFsBattlesCount28d(self):
-        return self.fs_battles_count_28d
-
-    @fmtUnavailableValue(fields=('fb_battles_count_28d',))
-    def getFbBattlesCount28d(self):
-        return self.fb_battles_count_28d
+        return self.gm_battles_count_28d > 0
 
     @fmtUnavailableValue(fields=('xp_avg',))
     def getBattlesPerformanceAvg(self):
@@ -338,14 +330,11 @@ class ClanRatingsData(_ClanRatingsData, FieldsCheckerMixin):
         return self.fs_battles_count_10_28d <= 0
 
     def hasFortRating(self):
-        for gtr in (self.getFsBattlesCount28d,
-         self.getFbBattlesCount28d,
-         self.getEloRating10,
-         self.getEloRating8):
+        for gtr in (self.getEloRating10, self.getEloRating8):
             if not isValueAvailable(gtr):
                 return False
 
-        return self.fs_battles_count_28d > 0 or self.fb_battles_count_28d > 0 or self.fb_elo_rating_10 != 1000 or self.fb_elo_rating_8 != 1000
+        return self.fb_elo_rating_10 != 1000 or self.fb_elo_rating_8 != 1000
 
     def _getCriticalFields(self):
         return _ClanRatingsDataCriticalFields
@@ -436,6 +425,7 @@ class ClanGlobalMapStatsData(_ClanGlobalMapStatsData, FieldsCheckerMixin):
         return avg(self.battles_won_on_10_level, self.battles_played_on_10_level)
 
 
+Building = namedtuple('Building', 'type direction level position')
 _ClanStrongholdInfoData = namedtuple('ClanStrongholdData', ['buildings',
  'defence_attack_count',
  'defence_success_attack_count',
@@ -469,7 +459,6 @@ _ClanStrongholdInfoData.__new__.__defaults__ = ([],) + tuple([0] * (len(_ClanStr
 DefClanStrongholdInfoData = _ClanStrongholdInfoData([], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, None)
 
 class ClanStrongholdInfoData(_ClanStrongholdInfoData, FieldsCheckerMixin):
-    _Building = namedtuple('_Building', 'type direction level position')
 
     def hasFort(self):
         return self.level > 0
@@ -478,7 +467,7 @@ class ClanStrongholdInfoData(_ClanStrongholdInfoData, FieldsCheckerMixin):
         result = []
         for b in self.buildings:
             try:
-                result.append(makeTupleByDict(self._Building, b))
+                result.append(makeTupleByDict(Building, b))
             except:
                 LOG_WARNING('There is error while collecting Buildings list', self.buildings)
 
@@ -584,6 +573,8 @@ class ClanStrongholdInfoData(_ClanStrongholdInfoData, FieldsCheckerMixin):
         return self.defence_mode_is_activated
 
 
+BuildingStats = namedtuple('BuildingStats', 'position type level hp storage')
+BuildingStats.__new__.__defaults__ = (0, 0, 0, 0, 0)
 _ClanStrongholdStatisticsData = namedtuple('ClanStrongholdData', ['buildings',
  'buildings_count',
  'clan_id',
@@ -597,7 +588,9 @@ _ClanStrongholdStatisticsData = namedtuple('ClanStrongholdData', ['buildings',
  'vacation_finish',
  'vacation_start',
  'sortie_battles_wins_percentage_period',
- 'sortie_wins_period'])
+ 'sortie_wins_period',
+ 'sortie_battles_count_period',
+ 'defence_battles_count_period'])
 _ClanStrongholdStatisticsData.__new__.__defaults__ = ([],
  0,
  0,
@@ -611,11 +604,11 @@ _ClanStrongholdStatisticsData.__new__.__defaults__ = ([],
  None,
  None,
  None,
- None)
+ None,
+ 0,
+ 0)
 
 class ClanStrongholdStatisticsData(_ClanStrongholdStatisticsData, FieldsCheckerMixin):
-    _Building = namedtuple('_Building', 'position type level hp storage')
-    _Building.__new__.__defaults__ = (0, 0, 0, 0, 0)
 
     def hasFort(self):
         return self.level > 0
@@ -623,10 +616,19 @@ class ClanStrongholdStatisticsData(_ClanStrongholdStatisticsData, FieldsCheckerM
     def getBuildings(self):
         result = {}
         for b in self.buildings:
-            result[b['type']] = makeTupleByDict(self._Building, b)
+            result[b['type']] = makeTupleByDict(BuildingStats, b)
 
         return result
 
+    @fmtUnavailableValue(fields=('defence_battles_count_period',))
+    def getFbBattlesCount28d(self):
+        return self.defence_battles_count_period
+
+    @fmtUnavailableValue(fields=('sortie_battles_count_period',))
+    def getFsBattlesCount28d(self):
+        return self.sortie_battles_count_period
+
+    @fmtUnavailableValue(fields=('sortie_wins_period',))
     def getFsWinsCount28d(self):
         return self.sortie_wins_period
 
@@ -636,11 +638,15 @@ class ClanStrongholdStatisticsData(_ClanStrongholdStatisticsData, FieldsCheckerM
 
     def getBuildingStats(self, typeID):
         buildings = self.getBuildings()
-        return buildings.get(typeID, self._Building())
+        return buildings.get(typeID, BuildingStats())
 
     @fmtUnavailableValue(fields=('directions_count',))
     def getDirectionsCount(self):
         return self.directions_count
+
+    @fmtUnavailableValue(fields=('directions',))
+    def getDirectionsIDs(self):
+        return self.directions
 
     def getPeripheryID(self):
         return self.periphery_id
@@ -1055,22 +1061,46 @@ class ClanInviteWrapper(object):
         self.__sender = sender or AccountClanRatingsData()
         self.__accountName = accountName
         self.__senderName = senderName
-        self.__sortableFieldsMapping = {'status': self.getStatusSortWeight,
-         'message': self.getComment,
-         'sent': self.getCreatedAt,
-         'createdAt': self.getCreatedAt,
-         'updatedAt': self.getUpdatedAt,
-         'userName': self.getAccountName,
-         'personalRating': self.getPersonalRating,
-         'battlesCount': self.getBattlesCount,
-         'wins': self.getBattleXpAvg,
-         'awgExp': self.getBattlesPerformanceAvg}
 
-    def __getattr__(self, item):
-        if item in self.__sortableFieldsMapping:
-            getter = self.__sortableFieldsMapping[item]
-            return getter()
-        return super(ClanInviteWrapper, self).__getattribute__(item)
+    @property
+    def status(self):
+        return CLAN_INVITE_STATES_SORT_RULES.get(self.__invite.status, 0)
+
+    @property
+    def message(self):
+        return self.__invite.comment
+
+    @property
+    def sent(self):
+        return self.getCreatedAt()
+
+    @property
+    def createdAt(self):
+        return self.getCreatedAt()
+
+    @property
+    def updatedAt(self):
+        return self.getUpdatedAt()
+
+    @property
+    def userName(self):
+        return self.getAccountName()
+
+    @property
+    def personalRating(self):
+        return self.getPersonalRating()
+
+    @property
+    def battlesCount(self):
+        return self.getBattlesCount()
+
+    @property
+    def awgExp(self):
+        return self.getBattlesPerformanceAvg()
+
+    @property
+    def wins(self):
+        return self.getBattleXpAvg()
 
     @property
     def invite(self):
@@ -1128,9 +1158,6 @@ class ClanInviteWrapper(object):
     def getBattlesPerformanceAvg(self):
         return self.__account.getBattlesPerformanceAvg()
 
-    def getStatusSortWeight(self):
-        return CLAN_INVITE_STATES_SORT_RULES.get(self.__invite.getStatus(), 0)
-
     @fmtDelegat(path='invite.getStatus')
     def getStatus(self):
         return self.__invite.getStatus()
@@ -1160,22 +1187,46 @@ class ClanPersonalInviteWrapper(object):
         self.__clanRatings = clanRatings or ClanRatingsData()
         self.__clanInfo = clanInfo or ClanExtInfoData()
         self.__senderName = senderName
-        self.__sortableFieldsMapping = {'status': self.getStatusSortWeight,
-         'message': self.getComment,
-         'createdAt': self.getCreatedAt,
-         'sent': self.getCreatedAt,
-         'updatedAt': self.getUpdatedAt,
-         'clanName': self.getClanFullName,
-         'personalRating': self.getPersonalRating,
-         'battlesCount': self.getBattlesCount,
-         'wins': self.getBattleXpAvg,
-         'awgExp': self.getBattlesPerformanceAvg}
 
-    def __getattr__(self, item):
-        if item in self.__sortableFieldsMapping:
-            getter = self.__sortableFieldsMapping[item]
-            return getter()
-        return super(ClanPersonalInviteWrapper, self).__getattribute__(item)
+    @property
+    def status(self):
+        return CLAN_INVITE_STATES_SORT_RULES.get(self.__invite.status, 0)
+
+    @property
+    def message(self):
+        return self.__invite.comment
+
+    @property
+    def createdAt(self):
+        return self.getCreatedAt()
+
+    @property
+    def sent(self):
+        return self.getCreatedAt()
+
+    @property
+    def updatedAt(self):
+        return self.getUpdatedAt()
+
+    @property
+    def clanName(self):
+        return self.getClanFullName()
+
+    @property
+    def personalRating(self):
+        return self.getPersonalRating()
+
+    @property
+    def battlesCount(self):
+        return self.getBattlesCount()
+
+    @property
+    def wins(self):
+        return self.getBattleXpAvg()
+
+    @property
+    def awgExp(self):
+        return self.getBattlesPerformanceAvg()
 
     @property
     def invite(self):
@@ -1191,9 +1242,6 @@ class ClanPersonalInviteWrapper(object):
 
     def getDbID(self):
         return self.__invite.getDbID()
-
-    def getStatusSortWeight(self):
-        return CLAN_INVITE_STATES_SORT_RULES.get(self.__invite.getStatus(), 0)
 
     @fmtDelegat(path='invite.getStatus')
     def getStatus(self):

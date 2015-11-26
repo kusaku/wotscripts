@@ -516,7 +516,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
      'id': 'id',
      'account_id': 'account_id',
      'clan_id': 'clan_id',
-     'comment': 'data.comment'}, paginated=True)
+     'comment': 'data.comment',
+     'status_changer_id': 'data.status_changer_id'}, paginated=True)
     def get_account_applications(self, callback, fields = None, statuses = None, get_total_count = False, limit = 18, offset = 0):
         """
         return data from WGCCBE backend using `applications API method`_
@@ -546,7 +547,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
      'id': 'id',
      'account_id': 'account_id',
      'clan_id': 'clan_id',
-     'comment': 'data.comment'}, paginated=True)
+     'comment': 'data.comment',
+     'status_changer_id': 'data.status_changer_id'}, paginated=True)
     def get_clan_applications(self, callback, clan_id, fields = None, statuses = None, get_total_count = False, limit = 18, offset = 0):
         """
         return data from WGCCBE backend using `applications API method`_
@@ -799,7 +801,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
      'id': 'id',
      'account_id': 'account_id',
      'clan_id': 'clan_id',
-     'comment': 'data.comment'}, paginated=True)
+     'comment': 'data.comment',
+     'status_changer_id': 'data.status_changer_id'}, paginated=True)
     def get_account_invites(self, callback, fields = None, statuses = None, get_total_count = False, limit = 18, offset = 0):
         """
         return data from WGCCBE backend using `invites API method`_
@@ -1006,7 +1009,9 @@ class StagingDataAccessor(base.BaseDataAccessor):
      'vacation_finish': 'vacation_finish',
      'vacation_start': 'vacation_start',
      'sortie_wins_period': 'sortie_wins_period',
-     'sortie_battles_wins_percentage_period': 'sortie_battles_wins_percentage_period'})
+     'sortie_battles_wins_percentage_period': 'sortie_battles_wins_percentage_period',
+     'sortie_battles_count_period': 'sortie_battles_count_period',
+     'defence_battles_count_period': 'defence_battles_count_period'})
     def get_strongholds_statistics(self, callback, clan_id, fields = None):
         """
         return data from WGCCFE backend using `stronghold statistics API method`_

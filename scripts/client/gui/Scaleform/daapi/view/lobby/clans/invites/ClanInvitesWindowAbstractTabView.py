@@ -1,19 +1,63 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/clans/invites/ClanInvitesWindowAbstractTabView.py
+import weakref
 from gui import SystemMessages
 from gui.Scaleform.daapi.view.meta.ClanInvitesWindowAbstractTabViewMeta import ClanInvitesWindowAbstractTabViewMeta
 from gui.Scaleform.locale.CLANS import CLANS
 from gui.Scaleform.genConsts.CLANS_ALIASES import CLANS_ALIASES
 from gui.clans import formatters as clans_fmts
 from gui.clans.clan_helpers import ClanListener
-from gui.clans.settings import CLAN_INVITE_STATES
+from gui.clans.settings import CLAN_INVITE_STATES, CLAN_REQUESTED_DATA_TYPE
+from gui.shared.events import CoolDownEvent
+from gui.shared.view_helpers import CooldownHelper
 from helpers.i18n import makeString as _ms
 from gui.shared.utils.functions import makeTooltip
+
+class _RefreshBtnStateController(object):
+    __coolDownRequests = [CLAN_REQUESTED_DATA_TYPE.CREATE_APPLICATIONS,
+     CLAN_REQUESTED_DATA_TYPE.CREATE_INVITES,
+     CLAN_REQUESTED_DATA_TYPE.ACCEPT_APPLICATION,
+     CLAN_REQUESTED_DATA_TYPE.ACCEPT_INVITE,
+     CLAN_REQUESTED_DATA_TYPE.DECLINE_APPLICATION,
+     CLAN_REQUESTED_DATA_TYPE.DECLINE_INVITE,
+     CLAN_REQUESTED_DATA_TYPE.DECLINE_INVITES]
+
+    def __init__(self, view):
+        super(_RefreshBtnStateController, self).__init__()
+        self.__view = weakref.proxy(view)
+        self.__cooldown = CooldownHelper(self.__coolDownRequests, self._onCooldownHandle, CoolDownEvent.CLAN)
+        self.__isEnabled = False
+        self.__tooltip = None
+        return
+
+    def start(self):
+        self.__cooldown.start()
+
+    def stop(self):
+        self.__cooldown.stop()
+        self.__cooldown = None
+        return
+
+    def setEnabled(self, enable, toolTip = None):
+        self.__isEnabled = enable
+        self.__tooltip = toolTip
+        self._updateState()
+
+    def _onCooldownHandle(self, isInCooldown):
+        self._updateState()
+
+    def _updateState(self):
+        if self.__isEnabled:
+            self.__view.as_updateButtonRefreshStateS(not self.__cooldown.isInCooldown(), makeTooltip(body=_ms(self.__tooltip or CLANS.CLANINVITESWINDOW_TOOLTIPS_REFRESHBUTTON_ENABLED)))
+        else:
+            self.__view.as_updateButtonRefreshStateS(False, makeTooltip(body=_ms(self.__tooltip or CLANS.CLANINVITESWINDOW_TOOLTIPS_REFRESHBUTTON_DISABLED)))
+
 
 class ClanInvitesWindowAbstractTabView(ClanInvitesWindowAbstractTabViewMeta, ClanListener):
 
     def __init__(self):
         super(ClanInvitesWindowAbstractTabView, self).__init__()
         self.__filterName = self._getDefaultFilterName()
+        self.__refreshBtnController = _RefreshBtnStateController(self)
 
     @property
     def paginatorsController(self):
@@ -27,6 +71,15 @@ class ClanInvitesWindowAbstractTabView(ClanInvitesWindowAbstractTabViewMeta, Cla
     def clanInfo(self):
         return self._parentWnd.clanInfo
 
+    def onClanMembersListChanged(self, members):
+        self.resyncClanInfo()
+
+    def onClanInfoReceived(self, clanDbID, clanInfo):
+        paginator = self._getCurrentPaginator()
+        if paginator.isSynced():
+            self._onListUpdated(None, True, True, (paginator.getLastStatus(), paginator.getLastResult()))
+        return
+
     def resyncClanInfo(self, force = False):
         return self._parentWnd.resyncClanInfo(force=force)
 
@@ -35,9 +88,9 @@ class ClanInvitesWindowAbstractTabView(ClanInvitesWindowAbstractTabViewMeta, Cla
 
     def refreshTable(self):
         self._enableRefreshBtn(False)
-        self.resyncClanInfo(force=True)
         self.paginatorsController.markPanginatorsAsUnSynced()
         self._sendRefreshRequest(self._getCurrentPaginator())
+        self.resyncClanInfo()
 
     def filterBy(self, filterName):
         self.__filterName = filterName
@@ -145,11 +198,13 @@ class ClanInvitesWindowAbstractTabView(ClanInvitesWindowAbstractTabViewMeta, Cla
         super(ClanInvitesWindowAbstractTabView, self)._populate()
 
     def _dispose(self):
+        self.__refreshBtnController.stop()
         self.stopClanListening()
         super(ClanInvitesWindowAbstractTabView, self)._dispose()
 
     def _onAttachedToWindow(self):
         super(ClanInvitesWindowAbstractTabView, self)._onAttachedToWindow()
+        self.__refreshBtnController.start()
 
     def _makeData(self):
         data = super(ClanInvitesWindowAbstractTabView, self)._makeData()
@@ -162,7 +217,4 @@ class ClanInvitesWindowAbstractTabView(ClanInvitesWindowAbstractTabViewMeta, Cla
             self.as_updateFilterStateS(item)
 
     def _enableRefreshBtn(self, enable, toolTip = None):
-        if enable:
-            self.as_updateButtonRefreshStateS(True, makeTooltip(body=_ms(toolTip or CLANS.CLANINVITESWINDOW_TOOLTIPS_REFRESHBUTTON_ENABLED)))
-        else:
-            self.as_updateButtonRefreshStateS(False, makeTooltip(body=_ms(toolTip or CLANS.CLANINVITESWINDOW_TOOLTIPS_REFRESHBUTTON_DISABLED)))
+        self.__refreshBtnController.setEnabled(enable, toolTip)

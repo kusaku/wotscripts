@@ -171,7 +171,9 @@ class Cart(object):
     def __onCustomizationDrop(self, resultID, cItemID, cType):
         if resultID < 0:
             message = _ms(_DROP_MESSAGE[cType]['error'])
+            sysMessageType = SystemMessages.SM_TYPE.Error
         else:
+            sysMessageType = SystemMessages.SM_TYPE.Information
             if self.__aData.available[cType][cItemID].isInDossier:
                 intCD = g_currentVehicle.item.intCD
                 vehicle = vehicles.getVehicleType(int(intCD))
@@ -180,7 +182,7 @@ class Cart(object):
                 message = _ms(_DROP_MESSAGE[cType]['removedSuccess'])
             if g_tankActiveCamouflage.has_key(g_currentVehicle.item.intCD):
                 del g_tankActiveCamouflage[g_currentVehicle.item.intCD]
-        SystemMessages.pushMessage(message)
+        SystemMessages.pushMessage(message, type=sysMessageType)
         self.__synchronizeDossierIfRequired()
         self.purchaseProcessed()
 
