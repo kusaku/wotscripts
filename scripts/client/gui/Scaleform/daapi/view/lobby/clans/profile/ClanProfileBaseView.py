@@ -2,11 +2,14 @@
 import BigWorld
 from helpers import i18n
 from gui.shared.view_helpers.emblems import ClanEmblemsHelper
+from gui.clans import items
 from gui.clans.clan_helpers import ClanListener
 from gui.clans.settings import CLIENT_CLAN_RESTRICTIONS as RES
 from gui.Scaleform.locale.CLANS import CLANS
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.Scaleform.daapi.view.meta.ClanProfileBaseViewMeta import ClanProfileBaseViewMeta
+from gui.shared.formatters import text_styles
+from gui.clans import formatters as clans_fmts
 _JOIN_BTN_ACTION_ID = 'join'
 
 class ClanProfileBaseView(ClanProfileBaseViewMeta, ClanEmblemsHelper, ClanListener):
@@ -31,7 +34,11 @@ class ClanProfileBaseView(ClanProfileBaseViewMeta, ClanEmblemsHelper, ClanListen
     def _populate(self):
         super(ClanProfileBaseView, self)._populate()
         self.startClanListening()
+        self._updateDummy()
         self._initHeaderBtnStates()
+
+    def onClanStateChanged(self, oldStateID, newStateID):
+        self._updateDummy()
 
     def _dispose(self):
         self._clanDossier = None
@@ -40,12 +47,8 @@ class ClanProfileBaseView(ClanProfileBaseViewMeta, ClanEmblemsHelper, ClanListen
         return
 
     def _updateClanInfo(self, clanInfo):
-        createdAt = clanInfo.getCreatedAt()
-        if createdAt:
-            creationDate = i18n.makeString(CLANS.CLAN_HEADER_CREATIONDATE, creationDate=BigWorld.wg_getLongDateFormat(createdAt))
-        else:
-            creationDate = ''
-        self.as_setClanInfoS({'name': clanInfo.getFullName(),
+        creationDate = i18n.makeString(CLANS.CLAN_HEADER_CREATIONDATE, creationDate=items.formatField(getter=clanInfo.getCreatedAt, formatter=BigWorld.wg_getLongDateFormat))
+        self.as_setClanInfoS({'name': items.formatField(getter=clanInfo.getFullName),
          'bgIcon': RES_ICONS.MAPS_ICONS_CLANS_CLAN_CARD_HEADER,
          'creationDate': creationDate})
 
@@ -76,3 +79,14 @@ class ClanProfileBaseView(ClanProfileBaseViewMeta, ClanEmblemsHelper, ClanListen
 
     def _hideWaiting(self):
         self.as_showWaitingS(False)
+
+    def _updateDummy(self):
+        if self.clansCtrl.isAvailable():
+            self.as_hideDummyS()
+        else:
+            self.as_showDummyS({'iconSource': RES_ICONS.MAPS_ICONS_LIBRARY_ALERTBIGICON,
+             'htmlText': str().join((text_styles.middleTitle(i18n.makeString(CLANS.CLANPROFILE_MAINWINDOW_DUMMY_HEADER)), clans_fmts.getHtmlLineDivider(3), text_styles.main(i18n.makeString(CLANS.CLANPROFILE_MAINWINDOW_DUMMY_BODY)))),
+             'alignCenter': False,
+             'btnVisible': False,
+             'btnLabel': '',
+             'btnTooltip': ''})

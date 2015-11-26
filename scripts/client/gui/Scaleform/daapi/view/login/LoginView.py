@@ -160,6 +160,9 @@ class LoginView(LoginPageMeta):
             password = '*' * g_loginManager.getPreference('password_length')
         else:
             password = ''
+        rememberPwd = GUI_SETTINGS.rememberPassVisible and self._rememberUser
+        if GUI_SETTINGS.clearLoginValue or not rememberPwd and GUI_SETTINGS.igrCredentialsReset:
+            g_loginManager.clearLogin()
         self.as_setDefaultValuesS(g_loginManager.getPreference('login'), password, self._rememberUser, GUI_SETTINGS.rememberPassVisible, GUI_SETTINGS.igrCredentialsReset, not GUI_SETTINGS.isEmpty('recoveryPswdURL'))
         self.as_setServersListS(self._servers.serverList, self._servers.selectedServerIdx)
 

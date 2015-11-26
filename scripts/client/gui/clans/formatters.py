@@ -79,8 +79,16 @@ def getClanFullName(clanName, clanAbbrev):
 
 
 def getAppSentSysMsg(clanName, clanAbbrev):
-    clanFullName = '{} {}'.format(getClanAbbrevString(clanAbbrev or ''), clanName or '')
-    return _sysMsg('clans/notifications/requestSent', clanName=clanFullName)
+    return _sysMsg('clans/notifications/requestSent', clanName=getClanFullName(clanName, clanAbbrev))
+
+
+def getInvitesNotSentSysMsg(accountNames):
+    count = len(accountNames)
+    if count == 1:
+        msg = _sysMsg('clans/notifications/inviteSendError', userName=accountNames[0])
+    else:
+        msg = _sysMsg('clans/notifications/invitesSendError', userCount=count)
+    return msg
 
 
 def getInvitesSentSysMsg(accountNames):

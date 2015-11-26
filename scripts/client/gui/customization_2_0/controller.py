@@ -29,8 +29,10 @@ class Controller(object):
             newViewData = self.__aData.initialViewModel
         else:
             newViewData = self.__aData.viewModel[1:3]
-        g_hangarSpace.space.updateVehicleCamouflage(camouflageID=self.__aData.installed[CUSTOMIZATION_TYPE.CAMOUFLAGE][0].getID())
-        g_hangarSpace.space.updateVehicleSticker(newViewData)
+        if g_hangarSpace.space is not None:
+            g_hangarSpace.space.updateVehicleCamouflage(camouflageID=self.__aData.installed[CUSTOMIZATION_TYPE.CAMOUFLAGE][0].getID())
+            g_hangarSpace.space.updateVehicleSticker(newViewData)
+        return
 
     @property
     def carousel(self):

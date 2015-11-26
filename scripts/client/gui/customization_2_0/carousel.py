@@ -8,6 +8,7 @@ from gui.shared.utils.HangarSpace import g_hangarSpace
 from data_aggregator import CUSTOMIZATION_TYPE
 from gui.shared.utils.functions import makeTooltip
 from slots import Slots
+import shared
 _RENDERER_WIDTH = {CUSTOMIZATION_TYPE.EMBLEM: 100,
  CUSTOMIZATION_TYPE.INSCRIPTION: 176,
  CUSTOMIZATION_TYPE.CAMOUFLAGE: 100}
@@ -29,7 +30,7 @@ class Carousel(object):
 
     def fini(self):
         self.slots.selected -= self.__onSlotSelected
-        self.slots.updated -= self.__updateCarouselData
+        self.slots.updated -= self.__onSlotUpdated
         self.filter.changed -= self.__updateCarouselData
         self.__carouselItems = None
         self.__aData = None
@@ -44,6 +45,10 @@ class Carousel(object):
     @property
     def currentType(self):
         return self.__currentType
+
+    @property
+    def currentSlotIdx(self):
+        return self.__currentSlotIdx
 
     def applyItem(self, carouselItemIdx):
         self.slots.updateSlot(self.__carouselItems[carouselItemIdx], duration=self.__currentDuration)
@@ -60,13 +65,15 @@ class Carousel(object):
         self.__updateCarouselData()
 
     def __updateItemOnTank3DModel(self, previewItemID):
-        itemSpot = self.slots.getData()['data'][self.__currentType]['data'][self.__currentSlotIdx]['spot']
-        formattedPreviewModel = copy.deepcopy(self.__aData.viewModel[1:3])
+        cType = self.__currentType
+        slotIdx = self.__currentSlotIdx
+        slotItem = self.slots.getData()['data'][cType]['data'][slotIdx]
+        changedPreviewModel = copy.deepcopy(self.__aData.viewModel[1:3])
         rawInstalledItem = [previewItemID, time.time(), 0]
-        if self.__currentType == CUSTOMIZATION_TYPE.INSCRIPTION:
+        if cType == CUSTOMIZATION_TYPE.INSCRIPTION:
             rawInstalledItem.append(0)
-        formattedPreviewModel[self.__currentType - 1][itemSpot + self.__currentSlotIdx] = rawInstalledItem
-        g_hangarSpace.space.updateVehicleSticker(formattedPreviewModel)
+        changedPreviewModel[cType - 1][slotItem['spot'] + self.slots.calculateVehicleIndex(slotIdx, cType)] = rawInstalledItem
+        g_hangarSpace.space.updateVehicleSticker(changedPreviewModel)
 
     def __onSlotSelected(self, newType, newSlotIdx):
         self.__currentType = newType
@@ -88,13 +95,13 @@ class Carousel(object):
         appliedItems = []
         purchasedItems = []
         otherItems = []
-        slotInstallItemId = self.slots.getInstallItemID(self.slots.currentIdx, self.__currentType)
+        installedItemID = self.slots.getInstalledItem(self.__currentSlotIdx, self.__currentType).getID()
         currentSlotItem = None
         for itemID, item in self.__aData.available[self.__currentType].iteritems():
             if not self.filter.check(item):
                 continue
             appliedToCurrentSlot = itemID == self.slots.getSelectedSlotItemID()
-            itemIsInSlot = itemID == slotInstallItemId
+            installedInSlot = itemID == installedItemID
             carouselItem = {'id': itemID,
              'object': item,
              'appliedToCurrentSlot': appliedToCurrentSlot,
@@ -103,10 +110,10 @@ class Carousel(object):
              'isInDossier': item.isInDossier,
              'buttonTooltip': self.__getBtnTooltip(),
              'duration': self.__currentDuration,
-             'isInSlot': itemIsInSlot}
+             'installedInSlot': installedInSlot}
             if appliedToCurrentSlot:
                 currentSlotItem = carouselItem
-            if itemIsInSlot:
+            if installedInSlot:
                 appliedItems.append(carouselItem)
             elif item.isInDossier:
                 purchasedItems.append(carouselItem)
@@ -114,7 +121,10 @@ class Carousel(object):
                 otherItems.append(carouselItem)
 
         self.__carouselItems = appliedItems + purchasedItems + otherItems
-        currentSlotCarouselItemIdx = self.__carouselItems.index(currentSlotItem) if currentSlotItem != None else -1
+        if currentSlotItem is not None:
+            currentSlotCarouselItemIdx = self.__carouselItems.index(currentSlotItem)
+        else:
+            currentSlotCarouselItemIdx = -1
         self.updated({'items': self.__carouselItems,
          'rendererWidth': _RENDERER_WIDTH[self.__currentType],
          'selectedIndex': currentSlotCarouselItemIdx,

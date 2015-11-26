@@ -231,11 +231,11 @@ class ClanInvitesAbstractDataProvider(SortableDAAPIDataProvider):
         if status == CLAN_INVITE_STATES.ACCEPTED:
             return text_styles.success(_ms(CLANS.CLANINVITESWINDOW_STATUS_ACCEPTED))
         if status == CLAN_INVITE_STATES.DECLINED:
-            return text_styles.disabled(_ms(CLANS.CLANINVITESWINDOW_STATUS_DECLINED))
+            return text_styles.standard(_ms(CLANS.CLANINVITESWINDOW_STATUS_DECLINED))
         if status == CLAN_INVITE_STATES.EXPIRED:
-            return text_styles.disabled(_ms(CLANS.CLANINVITESWINDOW_STATUS_EXPIRED))
+            return text_styles.standard(_ms(CLANS.CLANINVITESWINDOW_STATUS_EXPIRED))
         if status == CLAN_INVITE_STATES.EXPIRED_RESENT or status == CLAN_INVITE_STATES.DECLINED_RESENT:
-            return text_styles.disabled(_ms(CLANS.CLANINVITESWINDOW_STATUS_SENT))
+            return text_styles.standard(_ms(CLANS.CLANINVITESWINDOW_STATUS_SENT))
         if status == CLAN_INVITE_STATES.ERROR:
             return text_styles.error(_ms(CLANS.CLANINVITESWINDOW_STATUS_ERROR))
         return ''

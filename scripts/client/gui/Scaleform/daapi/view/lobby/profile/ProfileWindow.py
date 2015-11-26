@@ -6,6 +6,7 @@ from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui.Scaleform.daapi.view.meta.ProfileWindowMeta import ProfileWindowMeta
 from gui.Scaleform.daapi.view.lobby.profile.ProfileUtils import getProfileCommonInfo
 from gui.Scaleform.locale.PROFILE import PROFILE
+from gui.Scaleform.locale.WAITING import WAITING
 from helpers.i18n import makeString
 from gui.clans import formatters as clans_fmts
 from gui.clans.clan_helpers import ClanListener
@@ -26,10 +27,7 @@ class ProfileWindow(ProfileWindowMeta, ClanListener):
         self.__userName = ctx.get('userName')
         self.__databaseID = ctx.get('databaseID')
 
-    def onClanAvailabilityChanged(self, isAvailable):
-        self.__updateAddToClanBtn()
-
-    def onClansStateChanged(self, oldStateID, newStateID):
+    def onClanStateChanged(self, oldStateID, newStateID):
         self.__updateAddToClanBtn()
 
     def _populate(self):
@@ -38,8 +36,10 @@ class ProfileWindow(ProfileWindowMeta, ClanListener):
         self.__updateUserInfo()
         g_messengerEvents.users.onUserActionReceived += self._onUserActionReceived
         self.__checkUserRosterInfo()
+        self.startClanListening()
 
     def _dispose(self):
+        self.stopClanListening()
         g_messengerEvents.users.onUserActionReceived -= self._onUserActionReceived
         g_playerEvents.onDossiersResync -= self.__dossierResyncHandler
         g_itemsCache.items.unloadUserDossier(self.__databaseID)
@@ -58,8 +58,9 @@ class ProfileWindow(ProfileWindowMeta, ClanListener):
 
     def __updateAddToClanBtn(self):
         clanDBID, clanInfo = g_itemsCache.items.getClanInfo(self.__databaseID)
-        isInClan = clanInfo is not None
-        self.as_addToClanAvailableS(self.clansCtrl.isAvailable() and not isInClan)
+        candidateIsInClan = clanInfo is not None
+        canIHandleInvites = self.clansCtrl.getAccountProfile().getMyClanPermissions().canHandleClanInvites()
+        self.as_addToClanAvailableS(self.clansCtrl.isAvailable() and not candidateIsInClan and canIHandleInvites)
         self.as_addToClanVisibleS(self.clansCtrl.isEnabled())
         return
 
@@ -113,7 +114,7 @@ class ProfileWindow(ProfileWindowMeta, ClanListener):
 
     @process
     def userAddToClan(self):
-        self.as_showWaitingS(str(), {})
+        self.as_showWaitingS(WAITING.CLANS_INVITES_SEND, {})
         profile = g_clanCtrl.getAccountProfile()
         context = CreateInviteCtx(profile.getClanDbID(), [self.__databaseID])
         result = yield g_clanCtrl.sendRequest(context, allowDelay=True)

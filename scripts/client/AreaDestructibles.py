@@ -1373,11 +1373,10 @@ class DestructiblesManagerStaticModel():
 
     def __dropDestructible(self, chunkID, destrIndex, dmgType, fallDirYaw, pitchConstr, fallSpeed, isAnimate, obstacleCollisionFlags):
         self.__stopLifetimeEffect(chunkID, destrIndex, 0)
-        if isAnimate:
-            self.__launchFallEffect(chunkID, destrIndex, 'fractureEffect', fallDirYaw)
         useEffectsOnTouchDown = obstacleCollisionFlags & 8 or pitchConstr > _MAX_PITCH_TO_CHECK_TERRAIN
         if dmgType == DESTR_TYPE_FALLING_ATOM:
             if isAnimate:
+                self.__launchFallEffect(chunkID, destrIndex, 'fractureEffect', fallDirYaw)
                 if useEffectsOnTouchDown:
                     touchdownCallback = partial(self.__touchDownWithEffect, chunkID, destrIndex, fallDirYaw, 'touchdownEffect', 'touchdownBreakEffect')
                 else:
@@ -1388,8 +1387,10 @@ class DestructiblesManagerStaticModel():
             initialMatrix = self.__getDestrInitialMatrix(chunkID, destrIndex)
             g_destructiblesAnimator.showFall(self.__spaceID, chunkID, destrIndex, fallDirYaw, pitchConstr, fallSpeed, isAnimate, initialMatrix, touchdownCallback)
         else:
+            if isAnimate:
+                self.__launchTreeFallEffect(chunkID, destrIndex, 'fractureEffect', fallDirYaw)
             if isAnimate and useEffectsOnTouchDown:
-                touchdownCallback = partial(self.__launchFallEffect, chunkID, destrIndex, 'touchdownEffect', fallDirYaw)
+                touchdownCallback = partial(self.__launchTreeFallEffect, chunkID, destrIndex, 'touchdownEffect', fallDirYaw)
             else:
                 touchdownCallback = None
             initialMatrix = self.__getDestrInitialMatrix(chunkID, destrIndex)
@@ -1486,7 +1487,25 @@ class DestructiblesManagerStaticModel():
             BigWorld.wg_havokExplosion(endPoint, impact, radius)
             explosionInfo[1] = False
 
-    def __launchFallEffect(self, chunkID, destrIndex, effectName, fallDirYaw):
+    def __launchFallEffect(self, chunkID, destrIndex, effectType, fallDirYaw):
+        player = BigWorld.player()
+        if player is None or isPlayerAccount():
+            return
+        else:
+            effectName = BigWorld.wg_getDestructibleEffectName(self.__spaceID, chunkID, destrIndex, -1, effectType)
+            effectVars = g_cache._getEffect(effectName, 'fallingAtoms', False)
+            if effectVars is None:
+                return
+            effectStuff = random.choice(effectVars)
+            chunkMatrix = BigWorld.wg_getChunkMatrix(self.__spaceID, chunkID)
+            destrMatrix = BigWorld.wg_getDestructibleMatrix(self.__spaceID, chunkID, destrIndex)
+            pos = chunkMatrix.translation + destrMatrix.translation
+            dir = Math.Vector3(math.sin(fallDirYaw), 0.0, math.cos(fallDirYaw))
+            scale = BigWorld.wg_getDestructibleEffectScale(self.__spaceID, chunkID, destrIndex, -1)
+            player.terrainEffects.addNew(pos, effectStuff.effectsList, effectStuff.keyPoints, None, dir=dir, scale=scale)
+            return
+
+    def __launchTreeFallEffect(self, chunkID, destrIndex, effectName, fallDirYaw):
         player = BigWorld.player()
         if player is None or isPlayerAccount():
             return
@@ -1503,11 +1522,8 @@ class DestructiblesManagerStaticModel():
             destrMatrix = BigWorld.wg_getDestructibleMatrix(self.__spaceID, chunkID, destrIndex)
             pos = chunkMatrix.translation + destrMatrix.translation
             dir = Math.Vector3(math.sin(fallDirYaw), 0.0, math.cos(fallDirYaw))
-            if desc['type'] == DESTR_TYPE_TREE:
-                treeScale = destrMatrix.applyVector((0.0, 1.0, 0.0)).length
-                scale = 1.0 + (treeScale - 1.0) * _TREE_EFFECTS_SCALE_RATIO
-            else:
-                scale = desc['effectScale']
+            treeScale = destrMatrix.applyVector((0.0, 1.0, 0.0)).length
+            scale = 1.0 + (treeScale - 1.0) * _TREE_EFFECTS_SCALE_RATIO
             player.terrainEffects.addNew(pos, effectStuff.effectsList, effectStuff.keyPoints, None, dir=dir, scale=scale)
             return
 

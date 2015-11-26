@@ -1,5 +1,4 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/clans/profile/ClanProfilePersonnelView.py
-from collections import defaultdict
 import BigWorld
 from adisp import process
 from constants import CLAN_MEMBER_FLAGS
@@ -17,9 +16,9 @@ from gui.shared.formatters import text_styles
 from gui.shared.event_dispatcher import showClanInvitesWindow
 from gui.shared.view_helpers import UsersInfoHelper
 from gui.clans.settings import CLIENT_CLAN_RESTRICTIONS as RES, DATA_UNAVAILABLE_PLACEHOLDER
+from gui.clans import items
 from gui.clans import formatters as clans_fmts
 from helpers.i18n import makeString as _ms
-from helpers.time_utils import getTimeDeltaTilNow, ONE_DAY
 from messenger.gui.Scaleform.data.contacts_vo_converter import ContactConverter
 from messenger.proto.bw.find_criteria import BWClanChannelFindCriteria
 from messenger.proto.events import g_messengerEvents
@@ -93,11 +92,10 @@ class ClanProfilePersonnelView(ClanProfilePersonnelViewMeta):
         self._updateClanInfo(clanInfo)
         membersCount = len(members)
         self.__membersDP.buildList(members, syncUserInfo=True)
-        totalRatings = self.__membersDP.getTotalRatings()
-        statistics = [_packStat(BigWorld.wg_getIntegralFormat(totalRatings.getAvgGlobalRating()), CLANS.PERSONNELVIEW_CLANSTATS_AVGPERSONALRATING, CLANS.PERSONNELVIEW_CLANSTATS_AVGPERSONALRATING_TOOLTIP, 'avgPersonalRating40x32.png'),
-         _packStat(BigWorld.wg_getIntegralFormat(totalRatings.getAvgBattlesCount()), CLANS.PERSONNELVIEW_CLANSTATS_AVGBATTLESCOUNT, CLANS.PERSONNELVIEW_CLANSTATS_AVGBATTLESCOUNT_TOOLTIP, 'avgBattlesCount40x32.png'),
-         _packStat(BigWorld.wg_getNiceNumberFormat(totalRatings.getAvgPerformanceBattles()) + '%', CLANS.PERSONNELVIEW_CLANSTATS_AVGWINS, CLANS.PERSONNELVIEW_CLANSTATS_AVGWINS_TOOLTIP, 'avgWins40x32.png'),
-         _packStat(BigWorld.wg_getIntegralFormat(totalRatings.getAvgXp()), CLANS.PERSONNELVIEW_CLANSTATS_AVGEXP, CLANS.PERSONNELVIEW_CLANSTATS_AVGEXP_TOOLTIP, 'avgExp40x32.png')]
+        statistics = [_packStat(self.__membersDP.getAvgGlobalRating(), CLANS.PERSONNELVIEW_CLANSTATS_AVGPERSONALRATING, CLANS.PERSONNELVIEW_CLANSTATS_AVGPERSONALRATING_TOOLTIP, 'avgPersonalRating40x32.png'),
+         _packStat(self.__membersDP.getAvgBattlesCount(), CLANS.PERSONNELVIEW_CLANSTATS_AVGBATTLESCOUNT, CLANS.PERSONNELVIEW_CLANSTATS_AVGBATTLESCOUNT_TOOLTIP, 'avgBattlesCount40x32.png'),
+         _packStat(self.__membersDP.getAvgPerformanceBattles(), CLANS.PERSONNELVIEW_CLANSTATS_AVGWINS, CLANS.PERSONNELVIEW_CLANSTATS_AVGWINS_TOOLTIP, 'avgWins40x32.png'),
+         _packStat(self.__membersDP.getAvgXp(), CLANS.PERSONNELVIEW_CLANSTATS_AVGEXP, CLANS.PERSONNELVIEW_CLANSTATS_AVGEXP_TOOLTIP, 'avgExp40x32.png')]
         headers = [_packColumn(_SORT_IDS.USER_NAME, CLANS.PERSONNELVIEW_TABLE_PLAYER, 223, CLANS.PERSONNELVIEW_TABLE_PLAYER_TOOLTIP),
          _packColumn(_SORT_IDS.POST, CLANS.PERSONNELVIEW_TABLE_POST, 275, CLANS.PERSONNELVIEW_TABLE_POST_TOOLTIP),
          _packColumn(_SORT_IDS.RATING, '', 100, CLANS.PERSONNELVIEW_TABLE_PERSONALRATING_TOOLTIP, RES_ICONS.MAPS_ICONS_STATISTIC_RATING24),
@@ -153,42 +151,6 @@ class ClanProfilePersonnelView(ClanProfilePersonnelViewMeta):
         return states
 
 
-class _MembersClanRating(object):
-
-    def __init__(self):
-        self.__total = defaultdict(int)
-        self.__membersCount = 0
-
-    def __iadd__(self, accRating):
-        self.__membersCount += 1
-        self.__total['globalRating'] += accRating.getGlobalRating()
-        self.__total['battlesCount'] += accRating.getBattlesCount()
-        self.__total['perfAvg'] += accRating.getBattlesPerformanceAvg()
-        self.__total['xp'] += accRating.getXp()
-        return self
-
-    def clear(self):
-        self.__membersCount = 0
-        self.__total.clear()
-
-    def getAvgGlobalRating(self):
-        return self.__getAvgValue('globalRating')
-
-    def getAvgBattlesCount(self):
-        return self.__getAvgValue('battlesCount')
-
-    def getAvgPerformanceBattles(self):
-        return self.__getAvgValue('perfAvg')
-
-    def getAvgXp(self):
-        return self.__getAvgValue('xp')
-
-    def __getAvgValue(self, key):
-        if self.__membersCount:
-            return self.__total[key] / self.__membersCount
-        return 0
-
-
 class _ClanMembersDataProvider(SortableDAAPIDataProvider, UsersInfoHelper):
 
     def __init__(self):
@@ -196,7 +158,6 @@ class _ClanMembersDataProvider(SortableDAAPIDataProvider, UsersInfoHelper):
         self._list = []
         self.__mapping = {}
         self.__selectedID = None
-        self.__totalRatings = _MembersClanRating()
         self.__accountsList = []
         self.__sortMapping = {_SORT_IDS.USER_NAME: self.__getMemberName,
          _SORT_IDS.POST: self.__getMemberRole,
@@ -233,9 +194,6 @@ class _ClanMembersDataProvider(SortableDAAPIDataProvider, UsersInfoHelper):
         self.clear()
         self._dispose()
 
-    def getTotalRatings(self):
-        return self.__totalRatings
-
     def getSelectedIdx(self):
         if self.__selectedID in self.__mapping:
             return self.__mapping[self.__selectedID]
@@ -256,7 +214,6 @@ class _ClanMembersDataProvider(SortableDAAPIDataProvider, UsersInfoHelper):
 
     def buildList(self, accounts, syncUserInfo = False):
         self.clear()
-        self.__totalRatings.clear()
         self.__accountsList = accounts
         self._list = list((self._makeVO(acc) for acc in accounts))
         if syncUserInfo:
@@ -284,48 +241,78 @@ class _ClanMembersDataProvider(SortableDAAPIDataProvider, UsersInfoHelper):
             self.buildList(self.__accountsList)
             self.refresh()
 
+    def getAvgGlobalRating(self):
+        return self.__getAvgStringValue('getGlobalRating', formatter=BigWorld.wg_getIntegralFormat)
+
+    def getAvgBattlesCount(self):
+        return self.__getAvgStringValue('getBattlesCount', formatter=BigWorld.wg_getIntegralFormat)
+
+    def getAvgPerformanceBattles(self):
+        return self.__getAvgStringValue('getBattlesPerformanceAvg', formatter=lambda v: BigWorld.wg_getNiceNumberFormat(v) + '%')
+
+    def getAvgXp(self):
+        return self.__getAvgStringValue('getXp', formatter=BigWorld.wg_getIntegralFormat)
+
     def _makeVO(self, memberData):
         memberDBID = memberData.getDbID()
         contactEntity = self.userStorage.getUser(memberDBID)
-        if not contactEntity:
-            return None
-        else:
+        if contactEntity:
             userVO = ContactConverter().makeVO(contactEntity)
-            ratings = memberData.getRatings()
-            self.__totalRatings += ratings
-            return {'dbID': memberDBID,
-             'userName': self.__getMemberName(memberData),
-             'post': memberData.getRoleString(),
-             'postIcon': memberData.getRoleIcon(),
-             'personalRating': BigWorld.wg_getIntegralFormat(self.__getMemberRating(memberData)),
-             'battlesCount': BigWorld.wg_getIntegralFormat(self.__getMemberBattlesCount(memberData)),
-             'wins': BigWorld.wg_getNiceNumberFormat(self.__getMemberBattlesPerformance(memberData)) + '%',
-             'awgExp': BigWorld.wg_getIntegralFormat(self.__getMemberAwgExp(memberData)),
-             'daysInClan': BigWorld.wg_getIntegralFormat(self.__getMemberDaysInClan(memberData)),
-             'canShowContextMenu': memberDBID != getAccountDatabaseID(),
-             'contactItem': userVO}
+        else:
+            userVO = {}
+        return {'dbID': memberDBID,
+         'userName': self.__getMemberName(memberData),
+         'post': items.formatField(getter=memberData.getRoleString),
+         'postIcon': memberData.getRoleIcon(),
+         'personalRating': items.formatField(getter=memberData.getGlobalRating, formatter=BigWorld.wg_getIntegralFormat),
+         'battlesCount': items.formatField(getter=memberData.getBattlesCount, formatter=BigWorld.wg_getIntegralFormat),
+         'wins': items.formatField(getter=memberData.getBattlesPerformanceAvg, formatter=lambda x: BigWorld.wg_getNiceNumberFormat(x) + '%'),
+         'awgExp': items.formatField(getter=memberData.getXp, formatter=BigWorld.wg_getIntegralFormat),
+         'daysInClan': items.formatField(getter=memberData.getDaysInClan, formatter=BigWorld.wg_getIntegralFormat),
+         'canShowContextMenu': memberDBID != getAccountDatabaseID(),
+         'contactItem': userVO}
 
     def __sortingMethod(self, item, field):
         valueGetter = self.__sortMapping[field]
         return valueGetter(item)
 
     def __getMemberName(self, memberData):
-        return self.getUserName(memberData.getDbID())
+        return items.formatField(getter=memberData.getDbID, formatter=self.getUserName)
 
     def __getMemberRole(self, memberData):
+        if not items.isValueAvailable(memberData.getRole):
+            return len(_CLAN_MEMBERS_SORT_INDEXES)
         return _CLAN_MEMBERS_SORT_INDEXES.index(memberData.getRole())
 
     def __getMemberRating(self, memberData):
-        return memberData.getRatings().getGlobalRating()
+        return memberData.getGlobalRating()
 
     def __getMemberBattlesCount(self, memberData):
-        return memberData.getRatings().getBattlesCount()
+        return memberData.getBattlesCount()
 
     def __getMemberBattlesPerformance(self, memberData):
-        return memberData.getRatings().getBattlesPerformanceAvg()
+        return memberData.getBattlesPerformanceAvg()
 
     def __getMemberAwgExp(self, memberData):
-        return memberData.getRatings().getXp()
+        return memberData.getXp()
 
     def __getMemberDaysInClan(self, memberData):
-        return getTimeDeltaTilNow(memberData.getJoiningTime()) / ONE_DAY
+        return memberData.getDaysInClan()
+
+    def __getAvgStringValue(self, key, formatter = None):
+        count = 0
+        total = 0
+        for item in self.__accountsList:
+            getter = getattr(item, key)
+            if items.isValueAvailable(getter):
+                count += 1
+                total += getter()
+
+        value = 0
+        if count > 0:
+            value = total / count
+        elif len(self.__accountsList):
+            return items.formatField(getter=getattr(self.__accountsList[0], key))
+        if formatter:
+            return formatter(value)
+        return value

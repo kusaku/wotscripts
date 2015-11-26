@@ -296,9 +296,9 @@ class FakeDataAccessor(base.BaseDataAccessor):
         return self._request_data('clan_members', clan_id, fields=fields)
 
     @fake_method(example={'clan_id': 2790,
-     'favorite_arenas': [{'arena': '1',
-                          'frontlevel': 6}, {'arena': '2',
-                          'frontlevel': 10}],
+     'favorite_arena_6': 1,
+     'favorite_arena_8': 3,
+     'favorite_arena_10': 121,
      'favorite_primetime': dt_time(19, 0)})
     def get_clan_favorite_attributes(self, clan_id, fields = None):
         """
@@ -365,7 +365,6 @@ class FakeDataAccessor(base.BaseDataAccessor):
     @fake_method(example=lambda search: ([] if len(search) % 2 else [ {'name': 'Clan Name %d' % random.randrange(1, 1000),
      'tag': 'TCLAN',
      'motto': 'Clan Motto',
-     'treasury': 231,
      'leader_id': random.randrange(1, 10000),
      'clan_id': random.randrange(1, 100),
      'members_count': random.randrange(1, 50),
@@ -381,7 +380,6 @@ class FakeDataAccessor(base.BaseDataAccessor):
     @fake_method(example=lambda account: [ {'name': 'Clan Name %d' % random.randrange(1, 1000),
      'tag': 'TCLAN',
      'motto': 'Clan Motto',
-     'treasury': 334,
      'leader_id': random.randrange(1, 10000),
      'clan_id': random.randrange(1, 100),
      'members_count': random.randrange(1, 50),
@@ -523,7 +521,8 @@ class FakeDataAccessor(base.BaseDataAccessor):
                     'hp': 32,
                     'storage': 123,
                     'level': 4,
-                    'position': 7}],
+                    'position': 7,
+                    'direction': 1}],
      'directions': ['A', 'B'],
      'off_day': 3,
      'vacation_start': datetime.utcnow() + timedelta(days=1),
@@ -596,3 +595,16 @@ class FakeDataAccessor(base.BaseDataAccessor):
         return fake data from `decline_invite` section
         """
         return self._request_data('decline_invite', application_id, fields=fields)
+
+    @fake_method(example=[{'id': 991,
+      'account_id': 1001,
+      'clan_id': 19}, {'id': 992,
+      'account_id': 1001,
+      'clan_id': 19}, {'id': 993,
+      'account_id': 1001,
+      'clan_id': 19}])
+    def bulk_decline_invites(self, invite_ids):
+        """
+        return fake data from `bulk_decline_invites` section
+        """
+        return self._request_data('bulk_decline_invites', invite_ids)

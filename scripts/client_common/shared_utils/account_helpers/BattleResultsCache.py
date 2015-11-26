@@ -168,6 +168,7 @@ def convertToFullForm(compactForm):
         vehPersonal['isPrematureLeave'] = avatarResults['isPrematureLeave']
         vehPersonal['fairplayViolations'] = avatarResults['fairplayViolations']
         vehPersonal['club'] = avatarResults['club']
+        vehPersonal['enemyClub'] = avatarResults['enemyClub']
 
     commonAsList, playersAsList, vehiclesAsList, avatarsAsList = cPickle.loads(zlib.decompress(pickled))
     fullForm['common'] = COMMON_RESULTS.unpack(commonAsList)

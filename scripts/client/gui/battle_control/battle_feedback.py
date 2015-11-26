@@ -133,6 +133,7 @@ class BattleFeedbackAdaptor(object):
             def __addVehicleToUI():
                 self.__pending[vehicleID] = None
                 self.onVehicleMarkerAdded(vProxy, vInfo, guiProps)
+                self.onMinimapVehicleAdded(vProxy, vInfo, guiProps)
                 if not isImmediate and not vProxy.isAlive():
                     self.setVehicleState(vProxy.id, _EVENT_ID.VEHICLE_DEAD, True)
                 return
@@ -141,7 +142,6 @@ class BattleFeedbackAdaptor(object):
                 __addVehicleToUI()
             else:
                 self.__pending[vehicleID] = BigWorld.callback(0.0, __addVehicleToUI)
-        self.onMinimapVehicleAdded(vInfo, guiProps)
 
     def stopVehicleVisual(self, vehicleID, isPlayer):
         callbackID = self.__pending.pop(vehicleID, None)

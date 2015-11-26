@@ -1,6 +1,5 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/clans/invites/ClanRequestsView.py
 import BigWorld
-from helpers.i18n import makeString as _ms
 from gui.clans import formatters
 from gui.clans.items import formatField, isValueAvailable
 from gui.clans.settings import CLAN_REQUESTED_DATA_TYPE, CLAN_INVITE_STATES
@@ -8,11 +7,11 @@ from gui.clans.contexts import AcceptApplicationCtx, DeclineApplicationCtx, Crea
 from gui.Scaleform.daapi.view.lobby.clans.invites.ClanInvitesViewWithTable import ClanInvitesAbstractDataProvider
 from gui.Scaleform.daapi.view.meta.ClanRequestsViewMeta import ClanRequestsViewMeta
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
-from gui.Scaleform.locale.CLANS import CLANS
 from gui.Scaleform.daapi.view.lobby.clans.invites.ClanInvitesWindowAbstractTabView import *
 from gui.shared.events import CoolDownEvent
 from gui.shared.view_helpers import CooldownHelper
 from debug_utils import LOG_DEBUG
+from helpers.i18n import makeString as _ms
 
 class ClanRequestsView(ClanRequestsViewMeta):
     __coolDownRequests = [CLAN_REQUESTED_DATA_TYPE.CREATE_APPLICATIONS,
@@ -20,7 +19,8 @@ class ClanRequestsView(ClanRequestsViewMeta):
      CLAN_REQUESTED_DATA_TYPE.ACCEPT_APPLICATION,
      CLAN_REQUESTED_DATA_TYPE.ACCEPT_INVITE,
      CLAN_REQUESTED_DATA_TYPE.DECLINE_APPLICATION,
-     CLAN_REQUESTED_DATA_TYPE.DECLINE_INVITE]
+     CLAN_REQUESTED_DATA_TYPE.DECLINE_INVITE,
+     CLAN_REQUESTED_DATA_TYPE.DECLINE_INVITES]
 
     def __init__(self):
         super(ClanRequestsView, self).__init__()
@@ -38,17 +38,15 @@ class ClanRequestsView(ClanRequestsViewMeta):
     def processedRequestsPaginator(self):
         return self._getPaginatorByFilterName(CLANS_ALIASES.INVITE_WINDOW_FILTER_PROCESSED)
 
-    def acceptRequest(self, dbId):
-        dbId = int(dbId)
-        ctx = AcceptApplicationCtx(dbId)
-        self._getCurrentPaginator().accept(dbId, ctx)
-        self._enableRefreshBtn(True)
+    def acceptRequest(self, applicationID):
+        applicationID = int(applicationID)
+        ctx = AcceptApplicationCtx(applicationID)
+        self._getCurrentPaginator().accept(applicationID, ctx)
 
-    def declineRequest(self, dbId):
-        dbId = int(dbId)
-        ctx = DeclineApplicationCtx(dbId)
-        self._getCurrentPaginator().decline(dbId, ctx)
-        self._enableRefreshBtn(True)
+    def declineRequest(self, applicationID):
+        applicationID = int(applicationID)
+        ctx = DeclineApplicationCtx(applicationID)
+        self._getCurrentPaginator().decline(applicationID, ctx)
 
     def sendInvite(self, dbId):
         dbId = int(dbId)

@@ -98,11 +98,8 @@ class Inscription(Item):
     def getTexturePath(self):
         return self._rawData[2].replace('gui/maps', '../maps')
 
-    def getNationName(self):
-        return self._rawData[0]
-
     def getGroup(self):
-        return 'historical'
+        return self._rawData[0]
 
     def getName(self):
         return self._rawData[4]
@@ -118,7 +115,7 @@ class Inscription(Item):
         return self.getGroup() not in g_itemsCache.items.shop.getInscriptionsGroupHiddens(g_currentVehicle.item.nationID)
 
     def getPrice(self, duration):
-        return int(round(self._price[duration][0] * g_currentVehicle.item.level * g_itemsCache.items.shop.getInscriptionsGroupPriceFactors(g_currentVehicle.item.nationID)[self.getNationName()]))
+        return int(round(self._price[duration][0] * g_currentVehicle.item.level * g_itemsCache.items.shop.getInscriptionsGroupPriceFactors(g_currentVehicle.item.nationID)[self.getGroup()]))
 
 
 class Camouflage(Item):

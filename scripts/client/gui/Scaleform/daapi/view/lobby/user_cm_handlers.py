@@ -82,7 +82,7 @@ class BaseUserCMHandler(AbstractContextMenuHandler, EventSystemEntity):
         def onDossierReceived(databaseID, userName):
             shared_events.showProfileWindow(databaseID, userName)
 
-        self.__receiveProfile(successCallback=onDossierReceived)
+        shared_events.requestProfile(self.databaseID, self.userName, successCallback=onDossierReceived)
 
     def showClanInfo(self):
         if not g_lobbyContext.getServerSettings().clanProfile.isEnabled():
@@ -98,23 +98,7 @@ class BaseUserCMHandler(AbstractContextMenuHandler, EventSystemEntity):
                 key = 'clan data is not available'
                 DialogsInterface.showI18nInfoDialog(key, lambda result: None, I18nInfoDialogMeta(key, messageCtx={'userName': key}))
 
-        self.__receiveProfile(successCallback=onDossierReceived)
-
-    @process
-    def __receiveProfile(self, successCallback):
-        databaseID = self.databaseID
-        userName = self.userName
-        userDossier, _, isHidden = yield g_itemsCache.items.requestUserDossier(databaseID)
-        if userDossier is None:
-            if isHidden:
-                key = 'messenger/userInfoHidden'
-            else:
-                key = 'messenger/userInfoNotAvailable'
-            from gui import DialogsInterface
-            DialogsInterface.showI18nInfoDialog(key, lambda result: None, I18nInfoDialogMeta(key, messageCtx={'userName': userName}))
-        else:
-            successCallback(databaseID, userName)
-        return
+        shared_events.requestProfile(self.databaseID, self.userName, successCallback=onDossierReceived)
 
     def createPrivateChannel(self):
         self.proto.contacts.createPrivateChannel(self.databaseID, self.userName)

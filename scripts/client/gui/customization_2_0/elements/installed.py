@@ -1,5 +1,6 @@
 # Embedded file name: scripts/client/gui/customization_2_0/elements/installed.py
-
+import time
+from helpers import time_utils
 
 class Item(object):
     __slots__ = ('_rawData', '_spot', '_qualifier')
@@ -12,7 +13,8 @@ class Item(object):
     def getID(self):
         raise NotImplementedError
 
-    def howManyDays(self):
+    @property
+    def duration(self):
         raise NotImplementedError
 
     def timeOfApplication(self):
@@ -25,6 +27,11 @@ class Item(object):
     def qualifier(self):
         return self._qualifier
 
+    def getNumberOfDaysLeft(self):
+        timeLeft = (time.time() - self.timeOfApplication()) / time_utils.ONE_DAY
+        term = self.duration
+        return round(term - timeLeft)
+
 
 class Emblem(Item):
 
@@ -34,7 +41,8 @@ class Emblem(Item):
     def getID(self):
         return self._rawData[0]
 
-    def howManyDays(self):
+    @property
+    def duration(self):
         return self._rawData[2]
 
     def timeOfApplication(self):
@@ -52,7 +60,8 @@ class Inscription(Item):
     def getID(self):
         return self._rawData[0]
 
-    def howManyDays(self):
+    @property
+    def duration(self):
         return self._rawData[2]
 
     def timeOfApplication(self):
@@ -70,7 +79,8 @@ class Camouflage(Item):
     def getID(self):
         return self._rawData[0]
 
-    def howManyDays(self):
+    @property
+    def duration(self):
         return self._rawData[2]
 
     def timeOfApplication(self):

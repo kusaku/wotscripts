@@ -2,6 +2,7 @@
 from collections import defaultdict
 from gui.clans import contexts
 from gui.clans.clan_account_profile import MyClanAccountProfile
+from gui.clans.settings import CLAN_INVITE_STATES, CLAN_REQUESTED_DATA_TYPE, CLAN_APPLICATION_STATES
 from gui.clans.users import UserCache
 from adisp import async, process
 from gui import SystemMessages
@@ -27,12 +28,14 @@ class _ClanDossier(object):
         self.__processingRequests = defaultdict(list)
         self.__vitalInfo = defaultdict(lambda : None)
         self.__waitForSync = 0
+        self.__appsCountWaitForSync = 0
 
     def fini(self):
         self._clansCtrl = None
         self.__cache.clear()
         self.__vitalInfo.clear()
         self.__waitForSync = 0
+        self.__appsCountWaitForSync = 0
         return
 
     def isSynced(self, key = None):
@@ -61,20 +64,35 @@ class _ClanDossier(object):
 
     @process
     def resync(self, force = False):
-        if not self.isClanValid() or self.__waitForSync or self.isSynced() and not force:
+        if self.__cantResync(force, self.__waitForSync):
             return
-        self.__vitalInfo.clear()
-        self.__waitForSync = True
-        clanInfo = yield self.requestClanInfo()
-        self.__changeWebInfo('clanInfo', clanInfo, 'onClanInfoReceived')
-        if self.__isMy and self.canIHandleClanInvites():
-            invitesCount = yield self.requestInvitationsCount()
-            self.__changeWebInfo('invitesCount', invitesCount, 'onClanInvitesCountReceived')
-            appsCount = yield self.requestApplicationsCount()
-            self.__changeWebInfo('appsCount', appsCount, 'onClanAppsCountReceived')
         else:
-            self.__vitalInfo['invitesCount'] = self.__vitalInfo['appsCount'] = 0
-        self.__waitForSync = False
+            self.__waitForSync = True
+            clanInfo = yield self.requestClanInfo()
+            self.__changeWebInfo('clanInfo', clanInfo, 'onClanInfoReceived')
+            if self.__isMy and self.canIHandleClanInvites():
+                invitesCount = yield self.requestInvitationsCount()
+                self.__changeWebInfo('invitesCount', invitesCount, 'onClanInvitesCountReceived')
+                self.requestAppsCount(force)
+            else:
+                self.__vitalInfo['invitesCount'] = None
+            self.__waitForSync = False
+            return
+
+    @process
+    def requestAppsCount(self, force = False):
+        if self.__cantResync(force, self.__appsCountWaitForSync):
+            return
+        else:
+            if self.__isMy and self.canIHandleClanInvites():
+                appsCount = yield self.requestApplicationsCount(isForced=force)
+                appsCountName = 'appsCount'
+                if self.__vitalInfo[appsCountName] != appsCount:
+                    self.__changeWebInfo(appsCountName, appsCount, 'onClanAppsCountReceived')
+            else:
+                self.__vitalInfo['appsCount'] = None
+            self.__appsCountWaitForSync = False
+            return
 
     def getClanInfo(self):
         self.resync()
@@ -85,11 +103,11 @@ class _ClanDossier(object):
 
     def getInvitesCount(self):
         self.resync()
-        return self.__vitalInfo['invitesCount'] or None
+        return self.__vitalInfo['invitesCount']
 
     def getAppsCount(self):
         self.resync()
-        return self.__vitalInfo['appsCount'] or None
+        return self.__vitalInfo['appsCount']
 
     @async
     def requestClanInfo(self, callback):
@@ -118,11 +136,11 @@ class _ClanDossier(object):
 
     @async
     def requestInvitationsCount(self, callback):
-        self.__doRequest(contexts.GetClanInvitesCount(self.__clanDbID), callback)
+        self.__doRequest(contexts.GetClanInvitesCount(self.__clanDbID, statuses=[CLAN_INVITE_STATES.ACTIVE]), callback)
 
     @async
-    def requestApplicationsCount(self, callback):
-        self.__doRequest(contexts.GetClanAppsCount(self.__clanDbID), callback)
+    def requestApplicationsCount(self, callback, isForced):
+        self.__doRequest(contexts.GetClanAppsCount(self.__clanDbID, not isForced, statuses=[CLAN_INVITE_STATES.ACTIVE]), callback)
 
     @async
     def requestMembers(self, callback):
@@ -162,10 +180,27 @@ class _ClanDossier(object):
         else:
             callback(self.__cache[requestType])
 
+    def processRequestResponse(self, ctx, response):
+        requestType = ctx.getRequestType()
+        if response.isSuccess():
+            if requestType == CLAN_REQUESTED_DATA_TYPE.DECLINE_APPLICATION or requestType == CLAN_REQUESTED_DATA_TYPE.ACCEPT_APPLICATION:
+                appsCountName = 'appsCount'
+                newVal = self.__vitalInfo[appsCountName] - 1
+                if newVal >= 0:
+                    self.__changeWebInfo(appsCountName, newVal, 'onClanAppsCountReceived')
+                if requestType == CLAN_REQUESTED_DATA_TYPE.DECLINE_APPLICATION:
+                    state = CLAN_APPLICATION_STATES.DECLINED
+                else:
+                    state = CLAN_APPLICATION_STATES.ACCEPTED
+                self._clansCtrl.notify('onClanAppStateChanged', ctx.getApplicationDbID(), state)
+
     def __changeWebInfo(self, fieldName, value, eventName):
         self.__vitalInfo[fieldName] = value
         self._clansCtrl.notify(eventName, self.__clanDbID, value)
         self._clansCtrl.notify('onClanWebVitalInfoChanged', self.__clanDbID, fieldName, value)
+
+    def __cantResync(self, force, waitForSync):
+        return not self.isClanValid() or waitForSync or self.isSynced() and not force
 
     def __repr__(self):
         return 'ClanDossier(dbID = %d, my = %s, web = %s, cache = %s)' % (self.__clanDbID,
@@ -183,7 +218,23 @@ class _ClanController(ClansListeners):
         self.__state = None
         self.__profile = None
         self.__userCache = UserCache(self)
+        self.__simWGCGEnabled = True
         return
+
+    def simEnableWGCG(self, enable):
+        self.__simWGCGEnabled = enable
+        if self.__profile:
+            self.__profile.resync(force=True)
+
+    def simEnableClan(self, enable):
+        settings = g_lobbyContext.getServerSettings()
+        clanSettings = {'clanProfile': {'isEnabled': enable,
+                         'gateUrl': settings.clanProfile.getSettingsJSON()}}
+        settings.update(clanSettings)
+        g_clientUpdateManager.update({'serverSettings': clanSettings})
+
+    def simWGCGEnabled(self):
+        return self.__simWGCGEnabled
 
     def init(self):
         self.__state = ClanUndefinedState(self)
@@ -200,7 +251,7 @@ class _ClanController(ClansListeners):
     def start(self):
         self.__profile = MyClanAccountProfile(self)
         g_clientUpdateManager.addCallbacks({'stats.clanInfo': self.__onClanInfoChanged,
-         'serverSettings.clanProfile.isEnabled': self.__onClanProfileAvailabilityChanged})
+         'serverSettings.clanProfile.isEnabled': self.__onServerSettingChanged})
         self.invalidate()
 
     def stop(self):
@@ -210,9 +261,6 @@ class _ClanController(ClansListeners):
             self.__profile = None
         self.__state.logout()
         return
-
-    def isEnabled(self):
-        return g_lobbyContext.getServerSettings().clanProfile.isEnabled()
 
     def invalidate(self):
         self.__state.update()
@@ -243,6 +291,9 @@ class _ClanController(ClansListeners):
     def getStateID(self):
         return self.__state.getStateID()
 
+    def isEnabled(self):
+        return g_lobbyContext.getServerSettings().clanProfile.isEnabled()
+
     def isAvailable(self):
         return self.__state.isAvailable()
 
@@ -258,7 +309,7 @@ class _ClanController(ClansListeners):
     def changeState(self, state):
         oldState = self.__state
         self.__state = state
-        self.notify('onClansStateChanged', oldState.getStateID(), state.getStateID())
+        self.notify('onClanStateChanged', oldState.getStateID(), state.getStateID())
 
     def onStateUpdated(self):
         if self.__state.isLoggedOn():
@@ -287,8 +338,7 @@ class _ClanController(ClansListeners):
         self.__profile.resyncBwInfo()
         self.resyncLogin()
 
-    def __onClanProfileAvailabilityChanged(self, isAvailable):
-        self.notify('onClanAvailabilityChanged', isAvailable)
+    def __onServerSettingChanged(self, *args):
         self.invalidate()
 
     def __cleanDossiers(self):

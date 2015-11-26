@@ -4,7 +4,7 @@ from debug_utils import LOG_ERROR
 from gui.clans.clan_helpers import ClanListener, ClanFinder
 from gui.clans.items import ClanCommonData, formatField
 from gui.clans import formatters as clans_fmts
-from gui.clans.settings import CLAN_REQUESTED_DATA_TYPE, CLAN_CONTROLLER_STATES
+from gui.clans.settings import CLAN_REQUESTED_DATA_TYPE, CLIENT_CLAN_RESTRICTIONS as _CCR
 from gui.Scaleform.daapi.view.meta.ClanSearchWindowMeta import ClanSearchWindowMeta
 from gui.Scaleform.framework.entities.DAAPIDataProvider import SortableDAAPIDataProvider
 from gui.Scaleform.genConsts.CLANS_ALIASES import CLANS_ALIASES
@@ -45,9 +45,11 @@ class ClanSearchWindow(ClanSearchWindowMeta, ClanListener):
     def onWindowClose(self):
         self.destroy()
 
-    def onClansStateChanged(self, oldStateID, newStateID):
-        if newStateID == CLAN_CONTROLLER_STATES.STATE_UNAVAILABLE:
-            self.destroy()
+    def onClanStateChanged(self, oldStateID, newStateID):
+        if not self.clansCtrl.isEnabled():
+            self.onWindowClose()
+        if not self.clansCtrl.isAvailable():
+            pass
 
     def search(self, text):
         self.__clanFinder.setRecommended(False)
@@ -109,10 +111,6 @@ class ClanSearchWindow(ClanSearchWindowMeta, ClanListener):
         self.__isFirstPageRequested = False
         self.as_hideWaitingS()
 
-    def _validateSearchField(self, text):
-        isValid, reason = g_clanCtrl.getLimits().canSearchClans(text)
-        return isValid
-
     def _processSearchResponse(self, status, data, isInitial = False):
         if status:
             if len(data) > 0:
@@ -122,9 +120,7 @@ class ClanSearchWindow(ClanSearchWindowMeta, ClanListener):
                 self._showDummy(True)
                 self._setDummyData(CLANS.SEARCH_EMPTYRESULT_HEADER, CLANS.SEARCH_EMPTYRESULT_BODY, None, self.__clanFinder.hasSuccessRequest(), _ms(CLANS.SEARCH_EMPTYRESULT_BUTTON), CLANS.SEARCH_EMPTYRESULT_BUTTON_TOOLTIP)
         else:
-            self._searchDP.rebuildList(None)
-            self._showDummy(True)
-            self._setDummyData(CLANS.SEARCH_SERVERUNAVAILABLE_HEADER, CLANS.SEARCH_SERVERUNAVAILABLE_BODY, RES_ICONS.MAPS_ICONS_LIBRARY_ALERTBIGICON)
+            self._showErrorDummy()
         self._updateControlsState()
         return
 
@@ -136,6 +132,12 @@ class ClanSearchWindow(ClanSearchWindowMeta, ClanListener):
          'previousBtnEnabled': self.__clanFinder.canMoveLeft() and isNotInCooldown,
          'searchBtnEnabled': isNotInCooldown,
          'searchInputEnabled': isNotInCooldown})
+
+    def _showErrorDummy(self):
+        self._searchDP.rebuildList(None)
+        self._showDummy(True)
+        self._setDummyData(CLANS.SEARCH_SERVERUNAVAILABLE_HEADER, CLANS.SEARCH_SERVERUNAVAILABLE_BODY, RES_ICONS.MAPS_ICONS_LIBRARY_ALERTBIGICON)
+        return
 
     def _showDummy(self, isVisible):
         self.as_setDummyVisibleS(isVisible)
@@ -183,13 +185,17 @@ class ClanSearchWindow(ClanSearchWindowMeta, ClanListener):
         """
         self.as_showWaitingS(WAITING.PREBATTLE_AUTO_SEARCH, {})
         self._searchDP.rebuildList(None)
-        if self.__clanFinder.isRecommended() or self._validateSearchField(text):
+        isValid, reason = g_clanCtrl.getLimits().canSearchClans(text)
+        if self.__clanFinder.isRecommended() or isValid:
             self._showDummy(False)
             self.__isFirstPageRequested = True
             self.__clanFinder.setPattern(text)
             self.__clanFinder.reset()
         else:
-            self._processSearchResponse(True, list(), True)
+            if reason == _CCR.SEARCH_PATTERN_INVALID:
+                self._processSearchResponse(True, list(), True)
+            else:
+                self._processSearchResponse(False, list(), True)
             self.as_hideWaitingS()
         return
 

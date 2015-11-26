@@ -21,7 +21,7 @@ from gui.shared.formatters import text_styles, icons
 from gui.customization_2_0.filter import QUALIFIER_TYPE_INDEX, FILTER_TYPE
 from gui.customization_2_0.shared import formatPriceCredits, formatPriceGold, isSale, getSalePriceString
 from gui.customization_2_0.elements.qualifier import QUALIFIER_TYPE
-from gui.customization_2_0 import g_customizationController
+from gui.customization_2_0 import g_customizationController, shared
 _BONUS_TOOLTIP_BODY = {QUALIFIER_TYPE.ALL: TOOLTIPS.CUSTOMIZATION_BONUSPANEL_BONUS_ENTIRECREW_BODY,
  QUALIFIER_TYPE.RADIOMAN: TOOLTIPS.CUSTOMIZATION_BONUSPANEL_BONUS_RADIOMAN_BODY,
  QUALIFIER_TYPE.COMMANDER: TOOLTIPS.CUSTOMIZATION_BONUSPANEL_BONUS_COMMANDER_BODY,
@@ -198,7 +198,8 @@ class MainView(CustomizationMainViewMeta):
     def __setCarouselData(self, blData):
         itemVOs = []
         for item in blData['items']:
-            if item['isInSlot']:
+            enable = True
+            if item['installedInSlot']:
                 label = text_styles.main(CUSTOMIZATION.CAROUSEL_ITEMLABEL_APPLIED)
             elif item['isInDossier']:
                 label = text_styles.main(CUSTOMIZATION.CAROUSEL_ITEMLABEL_PURCHASED)
@@ -207,6 +208,7 @@ class MainView(CustomizationMainViewMeta):
                     label = text_styles.main(CUSTOMIZATION.CAROUSEL_ITEMLABEL_PURCHASED)
                 else:
                     label = icons.premiumIgrSmall()
+                    enable = False
             else:
                 if item['priceIsGold']:
                     priceFormatter = text_styles.gold
@@ -218,14 +220,17 @@ class MainView(CustomizationMainViewMeta):
             data = {'id': item['id'],
              'icon': item['object'].getTexturePath(),
              'bonusType': item['object'].qualifier.getIcon16x16(),
-             'bonusPower': text_styles.stats('+{0}%'.format(item['object'].qualifier.getValue())),
+             'bonusPower': text_styles.stats('+{0}%{1}'.format(item['object'].qualifier.getValue(), '*' if item['object'].qualifier.getDescription() is not None else '')),
              'label': label,
              'installed': item['appliedToCurrentSlot'],
              'btnSelect': VEHICLE_CUSTOMIZATION.CUSTOMIZATIONITEMCAROUSEL_RENDERER_SELECT,
              'btnShoot': VEHICLE_CUSTOMIZATION.CUSTOMIZATIONITEMCAROUSEL_RENDERER_SHOOT,
-             'btnTooltip': item['buttonTooltip']}
+             'btnTooltip': item['buttonTooltip'],
+             'btnSelectEnable': enable,
+             'doubleclickEnable': enable,
+             'btnShootEnable': True}
             cType = g_customizationController.carousel.currentType
-            if isSale(cType, item['duration']) and not item['isInDossier'] and not item['isInSlot']:
+            if isSale(cType, item['duration']) and not item['isInDossier'] and not item['installedInSlot']:
                 isGold = item['priceIsGold']
                 data['salePrice'] = getSalePriceString(isGold, item['price'])
             itemVOs.append(data)
@@ -238,3 +243,4 @@ class MainView(CustomizationMainViewMeta):
          'counterVisible': True,
          'goToIndex': blData['goToIndex'],
          'selectedIndex': blData['selectedIndex']})
+        return

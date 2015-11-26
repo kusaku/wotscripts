@@ -1108,7 +1108,6 @@ def _delAccountRepository():
     global g_accountRepository
     LOG_MX('_delAccountRepository')
     if g_accountRepository is None:
-        LOG_WARNING('AccountRepository is None')
         return
     else:
         g_accountRepository.customFilesCache.close()

@@ -1132,6 +1132,38 @@ class ClansAccessor(BaseAccessor):
         """
         return self._data_source.decline_invite(callback, invite_id)
 
+    def bulk_decline_invites(self, callback, invite_ids):
+        """
+        decline clan invites and call `callback`
+        with following information after response is parsed:
+        
+                - `result` is result data
+                - `status_code` is http status code of response (RESTful one)
+                - `response_code` is unique response code
+        
+        :Example:
+        
+        >>> def printer (*args, **kwargs):
+                        pprint(args)
+        ...
+        >>> requester.clans.bulk_decline_invites(printer, [991, 992, 993])
+        (
+                [
+                        {"id": 991, "account_id": 1001, "clan_id": 19},
+                        {"id": 992, "account_id": 1001, "clan_id": 19}
+                ],
+                200,
+                0
+        )
+        
+        :param callback: callback function which will be called when data
+                                        would be obtained
+        :param invite_ids: invites' identifiers
+        :type callback: function
+        :type invite_ids: list of integers
+        """
+        return self._data_source.bulk_decline_invites(callback, invite_ids)
+
 
 class StrongholdsAccessor(BaseAccessor):
     """

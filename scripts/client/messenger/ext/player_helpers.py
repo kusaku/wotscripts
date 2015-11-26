@@ -1,6 +1,5 @@
 # Embedded file name: scripts/client/messenger/ext/player_helpers.py
 import BigWorld
-from adisp import process
 from debug_utils import LOG_ERROR
 from gui.ClientUpdateManager import g_clientUpdateManager
 from gui.shared import g_itemsCache
@@ -47,7 +46,7 @@ class CurrentPlayerHelper(object):
     def clear(self):
         g_clientUpdateManager.removeObjectCallbacks(self)
 
-    def onAccountShowGUI(self):
+    def initPersonalAccount(self):
         dbID, name, clanAbbrev = _getInfo4AccountPlayer()
         if dbID:
             if self.usersStorage.getUser(dbID) is None:
@@ -57,13 +56,15 @@ class CurrentPlayerHelper(object):
                 self.usersStorage.addUser(user)
         else:
             LOG_ERROR('Current player is not found')
+        return
+
+    def initCachedData(self):
         accountAttrs = g_itemsCache.items.stats.attributes
         self.__setAccountAttrs(accountAttrs)
         clanInfo = g_itemsCache.items.stats.clanInfo
         self.__setClanInfo(clanInfo)
         g_clientUpdateManager.addCallbacks({'account.attrs': self.__setAccountAttrs,
          'stats.clanInfo': self.__setClanInfo})
-        return
 
     def onAvatarShowGUI(self):
         dbID, name, clanAbbrev = _getInfo4AvatarPlayer()
@@ -83,7 +84,7 @@ class CurrentPlayerHelper(object):
         self.clear()
 
     def __setAccountAttrs(self, accountAttrs):
-        self.playerCtx._setAccountAttrs(accountAttrs)
+        self.playerCtx.setAccountAttrs(accountAttrs)
 
     def __setClanInfo(self, info):
         if info:
@@ -99,7 +100,7 @@ class CurrentPlayerHelper(object):
         else:
             role = 0
         clanInfo = ClanInfo(abbrev=abbrev, role=role)
-        self.playerCtx._setClanInfo(clanInfo)
+        self.playerCtx.setClanInfo(clanInfo)
         user = self.usersStorage.getUser(getPlayerDatabaseID())
         if user:
             user.update(clanInfo=clanInfo)

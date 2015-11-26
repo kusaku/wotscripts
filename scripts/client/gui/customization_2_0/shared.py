@@ -46,3 +46,11 @@ def forEachSlotIn(newSlotsData, oldSlotsData, functionToRun):
             newSlotItem = newSlotsData['data'][cType]['data'][slotIdx]
             oldSlotItem = oldSlotsData['data'][cType]['data'][slotIdx]
             functionToRun(newSlotItem, oldSlotItem, cType, slotIdx)
+
+
+def isConditional(item):
+    if item.qualifier.getDescription() is None:
+        return ''
+    else:
+        return '*'
+        return

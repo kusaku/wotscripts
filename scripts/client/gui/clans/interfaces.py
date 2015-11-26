@@ -3,10 +3,7 @@
 
 class IClanListener(object):
 
-    def onClanAvailabilityChanged(self, isAvailable):
-        pass
-
-    def onClansStateChanged(self, oldStateID, newStateID):
+    def onClanStateChanged(self, oldStateID, newStateID):
         pass
 
     def onClanInvitesCountReceived(self, clanDbID, invitesCount):
@@ -34,4 +31,10 @@ class IClanListener(object):
         pass
 
     def onAccountWebVitalInfoChanged(self, fieldName, value):
+        pass
+
+    def onClanAppStateChanged(self, appId, state):
+        pass
+
+    def onClanInvitesStateChanged(self, inviteIds, state):
         pass

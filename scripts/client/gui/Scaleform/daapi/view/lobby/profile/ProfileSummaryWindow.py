@@ -4,6 +4,7 @@ from adisp import process
 from debug_utils import LOG_ERROR
 from gui.LobbyContext import g_lobbyContext
 from gui.Scaleform.genConsts.FORTIFICATION_ALIASES import FORTIFICATION_ALIASES
+from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.clubs import events_dispatcher as club_events
 from gui.shared import event_dispatcher as shared_events
 from gui.shared.event_bus import EVENT_BUS_SCOPE
@@ -58,16 +59,13 @@ class ProfileSummaryWindow(ProfileSummaryWindowMeta, ClubEmblemsHelper, ClanEmbl
             path = self.getMemoryTexturePath(emblem)
             self.as_setClanEmblemS(path)
 
-    def onClansStateChanged(self, oldStateID, newStateID):
+    def onClanStateChanged(self, oldStateID, newStateID):
         self._requestClanInfo()
 
     def onAccountClanProfileChanged(self, profile):
         self._requestClanInfo()
 
     def onAccountClanInfoReceived(self, info):
-        self._requestClanInfo()
-
-    def onClanAvailabilityChanged(self, isAvailable):
         self._requestClanInfo()
 
     def _populate(self):
@@ -81,10 +79,10 @@ class ProfileSummaryWindow(ProfileSummaryWindowMeta, ClubEmblemsHelper, ClanEmbl
         super(ProfileSummaryWindow, self)._dispose()
 
     def _requestClanInfo(self):
-        if self.clansCtrl.isAvailable():
-            isShowClanProfileBtnVisible = self.__isFortClanProfileAvailable()
+        if self.clansCtrl.isEnabled():
+            isShowClanProfileBtnVisible = True
         else:
-            isShowClanProfileBtnVisible = False
+            isShowClanProfileBtnVisible = self.__isFortClanProfileAvailable()
         clanDBID, clanInfo = g_itemsCache.items.getClanInfo(self._userID)
         if clanInfo is not None:
             clanInfo = ClanInfo(*clanInfo)
@@ -130,12 +128,14 @@ class ProfileSummaryWindow(ProfileSummaryWindowMeta, ClubEmblemsHelper, ClanEmbl
         self.__rating = yield req.getGlobalRating()
 
     def _getClanBtnParams(self, isVisible):
-        if self.clansCtrl.getStateID() == CLAN_CONTROLLER_STATES.STATE_UNAVAILABLE:
-            btnTooltip = str()
-        else:
+        if self.clansCtrl.isAvailable():
+            btnEnabled = True
             btnTooltip = None
+        else:
+            btnEnabled = False
+            btnTooltip = TOOLTIPS.HEADER_ACCOUNTPOPOVER_UNAVAILABLE
         return {'btnLabel': _ms(PROFILE.PROFILE_SUMMARY_CLAN_BTNLABEL),
-         'btnEnabled': True,
+         'btnEnabled': btnEnabled,
          'btnVisible': isVisible,
          'btnTooltip': btnTooltip}
 

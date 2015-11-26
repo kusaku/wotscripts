@@ -10,7 +10,7 @@ from debug_utils import LOG_DEBUG
 from gui.shared import g_itemsCache
 from gui.clans import items, contexts, formatters as clans_fmts
 from gui.clans.restrictions import ClanMemberPermissions, DefaultClanMemberPermissions
-from gui.clans.settings import CLAN_REQUESTED_DATA_TYPE, COUNT_THRESHOLD
+from gui.clans.settings import CLAN_REQUESTED_DATA_TYPE, COUNT_THRESHOLD, CLAN_INVITE_STATES
 
 class _SYNC_STATE(CONST_CONTAINER):
     INVITES = 1
@@ -156,7 +156,7 @@ class ClanAccountProfile(object):
             return
         else:
             self._waitForSync |= _SYNC_STATE.INVITES
-            ctx = contexts.AccountInvitesCtx(self._accountDbID, 0, COUNT_THRESHOLD, ['active'])
+            ctx = contexts.AccountInvitesCtx(self._accountDbID, 0, COUNT_THRESHOLD, [CLAN_INVITE_STATES.ACTIVE])
             response = yield self._clansCtrl.sendRequest(ctx)
             if response.isSuccess():
                 invites = dict(((i.getClanDbID(), i) for i in ctx.getDataObj(response.data)))
@@ -175,7 +175,7 @@ class ClanAccountProfile(object):
             return
         else:
             self._waitForSync |= _SYNC_STATE.APPS
-            ctx = contexts.AccountApplicationsCtx(self._accountDbID, 0, COUNT_THRESHOLD, ['active'])
+            ctx = contexts.AccountApplicationsCtx(self._accountDbID, 0, COUNT_THRESHOLD, [CLAN_INVITE_STATES.ACTIVE])
             response = yield self._clansCtrl.sendRequest(ctx)
             if response.isSuccess():
                 apps = dict(((a.getClanDbID(), a) for a in ctx.getDataObj(response.data)))
@@ -190,16 +190,25 @@ class ClanAccountProfile(object):
         pass
 
     def processRequestResponse(self, ctx, response):
-        if ctx.getRequestType() == CLAN_REQUESTED_DATA_TYPE.CREATE_APPLICATIONS and response.isSuccess():
-            if len(response.data):
-                if self._vitalWebInfo['apps'] is None:
-                    self._vitalWebInfo['apps'] = {}
-                for item in ctx.getDataObj(response.data):
-                    item = items.ClanInviteData.fromClanCreateInviteData(item)
-                    apps = self._vitalWebInfo['apps']
-                    apps[item.getClanDbID()] = item
-                    self.__changeWebInfo('apps', apps, 'onAccountAppsReceived')
+        requestType = ctx.getRequestType()
+        if response.isSuccess():
+            if requestType == CLAN_REQUESTED_DATA_TYPE.CREATE_APPLICATIONS:
+                if len(response.data):
+                    if self._vitalWebInfo['apps'] is None:
+                        self._vitalWebInfo['apps'] = {}
+                    for item in ctx.getDataObj(response.data):
+                        item = items.ClanInviteData.fromClanCreateInviteData(item)
+                        apps = self._vitalWebInfo['apps']
+                        apps[item.getClanDbID()] = item
+                        self.__changeWebInfo('apps', apps, 'onAccountAppsReceived')
 
+            elif requestType == CLAN_REQUESTED_DATA_TYPE.DECLINE_INVITE:
+                self.__changeInvitesState([ctx.getInviteDbID()], CLAN_INVITE_STATES.DECLINED)
+            elif requestType == CLAN_REQUESTED_DATA_TYPE.DECLINE_INVITES:
+                self.__changeInvitesState([ item.getDbID() for item in ctx.getDataObj(response.data) ], CLAN_INVITE_STATES.DECLINED)
+            elif requestType == CLAN_REQUESTED_DATA_TYPE.ACCEPT_INVITE:
+                self.__changeInvitesState([ctx.getInviteDbID()], CLAN_INVITE_STATES.ACCEPTED)
+        self.getClanDossier().processRequestResponse(ctx, response)
         return
 
     def _getClanInfoValue(self, index, default):
@@ -219,6 +228,22 @@ class ClanAccountProfile(object):
         self._vitalWebInfo[fieldName] = value
         self._clansCtrl.notify(eventName, value)
         self._clansCtrl.notify('onAccountWebVitalInfoChanged', fieldName, value)
+
+    def __changeInvitesState(self, inviteIDs, state):
+        self._clansCtrl.notify('onClanInvitesStateChanged', inviteIDs, state)
+        self.__removeInvites(inviteIDs)
+
+    def __removeInvites(self, inviteIDs):
+        invites = self._vitalWebInfo['invites']
+        if inviteIDs and invites:
+            mapping = dict(((invite.getDbID(), clanId) for clanId, invite in invites.iteritems()))
+            size = len(invites)
+            for invID in inviteIDs:
+                if invID in mapping:
+                    del invites[mapping[invID]]
+
+            if size != len(invites):
+                self.__changeWebInfo('invites', invites, 'onAccountInvitesReceived')
 
     def __repr__(self):
         args = []

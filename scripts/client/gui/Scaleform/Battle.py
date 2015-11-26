@@ -157,9 +157,6 @@ class Battle(BattleWindow):
         if hasGasAttack():
             plugins['gasAttack'] = GasAttackPlugin
         self.__plugins.addPlugins(plugins)
-        BattleWindow.__init__(self, 'battle.swf')
-        self.__isHelpWindowShown = False
-        self.__cameraMode = None
         self.__timerSounds = {}
         for timer, sounds in self.VEHICLE_DEATHZONE_TIMER_SOUND.iteritems():
             self.__timerSounds[timer] = {}
@@ -167,6 +164,9 @@ class Battle(BattleWindow):
                 self.__timerSounds[timer][level] = SoundGroups.g_instance.getSound2D(sound)
 
         self.__timerSound = None
+        BattleWindow.__init__(self, 'battle.swf')
+        self.__isHelpWindowShown = False
+        self.__cameraMode = None
         self.component.wg_inputKeyMode = 1
         self.component.position.z = DEPTH_OF_Battle
         self.movie.backgroundAlpha = 0
@@ -743,6 +743,10 @@ class Battle(BattleWindow):
     def getPlayerNameLength(self, isEnemy):
         panel = self.rightPlayersPanel if isEnemy else self.leftPlayersPanel
         return panel.getPlayerNameLength()
+
+    def getVehicleNameLength(self, isEnemy):
+        panel = self.rightPlayersPanel if isEnemy else self.leftPlayersPanel
+        return panel.getVehicleNameLength()
 
 
 class VehicleDamageInfoPanel(object):

@@ -137,7 +137,7 @@ class Vehicle(FittingItem, HasStrCD):
         self.hasRentPackages = False
         self.isDisabledForBuy = False
         invData = dict()
-        if proxy is not None and proxy.isSynced():
+        if proxy is not None and proxy.inventory.isSynced() and proxy.stats.isSynced() and proxy.shop.isSynced():
             invDataTmp = proxy.inventory.getItems(GUI_ITEM_TYPE.VEHICLE, inventoryID)
             if invDataTmp is not None:
                 invData = invDataTmp
@@ -472,6 +472,9 @@ class Vehicle(FittingItem, HasStrCD):
     def setCustomState(self, state):
         raise state in Vehicle.VEHICLE_STATE.CUSTOM or AssertionError('State is not valid')
         self.__customState = state
+
+    def getCustomState(self):
+        return self.__customState
 
     def clearCustomState(self):
         self.__customState = ''

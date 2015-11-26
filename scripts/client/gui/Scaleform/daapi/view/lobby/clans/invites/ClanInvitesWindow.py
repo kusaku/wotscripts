@@ -3,6 +3,7 @@ import weakref
 from functools import partial
 import BigWorld
 import gui
+from gui.Scaleform.locale.WAITING import WAITING
 from gui.clans.clan_controller import g_clanCtrl
 from gui.clans.clan_helpers import ClanListener
 from gui.clans import formatters
@@ -25,7 +26,7 @@ from helpers.i18n import makeString as _ms
 from debug_utils import LOG_DEBUG
 
 class ClanInvitesWindow(ClanInvitesWindowMeta, ClanListener, ClanEmblemsHelper):
-    __coolDownRequests = [CLAN_REQUESTED_DATA_TYPE.CLAN_INFO, CLAN_REQUESTED_DATA_TYPE.CLAN_APPLICATIONS, CLAN_REQUESTED_DATA_TYPE.CLAN_INVITES]
+    __coolDownRequests = [CLAN_REQUESTED_DATA_TYPE.CLAN_APPLICATIONS, CLAN_REQUESTED_DATA_TYPE.CLAN_INVITES]
 
     def __init__(self, *args):
         super(ClanInvitesWindow, self).__init__()
@@ -36,9 +37,11 @@ class ClanInvitesWindow(ClanInvitesWindowMeta, ClanListener, ClanEmblemsHelper):
         self.__clanDossier = weakref.proxy(self.clansCtrl.getClanDossier(self.__clanDbID))
         self.__pagiatorsController = _PaginatorsController(self.__clanDbID)
 
-    def onClansStateChanged(self, oldStateID, newStateID):
-        if newStateID == CLAN_CONTROLLER_STATES.STATE_UNAVAILABLE:
-            self.destroy()
+    def onClanStateChanged(self, oldStateID, newStateID):
+        if not self.clansCtrl.isEnabled():
+            self.onWindowClose()
+        if not self.clansCtrl.isAvailable():
+            pass
 
     def onAccountClanProfileChanged(self, profile):
         if self.clanProfile.getClanDbID() != self.__clanDbID:
@@ -75,7 +78,7 @@ class ClanInvitesWindow(ClanInvitesWindowMeta, ClanListener, ClanEmblemsHelper):
 
     def showWaiting(self, show):
         if show:
-            self.as_showWaitingS(str(), {})
+            self.as_showWaitingS(WAITING.LOADINGDATA, {})
         elif not self.paginatorsController.isInProgress():
             self.as_hideWaitingS()
 

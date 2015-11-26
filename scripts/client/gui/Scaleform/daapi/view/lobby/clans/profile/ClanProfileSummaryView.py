@@ -7,6 +7,7 @@ from gui.clans.contexts import CreateApplicationCtx
 from helpers import i18n
 from gui.clans.settings import CLIENT_CLAN_RESTRICTIONS as _RES
 from gui.clans import formatters as clans_fmts
+from gui.clans.items import formatField
 from gui.shared.formatters import icons, text_styles
 from gui.shared.view_helpers.UsersInfoHelper import UsersInfoHelper
 from gui.shared.events import OpenLinkEvent
@@ -65,7 +66,7 @@ class ClanProfileSummaryView(ClanProfileSummaryViewMeta, UsersInfoHelper):
             return
         self._updateClanInfo(clanInfo)
         ratingStrBuilder = text_styles.builder(delimiter='\n')
-        ratingStrBuilder.addStyledText(text_styles.promoTitle, BigWorld.wg_getIntegralFormat(ratings.getEfficiency()))
+        ratingStrBuilder.addStyledText(text_styles.promoTitle, formatField(getter=ratings.getEfficiency, formatter=BigWorld.wg_getIntegralFormat))
         ratingStrBuilder.addStyledText(text_styles.stats, CLANS.CLANPROFILE_SUMMARYVIEW_TOTALRAGE)
         motto = clanInfo.getMotto()
         if motto:
@@ -135,23 +136,23 @@ class ClanProfileSummaryView(ClanProfileSummaryViewMeta, UsersInfoHelper):
         pass
 
     def __makeFortBlock(self, ratings, strongholdInfo):
-        notActual = ratings.getBattlesFor28Days() + ratings.getSortiesFor28Days() <= 0
+        notActual = ratings.getFbBattlesCount28d() + ratings.getFsBattlesCount28d() <= 0
         stats = [{'local': 'rageLevel10',
-          'value': ratings.getEloRating10(),
+          'value': formatField(getter=ratings.getEloRating10, formatter=BigWorld.wg_getIntegralFormat),
           'timeExpired': notActual,
           'tooltip': CLANS.CLANPROFILE_SUMMARYVIEW_TOOLTIP_FORT_ELO_RAGE_10_BODY},
          {'local': 'rageLevel8',
-          'value': ratings.getEloRating8(),
+          'value': formatField(getter=ratings.getEloRating8, formatter=BigWorld.wg_getIntegralFormat),
           'timeExpired': notActual,
           'tooltip': CLANS.CLANPROFILE_SUMMARYVIEW_TOOLTIP_FORT_ELO_RAGE_8_BODY},
          {'local': 'sortiesPerDay',
-          'value': ratings.getSortiesFor28Days(),
+          'value': formatField(getter=ratings.getFsBattlesCount28d, formatter=BigWorld.wg_getIntegralFormat),
           'tooltip': CLANS.CLANPROFILE_SUMMARYVIEW_TOOLTIP_FORT_SORTIE_COUNT_28_BODY},
          {'local': 'battlesPerDay',
-          'value': ratings.getBattlesFor28Days(),
+          'value': formatField(getter=ratings.getFbBattlesCount28d, formatter=BigWorld.wg_getIntegralFormat),
           'tooltip': CLANS.CLANPROFILE_SUMMARYVIEW_TOOLTIP_FORT_BATTLES_COUNT_28_BODY},
          {'local': 'fortLevel',
-          'value': fort_formatters.getTextLevel(strongholdInfo.getLevel()),
+          'value': formatField(getter=strongholdInfo.getLevel, formatter=fort_formatters.getTextLevel),
           'tooltip': CLANS.CLANPROFILE_SUMMARYVIEW_TOOLTIP_FORT_LEVEL_BODY}]
         return {'isShowHeader': True,
          'header': text_styles.highTitle(CLANS.CLANPROFILE_MAINWINDOWTAB_FORTIFICATION),
@@ -161,13 +162,13 @@ class ClanProfileSummaryView(ClanProfileSummaryViewMeta, UsersInfoHelper):
 
     def __makeGeneralBlock(self, clanInfo, syncUserInfo = False):
         stats = [{'local': 'commander',
-          'value': self.getGuiUserName(clanInfo.getLeaderDbID()),
+          'value': formatField(getter=clanInfo.getLeaderDbID, formatter=self.getGuiUserName),
           'textStyle': _STYLE.STATS_TEXT}, {'local': 'totalPlayers',
-          'value': clanInfo.getMembersCount()}]
+          'value': formatField(getter=clanInfo.getMembersCount, formatter=BigWorld.wg_getIntegralFormat)}]
         canSeeTreasury = self.clansCtrl.getLimits().canSeeTreasury(self._clanDossier)
         if canSeeTreasury.success:
             stats.append({'local': 'gold',
-             'value': clanInfo.getTreasuryValue(),
+             'value': formatField(getter=clanInfo.getTreasuryValue, formatter=BigWorld.wg_getIntegralFormat),
              'icon': RES_ICONS.MAPS_ICONS_LIBRARY_GOLDICON_2})
         if syncUserInfo:
             self.syncUsersInfo()
@@ -180,22 +181,22 @@ class ClanProfileSummaryView(ClanProfileSummaryViewMeta, UsersInfoHelper):
         battles28d = ratings.getGlobalMapBattlesFor28Days()
         notActual = battles28d <= 0
         stats = [{'local': 'rageLevel10',
-          'value': ratings.getGlobalMapEloRating10(),
+          'value': formatField(getter=ratings.getGlobalMapEloRating10, formatter=BigWorld.wg_getIntegralFormat),
           'timeExpired': notActual,
           'tooltip': CLANS.CLANPROFILE_SUMMARYVIEW_TOOLTIP_GMAP_ELO_RAGE_10_BODY},
          {'local': 'rageLevel8',
-          'value': ratings.getGlobalMapEloRating8(),
+          'value': formatField(getter=ratings.getGlobalMapEloRating8, formatter=BigWorld.wg_getIntegralFormat),
           'timeExpired': notActual,
           'tooltip': CLANS.CLANPROFILE_SUMMARYVIEW_TOOLTIP_GMAP_ELO_RAGE_8_BODY},
          {'local': 'rageLevel6',
-          'value': ratings.getGlobalMapEloRating6(),
+          'value': formatField(getter=ratings.getGlobalMapEloRating6, formatter=BigWorld.wg_getIntegralFormat),
           'timeExpired': notActual,
           'tooltip': CLANS.CLANPROFILE_SUMMARYVIEW_TOOLTIP_GMAP_ELO_RAGE_6_BODY},
          {'local': 'battlesCount',
-          'value': battles28d,
+          'value': formatField(getter=ratings.getGlobalMapBattlesFor28Days, formatter=BigWorld.wg_getIntegralFormat),
           'tooltip': CLANS.CLANPROFILE_SUMMARYVIEW_TOOLTIP_GMAP_BATTLES_COUNT_BODY},
          {'local': 'provinces',
-          'value': globalMapStats.getCapturedProvincesCount(),
+          'value': formatField(getter=globalMapStats.getCapturedProvincesCount, formatter=BigWorld.wg_getIntegralFormat),
           'tooltip': CLANS.CLANPROFILE_SUMMARYVIEW_TOOLTIP_GMAP_PROVINCE_BODY}]
         return {'isShowHeader': True,
          'header': text_styles.highTitle(CLANS.CLANPROFILE_MAINWINDOWTAB_GLOBALMAP),
@@ -219,7 +220,7 @@ class ClanProfileSummaryView(ClanProfileSummaryViewMeta, UsersInfoHelper):
             localKey = i18n.makeString(CLANS.clanprofile_summaryview_blocklbl(localKey))
             tooltipHeader = localKey
             if isTimeExpired:
-                valueStyle = text_styles.disabled
+                valueStyle = text_styles.standard
                 tooltipBody = CLANS.CLANPROFILE_SUMMARYVIEW_TOOLTIP_RATINGOUTDATED_BODY
             elif tooltipBody is None:
                 tooltipBody = None

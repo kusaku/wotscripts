@@ -102,6 +102,7 @@ def onAvatarBecomePlayer():
     g_settingsCore.serverSettings.applySettings()
     g_clubsCtrl.stop()
     g_clanCtrl.stop()
+    g_eventsCache.stop()
     g_prbLoader.onAvatarBecomePlayer()
     game_control.g_instance.onAvatarBecomePlayer()
     g_clanCache.onAvatarBecomePlayer()

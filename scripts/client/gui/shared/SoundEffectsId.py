@@ -49,13 +49,6 @@ class SoundEffectsId(object):
         CS_ANIMATION_DIVISION_UP_ALT = 'cs_animation_division_up_alt'
         CS_ANIMATION_DIVISION_DOWN = 'cs_animation_division_down'
         DYN_SQUAD_STARTING_DYNAMIC_PLATOON = 'dyn_squad_starting_dynamic_platoon'
-        DYN_SQUAD_PLATOON_JOINED = 'dyn_squad_platoon_joined'
-        DYN_SQUAD_PLATOON_CREATED = 'dyn_squad_platoon_created'
-        DYN_SQUAD_PLATOON_DISMISSED = 'dyn_squad_platoon_dismissed'
-        DYN_SQUAD_BEEN_EXCLUDED_PLATOON = 'dyn_squad_been_excluded_platoon'
-        DYN_SQUAD_LEFT_PLATOON = 'dyn_squad_left_platoon'
-        DYN_SQUAD_ASSISTANCE_BEEN_REQUESTED = 'dyn_squad_assistance_been_requested'
-        DYN_SQUAD_PLAYER_JOINED_PLATOON = 'dyn_squad_player_joined_platoon'
         RUDY_DOG = 'rody_dog'
 
     @classmethod

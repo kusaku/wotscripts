@@ -1,7 +1,5 @@
 # Embedded file name: scripts/common/items/qualifiers/_qualifier.py
 from _xml import *
-from debug_utils import LOG_WARNING
-from qualifier_condition_updaters import REGISTERED_CONDITION_PARAMS
 
 class QUALIFIER_TYPE:
     MAIN_SKILL = 'main_skill'
@@ -55,10 +53,6 @@ def parseQualifier(section):
     res = _PARSERS[qualifierType](section)
     if not res or not all((res.id, res.qualifierType, res.value)):
         raise Exception, 'Bonus attributes (id, type, value) are required.'
-    for conditionParam in res.conditionParams:
-        if conditionParam not in REGISTERED_CONDITION_PARAMS:
-            LOG_WARNING('Qualifier "%s" has condition parameter %s without registered updater.' % (res.id, conditionParam))
-
     return res
 
 

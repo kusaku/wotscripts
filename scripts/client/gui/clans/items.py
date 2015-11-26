@@ -11,6 +11,7 @@ from gui.clans import formatters as clans_fmts
 from gui.clans.settings import MAX_CLAN_MEMBERS_COUNT, CLAN_INVITE_STATES_SORT_RULES, CLAN_INVITE_STATES
 from gui.shared.utils import avg
 from debug_utils import LOG_ERROR
+from helpers.time_utils import getTimeDeltaTilNow, ONE_DAY
 
 def _getTimestamp(datetimeValue):
     return time_utils.getTimestampFromUTC(datetimeValue.timetuple())
@@ -26,12 +27,15 @@ def isValueAvailable(getter):
     return getter(checkAvailability=True)
 
 
-class _FieldsCheckerMixin(object):
+class FieldsCheckerMixin(object):
 
     def __init__(self, *args, **kwargs):
-        super(_FieldsCheckerMixin, self).__init__()
+        super(FieldsCheckerMixin, self).__init__()
         self.__class = self.__class__
-        self._invalidFields = set((arg for arg in self._fields if arg not in kwargs))
+        if hasattr(self, '_fields'):
+            self._invalidFields = set((arg for arg in self._fields if arg not in kwargs))
+        else:
+            self._invalidFields = set()
 
     def isFieldValid(self, fieldName):
         return fieldName not in self._invalidFields
@@ -71,7 +75,11 @@ def fmtUnavailableValue(fields = tuple(), dummy = clans_fmts.DUMMY_UNAVAILABLE_D
                 formatter = kwargs.get('formatter', None)
                 if doFmt and not _isAvailable(fields):
                     return placeholder
-                value = func(self)
+                try:
+                    value = func(self)
+                except ValueError:
+                    value = None
+
                 if value is None:
                     return placeholder
                 if formatter is not None:
@@ -104,7 +112,7 @@ def fmtNullValue(nullValue = 0, dummy = clans_fmts.DUMMY_NULL_DATA):
 def _formatString(value):
     if not value or not len(value):
         return clans_fmts.DUMMY_UNAVAILABLE_DATA
-    return value
+    return passCensor(value)
 
 
 def fmtDelegat(path, dummy = clans_fmts.DUMMY_UNAVAILABLE_DATA):
@@ -168,7 +176,7 @@ _ClanExtInfoData.__new__.__defaults__ = ('',
  False,
  0)
 
-class ClanExtInfoData(_ClanExtInfoData, _FieldsCheckerMixin):
+class ClanExtInfoData(_ClanExtInfoData, FieldsCheckerMixin):
 
     def getDbID(self):
         return self.clan_id
@@ -195,6 +203,7 @@ class ClanExtInfoData(_ClanExtInfoData, _FieldsCheckerMixin):
     def getMembersCount(self):
         return self.members_count
 
+    @fmtUnavailableValue(fields=('leader_id',))
     def getLeaderDbID(self):
         return self.leader_id
 
@@ -240,7 +249,7 @@ _ClanRatingsData = namedtuple('ClanRatingsData', ['clan_id',
 _ClanRatingsData.__new__.__defaults__ = tuple([0] * len(_ClanRatingsData._fields))
 _ClanRatingsDataCriticalFields = ('efficiency', 'battles_count_avg', 'wins_ratio_avg', 'xp_avg')
 
-class ClanRatingsData(_ClanRatingsData, _FieldsCheckerMixin):
+class ClanRatingsData(_ClanRatingsData, FieldsCheckerMixin):
 
     def getClanDbID(self):
         return self.clan_id
@@ -256,14 +265,6 @@ class ClanRatingsData(_ClanRatingsData, _FieldsCheckerMixin):
     @fmtUnavailableValue(fields=('fb_elo_rating_8',))
     def getEloRating8(self):
         return self.fb_elo_rating_8
-
-    @fmtUnavailableValue(fields=('fs_battles_count_10_28d',))
-    def getSortiesFor28Days(self):
-        return self.fs_battles_count_10_28d
-
-    @fmtUnavailableValue(fields=('fb_battles_count_10_28d',))
-    def getBattlesFor28Days(self):
-        return self.fb_battles_count_10_28d
 
     @fmtUnavailableValue(fields=('gm_battles_count_28d',))
     def getGlobalMapBattlesFor28Days(self):
@@ -281,10 +282,6 @@ class ClanRatingsData(_ClanRatingsData, _FieldsCheckerMixin):
     def getGlobalMapEloRating6(self):
         return self.gm_elo_rating_6
 
-    @fmtUnavailableValue(fields=('TODO',))
-    def getGlobalMapFavoriteArena10(self):
-        return ''
-
     @fmtUnavailableValue(fields=('battles_count_avg',))
     def getBattlesCountAvg(self):
         return self.battles_count_avg
@@ -301,13 +298,9 @@ class ClanRatingsData(_ClanRatingsData, _FieldsCheckerMixin):
     def getFsBattlesCount28d(self):
         return self.fs_battles_count_28d
 
-    @fmtUnavailableValue(fields=('TODO',))
-    def getGlobalMapFavoriteArena8(self):
-        return ''
-
-    @fmtUnavailableValue(fields=('TODO',))
-    def getGlobalMapFavoriteArena6(self):
-        return ''
+    @fmtUnavailableValue(fields=('fb_battles_count_28d',))
+    def getFbBattlesCount28d(self):
+        return self.fb_battles_count_28d
 
     @fmtUnavailableValue(fields=('xp_avg',))
     def getBattlesPerformanceAvg(self):
@@ -351,10 +344,10 @@ _ClanGlobalMapStatsData = namedtuple('ClanGlobalMapStatsData', ['battles_lost',
  'battles_won_on_10_level'])
 _ClanGlobalMapStatsData.__new__.__defaults__ = tuple([0] * len(_ClanGlobalMapStatsData._fields))
 
-class ClanGlobalMapStatsData(_ClanGlobalMapStatsData, _FieldsCheckerMixin):
+class ClanGlobalMapStatsData(_ClanGlobalMapStatsData, FieldsCheckerMixin):
 
     def hasGlobalMap(self):
-        return self.battles_played > 0
+        return self.battles_played > 0 or self.provinces_captured > 0
 
     @fmtUnavailableValue(fields=('battles_played',))
     def getBattlesCount(self):
@@ -448,7 +441,7 @@ _ClanStrongholdInfoData = namedtuple('ClanStrongholdData', ['buildings',
 _ClanStrongholdInfoData.__new__.__defaults__ = ([],) + tuple([0] * (len(_ClanStrongholdInfoData._fields) - 1))
 DefClanStrongholdInfoData = _ClanStrongholdInfoData([], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 
-class ClanStrongholdInfoData(_ClanStrongholdInfoData, _FieldsCheckerMixin):
+class ClanStrongholdInfoData(_ClanStrongholdInfoData, FieldsCheckerMixin):
     _Building = namedtuple('_Building', 'type direction level position')
 
     def hasFort(self):
@@ -571,7 +564,9 @@ _ClanStrongholdStatisticsData = namedtuple('ClanStrongholdData', ['buildings',
  'off_day',
  'periphery_id',
  'vacation_finish',
- 'vacation_start'])
+ 'vacation_start',
+ 'sortie_battles_wins_percentage_period',
+ 'sortie_wins_period'])
 _ClanStrongholdStatisticsData.__new__.__defaults__ = ([],
  0,
  0,
@@ -583,9 +578,11 @@ _ClanStrongholdStatisticsData.__new__.__defaults__ = ([],
  -1,
  0,
  None,
+ None,
+ None,
  None)
 
-class ClanStrongholdStatisticsData(_ClanStrongholdStatisticsData, _FieldsCheckerMixin):
+class ClanStrongholdStatisticsData(_ClanStrongholdStatisticsData, FieldsCheckerMixin):
     _Building = namedtuple('_Building', 'position type level hp storage')
     _Building.__new__.__defaults__ = (0, 0, 0, 0, 0)
 
@@ -598,6 +595,13 @@ class ClanStrongholdStatisticsData(_ClanStrongholdStatisticsData, _FieldsChecker
             result[b['type']] = makeTupleByDict(self._Building, b)
 
         return result
+
+    def getFsWinsCount28d(self):
+        return self.sortie_wins_period
+
+    @fmtUnavailableValue(fields=('sortie_battles_wins_percentage_period',))
+    def getSortieBattlesWinsPercentagePeriod(self):
+        return self.sortie_battles_wins_percentage_period
 
     def getBuildingStats(self, typeID):
         buildings = self.getBuildings()
@@ -634,7 +638,7 @@ _AccountClanData.__new__.__defaults__ = (0,
  '',
  _defDateTime)
 
-class AccountClanData(_AccountClanData, _FieldsCheckerMixin):
+class AccountClanData(_AccountClanData, FieldsCheckerMixin):
 
     def getClanCooldownTill(self):
         return time_utils.getTimestampFromUTC(self.in_clan_cooldown_till.timetuple())
@@ -647,11 +651,13 @@ _ClanMemberData.__new__.__defaults__ = (0,
  _defDateTime,
  None)
 
-class ClanMemberData(_ClanMemberData, _FieldsCheckerMixin):
+class ClanMemberData(_ClanMemberData, FieldsCheckerMixin):
 
+    @fmtUnavailableValue(fields=('account_id',))
     def getDbID(self):
         return self.account_id
 
+    @fmtUnavailableValue(fields=('role_bw_flag',))
     def getRole(self):
         return self.role_bw_flag
 
@@ -659,6 +665,7 @@ class ClanMemberData(_ClanMemberData, _FieldsCheckerMixin):
     def getRoleString(self):
         return clans_fmts.getClanRoleString(self.role_bw_flag)
 
+    @fmtUnavailableValue(fields=('role_bw_flag',))
     def getRoleIcon(self):
         return clans_fmts.getClanRoleIcon(self.role_bw_flag)
 
@@ -669,12 +676,25 @@ class ClanMemberData(_ClanMemberData, _FieldsCheckerMixin):
     def getJoiningTime(self):
         return time_utils.getTimestampFromUTC(self.joined_at.timetuple())
 
-    def getRatings(self):
-        if self.ratings is not None:
-            return makeTupleByDict(AccountClanRatingsData, self.ratings)
-        else:
-            return AccountClanRatingsData(self.account_id)
-            return
+    @fmtUnavailableValue(fields=('joined_at',))
+    def getDaysInClan(self):
+        getTimeDeltaTilNow(self.getJoiningTime()) / ONE_DAY
+
+    @fmtDelegat(path='ratings.getGlobalRating')
+    def getGlobalRating(self):
+        return self.ratings.getGlobalRating()
+
+    @fmtDelegat(path='ratings.getBattlesCount')
+    def getBattlesCount(self):
+        return self.ratings.getBattlesCount()
+
+    @fmtDelegat(path='ratings.getBattlesPerformanceAvg')
+    def getBattlesPerformanceAvg(self):
+        return self.ratings.getBattlesPerformanceAvg()
+
+    @fmtDelegat(path='ratings.getXp')
+    def getXp(self):
+        return self.ratings.getXp()
 
 
 _AccountClanRatingsData = namedtuple('_AccountClanRatingsData', ['account_id',
@@ -685,7 +705,7 @@ _AccountClanRatingsData = namedtuple('_AccountClanRatingsData', ['account_id',
  'xp_amount'])
 _AccountClanRatingsData.__new__.__defaults__ = (0, 0, 0, 0, 0, 0)
 
-class AccountClanRatingsData(_AccountClanRatingsData, _FieldsCheckerMixin):
+class AccountClanRatingsData(_AccountClanRatingsData, FieldsCheckerMixin):
 
     def getAccountDbID(self):
         return self.account_id
@@ -728,7 +748,7 @@ _ClanProvinceData.__new__.__defaults__ = ('',
  '',
  0)
 
-class ClanProvinceData(_ClanProvinceData, _FieldsCheckerMixin):
+class ClanProvinceData(_ClanProvinceData, FieldsCheckerMixin):
 
     @fmtUnavailableValue(fields=('front_name',))
     def getFrontName(self):
@@ -794,7 +814,7 @@ _ClanSearchData.__new__.__defaults__ = ('',
  ClanRatingsData())
 _ClanSearchDataCriticalFields = ('tag', 'name', 'members_count')
 
-class ClanSearchData(_ClanSearchData, _FieldsCheckerMixin):
+class ClanSearchData(_ClanSearchData, FieldsCheckerMixin):
 
     def getClanDbID(self):
         return self.clan_id
@@ -811,6 +831,7 @@ class ClanSearchData(_ClanSearchData, _FieldsCheckerMixin):
     def getClanMotto(self):
         return passCensor(self.motto)
 
+    @fmtUnavailableValue(fields=('leader_id',))
     def getLeaderDbID(self):
         return self.leader_id
 
@@ -872,7 +893,7 @@ _ClanInviteData.__new__.__defaults__ = (0,
  '',
  _defDateTime)
 
-class ClanInviteData(_ClanInviteData, _FieldsCheckerMixin):
+class ClanInviteData(_ClanInviteData, FieldsCheckerMixin):
 
     def getDbID(self):
         return self.id
@@ -888,7 +909,7 @@ class ClanInviteData(_ClanInviteData, _FieldsCheckerMixin):
 
     @fmtUnavailableValue(fields=('comment',))
     def getComment(self):
-        return self.comment
+        return passCensor(self.comment)
 
     @fmtUnavailableValue(fields=('status',))
     def getStatus(self):
@@ -913,7 +934,7 @@ class ClanInviteData(_ClanInviteData, _FieldsCheckerMixin):
 _ClanCreateInviteData = namedtuple('_ClanCreateInviteData', ['clan_id', 'id', 'account_id'])
 _ClanCreateInviteData.__new__.__defaults__ = (0, 0, 0)
 
-class ClanCreateInviteData(_ClanCreateInviteData, _FieldsCheckerMixin):
+class ClanCreateInviteData(_ClanCreateInviteData, FieldsCheckerMixin):
 
     def getDbID(self):
         return self.id
@@ -1140,6 +1161,7 @@ class ClanPersonalInviteWrapper(object):
     def getBattlesPerformanceAvg(self):
         return self.__clanRatings.getBattlesPerformanceAvg()
 
+    @fmtDelegat(path='clanInfo.getLeaderDbID')
     def getLeaderDbID(self):
         return self.__clanInfo.getLeaderDbID()
 
@@ -1197,6 +1219,7 @@ class ClanCommonData(object):
     def getAvgExp(self):
         return self._proxy.getBattlesPerformanceAvg()
 
+    @fmtDelegat(path='_proxy.getLeaderDbID')
     def getLeaderDbID(self):
         return self._proxy.getLeaderDbID()
 
@@ -1209,13 +1232,28 @@ class ClanCommonData(object):
         return ClanCommonData(data)
 
 
-_ClanFavouriteAttrs = namedtuple('_ClanFavouriteAttrs', ['clan_id', 'favorite_arena', 'favorite_primetime'])
-_ClanFavouriteAttrs.__new__.__defaults__ = (0, None, 0)
+_ClanFavouriteAttrs = namedtuple('_ClanFavouriteAttrs', ['clan_id',
+ 'favorite_arena_6',
+ 'favorite_arena_8',
+ 'favorite_arena_10',
+ 'favorite_primetime',
+ 'favorite_arenas'])
+_ClanFavouriteAttrs.__new__.__defaults__ = (0, None, None, None, 0, None)
 
-class ClanFavouriteAttrs(_ClanFavouriteAttrs, _FieldsCheckerMixin):
+class ClanFavouriteAttrs(_ClanFavouriteAttrs, FieldsCheckerMixin):
 
-    def getFavoriteArena(self):
-        return self.favorite_arena
+    @fmtUnavailableValue(fields=('favorite_arena_6',))
+    def getFavouriteArena6(self):
+        return self.favorite_arena_6
 
+    @fmtUnavailableValue(fields=('favorite_arena_8',))
+    def getFavouriteArena8(self):
+        return self.favorite_arena_8
+
+    @fmtUnavailableValue(fields=('favorite_arena_10',))
+    def getFavouriteArena10(self):
+        return self.favorite_arena_10
+
+    @fmtUnavailableValue(fields=('favorite_primetime',))
     def getFavoritePrimetime(self):
         return self.favorite_primetime

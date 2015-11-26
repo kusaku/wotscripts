@@ -332,6 +332,7 @@ class HeaderItemsTypes(object):
 class ProfileUtils(object):
     UNAVAILABLE_VALUE = -1
     UNAVAILABLE_SYMBOL = '--'
+    PERCENT_SYMBOL = '%'
     VIEW_TYPE_TABLES = 0
     VIEW_TYPE_CHARTS = 1
     VIEW_TYPE_TABLE = 2
@@ -380,6 +381,13 @@ class ProfileUtils(object):
     def formatEfficiency(coeff2, valueReceiveFunction):
         if coeff2 > 0:
             return BigWorld.wg_getNiceNumberFormat(valueReceiveFunction())
+        else:
+            return ProfileUtils.UNAVAILABLE_VALUE
+
+    @staticmethod
+    def getEfficiencyPercent(dividend, delimiter):
+        if delimiter != 0:
+            return BigWorld.wg_getNiceNumberFormat(float(dividend) / delimiter * 100) + ProfileUtils.PERCENT_SYMBOL
         else:
             return ProfileUtils.UNAVAILABLE_VALUE
 

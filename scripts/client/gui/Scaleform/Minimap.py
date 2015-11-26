@@ -138,6 +138,7 @@ class Minimap(IDynSquadEntityClient):
         self.__markerScale = None
         self.__markerIDGenerator = None
         self.__settingName = 'minimapSize'
+        self.__isShowExtendedInfoActive = False
         self.__updateSettings()
         return
 
@@ -241,8 +242,8 @@ class Minimap(IDynSquadEntityClient):
             self.__ownEntry['entryName'] = entryName
         self.__resetCamera(MODE_ARCADE)
         self.__isStarted = True
-        for vInfo, guiProps in self.__vehiclesWaitStart.itervalues():
-            self.notifyVehicleStart(vInfo, guiProps)
+        for vProxy, vInfo, guiProps in self.__vehiclesWaitStart.itervalues():
+            self.notifyVehicleStart(vProxy, vInfo, guiProps)
 
         self.__vehiclesWaitStart.clear()
         self.__mapSizeIndex = self.getStoredMinimapSize()
@@ -539,11 +540,11 @@ class Minimap(IDynSquadEntityClient):
                         if not battleCtx.isObserver(self.__playerVehicleID):
                             if entries[vehicleID]['matrix'] is not None:
                                 if type(entries[vehicleID]['matrix']) == Math.WGTranslationOnlyMP:
-                                    self.__addEntryLit(vInfo, guiProps, Math.Matrix(entries[vehicleID]['matrix'].source), not self.__onAltNamesShow)
+                                    self.__addEntryLit(vInfo, guiProps, Math.Matrix(entries[vehicleID]['matrix'].source), not self.__onAltNamesShow or self.__isShowExtendedInfoActive)
                                 else:
                                     mp = Math.WGTranslationOnlyMP()
                                     mp.source = Math.Matrix(entries[vehicleID]['matrix'])
-                                    self.__addEntryLit(vInfo, guiProps, mp, not self.__onAltNamesShow)
+                                    self.__addEntryLit(vInfo, guiProps, mp, not self.__onAltNamesShow or self.__isShowExtendedInfoActive)
                     self.__delEntry(vehicleID)
                     if not inAoI:
                         self.__addEntry(vInfo, guiProps, VehicleLocation.AOI_TO_FAR, False)
@@ -551,14 +552,14 @@ class Minimap(IDynSquadEntityClient):
                     LOG_DEBUG('notifyVehicleOnStop, unknown minimap entry location', location)
             return
 
-    def notifyVehicleStart(self, vInfo, guiProps):
+    def notifyVehicleStart(self, vProxy, vInfo, guiProps):
         vehicleID = vInfo.vehicleID
         if not self.__isStarted:
-            self.__vehiclesWaitStart[vehicleID] = (vInfo, guiProps)
+            self.__vehiclesWaitStart[vehicleID] = (vProxy, vInfo, guiProps)
             return
         if vehicleID == self.__playerVehicleID:
             return
-        if not vInfo.isAlive():
+        if not vProxy.isAlive():
             return
         entries = self.__entries
         doMark = True
@@ -701,7 +702,7 @@ class Minimap(IDynSquadEntityClient):
                     if hasattr(entries[vehicleID]['matrix'], 'source'):
                         vInfo = getVehicleInfo(vehicleID)
                         guiProps = getPlayerGuiProps(vehicleID, vInfo.team)
-                        self.__addEntryLit(vInfo, guiProps, entries[vehicleID]['matrix'].source, not self.__onAltNamesShow)
+                        self.__addEntryLit(vInfo, guiProps, entries[vehicleID]['matrix'].source, not self.__onAltNamesShow or self.__isShowExtendedInfoActive)
                 self.__delEntry(vehicleID)
 
     def __validateEntries(self):
@@ -1122,6 +1123,8 @@ class Minimap(IDynSquadEntityClient):
         self.__onAltNamesShow = valueName == setting.OPTIONS.ALT
         self.__showDirectionLine = g_settingsCore.getSetting(settings_constants.GAME.SHOW_VECTOR_ON_MAP)
         self.__showSectorLine = g_settingsCore.getSetting(settings_constants.GAME.SHOW_SECTOR_ON_MAP)
+        for entry in self.__entrieLits.values():
+            self.__entrySetActive(entry['handle'], self.__permanentNamesShow)
 
     def __onEquipmentMarkerShown(self, item, pos, dir, time):
         markerType = MARKER_TYPE.CONSUMABLE
@@ -1142,7 +1145,11 @@ class Minimap(IDynSquadEntityClient):
 
     def __handleShowExtendedInfo(self, event):
         if not self.__permanentNamesShow and self.__onAltNamesShow:
+            for entry in self.__entrieLits.values():
+                self.__entrySetActive(entry['handle'], event.ctx['isDown'])
+
             self.showVehicleNames(event.ctx['isDown'])
+            self.__isShowExtendedInfoActive = event.ctx['isDown']
 
     def __handleMinimapCmd(self, event):
         self.handleKey(event.ctx['key'])
@@ -1283,15 +1290,16 @@ class Minimap(IDynSquadEntityClient):
                 self.__entrySetActive(captureAnimationEntry['handle'], isCarried)
 
     def __delFlagCaptureMarkers(self):
-        for pointIndex, point in enumerate(self.__cfg['flagAbsorptionPoints']):
-            if self.__isTeamPlayer and point['team'] in (NEUTRAL_TEAM, self.__playerTeam):
-                captureUniqueID = self.__makeFlagUniqueID(pointIndex, FLAG_TYPE.ALLY_CAPTURE)
-                self.__delEntryMarker(captureUniqueID)
-                captureAnumationUniqueID = self.__makeFlagUniqueID(pointIndex, FLAG_TYPE.ALLY_CAPTURE_ANIMATION)
-                self.__delEntryMarker(captureAnumationUniqueID)
-            else:
-                captureUniqueID = self.__makeFlagUniqueID(pointIndex, FLAG_TYPE.ENEMY_CAPTURE)
-                self.__delEntryMarker(captureUniqueID)
+        if hasFlags():
+            for pointIndex, point in enumerate(self.__cfg['flagAbsorptionPoints']):
+                if self.__isTeamPlayer and point['team'] in (NEUTRAL_TEAM, self.__playerTeam):
+                    captureUniqueID = self.__makeFlagUniqueID(pointIndex, FLAG_TYPE.ALLY_CAPTURE)
+                    self.__delEntryMarker(captureUniqueID)
+                    captureAnumationUniqueID = self.__makeFlagUniqueID(pointIndex, FLAG_TYPE.ALLY_CAPTURE_ANIMATION)
+                    self.__delEntryMarker(captureAnumationUniqueID)
+                else:
+                    captureUniqueID = self.__makeFlagUniqueID(pointIndex, FLAG_TYPE.ENEMY_CAPTURE)
+                    self.__delEntryMarker(captureUniqueID)
 
     def __getFlagMarkerType(self, flagID, flagTeam = 0):
         if flagTeam > 0:
@@ -1318,8 +1326,8 @@ class Minimap(IDynSquadEntityClient):
         self.__ownUI.entrySetActive(entryHandle, visible)
         self.__ownUI.entryInvoke(entryHandle, ('resumeAnimation' if visible else 'stopAnimation',))
 
-    def __onMinimapVehicleAdded(self, vInfo, guiProps):
-        self.notifyVehicleStart(vInfo, guiProps)
+    def __onMinimapVehicleAdded(self, vProxy, vInfo, guiProps):
+        self.notifyVehicleStart(vProxy, vInfo, guiProps)
 
     def __onMinimapVehicleRemoved(self, vehicleID):
         self.notifyVehicleStop(vehicleID)

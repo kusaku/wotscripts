@@ -429,7 +429,9 @@ class StagingDataAccessor(base.BaseDataAccessor):
         return self._request_data(preprocess_callback(callback, 'clans'), 'clans', url)
 
     @convert_data({'favorite_primetime': lambda x: x and datetime.strptime(x, '%H:%M').time()})
-    @mapped_fields({'favorite_arenas': 'favorite_arenas',
+    @mapped_fields({'favorite_arena_6': 'favorite_arena_6',
+     'favorite_arena_8': 'favorite_arena_8',
+     'favorite_arena_10': 'favorite_arena_10',
      'clan_id': 'clan_id',
      'favorite_primetime': 'favorite_primetime'})
     def get_clan_favorite_attributes(self, callback, clan_id, fields = None):
@@ -439,7 +441,21 @@ class StagingDataAccessor(base.BaseDataAccessor):
                 .. _favorite_attributes API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/statistics/favorite_attributes.html
         """
         url = '/gm/clans/%s/favorite_attributes' % clan_id
-        return self._request_data(preprocess_callback(callback, 'clans'), 'clans', url)
+
+        @preprocess_callback(callback, 'clans')
+        def inner_callback(backend_data):
+            result = {}
+            for field in ['clan_id', 'favorite_primetime']:
+                if field in backend_data:
+                    result[field] = backend_data[field]
+
+            for data in backend_data.get('favorite_arenas', []):
+                if data.get('frontlevel') in (6, 8, 10) and 'arena' in data:
+                    result['favorite_arena_{}'.format(data['frontlevel'])] = data['arena']
+
+            return result
+
+        return self._request_data(inner_callback, 'clans', url)
 
     @convert_data({'joined_at': from_iso,
      'in_clan_cooldown_till': from_iso})
@@ -662,6 +678,26 @@ class StagingDataAccessor(base.BaseDataAccessor):
         def inner_callback(data):
             data = data or {}
             data['id'] = invite_id
+            return data
+
+        return self._request_data(inner_callback, 'clans', url, method='PATCH', postData=data)
+
+    @mapped_fields({'id': 'id',
+     'clan_id': 'clan_id',
+     'account_id': 'account_id'})
+    def bulk_decline_invites(self, callback, invite_ids, fields = None):
+        """
+        decline invites for clan using `decline invites API method`_
+                .. _decline invites API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/wgcc/invites.html#patch
+        """
+        url = '/invites/'
+        data = {'initiator_id': self._account,
+         'status': 'declined',
+         'ids': invite_ids}
+
+        @preprocess_callback(callback, 'clans')
+        def inner_callback(data):
+            data = data and data['items'] or {}
             return data
 
         return self._request_data(inner_callback, 'clans', url, method='PATCH', postData=data)
@@ -930,6 +966,7 @@ class StagingDataAccessor(base.BaseDataAccessor):
      'vacation_start': timestamp_to_datetime})
     @mapped_fields({'buildings.type': 'buildings.type',
      'buildings.hp': 'buildings.hp',
+     'buildings.direction': 'buildings.direction',
      'buildings.position': 'buildings.position',
      'buildings.storage': 'buildings.resource_amount',
      'buildings.level': 'buildings.level',

@@ -119,7 +119,7 @@ class ClanDataReceiver(_BaseDataReceiver, FortViewHelper):
             defModeParams = None
             if sInfo.isDefenceModeActivated():
                 defModeParams = (sStats.getOffDay(), sStats.getDefHour(), sStats.getVacationInfo())
-            data = _getFortBuildingsVO(FortSortiesStatisticsVO(FortRegionSortiesStats(dossierDescriptor), ratings.getFsBattlesCount28d()), FortBattlesStatisticsVO(FortRegionBattlesStats(dossierDescriptor)), buildings, _getFortSortiesSchemaTexts(defModeParams, sStats.getPeripheryID(), len(buildings), sStats.getDirectionsCount()))
+            data = _getFortBuildingsVO(FortSortiesStatisticsVO(FortRegionSortiesStats(dossierDescriptor), ratings.getFsBattlesCount28d(), sStats.getFsWinsCount28d()), FortBattlesStatisticsVO(FortRegionBattlesStats(dossierDescriptor), sInfo.getFbBattlesCount8(), sInfo.getFbBattlesCount10()), buildings, _getFortSortiesSchemaTexts(defModeParams, sStats.getPeripheryID(), len(buildings), sStats.getDirectionsCount()))
         else:
             data = _getNoFortBuildingsVO()
         callback(data)
@@ -170,7 +170,9 @@ class OwnClanDataReceiver(_BaseDataReceiver, FortTransportationViewHelper):
     @process
     def requestFort(self, clanDossier, callback):
         fortData = yield FortClanStatisticsData.getDataObject()
+        sInfo = yield clanDossier.requestStrongholdInfo()
         ratings = yield clanDossier.requestClanRatings()
+        sStats = yield clanDossier.requestStrongholdStatistics()
         if fortData is not None:
             fort = fortData.fortCtrl.getFort()
             dossier = fort.getFortDossier()
@@ -178,7 +180,7 @@ class OwnClanDataReceiver(_BaseDataReceiver, FortTransportationViewHelper):
             defModeParams = None
             if fort.isDefenceHourEnabled():
                 defModeParams = (fort.getLocalOffDay(), fort.getDefencePeriod(), fort.getVacationDate())
-            data = _getFortBuildingsVO(FortSortiesStatisticsVO(dossier.getSortiesStats(), ratings.getFsBattlesCount28d()), FortBattlesStatisticsVO(dossier.getBattlesStats()), mapObjects, _getFortSortiesSchemaTexts(defModeParams, fort.peripheryID, buildingsCount, len(fort.getOpenedDirections())))
+            data = _getFortBuildingsVO(FortSortiesStatisticsVO(dossier.getSortiesStats(), ratings.getFsBattlesCount28d(), sStats.getFsWinsCount28d()), FortBattlesStatisticsVO(dossier.getBattlesStats(), sInfo.getFbBattlesCount8(), sInfo.getFbBattlesCount10()), mapObjects, _getFortSortiesSchemaTexts(defModeParams, fort.peripheryID, buildingsCount, len(fort.getOpenedDirections())))
             fortData.stopFortListening()
         else:
             data = _getNoFortBuildingsVO()

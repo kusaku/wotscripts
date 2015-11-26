@@ -61,6 +61,9 @@ class Manager(object):
     def clearToken2Preference(self):
         self._preferences['token2'] = ''
 
+    def clearLogin(self):
+        self._preferences['login'] = ''
+
     def writePreferences(self):
         self._preferences.writeLoginInfo()
 

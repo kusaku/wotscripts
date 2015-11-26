@@ -90,6 +90,7 @@ class ClanFavouriteAttributesCtx(CommonClanRequestCtx):
         return CLAN_REQUESTED_DATA_TYPE.CLAN_FAVOURITE_ATTRS
 
     def getDataObj(self, incomeData):
+        incomeData = incomeData or {}
         return makeTupleByDict(items.ClanFavouriteAttrs, incomeData)
 
     def getDefDataObj(self):
@@ -171,7 +172,7 @@ class ClanGlobalMapStatsCtx(_ClanRequestBaseCtx):
         return CLAN_REQUESTED_DATA_TYPE.CLAN_GLOBAL_MAP_STATS
 
     def getDataObj(self, incomeData):
-        incomeData = incomeData if incomeData else {}
+        incomeData = incomeData or {}
         return makeTupleByDict(items.ClanGlobalMapStatsData, incomeData)
 
     def getDefDataObj(self):
@@ -201,6 +202,7 @@ class AccountsInfoCtx(_AccountsInfoBaseCtx):
         return CLAN_REQUESTED_DATA_TYPE.CLAN_ACCOUNTS
 
     def getDataObj(self, incomeData):
+        incomeData = incomeData or []
         return map(lambda v: makeTupleByDict(items.AccountClanData, v), incomeData)
 
     def getDefDataObj(self):
@@ -232,6 +234,7 @@ class AccountClanRatingsCtx(_AccountsInfoBaseCtx):
         return CLAN_REQUESTED_DATA_TYPE.CLAN_MEMBERS_RATING
 
     def getDataObj(self, incomeData):
+        incomeData = incomeData or []
         result = {}
         for data in incomeData:
             result[data['account_id']] = makeTupleByDict(items.AccountClanRatingsData, data)
@@ -239,7 +242,7 @@ class AccountClanRatingsCtx(_AccountsInfoBaseCtx):
         return result
 
     def getDefDataObj(self):
-        return []
+        return {}
 
 
 @ReprInjector.withParent()
@@ -250,6 +253,7 @@ class StrongholdInfoCtx(_ClanRequestBaseCtx):
         return CLAN_REQUESTED_DATA_TYPE.STRONGHOLD_INFO
 
     def getDataObj(self, incomeData):
+        incomeData = incomeData or {}
         return makeTupleByDict(items.ClanStrongholdInfoData, incomeData)
 
     def getDefDataObj(self):
@@ -264,6 +268,7 @@ class StrongholdStatisticsCtx(_ClanRequestBaseCtx):
         return CLAN_REQUESTED_DATA_TYPE.STRONGHOLD_STATISTICS
 
     def getDataObj(self, incomeData):
+        incomeData = incomeData or {}
         return makeTupleByDict(items.ClanStrongholdStatisticsData, incomeData)
 
     def getDefDataObj(self):
@@ -278,6 +283,7 @@ class GetProvincesCtx(_ClanRequestBaseCtx):
         return CLAN_REQUESTED_DATA_TYPE.CLAN_PROVINCES
 
     def getDataObj(self, incomeData):
+        incomeData = incomeData or []
         return map(lambda v: makeTupleByDict(items.ClanProvinceData, v), incomeData)
 
     def getDefDataObj(self):
@@ -292,6 +298,7 @@ class ClanMembersCtx(_ClanRequestBaseCtx):
         return CLAN_REQUESTED_DATA_TYPE.CLAN_MEMBERS
 
     def getDataObj(self, incomeData):
+        incomeData = incomeData or []
         return map(lambda v: makeTupleByDict(items.ClanMemberData, v), incomeData)
 
     def getDefDataObj(self):
@@ -310,7 +317,9 @@ class TotalInfoCtx(CommonClanRequestCtx):
         return self.__itemID
 
     def getDataObj(self, incomeData):
-        return incomeData['total']
+        if incomeData:
+            return incomeData['total']
+        return self.getDefDataObj()
 
     def getDefDataObj(self):
         return 0
@@ -359,10 +368,10 @@ class PaginatorCtx(CommonClanRequestCtx):
         return self.__fields
 
     def getTotalCount(self, incomeData):
-        if incomeData is not None:
+        if incomeData:
             return incomeData.get('total', None)
         else:
-            return
+            return None
 
     def getDataObj(self, incomeData):
         data = incomeData.get('items', self.getDefDataObj()) if incomeData else self.getDefDataObj()
@@ -532,9 +541,8 @@ class AcceptApplicationCtx(CommonClanRequestCtx):
         return CLAN_REQUESTED_DATA_TYPE.ACCEPT_APPLICATION
 
     def getDataObj(self, incomeData):
-        if incomeData:
-            return makeTupleByDict(items.ClanADInviteData, incomeData)
-        return self.getDefDataObj()
+        incomeData = incomeData or {}
+        return makeTupleByDict(items.ClanADInviteData, incomeData)
 
     def getDefDataObj(self):
         return items.ClanADInviteData()
@@ -558,9 +566,8 @@ class AcceptInviteCtx(CommonClanRequestCtx):
         return CLAN_REQUESTED_DATA_TYPE.ACCEPT_INVITE
 
     def getDataObj(self, incomeData):
-        if incomeData:
-            return makeTupleByDict(items.ClanADInviteData, incomeData)
-        return self.getDefDataObj()
+        incomeData = incomeData or {}
+        return makeTupleByDict(items.ClanADInviteData, incomeData)
 
     def getDefDataObj(self):
         return items.ClanADInviteData()
@@ -649,9 +656,8 @@ class DeclineApplicationCtx(CommonClanRequestCtx):
         return CLAN_REQUESTED_DATA_TYPE.DECLINE_APPLICATION
 
     def getDataObj(self, incomeData):
-        if incomeData:
-            return makeTupleByDict(items.ClanADInviteData, incomeData)
-        return self.getDefDataObj()
+        incomeData = incomeData or {}
+        return makeTupleByDict(items.ClanADInviteData, incomeData)
 
     def getDefDataObj(self):
         return items.ClanADInviteData()
@@ -675,12 +681,36 @@ class DeclineInviteCtx(CommonClanRequestCtx):
         return CLAN_REQUESTED_DATA_TYPE.DECLINE_INVITE
 
     def getDataObj(self, incomeData):
-        if incomeData:
-            return makeTupleByDict(items.ClanADInviteData, incomeData)
-        return self.getDefDataObj()
+        incomeData = incomeData or {}
+        return makeTupleByDict(items.ClanADInviteData, incomeData)
 
     def getDefDataObj(self):
         return items.ClanADInviteData()
+
+    def isAuthorizationRequired(self):
+        return True
+
+
+@ReprInjector.withParent(('getInviteDbIDs', 'inviteDbIDs'))
+
+class DeclineInvitesCtx(CommonClanRequestCtx):
+
+    def __init__(self, inviteDbIDs, waitingID = ''):
+        super(DeclineInvitesCtx, self).__init__(waitingID)
+        self.__inviteDbIDs = inviteDbIDs
+
+    def getInviteDbIDs(self):
+        return self.__inviteDbIDs
+
+    def getRequestType(self):
+        return CLAN_REQUESTED_DATA_TYPE.DECLINE_INVITES
+
+    def getDataObj(self, incomeData):
+        incomeData = incomeData or []
+        return [ makeTupleByDict(items.ClanADInviteData, item) for item in incomeData ]
+
+    def getDefDataObj(self):
+        return []
 
     def isAuthorizationRequired(self):
         return True
@@ -694,10 +724,11 @@ class GetAccountInvitesCount(AccountInvitesCtx):
         super(GetAccountInvitesCount, self).__init__(accountDbID, 0, 1, statuses, getTotalCount=True, fields=['id'], waitingID=waitingID)
 
     def getDataObj(self, incomeData):
-        return incomeData.get('total', 0)
+        incomeData = incomeData or {}
+        return incomeData.get('total', None)
 
     def getDefDataObj(self):
-        return 0
+        return None
 
     def isCaching(self):
         return True
@@ -714,6 +745,7 @@ class GetAccountAppsCount(AccountApplicationsCtx):
         super(GetAccountAppsCount, self).__init__(accountDbID, 0, 1, statuses, getTotalCount=True, fields=['id'], waitingID=waitingID)
 
     def getDataObj(self, incomeData):
+        incomeData = incomeData or {}
         return incomeData.get('total', None)
 
     def getDefDataObj(self):
@@ -734,6 +766,7 @@ class GetClanInvitesCount(ClanInvitesCtx):
         super(GetClanInvitesCount, self).__init__(clanDbID, 0, 1, statuses, getTotalCount=True, fields=['id'], waitingID=waitingID)
 
     def getDataObj(self, incomeData):
+        incomeData = incomeData or {}
         return incomeData.get('total', None)
 
     def getDefDataObj(self):
@@ -750,17 +783,19 @@ class GetClanInvitesCount(ClanInvitesCtx):
 
 class GetClanAppsCount(ClanApplicationsCtx):
 
-    def __init__(self, clanDbID, statuses = None, waitingID = ''):
+    def __init__(self, clanDbID, isCaching, statuses = None, waitingID = ''):
         super(GetClanAppsCount, self).__init__(clanDbID, 0, 1, statuses, getTotalCount=True, fields=['id'], waitingID=waitingID)
+        self.__isCaching = isCaching
 
     def getDataObj(self, incomeData):
+        incomeData = incomeData or {}
         return incomeData.get('total', None)
 
     def getDefDataObj(self):
         return None
 
     def isCaching(self):
-        return True
+        return self.__isCaching
 
     def isAuthorizationRequired(self):
         return True

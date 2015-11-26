@@ -131,7 +131,7 @@ class DamagePanel(DamagePanelMeta):
                  'respawnInfo': FALLOUT.GASATTACK_POSTMORTEM_RESPAWNINFO})
         self.as_setCrewDeactivatedS()
 
-    def _updateDestroyed(self, value):
+    def _updateDestroyed(self, value = None):
         if self.__isHasGasAttack:
             self.__ui.movie.falloutItems.as_setPostmortemGasAtackInfo({'infoStr': FALLOUT.GASATTACK_POSTMORTEM_VEHICLEDESTROYED,
              'respawnInfo': FALLOUT.GASATTACK_POSTMORTEM_RESPAWNINFO})

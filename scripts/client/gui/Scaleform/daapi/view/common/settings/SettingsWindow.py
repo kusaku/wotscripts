@@ -114,6 +114,7 @@ class SettingsWindow(SettingsWindowMeta):
 
     def onSettingsChange(self, settingName, settingValue):
         settingValue = flashObject2Dict(settingValue)
+        LOG_DEBUG('onSettingsChange', settingName, settingValue)
         self.params.preview(settingName, settingValue)
 
     def applySettings(self, settings, isCloseWnd):

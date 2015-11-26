@@ -33,12 +33,13 @@ def _getRoster(user):
 
 
 class EnemyTeamCtx(object):
-    __slots__ = ('team', 'labelMaxLength', 'playerVehicleID', 'prebattleID', 'cameraVehicleID', 'denunciationsLeft', 'playerTeamKillSuspected')
+    __slots__ = ('team', 'playerLabelMaxLength', 'vehicleLabelMaxLength', 'playerVehicleID', 'prebattleID', 'cameraVehicleID', 'denunciationsLeft', 'playerTeamKillSuspected')
 
-    def __init__(self, team, labelMaxLength, playerVehicleID = -1, playerTeamKillSuspected = False, cameraVehicleID = -1, prebattleID = -1):
+    def __init__(self, team, playerLabelMaxLength, vehicleLabelMaxLength, playerVehicleID = -1, playerTeamKillSuspected = False, cameraVehicleID = -1, prebattleID = -1):
         super(EnemyTeamCtx, self).__init__()
         self.team = team
-        self.labelMaxLength = labelMaxLength
+        self.playerLabelMaxLength = playerLabelMaxLength
+        self.vehicleLabelMaxLength = vehicleLabelMaxLength
         self.playerVehicleID = playerVehicleID
         self.playerTeamKillSuspected = playerTeamKillSuspected
         self.cameraVehicleID = cameraVehicleID
@@ -93,13 +94,13 @@ class PostmortemTeamCtx(PlayerTeamCtx):
         return vo.vehicleID == self.cameraVehicleID
 
 
-def makeTeamCtx(team, isEnemy, arenaDP, labelMaxLength, cameraVehicleID = -1):
+def makeTeamCtx(team, isEnemy, arenaDP, playerLabelMaxLength, vehicleLabelMaxLength, cameraVehicleID = -1):
     if isEnemy:
-        ctx = EnemyTeamCtx(team, labelMaxLength, cameraVehicleID=cameraVehicleID)
+        ctx = EnemyTeamCtx(team, playerLabelMaxLength, vehicleLabelMaxLength, cameraVehicleID=cameraVehicleID)
     elif cameraVehicleID > 0:
-        ctx = PostmortemTeamCtx(team, labelMaxLength, avatar_getter.getPlayerVehicleID(), arena_info.isPlayerTeamKillSuspected(), cameraVehicleID, arenaDP.getVehicleInfo().prebattleID)
+        ctx = PostmortemTeamCtx(team, playerLabelMaxLength, vehicleLabelMaxLength, avatar_getter.getPlayerVehicleID(), arena_info.isPlayerTeamKillSuspected(), cameraVehicleID, arenaDP.getVehicleInfo().prebattleID)
     else:
-        ctx = PlayerTeamCtx(team, labelMaxLength, avatar_getter.getPlayerVehicleID(), arena_info.isPlayerTeamKillSuspected(), cameraVehicleID, arenaDP.getVehicleInfo().prebattleID)
+        ctx = PlayerTeamCtx(team, playerLabelMaxLength, vehicleLabelMaxLength, avatar_getter.getPlayerVehicleID(), arena_info.isPlayerTeamKillSuspected(), cameraVehicleID, arenaDP.getVehicleInfo().prebattleID)
     return ctx
 
 
@@ -225,7 +226,7 @@ class BattleArenaController(IArenaVehiclesController):
          [],
          [])
         valuesHashes = []
-        ctx = makeTeamCtx(team, isEnemy, arenaDP, int(self._battleUI.getPlayerNameLength(isEnemy)), self._battleUI.getCameraVehicleID())
+        ctx = makeTeamCtx(team, isEnemy, arenaDP, int(self._battleUI.getPlayerNameLength(isEnemy)), int(self._battleUI.getVehicleNameLength(isEnemy)), self._battleUI.getCameraVehicleID())
         if isFragsUpdate:
             fragCorrelation = self._battleUI.fragCorrelation
             fragCorrelation.clear(team)
@@ -423,10 +424,11 @@ class MultiteamBattleArenaController(BattleArenaController):
         teamIds = arenaDP.getMultiTeamsIndexes()
         camraVehicleID = self._battleUI.getCameraVehicleID()
         playerNameLength = int(self._battleUI.getPlayerNameLength(isEnemy))
+        vehicleNameLength = int(self._battleUI.getVehicleNameLength(isEnemy))
         for index, (vInfoVO, vStatsVO, viStatsVO) in enumerate(arenaDP.getAllVehiclesIteratorByTeamScore()):
             team = vInfoVO.team
             isEnemy = arenaDP.isEnemyTeam(team)
-            ctx = makeTeamCtx(team, isEnemy, arenaDP, playerNameLength, camraVehicleID)
+            ctx = makeTeamCtx(team, isEnemy, arenaDP, playerNameLength, vehicleNameLength, camraVehicleID)
             if ctx.playerVehicleID == vInfoVO.vehicleID:
                 playerIdx = index
             playerFullName = self._battleCtx.getFullPlayerName(vID=vInfoVO.vehicleID, showVehShortName=False)

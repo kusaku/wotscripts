@@ -22,7 +22,7 @@ class VehicleDescrCrew(object):
                 LOG_DEBUG("TankmanIdxs/levels with skill '%s': %s" % (skillName, str(skillData)))
 
         self._commanderIdx = skills['commander'][0][0]
-        self._factorsDirty = True
+        self.__factorsDirty = True
         self._levelIncreaseByVehicle = 0.0
         self._levelIncreaseByCommander = 0.0
         skillData = skills.get('brotherhood')
@@ -32,6 +32,14 @@ class VehicleDescrCrew(object):
             self._levelIncreaseByBrotherhood = tankmen.getSkillsConfig()['brotherhood']['crewLevelIncrease']
         self._camouflageFactor = 1.0
         return
+
+    @property
+    def _factorsDirty(self):
+        return self.__factorsDirty or self._mainSkillQualifiersApplier.isUpdateNecessary()
+
+    @_factorsDirty.setter
+    def _factorsDirty(self, necessity):
+        self.__factorsDirty = necessity
 
     def isCrewActive(self):
         return True in self._activityFlags
@@ -116,17 +124,14 @@ class VehicleDescrCrew(object):
             skillEfficiencies.append((skillName, efficiency))
 
         skillProcessors = self._skillProcessors
+        mainSkillQualifiersApplier = self._mainSkillQualifiersApplier
         for skillName, efficiency in skillEfficiencies:
             updatedFactor = factor = 0.57 + 0.43 * efficiency
             if skillName in tankmen.ROLES:
-                updatedFactor = self._mainSkillQualifiersApplier[CREW_ROLE.ALL](factor)
-                updatedFactor = self._mainSkillQualifiersApplier[skillName](updatedFactor)
+                updatedFactor = mainSkillQualifiersApplier[CREW_ROLE.ALL](factor)
+                updatedFactor = mainSkillQualifiersApplier[skillName](updatedFactor)
             if _DO_DEBUG_LOG:
                 LOG_DEBUG("Efficiency/factor of skill '%s': (%s, %s, %s)" % (skillName,
-                 efficiency,
-                 factor,
-                 updatedFactor))
-                LOG_OGNICK_DEV("Efficiency/factor of skill '%s': (%s, %s, %s)" % (skillName,
                  efficiency,
                  factor,
                  updatedFactor))

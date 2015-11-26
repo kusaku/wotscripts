@@ -2,14 +2,13 @@
 from Event import Event
 from CurrentVehicle import g_currentVehicle
 from debug_utils import LOG_DEBUG
+from gui import GUI_SETTINGS
 import nations
 from data_aggregator import CUSTOMIZATION_TYPE
 from constants import IGR_TYPE
 from elements.qualifier import QUALIFIER_TYPE
-from gui.game_control import getIGRCtrl
 _GROUPS = {CUSTOMIZATION_TYPE.CAMOUFLAGE: ('winter', 'summer', 'desert', 'IGRwinter', 'IGRsummer', 'IGRdesert'),
- CUSTOMIZATION_TYPE.EMBLEM: ('group1', 'group2', 'group3', 'group4'),
- CUSTOMIZATION_TYPE.INSCRIPTION: ('historical',)}
+ CUSTOMIZATION_TYPE.EMBLEM: ('group1', 'group2', 'group3', 'group4')}
 _GROUPS_IGR_CAMOUFLAGE = 3
 
 class FILTER_TYPE:
@@ -42,8 +41,7 @@ class Filter(object):
         self.__currentPurchaseType = 0
         self.__currentGroup = -1
         self.__isInDossier = False
-        self.__rules = {CUSTOMIZATION_TYPE.EMBLEM: [self.__emblemIsNotNational,
-                                     self.__itemIsInGroup,
+        self.__rules = {CUSTOMIZATION_TYPE.EMBLEM: [self.__itemIsInGroup,
                                      self.__checkBonusType,
                                      self.__purchaseType,
                                      self.__checkIsInDossier,
@@ -65,7 +63,7 @@ class Filter(object):
          QUALIFIER_TYPE.DRIVER: False,
          QUALIFIER_TYPE.RADIOMAN: False,
          QUALIFIER_TYPE.LOADER: False}
-        if getIGRCtrl().getRoomType() != IGR_TYPE.NONE:
+        if GUI_SETTINGS.igrEnabled:
             self.__purchaseTypes.append(PURCHASE_TYPE.IGR)
 
     def isDefaultFilterSet(self):
@@ -78,7 +76,6 @@ class Filter(object):
 
         self.__isQualifiersDefault = True
         self.__currentPurchaseType = 0
-        self.__isInDossier = False
 
     @property
     def qualifierFilter(self):
@@ -132,12 +129,9 @@ class Filter(object):
 
     def __inscriptionIsNational(self, item):
         if self.__purchaseTypes[self.__currentPurchaseType] != PURCHASE_TYPE.IGR:
-            return item.getNationName() == nations.NAMES[g_currentVehicle.item.nationID]
+            return item.getGroup() == nations.NAMES[g_currentVehicle.item.nationID]
         else:
             return True
-
-    def __emblemIsNotNational(self, item):
-        return item.getGroup() != 'auto'
 
     def __checkBonusType(self, item):
         if self.__isQualifiersDefault:
@@ -149,7 +143,7 @@ class Filter(object):
     def __itemIsInGroup(self, item):
         if self.__currentGroup < 0:
             return True
-        elif self.__purchaseTypes[self.__currentPurchaseType] == PURCHASE_TYPE.IGR:
+        elif self.__purchaseTypes[self.__currentPurchaseType] == PURCHASE_TYPE.IGR and self.__currentType == CUSTOMIZATION_TYPE.CAMOUFLAGE:
             return item.getGroup() == _GROUPS[self.__currentType][self.__currentGroup + _GROUPS_IGR_CAMOUFLAGE]
         else:
             return item.getGroup() == _GROUPS[self.__currentType][self.__currentGroup]

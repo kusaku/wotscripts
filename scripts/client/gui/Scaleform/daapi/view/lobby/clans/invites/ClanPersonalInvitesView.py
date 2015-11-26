@@ -3,7 +3,6 @@ import BigWorld
 from gui.clans import formatters
 from gui.clans.clan_controller import g_clanCtrl
 from gui.clans.clan_helpers import ClanPersonalInvitesPaginator
-from gui.clans.contexts import AcceptInviteCtx, DeclineInviteCtx
 from gui.clans.items import ClanCommonData, formatField, isValueAvailable
 from gui.clans.settings import CLAN_REQUESTED_DATA_TYPE, CLAN_INVITE_STATES
 from gui.Scaleform.daapi.view.lobby.clans.invites.ClanInvitesViewWithTable import ClanInvitesAbstractDataProvider
@@ -20,7 +19,8 @@ class ClanPersonalInvitesView(ClanPersonalInvitesViewMeta):
     __coolDownRequests = [CLAN_REQUESTED_DATA_TYPE.ACCEPT_APPLICATION,
      CLAN_REQUESTED_DATA_TYPE.ACCEPT_INVITE,
      CLAN_REQUESTED_DATA_TYPE.DECLINE_APPLICATION,
-     CLAN_REQUESTED_DATA_TYPE.DECLINE_INVITE]
+     CLAN_REQUESTED_DATA_TYPE.DECLINE_INVITE,
+     CLAN_REQUESTED_DATA_TYPE.DECLINE_INVITES]
 
     def __init__(self):
         super(ClanPersonalInvitesView, self).__init__()
@@ -28,18 +28,13 @@ class ClanPersonalInvitesView(ClanPersonalInvitesViewMeta):
         self._cooldown = CooldownHelper(self.__coolDownRequests, self._onCooldownHandle, CoolDownEvent.CLAN)
 
     def declineAllSelectedInvites(self):
-        contexts = [ DeclineInviteCtx(dbID) for dbID in self.dataProvider.getCheckedIDs() ]
-        self._paginator.decline(contexts)
+        self._paginator.declineList(self.dataProvider.getCheckedIDs())
 
     def acceptInvite(self, dbID):
-        dbID = int(dbID)
-        ctx = AcceptInviteCtx(dbID)
-        self._paginator.accept([ctx])
+        self._paginator.accept(int(dbID))
 
     def declineInvite(self, dbID):
-        dbID = int(dbID)
-        ctx = DeclineInviteCtx(dbID)
-        self._paginator.decline([ctx])
+        self._paginator.decline(int(dbID))
 
     def showMore(self):
         if not self._paginator.isInProgress():

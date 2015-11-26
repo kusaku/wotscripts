@@ -6,9 +6,11 @@ from gui.shared.utils import sortByFields
 from collections import namedtuple
 from debug_utils import LOG_DEBUG, LOG_WARNING
 from gui.clans import interfaces, items
-from gui.clans.contexts import SearchClansCtx, GetRecommendedClansCtx, AccountInvitesCtx, ClanRatingsCtx, ClansInfoCtx
+from gui.clans.contexts import SearchClansCtx, GetRecommendedClansCtx, AccountInvitesCtx, ClanRatingsCtx
+from gui.clans.contexts import ClansInfoCtx, AcceptInviteCtx, DeclineInviteCtx, DeclineInvitesCtx
 from gui.clans.items import ClanInviteWrapper, ClanPersonalInviteWrapper
-from gui.clans.settings import COUNT_THRESHOLD, CLAN_INVITE_STATES, DATA_UNAVAILABLE_PLACEHOLDER
+from gui.clans.settings import COUNT_THRESHOLD, PERSONAL_INVITES_COUNT_THRESHOLD
+from gui.clans.settings import CLAN_INVITE_STATES, DATA_UNAVAILABLE_PLACEHOLDER
 from gui.shared.utils.ListPaginator import ListPaginator
 from gui.shared.utils import getPlayerDatabaseID
 from gui.shared.view_helpers import UsersInfoHelper
@@ -259,7 +261,7 @@ class ClanInvitesPaginator(ListPaginator, UsersInfoHelper):
         self._offset = max(self._offset, 0)
         offset = 0
         count = self._offset + self._count
-        if not self.__allInvitesCached:
+        if not self.__lastStatus or not self.__allInvitesCached:
             if len(sort):
                 yield self.__requestInvites(0, COUNT_THRESHOLD, isReset)
                 self.__allInvitesCached = self.__lastStatus
@@ -319,7 +321,7 @@ class ClanInvitesPaginator(ListPaginator, UsersInfoHelper):
             self.revertOffset()
         self.__rebuildMapping()
         self.syncUsersInfo()
-        self.__isSynced = True
+        self.__isSynced = self.__lastStatus
         callback((self.__lastStatus, self.__invitesCache))
 
     def __rebuildMapping(self):
@@ -430,13 +432,14 @@ class ClanPersonalInvitesPaginator(ListPaginator, UsersInfoHelper):
         self._request(isReset=True, sort=sort)
         return
 
-    def accept(self, contexts):
-        for context in contexts:
-            self.__sendADRequest(context, CLAN_INVITE_STATES.ACCEPTED)
+    def accept(self, inviteID):
+        self.__sendADRequest(AcceptInviteCtx(inviteID), CLAN_INVITE_STATES.ACCEPTED)
 
-    def decline(self, contexts):
-        for context in contexts:
-            self.__sendADRequest(context, CLAN_INVITE_STATES.DECLINED)
+    def decline(self, inviteID):
+        self.__sendADRequest(DeclineInviteCtx(inviteID), CLAN_INVITE_STATES.DECLINED)
+
+    def declineList(self, inviteIDs):
+        self.__sendADListRequest(DeclineInvitesCtx(inviteIDs), CLAN_INVITE_STATES.DECLINED)
 
     def getInviteByDbID(self, inviteDbID):
         index = self.__cacheMapping.get(inviteDbID, -1)
@@ -464,9 +467,9 @@ class ClanPersonalInvitesPaginator(ListPaginator, UsersInfoHelper):
         self._offset = max(self._offset, 0)
         offset = 0
         count = self._offset + self._count
-        if not self.__allInvitesCached:
+        if not self.__lastStatus or not self.__allInvitesCached:
             if len(sort):
-                yield self.__requestInvites(0, COUNT_THRESHOLD, isReset)
+                yield self.__requestInvites(0, PERSONAL_INVITES_COUNT_THRESHOLD, isReset)
                 self.__allInvitesCached = self.__lastStatus
             else:
                 yield self.__requestInvites(offset, count, isReset)
@@ -527,7 +530,7 @@ class ClanPersonalInvitesPaginator(ListPaginator, UsersInfoHelper):
             self.revertOffset()
         self.__rebuildMapping()
         self.syncUsersInfo()
-        self.__isSynced = True
+        self.__isSynced = self.__lastStatus
         callback((self.__lastStatus, self.__invitesCache))
 
     def __rebuildMapping(self):
@@ -545,10 +548,30 @@ class ClanPersonalInvitesPaginator(ListPaginator, UsersInfoHelper):
             status = CLAN_INVITE_STATES.ERROR
         self.__sentRequestCount -= 1
         self.__isInProgress = self.__sentRequestCount > 0
-        inviteWrapper = self.getInviteByDbID(inviteDbID)
-        if inviteWrapper:
-            invite = inviteWrapper.invite.update(status=status)
-            inviteWrapper.setInvite(invite)
-            self.onListItemsUpdated(self, [inviteWrapper])
-        else:
-            LOG_WARNING('Could not find invite with DB ID {} in the internal cache. Received data - "{}"'.format(inviteDbID, result.data))
+        self.__updateInvitesStatus([inviteDbID], status)
+
+    @process
+    def __sendADListRequest(self, context, sucessStatus):
+        self.__isInProgress = True
+        self.__sentRequestCount += 1
+        result = yield self._requester.sendRequest(context, allowDelay=True)
+        sentInvites = [ item.getDbID() for item in context.getDataObj(result.data) ]
+        failedInvites = set(context.getInviteDbIDs()) - set(sentInvites)
+        self.__sentRequestCount -= 1
+        self.__isInProgress = self.__sentRequestCount > 0
+        self.__updateInvitesStatus(sentInvites, sucessStatus)
+        self.__updateInvitesStatus(failedInvites, CLAN_INVITE_STATES.ERROR)
+
+    def __updateInvitesStatus(self, inviteIDs, status):
+        updatedInvites = list()
+        for invID in inviteIDs:
+            inviteWrapper = self.getInviteByDbID(invID)
+            if inviteWrapper:
+                invite = inviteWrapper.invite.update(status=status)
+                inviteWrapper.setInvite(invite)
+                updatedInvites.append(inviteWrapper)
+            else:
+                LOG_WARNING('Could not find invite with DB ID {} in the internal cache."'.format(invID))
+
+        if updatedInvites:
+            self.onListItemsUpdated(self, updatedInvites)

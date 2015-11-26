@@ -2,6 +2,9 @@
 import copy
 import time
 from Event import Event
+from constants import IGR_TYPE
+from gui.customization_2_0 import shared
+from gui.game_control import getIGRCtrl
 from helpers.i18n import makeString as _ms
 from gui import makeHtmlString
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
@@ -10,7 +13,6 @@ from gui.Scaleform.locale.VEHICLE_CUSTOMIZATION import VEHICLE_CUSTOMIZATION
 from gui.shared.formatters import text_styles
 from gui.shared.utils.HangarSpace import g_hangarSpace
 from gui.shared.utils.functions import getAbsoluteUrl, makeTooltip
-from shared import forEachSlotIn
 from data_aggregator import CUSTOMIZATION_TYPE, SLOT_TYPE
 from cart import Cart
 from bonus_panel import BonusPanel
@@ -48,35 +50,15 @@ class Slots(object):
         self.bonusPanel = None
         return
 
-    @property
-    def currentIdx(self):
-        return self.__currentIdx
-
     def getSelectedSlotItemID(self):
         return self.__data['data'][self.__currentType]['data'][self.__currentIdx]['itemID']
 
-    def getInstallItemID(self, idx, type_):
-        return self.__aData.installed[type_][idx].getID()
-
-    def getInstallDays(self, idx, type_):
-        return self.__aData.installed[type_][idx].howManyDays()
-
-    def getInstallDaysLeft(self, idx, type_):
-        item = self.__aData.installed[type_][idx]
-        timeLeft = (time.time() - item.timeOfApplication()) / 86400
-        term = item.howManyDays()
-        return round(term - timeLeft)
+    def getInstalledItem(self, idx, type_):
+        return self.__aData.installed[type_][idx]
 
     def getSlotItem(self, slotIdx, cType):
         itemID = self.__data['data'][cType]['data'][slotIdx]['itemID']
         return self.__aData.available[cType][itemID]
-
-    def itemInSlotOfType(self, cType, itemID):
-        appliedItemIDs = []
-        for item in self.__data['data'][cType]['data']:
-            appliedItemIDs.append(item['itemID'])
-
-        return itemID in appliedItemIDs
 
     def getSummaryString(self):
         totalSlotsNum = 0
@@ -102,7 +84,7 @@ class Slots(object):
         g_hangarSpace.space.updateVehicleSticker(self.__aData.viewModel[1:3])
         if cType != CUSTOMIZATION_TYPE.CAMOUFLAGE:
             slotItem = self.__data['data'][cType]['data'][slotIdx]
-            g_hangarSpace.space.locateCameraOnEmblem(slotItem['spot'] == 0, SLOT_TYPE[cType], slotIdx, 0.2)
+            g_hangarSpace.space.locateCameraOnEmblem(slotItem['spot'] == 0, SLOT_TYPE[cType], self.calculateVehicleIndex(slotIdx, cType), 0.2)
         else:
             g_hangarSpace.space.locateCameraToPreview()
 
@@ -116,12 +98,16 @@ class Slots(object):
                 img = _EMPTY_SLOTS_MAP[cType]
             price = 0
             bonus = ''
-            isInDossier = False
+            isInDossier = availableIGR = False
         else:
             img = item['object'].getTexturePath()
             price = item['object'].getPrice(duration)
             isInDossier = item['object'].isInDossier
             bonus = self.__getSlotBonusString(item['object'], isInDossier)
+            if getIGRCtrl().getRoomType() == IGR_TYPE.NONE:
+                availableIGR = False
+            else:
+                availableIGR = item['object'].getIgrType() == getIGRCtrl().getRoomType()
         oldSlotItem = self.__data['data'][cType]['data'][slotIdx]
         newSlotItem = {'itemID': item['id'],
          'img': img,
@@ -138,15 +124,19 @@ class Slots(object):
          'idx': slotIdx,
          'data': newSlotItem}
         if newSlotItem['itemID'] < 0:
-            if self.__initialData['data'][cType]['data'][slotIdx]['itemID'] >= 0:
-                self.cart.buyItem(cType, newSlotItem['spot'], slotIdx, oldSlotItem['itemID'], 0)
-            else:
-                self.__data['data'][cType]['data'][slotIdx] = newSlotItem
-                self.cart.update(self.__data)
-                self.bonusPanel.update(self.__data)
-                self.updated(newSlotData)
-        elif newSlotItem['isInDossier']:
-            self.cart.buyItem(cType, newSlotItem['spot'], slotIdx, newSlotItem['itemID'], 0, price=0)
+            if oldSlotItem['itemID'] >= 0:
+                if oldSlotItem['isInDossier']:
+                    self.cart.buyItem(cType, newSlotItem['spot'], self.calculateVehicleIndex(slotIdx, cType), oldSlotItem['itemID'], 0)
+                else:
+                    initialSlotItem = copy.deepcopy(self.__initialData['data'][cType]['data'][slotIdx])
+                    self.__data['data'][cType]['data'][slotIdx] = initialSlotItem
+                    self.cart.update(self.__data)
+                    self.bonusPanel.update(self.__data)
+                    self.updated({'type': cType,
+                     'idx': slotIdx,
+                     'data': initialSlotItem})
+        elif newSlotItem['isInDossier'] or availableIGR:
+            self.cart.buyItem(cType, newSlotItem['spot'], self.calculateVehicleIndex(slotIdx, cType), newSlotItem['itemID'], 0, price=0)
         else:
             self.__data['data'][cType]['data'][slotIdx] = newSlotItem
             self.cart.update(self.__data)
@@ -154,12 +144,22 @@ class Slots(object):
             self.updated(newSlotData)
         return
 
+    def calculateVehicleIndex(self, initialIndex, cType):
+        if initialIndex == 1:
+            slotItem = self.__data['data'][cType]['data'][initialIndex]
+            adjacentSlotItem = self.__data['data'][cType]['data'][0]
+            if slotItem['spot'] != adjacentSlotItem['spot']:
+                return initialIndex - 1
+            else:
+                return initialIndex
+        return initialIndex
+
     def __updateViewModel(self, cType, slotIdx, newSlotItem):
         if cType != CUSTOMIZATION_TYPE.CAMOUFLAGE:
             viewModelItem = [None if newSlotItem['itemID'] < 0 else newSlotItem['itemID'], time.time(), 0]
             if cType == CUSTOMIZATION_TYPE.INSCRIPTION:
                 viewModelItem.append(0)
-            self.__aData.viewModel[cType][newSlotItem['spot'] + slotIdx] = viewModelItem
+            self.__aData.viewModel[cType][newSlotItem['spot'] + self.calculateVehicleIndex(slotIdx, cType)] = viewModelItem
             g_hangarSpace.space.updateVehicleSticker(self.__aData.viewModel[1:3])
         return
 
@@ -169,13 +169,11 @@ class Slots(object):
                    'data': self.__setSlotsData(CUSTOMIZATION_TYPE.EMBLEM)}, {'header': self.__setSlotsHeader(CUSTOMIZATION_TYPE.INSCRIPTION),
                    'data': self.__setSlotsData(CUSTOMIZATION_TYPE.INSCRIPTION)}]}
         if self.__initialData is not None:
-            oldData = copy.deepcopy(self.__data)
-            self.__data = newSlotsData
-            self.__updateChangedSlots(newSlotsData, self.__initialData)
-            self.__updateChangedSlots(newSlotsData, oldData)
+            self.__handleServerChange(newSlotsData)
+            self.__initialData = newSlotsData
         else:
             self.__data = newSlotsData
-        self.__initialData = copy.deepcopy(self.__data)
+            self.__initialData = copy.deepcopy(self.__data)
         self.cart.setInitialSlotsData(self.__initialData)
         self.cart.update(self.__data)
         self.bonusPanel.setInitialSlotsData(self.__initialData)
@@ -218,17 +216,24 @@ class Slots(object):
 
     def __getSlotBonusString(self, item, isInDossier):
         bonus = makeHtmlString('html_templates:lobby/customization', 'bonusString', {'bonusIcon': getAbsoluteUrl(item.qualifier.getIcon16x16()),
-         'bonusValue': item.qualifier.getValue()})
+         'bonusValue': item.qualifier.getValue(),
+         'isConditional': shared.isConditional(item)})
         if not isInDossier:
             bonus = text_styles.bonusAppliedText(bonus)
         return bonus
 
-    def __updateChangedSlots(self, newSlotsData, oldSlotsData):
-
-        def updateChangedSlot(newSlotItem, oldSlotItem, cType, slotIdx):
-            if newSlotItem['itemID'] != oldSlotItem['itemID']:
-                self.updated({'type': cType,
-                 'idx': slotIdx,
-                 'data': newSlotItem})
-
-        forEachSlotIn(newSlotsData, oldSlotsData, updateChangedSlot)
+    def __handleServerChange(self, newSlotsData):
+        for cType in (CUSTOMIZATION_TYPE.CAMOUFLAGE, CUSTOMIZATION_TYPE.EMBLEM, CUSTOMIZATION_TYPE.INSCRIPTION):
+            for slotIdx in range(0, len(newSlotsData['data'][cType]['data'])):
+                newSlotItem = newSlotsData['data'][cType]['data'][slotIdx]
+                currentSlotItem = self.__data['data'][cType]['data'][slotIdx]
+                initialSlotItem = self.__initialData['data'][cType]['data'][slotIdx]
+                if newSlotItem['itemID'] != initialSlotItem['itemID']:
+                    self.__data['data'][cType]['data'][slotIdx] = newSlotItem
+                    self.updated({'type': cType,
+                     'idx': slotIdx,
+                     'data': newSlotItem})
+                elif initialSlotItem['itemID'] != currentSlotItem['itemID']:
+                    self.updated({'type': cType,
+                     'idx': slotIdx,
+                     'data': currentSlotItem})

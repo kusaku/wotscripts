@@ -15,6 +15,10 @@ class PurchasesPopover(CustomizationPurchasesPopoverMeta):
 
     def __init__(self, ctx = None):
         super(PurchasesPopover, self).__init__()
+        self.__items = g_customizationController.carousel.slots.cart.items
+
+    def cleanAll(self):
+        DialogsInterface.showDialog(I18nConfirmDialogMeta('customization/filter'), self.__confirmCloseWindow)
 
     def removePurchase(self, cType, slotIdx):
         g_customizationController.carousel.slots.updateSlot({'id': -1}, cType=cType, slotIdx=slotIdx)
@@ -59,9 +63,7 @@ class PurchasesPopover(CustomizationPurchasesPopoverMeta):
         return {'title': text_styles.highTitle(_ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATIONPURCHASESPOPOVER_TITLE, count=len(purchaseItems))),
          'popoverRenderers': purchaseItems}
 
-    def cleanAll(self):
-        DialogsInterface.showDialog(I18nConfirmDialogMeta('customization/filter'), self.__confirmCloseWindow)
-
     def __confirmCloseWindow(self, proceed):
         if proceed:
-            LOG_DEBUG('CLEAR POPOVER LIST')
+            for item in g_customizationController.carousel.slots.cart.items:
+                self.removePurchase(item['type'], item['idx'])

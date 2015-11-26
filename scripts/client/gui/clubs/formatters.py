@@ -108,6 +108,97 @@ class ClubAppsHtmlTextFormatter(object):
         return ''.join(result)
 
 
+class _BaseClanAppHtmlTextFormatter(object):
+
+    def __init__(self, titleKey, commentKey):
+        super(_BaseClanAppHtmlTextFormatter, self).__init__()
+        self._commentKey = commentKey
+        self._titleKey = titleKey
+
+    def getText(self, entity):
+        result = []
+        text = self.getTitle(entity)
+        if len(text):
+            result.append(text)
+        text = self.getComment(entity)
+        if len(text):
+            result.append(text)
+        return ''.join(result)
+
+    def getTitle(self, entity):
+        return makeHtmlString('html_templates:lobby/clans', self._titleKey, {'appsCount': entity})
+
+    def getComment(self, entity):
+        return makeHtmlString('html_templates:lobby/clans', self._commentKey)
+
+
+class ClanMultiNotificationsHtmlTextFormatter(_BaseClanAppHtmlTextFormatter):
+
+    def __init__(self, titleKey, commentKey, commentAction):
+        self.__commentAction = commentAction
+        super(ClanMultiNotificationsHtmlTextFormatter, self).__init__(titleKey, commentKey)
+
+    def getTitle(self, entity):
+        return makeHtmlString('html_templates:lobby/clans', self._titleKey, {'appsCount': entity})
+
+    def getComment(self, entity):
+        return makeHtmlString('html_templates:lobby/clans', self._commentKey, {'eventType': self.__commentAction,
+         'icon': makeHtmlString('html_templates:lobby/iconText', 'arrowButton')})
+
+
+class ClanSingleNotificationHtmlTextFormatter(_BaseClanAppHtmlTextFormatter):
+
+    def __init__(self, titleKey, commentKey, commentAction):
+        self.__commentAction = commentAction
+        super(ClanSingleNotificationHtmlTextFormatter, self).__init__(titleKey, commentKey)
+
+    def getTitle(self, uName):
+        return makeHtmlString('html_templates:lobby/clans', self._titleKey, {'name': uName})
+
+    def getComment(self, _):
+        return makeHtmlString('html_templates:lobby/clans', self._commentKey, {'eventType': self.__commentAction,
+         'icon': makeHtmlString('html_templates:lobby/iconText', 'arrowButton')})
+
+    def getText(self, data):
+        userName, state = data
+        text = super(ClanSingleNotificationHtmlTextFormatter, self).getText(userName)
+        stateTxt = self._getStateText(state)
+        if stateTxt:
+            text += stateTxt
+        return text
+
+    def _getStateText(self, state):
+        if not doesTextExist(state):
+            return ''
+        stateStr = makeString(state)
+        if stateStr:
+            stateStr = makeHtmlString('html_templates:lobby/clans', 'inviteState', {'state': stateStr})
+        return stateStr
+
+
+class ClanAppActionHtmlTextFormatter(object):
+
+    def __init__(self, actType):
+        super(ClanAppActionHtmlTextFormatter, self).__init__()
+        self.__actType = actType
+
+    def getTitle(self):
+        return ''
+
+    def getComment(self, clanName):
+        return makeHtmlString('html_templates:lobby/clans/', self.__actType, ctx={'name': clanName})
+
+    def getText(self, clanName):
+        result = []
+        text = self.getTitle()
+        if len(text):
+            result.append(text)
+        text = self.getComment(clanName)
+        if len(text):
+            result.append(text)
+        return ''.join(result)
+
+
 _CUSTOM_ERR_MESSAGES = {(_CRT.SEND_INVITE, _WCR.FORBIDDEN_FOR_ACCOUNT): 'sendInvite/ignored',
  (_CRT.SEND_APPLICATION, _WCR.FORBIDDEN_FOR_ACCOUNT): 'sendApp/ignored',
  (_CRT.JOIN_UNIT, _WCR.WEB_UNAVAILABLE): 'joinUnit/webUnavailable'}

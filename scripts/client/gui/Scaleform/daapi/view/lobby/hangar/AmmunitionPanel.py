@@ -143,7 +143,7 @@ class AmmunitionPanel(AmmunitionPanelMeta):
             isBackground = False
             if statusId == Vehicle.VEHICLE_STATE.NOT_PRESENT:
                 isBackground = True
-            isSuitableVeh = not (self.__falloutCtrl.isSelected() and not g_currentVehicle.item.isFalloutAvailable)
+            isSuitableVeh = not (self.__falloutCtrl.isSelected() and not g_currentVehicle.item.isFalloutAvailable) and g_currentVehicle.item.getCustomState() != Vehicle.VEHICLE_STATE.UNSUITABLE_TO_QUEUE
             if not isSuitableVeh:
                 msg = i18n.makeString('#menu:tankCarousel/vehicleStates/%s' % Vehicle.VEHICLE_STATE.NOT_SUITABLE)
                 msgLvl = Vehicle.VEHICLE_STATE_LEVEL.WARNING

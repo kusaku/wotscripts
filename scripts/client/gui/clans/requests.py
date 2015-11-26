@@ -53,8 +53,10 @@ class ClanRequester(ClientRequestsByIDProcessor):
                 response = responseCode == ResponseCodes.NO_ERRORS and self._makeResponse(responseCode, '', data, ctx)
             else:
                 errStr = data.pop('description', '')
+                data = None
                 response = self._makeResponse(responseCode, errStr, data, ctx)
             self._onResponseReceived(requestID, response)
+            return
 
         method(_callback, *args, **kwargs)
         return requestID
@@ -110,6 +112,7 @@ class ClanRequestsController(RequestsController):
          CLAN_REQUESTED_DATA_TYPE.CREATE_INVITES: self.__createInvites,
          CLAN_REQUESTED_DATA_TYPE.DECLINE_APPLICATION: self.__declineApplication,
          CLAN_REQUESTED_DATA_TYPE.DECLINE_INVITE: self.__declineInvite,
+         CLAN_REQUESTED_DATA_TYPE.DECLINE_INVITES: self.__declineInvites,
          CLAN_REQUESTED_DATA_TYPE.GET_ACCOUNT_APPLICATIONS: self.__getAccountApplications,
          CLAN_REQUESTED_DATA_TYPE.CLANS_INFO: self.__getClansInfo,
          CLAN_REQUESTED_DATA_TYPE.CLAN_FAVOURITE_ATTRS: self.__getClanFavoriteAttributes,
@@ -142,9 +145,11 @@ class ClanRequestsController(RequestsController):
                     for clan in dataRef:
                         clan['clan_ratings_data'] = ratings.get(clan['clan_id'], items.ClanRatingsData())
 
-                    callback(clansResponse)
                 else:
-                    callback(ClanRequestResponse(ratingsResponse.getCode(), ratingsResponse.getErrString(), {}))
+                    for clan in dataRef:
+                        clan['clan_ratings_data'] = items.ClanRatingsData()
+
+                callback(clansResponse)
 
             self.__getClanRatings(clanRatingsCtx, _onRatingsReceived)
         else:
@@ -184,18 +189,19 @@ class ClanRequestsController(RequestsController):
 
         def _onMembersReceived(membersResponse):
             if membersResponse.isSuccess():
+                ctx = contexts.AccountClanRatingsCtx(map(lambda v: v['account_id'], membersResponse.data))
 
                 def _onRatingsReceived(ratingsResponse):
                     if ratingsResponse.isSuccess():
-                        ratings = dict(((d['account_id'], d) for d in ratingsResponse.data or []))
+                        ratings = ctx.getDataObj(ratingsResponse.data)
                     else:
                         ratings = {}
                     for m in membersResponse.data:
-                        m['ratings'] = ratings.get(m['account_id'])
+                        m['ratings'] = ratings.get(m['account_id'], items.AccountClanRatingsData(account_id=m['account_id']))
 
                     callback(membersResponse)
 
-                self.__getClanMembersRating(contexts.AccountClanRatingsCtx(map(lambda v: v['account_id'], membersResponse.data)), _onRatingsReceived)
+                self.__getClanMembersRating(ctx, _onRatingsReceived)
             else:
                 callback(membersResponse)
 
@@ -262,6 +268,9 @@ class ClanRequestsController(RequestsController):
 
     def __declineInvite(self, ctx, callback):
         return self._requester.doRequestEx(ctx, callback, ('clans', 'decline_invite'), invite_id=ctx.getInviteDbID())
+
+    def __declineInvites(self, ctx, callback):
+        return self._requester.doRequestEx(ctx, callback, ('clans', 'bulk_decline_invites'), invite_ids=ctx.getInviteDbIDs())
 
     def __getClanFavoriteAttributes(self, ctx, callback = None):
         return self._requester.doRequestEx(ctx, callback, ('clans', 'get_clan_favorite_attributes'), ctx.getClanID())

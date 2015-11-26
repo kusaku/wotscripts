@@ -1,7 +1,8 @@
 # Embedded file name: scripts/client/notification/decorators.py
-import time
 import BigWorld
 from debug_utils import LOG_ERROR
+from gui.clans.clan_controller import g_clanCtrl
+from gui.clans.settings import CLAN_APPLICATION_STATES, CLAN_INVITE_STATES
 from gui.prb_control.formatters.invites import getPrbInviteHtmlFormatter
 from gui.prb_control.prb_helpers import prbInvitesProperty
 from gui.shared.notifications import NotificationPriorityLevel, NotificationGuiSettings
@@ -15,7 +16,7 @@ from notification.settings import NOTIFICATION_TYPE, NOTIFICATION_BUTTON_STATE
 from notification.settings import makePathToIcon
 from gui.wgnc.settings import WGNC_DEFAULT_ICON, WGNC_POP_UP_BUTTON_WIDTH
 from gui.clubs.ClubsController import g_clubsCtrl
-from gui.clubs.formatters import ClubInviteHtmlTextFormatter, ClubAppsHtmlTextFormatter
+from gui.clubs.formatters import ClubInviteHtmlTextFormatter, ClubAppsHtmlTextFormatter, ClanMultiNotificationsHtmlTextFormatter, ClanAppActionHtmlTextFormatter, ClanSingleNotificationHtmlTextFormatter
 from helpers import time_utils
 
 def _makeShowTime():
@@ -24,6 +25,10 @@ def _makeShowTime():
 
 _ICONS_FIELDS = ('icon', 'defaultIcon', 'bgIcon')
 _CLUB_INVITE_VISIBILITY_INTERVAL = 1200
+
+def _getClanName(clanInfo):
+    return '[{}] {}'.format(clanInfo[1], clanInfo[0])
+
 
 class _NotificationDecorator(object):
     __slots__ = ('_entityID', '_entity', '_settings', '_vo', '_isOrderChanged')
@@ -471,3 +476,217 @@ class ClubAppsDecorator(_NotificationDecorator):
          'message': message,
          'notify': self.isNotify(),
          'auxData': []}
+
+
+class _ClanBaseDecorator(_NotificationDecorator):
+    __slots__ = ('_createdAt',)
+
+    def __init__(self, entityID, entity = None, settings = None):
+        self._createdAt = time_utils.getCurrentTimestamp()
+        super(_ClanBaseDecorator, self).__init__(entityID, entity, settings)
+
+    def clear(self):
+        self._createdAt = 0
+        super(_ClanBaseDecorator, self).clear()
+
+    def getOrder(self):
+        return (self.showAt(), self._createdAt)
+
+    def getSavedData(self):
+        return self.getID()
+
+
+class _ClanDecorator(_ClanBaseDecorator):
+
+    def update(self, entity):
+        super(_ClanBaseDecorator, self).update(entity)
+        self._make(entity)
+
+    def _make(self, entity = None, settings = None):
+        self._settings = NotificationGuiSettings(True, NotificationPriorityLevel.MEDIUM, showAt=_makeShowTime())
+        formatter = self._getFormatter()
+        message = g_settings.msgTemplates.format(self._getTemplateId(), ctx={'text': self._getText(formatter, entity)}, data={'timestamp': self._createdAt,
+         'icon': makePathToIcon('clanInviteIcon'),
+         'defaultIcon': makePathToIcon('InformationIcon'),
+         'buttonsStates': self._getButtonsStates(entity)})
+        self._vo = {'typeID': self.getType(),
+         'entityID': self.getID(),
+         'message': message,
+         'notify': self.isNotify(),
+         'auxData': []}
+
+    def _getFormatter(self):
+        raise NotImplementedError
+
+    def _getText(self, formatter, entity):
+        return formatter.getText(entity)
+
+    def _getTemplateId(self):
+        raise NotImplementedError
+
+    def _getButtonsStates(self, entity):
+        raise NotImplementedError
+
+
+class _ClanSingleDecorator(_ClanDecorator):
+
+    def __init__(self, entityID, entity = None, settings = None):
+        self._state = self._getDefState()
+        super(_ClanSingleDecorator, self).__init__(entityID, entity, settings)
+
+    def setState(self, value):
+        self._state = value
+
+    def _getDefState(self):
+        raise NotImplementedError
+
+    def _make(self, entity = None, settings = None):
+        super(_ClanSingleDecorator, self)._make(entity, settings)
+
+
+class ClanSingleAppDecorator(_ClanSingleDecorator):
+
+    def __init__(self, entityID, entity = None, ctx = None, settings = None):
+        self.__userName = ctx
+        super(ClanSingleAppDecorator, self).__init__(entityID, entity, settings)
+
+    def getType(self):
+        return NOTIFICATION_TYPE.CLAN_APP
+
+    def getAccountID(self):
+        return self._entity.getAccountID()
+
+    def getApplicationID(self):
+        return self._entity.getApplicationID()
+
+    def _getTemplateId(self):
+        return 'clanApp'
+
+    def _getDefState(self):
+        return CLAN_APPLICATION_STATES.ACTIVE
+
+    def _getFormatter(self):
+        return ClanSingleNotificationHtmlTextFormatter('appTitle', 'appComment', 'showUserProfileAction')
+
+    def _getButtonsStates(self, entity):
+        if self._state in (CLAN_APPLICATION_STATES.ACCEPTED, CLAN_APPLICATION_STATES.DECLINED) or not g_clanCtrl.getAccountProfile().getMyClanPermissions().canHandleClanInvites() or not g_clanCtrl.isAvailable() or not g_clanCtrl.isEnabled():
+            submit = cancel = NOTIFICATION_BUTTON_STATE.HIDDEN
+        else:
+            submit = cancel = NOTIFICATION_BUTTON_STATE.DEFAULT
+        return {'submit': submit,
+         'cancel': cancel}
+
+    def _getText(self, formatter, entity):
+        stateStr = '#invites:clans/state/app/%s' % self._state
+        return formatter.getText((self.__userName, stateStr))
+
+
+class ClanSingleInviteDecorator(_ClanSingleDecorator):
+
+    def __init__(self, entityID, entity = None, ctx = None, settings = None):
+        super(ClanSingleInviteDecorator, self).__init__(entityID, entity, settings)
+
+    def getInviteID(self):
+        return self._entity.getInviteId()
+
+    def getClanID(self):
+        return self._entity.getClanId()
+
+    def getType(self):
+        return NOTIFICATION_TYPE.CLAN_INVITE
+
+    def _getTemplateId(self):
+        return 'clanInvite'
+
+    def _getDefState(self):
+        return CLAN_INVITE_STATES.ACTIVE
+
+    def _getFormatter(self):
+        return ClanSingleNotificationHtmlTextFormatter('inviteTitle', 'inviteComment', 'showClanProfileAction')
+
+    def _getButtonsStates(self, entity):
+        if self._state in (CLAN_INVITE_STATES.ACCEPTED, CLAN_INVITE_STATES.DECLINED) or g_clanCtrl.getAccountProfile().isInClan() or not g_clanCtrl.isAvailable() or not g_clanCtrl.isEnabled():
+            submit = cancel = NOTIFICATION_BUTTON_STATE.HIDDEN
+        else:
+            submit = cancel = NOTIFICATION_BUTTON_STATE.DEFAULT
+        return {'submit': submit,
+         'cancel': cancel}
+
+    def _getText(self, formatter, entity):
+        stateStr = '#invites:clans/state/invite/%s' % self._state
+        return formatter.getText((_getClanName((entity.getClanName(), entity.getClanTag())), stateStr))
+
+
+class _ClanMultiDecorator(_ClanDecorator):
+
+    def _getButtonsStates(self, entity):
+        if not g_clanCtrl.isAvailable() or not g_clanCtrl.isEnabled():
+            submit = NOTIFICATION_BUTTON_STATE.HIDDEN
+        else:
+            submit = NOTIFICATION_BUTTON_STATE.DEFAULT
+        return {'submit': submit}
+
+
+class ClanAppsDecorator(_ClanMultiDecorator):
+
+    def getType(self):
+        return NOTIFICATION_TYPE.CLAN_APPS
+
+    def _getTemplateId(self):
+        return 'clanApps'
+
+    def _getFormatter(self):
+        return ClanMultiNotificationsHtmlTextFormatter('appsTitle', 'multiAppsCommon', 'showClanSettingsAction')
+
+
+class ClanInvitesDecorator(_ClanMultiDecorator):
+
+    def getType(self):
+        return NOTIFICATION_TYPE.CLAN_INVITES
+
+    def _getTemplateId(self):
+        return 'clanPersonalInvites'
+
+    def _getFormatter(self):
+        return ClanMultiNotificationsHtmlTextFormatter('invitesTitle', 'multiAppsCommon', 'showClanSettingsAction')
+
+
+class _ClassBaseActionDecorator(_ClanBaseDecorator):
+
+    def __init__(self, entityID, actionType, entity = None, settings = None):
+        self._actionType = actionType
+        super(_ClassBaseActionDecorator, self).__init__(entityID, entity, settings)
+
+    def _getName(self, entity):
+        raise NotImplementedError
+
+    def _make(self, entity = None, settings = None):
+        self._settings = NotificationGuiSettings(True, NotificationPriorityLevel.MEDIUM, showAt=_makeShowTime())
+        name = self._getName(entity)
+        formatter = ClanAppActionHtmlTextFormatter(self._actionType)
+        message = g_settings.msgTemplates.format('clanSimple', ctx={'text': formatter.getText(name)}, data={'timestamp': self._createdAt,
+         'icon': makePathToIcon('clanInviteIcon'),
+         'defaultIcon': makePathToIcon('InformationIcon')})
+        self._vo = {'typeID': self.getType(),
+         'entityID': self.getID(),
+         'message': message,
+         'notify': self.isNotify(),
+         'auxData': []}
+
+
+class ClanAppActionDecorator(_ClassBaseActionDecorator):
+
+    def getType(self):
+        return NOTIFICATION_TYPE.CLAN_APP_ACTION
+
+    def _getName(self, clanInfo):
+        return _getClanName(clanInfo)
+
+
+class ClanInvitesActionDecorator(_ClassBaseActionDecorator):
+
+    def getType(self):
+        return NOTIFICATION_TYPE.CLAN_INVITE_ACTION
+
+    def _getName(self, entity):
+        return entity

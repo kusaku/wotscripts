@@ -125,6 +125,12 @@ def _listCollect(a, b):
     return tuple(a) + tuple(b)
 
 
+def _uniqueListCollect(a, b):
+    result = list(a)
+    result.extend([ j for j in b if j not in a ])
+    return tuple(result)
+
+
 def _calculateDailyXP(oritinalData, data):
     return (data['originalXP'] - int(data.get('xpPenaltyBase', 0))) * data['dailyXPFactor10'] / 10.0
 
@@ -175,7 +181,7 @@ CUMULATIVE_ACCOUNT_DATA = (('credits', (0, _intSum)),
  ('xpPenalty', (0, _intSum)),
  ('originalXP', (0, _intSum)),
  ('originalFreeXP', (0, _intSum)),
- ('dossierPopUps', ((), _listCollect)),
+ ('dossierPopUps', ((), _uniqueListCollect)),
  ('orderXP', (0, _intSum)),
  ('boosterXP', (0, _intSum)),
  ('orderFreeXP', (0, _intSum)),
@@ -818,8 +824,8 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
     def __populatePersonalMedals(self, pData, personalDataOutput):
         personalDataOutput['dossierType'] = None
         personalDataOutput['dossierCompDescr'] = None
-        personalDataOutput['achievementsLeft'] = []
-        personalDataOutput['achievementsRight'] = []
+        personalDataOutput['achievementsLeft'] = achievementsLeft = []
+        personalDataOutput['achievementsRight'] = achievementsRight = []
         for _, data in pData:
             achievementsData = data.get('dossierPopUps', [])
             for achievementId, achieveValue in achievementsData:
@@ -837,19 +843,21 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
                             achieve.setDamageRating(data['damageRating'])
                     achieveData = self._packAchievement(achieve, isUnique=True)
                     if achieve.getName() in achievements.BATTLE_ACHIEVES_RIGHT:
-                        personalDataOutput['achievementsRight'].append(achieveData)
-                    else:
-                        personalDataOutput['achievementsLeft'].append(achieveData)
+                        if achieveData not in achievementsRight:
+                            achievementsRight.append(achieveData)
+                    elif achieveData not in achievementsLeft:
+                        achievementsLeft.append(achieveData)
 
             markOfMastery = data.get('markOfMastery', 0)
             factory = getAchievementFactory(('achievements', 'markOfMastery'))
             if markOfMastery > 0 and factory is not None:
-                from gui.shared import g_itemsCache
                 achieve = factory.create(value=markOfMastery)
                 achieve.setPrevMarkOfMastery(data.get('prevMarkOfMastery', 0))
                 achieve.setCompDescr(data.get('typeCompDescr'))
-                personalDataOutput['achievementsLeft'].append(self._packAchievement(achieve))
-            personalDataOutput['achievementsRight'].sort(key=lambda k: k['isEpic'], reverse=True)
+                achieveData = self._packAchievement(achieve)
+                if achieveData not in achievementsLeft:
+                    achievementsLeft.append(achieveData)
+            achievementsRight.sort(key=lambda k: k['isEpic'], reverse=True)
 
         return
 
@@ -998,7 +1006,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
         return makeHtmlString('html_templates:lobby/battle_results', 'tooltip_crit_label', {'image': '{0}Destroyed'.format(key),
          'value': i18n.makeString('#item_types:tankman/roles/{0}'.format(key))})
 
-    def __populateResultStrings(self, commonData, pData, commonDataOutput, isMultiTeamMode):
+    def __populateResultStrings(self, commonData, pData, avatarData, commonDataOutput, isMultiTeamMode):
         bonusType = commonData.get('bonusType', 0)
         winnerTeam = commonData.get('winnerTeam', 0)
         playerTeam = pData.get('team')
@@ -1021,7 +1029,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
             return i18n.makeString(formatter.format(finishReason))
 
         if bonusType == ARENA_BONUS_TYPE.FORT_BATTLE:
-            fortBuilding = pData.get('fortBuilding', {})
+            fortBuilding = avatarData.get('fortBuilding', {})
             buildTypeID, buildTeam = fortBuilding.get('buildTypeID'), fortBuilding.get('buildTeam')
             if status == 'tie':
                 status = 'win' if buildTeam == playerTeam else 'lose'
@@ -1666,7 +1674,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
                 self.__addOrderDataToTotalValue(avatarsData[playerID], totalStatValues)
             statValues.insert(0, self.__populateStatValues(totalStatValues, True))
             personalDataOutput['statValues'] = statValues
-            self.__populateResultStrings(commonData, personalCommonData, commonDataOutput, isMultiTeamMode)
+            self.__populateResultStrings(commonData, personalCommonData, playerAvatarData, commonDataOutput, isMultiTeamMode)
             self.__populatePersonalMedals(personalData, personalDataOutput)
             self.__populateArenaData(commonData, personalCommonData, commonDataOutput, isMultiTeamMode, isResource)
             self.__populateAccounting(commonData, personalCommonData, personalData, playersData, personalDataOutput)

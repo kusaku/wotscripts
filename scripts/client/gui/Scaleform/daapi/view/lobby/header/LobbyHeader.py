@@ -24,7 +24,6 @@ from gui import makeHtmlString, game_control
 from gui.LobbyContext import g_lobbyContext
 from gui.ClientUpdateManager import g_clientUpdateManager
 from gui.prb_control.context import PrebattleAction
-from gui.prb_control.dispatcher import g_prbLoader
 from gui.shared import events
 from gui.shared import g_itemsCache
 from gui.shared.event_bus import EVENT_BUS_SCOPE
@@ -269,7 +268,7 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
             if not canUpdatePremium:
                 disableTTHeader = i18n.makeString(TOOLTIPS.LOBBY_HEADER_BUYPREMIUMACCOUNT_DISABLED_HEADER)
                 disableTTBody = i18n.makeString(TOOLTIPS.LOBBY_HEADER_BUYPREMIUMACCOUNT_DISABLED_BODY, number=time_utils.ONE_YEAR / time_utils.ONE_DAY)
-            self.as_doDisableHeaderButtonS(self.BUTTONS.PREM, canUpdatePremium)
+            self.as_doDisableHeaderButtonS(self.BUTTONS.PREM, canUpdatePremium and isNavigationEnabled)
             hasPersonalDiscount = len(g_itemsCache.items.shop.personalPremiumPacketsDiscounts) > 0
             tooltip = canUpdatePremium or {'header': disableTTHeader,
              'body': disableTTBody}
@@ -392,6 +391,12 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
                 self.__closeBattleTypeSelectPopover()
             else:
                 self.__updateBattleTypeSelectPopover()
+            isNavigationEnabled = not state.isNavigationDisabled()
+            self.as_doDisableHeaderButtonS(self.BUTTONS.SILVER, isNavigationEnabled)
+            self.as_doDisableHeaderButtonS(self.BUTTONS.GOLD, isNavigationEnabled)
+            self.as_doDisableHeaderButtonS(self.BUTTONS.FREE_XP, isNavigationEnabled)
+            self.as_doDisableHeaderButtonS(self.BUTTONS.ACCOUNT, isNavigationEnabled)
+            self.updateAccountAttrs()
             return
 
     def __handleFightButtonUpdated(self, _):

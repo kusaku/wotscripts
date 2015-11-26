@@ -1011,6 +1011,7 @@ class PostMortemControlMode(IControlMode):
             self.__selfVehicleID = player.playerVehicleID
             self.__isObserverMode = 'observer' in player.vehicleTypeDescriptor.type.tags
         self.__cam.enable(None, False, args.get('postmortemParams'))
+        self.__cam.vehicleMProv = BigWorld.player().consistentMatrices.attachedVehicleMatrix
         self.__aim.enable()
         self.__connectToArena()
         _setCameraFluency(self.__cam.camera, self.__CAM_FLUENCY)
@@ -1180,6 +1181,7 @@ class PostMortemControlMode(IControlMode):
             replayCtrl = BattleReplay.g_replayCtrl
             if replayCtrl.isRecording:
                 replayCtrl.setPlayerVehicleID(self.__curVehicleID)
+            self.__cam.vehicleMProv = BigWorld.player().consistentMatrices.attachedVehicleMatrix
             self.__aih.onCameraChanged('postmortem', self.__curVehicleID)
             return
 

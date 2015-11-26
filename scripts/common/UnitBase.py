@@ -33,6 +33,7 @@ class UNIT_FLAGS:
     RATED_BATTLE_FORBIDDEN = 128
     IN_PRE_ARENA = 256
     IN_ROSTER_WAIT = 512
+    IS_DYNAMIC = 1024
     DEFAULT = 0
     PRE_QUEUE = 0
     PRE_SEARCH = 0
@@ -663,6 +664,9 @@ class UnitBase(OpsUnpacker):
 
     def isRatedBattleForbidden(self):
         return bool(self._flags & UNIT_FLAGS.RATED_BATTLE_FORBIDDEN)
+
+    def isDynamic(self):
+        return bool(self._flags & UNIT_FLAGS.IS_DYNAMIC)
 
     def shouldPublish(self):
         return not (self.isInviteOnly() or self.isSortiesForbidden() or self.isRatedBattleForbidden())

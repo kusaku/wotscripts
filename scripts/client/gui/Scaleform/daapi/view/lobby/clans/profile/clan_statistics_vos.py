@@ -1,6 +1,6 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/clans/profile/clan_statistics_vos.py
-from collections import namedtuple
 import BigWorld
+from gui.Scaleform.daapi.view.lobby.clans.profile import getI18ArenaById
 from gui.clans.items import formatField
 from helpers.i18n import makeString as _ms
 from gui.Scaleform.daapi.view.lobby.profile.profile_statistics_vos import BaseDictStatisticsVO
@@ -10,7 +10,7 @@ from gui.Scaleform.locale.CLANS import CLANS as CL, CLANS
 from gui.Scaleform.locale.FORTIFICATIONS import FORTIFICATIONS
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.shared.formatters import text_styles, icons
-from gui.shared.utils.functions import makeTooltip
+from gui.shared.utils.functions import makeTooltip, getArenaGeomentryName
 
 def _resourceParam(value):
     return ''.join((text_styles.defRes(value), icons.nutStat()))
@@ -27,7 +27,7 @@ def _getTooltip(headerKey, bodyKey, ratingOutdated = False):
 def _getDataObject(key, i18nFunc, value, ratingOutdated = False, tooltipData = None):
     tooltip = _getTooltip(i18nFunc(key + '/tooltip/header'), i18nFunc(key + '/tooltip/body'), ratingOutdated)
     if ratingOutdated:
-        value = text_styles.disabled(value)
+        value = text_styles.standard(value)
     else:
         value = text_styles.stats(value)
     return SUtils.getDetailedDataObject(i18nFunc(key), value, tooltip, tooltipData)
@@ -43,19 +43,24 @@ def _getDataObjectTruncatedValue(key, i18nFunc, value):
     return data
 
 
-def _getLevelParams(i18nFunc, battlesCount, winsEfficiency, eloRating, placeGetter, favArenaName, ratingOutdated):
-    winsEfficiency = PUtils.formatFloatPercent(PUtils.getValueOrUnavailable(winsEfficiency))
-    return [_getDataObject('battles', i18nFunc, BigWorld.wg_getIntegralFormat(battlesCount)),
+def _getLevelParams(i18nFunc, battlesCountGetter, winsEfficiencyGetter, eloRatingGetter, placeGetter, favArenaNameGetter, ratingOutdated):
+    battlesCount = formatField(getter=battlesCountGetter, formatter=BigWorld.wg_getIntegralFormat)
+    winsEfficiency = formatField(getter=winsEfficiencyGetter, formatter=lambda x: PUtils.formatFloatPercent(x))
+    eloRating = formatField(getter=eloRatingGetter, formatter=BigWorld.wg_getIntegralFormat)
+    place = formatField(getter=placeGetter, formatter=BigWorld.wg_getIntegralFormat)
+    favArenaName = formatField(getter=favArenaNameGetter, formatter=lambda x: getI18ArenaById(getArenaGeomentryName(x)))
+    return [_getDataObject('battles', i18nFunc, battlesCount),
      _getDataObject('wins', i18nFunc, winsEfficiency),
-     _getDataObject('eloRating', i18nFunc, BigWorld.wg_getIntegralFormat(eloRating), ratingOutdated),
-     _getDataObject('place', i18nFunc, formatField(placeGetter, formatter=BigWorld.wg_getIntegralFormat), ratingOutdated),
+     _getDataObject('eloRating', i18nFunc, eloRating),
+     _getDataObject('place', i18nFunc, place, ratingOutdated),
      _getDataObjectTruncatedValue('favoriteMap', i18nFunc, favArenaName)]
 
 
 class FortSortiesStatisticsVO(BaseDictStatisticsVO):
 
-    def __init__(self, data, fsBattlesCountLast28days):
+    def __init__(self, data, fsBattlesCountLast28days, sortiesWinsCountLast28d):
         self.__sortiesBattlesCountLast28d = fsBattlesCountLast28days
+        self.__sortiesWinsCountLast28d = sortiesWinsCountLast28d or 0
         super(FortSortiesStatisticsVO, self).__init__(data)
 
     def _getHeaderText(self, data):
@@ -69,6 +74,7 @@ class FortSortiesStatisticsVO(BaseDictStatisticsVO):
          SUtils.getDetailedDataObject(CL.SECTION_FORT_VIEW_STATISTICS_SORTIES_DETAILED_CHAMPIONBATTLESCOUNT, BigWorld.wg_getIntegralFormat(data.getChampionBattlesCount()), CL.SECTION_FORT_TOOLTIPS_CHAMPIONBATTLESCOUNT),
          SUtils.getDetailedDataObject(CL.SECTION_FORT_VIEW_STATISTICS_SORTIES_DETAILED_ABSOLUTEBATTLESCOUNT, BigWorld.wg_getIntegralFormat(data.getAbsoluteBattlesCount()), CL.SECTION_FORT_TOOLTIPS_ABSOLUTEBATTLESCOUNT),
          None,
+         SUtils.getDetailedDataObject(CL.SECTION_FORT_VIEW_STATISTICS_SORTIES_DETAILED_WINSEFFICIENCY28, PUtils.getEfficiencyPercent(self.__sortiesWinsCountLast28d, self.__sortiesBattlesCountLast28d), CL.SECTION_FORT_TOOLTIPS_WINSEFFICIENCY28),
          SUtils.getDetailedDataObject(CL.SECTION_FORT_VIEW_STATISTICS_SORTIES_DETAILED_AVGBATTLESCOUNT28, BigWorld.wg_getIntegralFormat(self.__sortiesBattlesCountLast28d), CL.SECTION_FORT_TOOLTIPS_AVGBATTLESCOUNT28),
          None,
          SUtils.getDetailedDataObject(CL.SECTION_FORT_VIEW_STATISTICS_SORTIES_DETAILED_LOOTINSORTIES, _resourceParam(BigWorld.wg_getIntegralFormat(data.getLoot())), CL.SECTION_FORT_TOOLTIPS_LOOTINSORTIES)])
@@ -76,7 +82,9 @@ class FortSortiesStatisticsVO(BaseDictStatisticsVO):
 
 class FortBattlesStatisticsVO(BaseDictStatisticsVO):
 
-    def __init__(self, data):
+    def __init__(self, data, fbBattlesCountAbs, fbBattlesCountChemp):
+        self.__fbBattlesCountAbs = fbBattlesCountAbs
+        self.__fbBattlesCountChemp = fbBattlesCountChemp
         self.__resourceLossCount = data.getResourceLossCount()
         self.__resourceCaptureCount = data.getResourceCaptureCount()
         super(FortBattlesStatisticsVO, self).__init__(data)
@@ -104,23 +112,22 @@ class FortBattlesStatisticsVO(BaseDictStatisticsVO):
          None,
          SUtils.getDetailedDataObject(CL.SECTION_FORT_VIEW_STATISTICS_BATTLES_DETAILED_COUNTPROMRES, _resourceParam(BigWorld.wg_getIntegralFormat(resourceCaptureCount)), CL.SECTION_FORT_TOOLTIPS_COUNTPROMRES),
          SUtils.getDetailedDataObject(CL.SECTION_FORT_VIEW_STATISTICS_BATTLES_DETAILED_LOSTPROMRES, _resourceParam(BigWorld.wg_getIntegralFormat(resourceLossCount)), CL.SECTION_FORT_TOOLTIPS_LOSTPROMRES),
-         None,
          SUtils.getDetailedDataObject(CL.SECTION_FORT_VIEW_STATISTICS_BATTLES_DETAILED_PROFIT, _resourceParam(BigWorld.wg_getIntegralFormat(resourcesProfitValue)), CL.SECTION_FORT_TOOLTIPS_PROFIT),
          None,
-         SUtils.getDetailedDataObject(CL.SECTION_FORT_VIEW_STATISTICS_BATTLES_DETAILED_CHEMPIONLVLBATTLES, BigWorld.wg_getIntegralFormat(-1), CL.SECTION_FORT_TOOLTIPS_CHEMPIONLVLBATTLES),
-         SUtils.getDetailedDataObject(CL.SECTION_FORT_VIEW_STATISTICS_BATTLES_DETAILED_ABSOLUTELVLBATTLES, BigWorld.wg_getIntegralFormat(-1), CL.SECTION_FORT_TOOLTIPS_ABSOLUTELVLBATTLES)])
+         SUtils.getDetailedDataObject(CL.SECTION_FORT_VIEW_STATISTICS_BATTLES_DETAILED_CHEMPIONLVLBATTLES, BigWorld.wg_getIntegralFormat(self.__fbBattlesCountAbs), CL.SECTION_FORT_TOOLTIPS_CHEMPIONLVLBATTLES),
+         SUtils.getDetailedDataObject(CL.SECTION_FORT_VIEW_STATISTICS_BATTLES_DETAILED_ABSOLUTELVLBATTLES, BigWorld.wg_getIntegralFormat(self.__fbBattlesCountChemp), CL.SECTION_FORT_TOOLTIPS_ABSOLUTELVLBATTLES)])
 
 
 class FortGlobalMapStatistics(BaseDictStatisticsVO):
 
     def _getHeaderData(self, data):
         stats = data['stats']
-        winsEfficiency = PUtils.formatFloatPercent(PUtils.getValueOrUnavailable(stats.getWinsEfficiency()))
-        return (PUtils.packLditItemData(BigWorld.wg_getIntegralFormat(stats.battles_played), CLANS.GLOBALMAPVIEW_STATS_BATTLES, CLANS.GLOBALMAPVIEW_STATS_BATTLES_TOOLTIP, 'battles40x32.png'), PUtils.packLditItemData(winsEfficiency, CLANS.GLOBALMAPVIEW_STATS_WINS, CLANS.GLOBALMAPVIEW_STATS_WINS_TOOLTIP, 'wins40x32.png'), PUtils.packLditItemData(BigWorld.wg_getIntegralFormat(stats.provinces_captured), CLANS.GLOBALMAPVIEW_STATS_SEIZED, CLANS.GLOBALMAPVIEW_STATS_SEIZED_TOOLTIP, 'seizedProvinces40x32.png'))
+        return (PUtils.packLditItemData(formatField(getter=stats.getBattlesCount, formatter=BigWorld.wg_getIntegralFormat), CLANS.GLOBALMAPVIEW_STATS_BATTLES, CLANS.GLOBALMAPVIEW_STATS_BATTLES_TOOLTIP, 'battles40x32.png'), PUtils.packLditItemData(formatField(getter=stats.getWinsEfficiency, formatter=PUtils.formatFloatPercent), CLANS.GLOBALMAPVIEW_STATS_WINS, CLANS.GLOBALMAPVIEW_STATS_WINS_TOOLTIP, 'wins40x32.png'), PUtils.packLditItemData(formatField(getter=stats.getCapturedProvincesCount, formatter=BigWorld.wg_getIntegralFormat), CLANS.GLOBALMAPVIEW_STATS_SEIZED, CLANS.GLOBALMAPVIEW_STATS_SEIZED_TOOLTIP, 'seizedProvinces40x32.png'))
 
     def _getDetailedData(self, data):
         stats = data['stats']
         ratings = data['ratings']
+        favouriteAttrs = data['favouriteAttrs']
         ratingsOutDated = ratings.isGlobalMapOutdated()
-        columns = [[PUtils.getLabelDataObject(CL.GLOBALMAPVIEW_LEVEL10, _getLevelParams(CL.globalmapview_statistics10, stats.getBattles10LevelCount(), stats.getWins10LevelEfficiency(), ratings.getGlobalMapEloRating10(), ratings.getGlobalMapEloRatingRank10, ratings.getGlobalMapFavoriteArena10(), ratingsOutDated))], [PUtils.getLabelDataObject(CL.GLOBALMAPVIEW_LEVEL8, _getLevelParams(CL.globalmapview_statistics8, stats.getBattles8LevelCount(), stats.getWins8LevelEfficiency(), ratings.getGlobalMapEloRating8(), ratings.getGlobalMapEloRatingRank8, ratings.getGlobalMapFavoriteArena8(), ratingsOutDated))], [PUtils.getLabelDataObject(CL.GLOBALMAPVIEW_LEVEL6, _getLevelParams(CL.globalmapview_statistics6, stats.getBattles6LevelCount(), stats.getWins6LevelEfficiency(), ratings.getGlobalMapEloRating6(), ratings.getGlobalMapEloRatingRank6, ratings.getGlobalMapFavoriteArena6(), ratingsOutDated))]]
+        columns = [[PUtils.getLabelDataObject(CL.GLOBALMAPVIEW_LEVEL10, _getLevelParams(CL.globalmapview_statistics10, stats.getBattles10LevelCount, stats.getWins10LevelEfficiency, ratings.getGlobalMapEloRating10, ratings.getGlobalMapEloRatingRank10, favouriteAttrs.getFavouriteArena10, ratingsOutDated))], [PUtils.getLabelDataObject(CL.GLOBALMAPVIEW_LEVEL8, _getLevelParams(CL.globalmapview_statistics8, stats.getBattles8LevelCount, stats.getWins8LevelEfficiency, ratings.getGlobalMapEloRating8, ratings.getGlobalMapEloRatingRank8, favouriteAttrs.getFavouriteArena8, ratingsOutDated))], [PUtils.getLabelDataObject(CL.GLOBALMAPVIEW_LEVEL6, _getLevelParams(CL.globalmapview_statistics6, stats.getBattles6LevelCount, stats.getWins6LevelEfficiency, ratings.getGlobalMapEloRating6, ratings.getGlobalMapEloRatingRank6, favouriteAttrs.getFavouriteArena6, ratingsOutDated))]]
         return (PUtils.getLabelViewTypeDataObject(CLANS.GLOBALMAPVIEW_TABS_STATS, columns, PUtils.VIEW_TYPE_TABLES), PUtils.getLabelViewTypeDataObject(CLANS.GLOBALMAPVIEW_TABS_PROVINCES, None, PUtils.VIEW_TYPE_TABLE))

@@ -21,3 +21,7 @@ class ClanInvitesWindowMeta(AbstractWindowView):
     def as_setClanEmblemS(self, source):
         if self._isDAAPIInited():
             return self.flashObject.as_setClanEmblem(source)
+
+    def as_setControlsEnabledS(self, enabled):
+        if self._isDAAPIInited():
+            return self.flashObject.as_setControlsEnabled(enabled)

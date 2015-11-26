@@ -153,7 +153,7 @@ class MapActivities(object):
         return
 
     def __onArenaPeriodChange(self, period, periodEndTime, periodLength, periodAdditionalInfo):
-        isOnArena = period == ARENA_PERIOD.BATTLE
+        isOnArena = period in (ARENA_PERIOD.PREBATTLE, ARENA_PERIOD.BATTLE)
         if isOnArena and not self.__isOnArena:
             self.generateArenaActivities(periodAdditionalInfo)
         elif not isOnArena and self.__isOnArena:

@@ -1,10 +1,12 @@
 # Embedded file name: scripts/client/gui/shared/event_dispatcher.py
 from gui.Scaleform.genConsts.CLANS_ALIASES import CLANS_ALIASES
+from adisp import process
 from gui.shared import events, g_eventBus
 from gui.shared.ItemsCache import g_itemsCache
 from gui.shared.event_bus import EVENT_BUS_SCOPE
 from gui.shared.utils.functions import getViewName, getUniqueViewName
 from gui.battle_results import data_providers
+from gui.Scaleform.daapi.view.dialogs import I18nInfoDialogMeta
 from gui.prb_control.settings import CTRL_ENTITY_TYPE
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui.Scaleform.genConsts.FORTIFICATION_ALIASES import FORTIFICATION_ALIASES
@@ -126,3 +128,18 @@ def showChangeDivisionWindow(division):
 
 def runTutorialChain(id):
     g_eventBus.handleEvent(events.TutorialEvent(events.TutorialEvent.START_TRAINING, settingsID='TRIGGERS_CHAINS', initialChapter=id, restoreIfRun=True))
+
+
+@process
+def requestProfile(databaseID, userName, successCallback):
+    userDossier, _, isHidden = yield g_itemsCache.items.requestUserDossier(databaseID)
+    if userDossier is None:
+        if isHidden:
+            key = 'messenger/userInfoHidden'
+        else:
+            key = 'messenger/userInfoNotAvailable'
+        from gui import DialogsInterface
+        DialogsInterface.showI18nInfoDialog(key, lambda result: None, I18nInfoDialogMeta(key, messageCtx={'userName': userName}))
+    else:
+        successCallback(databaseID, userName)
+    return

@@ -150,17 +150,16 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
         else:
             self.telemetry = None
         self.__initProgress = 0
-        self.__setOwnVehicleMatrixTimerID = None
         self.__shotWaitingTimerID = None
         self.__projectileMover = None
         self.positionControl = None
-        self.__ownVehicleMProv = None
         self.__disableRespawnMode = False
         self.__flockMangager = FlockManager.getManager()
         self.gunRotator = None
         self.__physicMode = VEHICLE_PHYSICS_MODE.STANDARD
         self.__vehicles = set()
         self.__consistentMatrices = AvatarPositionControl.ConsistentMatrices()
+        self.__ownVehicleMProv = self.__consistentMatrices.ownVehicleMatrix
         return
 
     def onBecomePlayer(self):
@@ -191,12 +190,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
             self.onGunShotChanged = Event.Event()
             self.invRotationOnBackMovement = False
             self.__isVehicleAlive = True
-            self.__ownVehicleMProv = Math.WGAdaptiveMatrixProvider()
-            m = Math.Matrix()
-            m.setIdentity()
-            self.__ownVehicleMProv.setStaticTransform(m)
             self.__lastVehicleSpeeds = (0.0, 0.0)
-            self.__setOwnVehicleMatrixTimerID = None
             self.__aimingInfo = [0.0,
              0.0,
              1.0,
@@ -317,9 +311,6 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
         if self.__tryShootCallbackId:
             BigWorld.cancelCallback(self.__tryShootCallbackId)
             self.__tryShootCallbackId = None
-        if self.__setOwnVehicleMatrixTimerID is not None:
-            BigWorld.cancelCallback(self.__setOwnVehicleMatrixTimerID)
-            self.__setOwnVehicleMatrixTimerID = None
         if self.__shotWaitingTimerID is not None:
             BigWorld.cancelCallback(self.__shotWaitingTimerID)
             self.__shotWaitingTimerID = None
@@ -358,8 +349,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
             LOG_CURRENT_EXCEPTION()
 
         AreaDestructibles.clear()
-        if self.__ownVehicleMProv is not None:
-            self.__ownVehicleMProv.target = None
+        self.__ownVehicleMProv.target = None
         keyCode = CommandMapping.g_instance.get('CMD_VOICECHAT_MUTE')
         if not BigWorld.isKeyDown(keyCode):
             VOIP.getVOIPManager().setMicMute(True)
@@ -725,7 +715,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
         if vehicle.id != self.playerVehicleID:
             vehicle.targetCaps = [1]
         else:
-            LOG_DEBUG('[INIT_STEPS] Avatar.vehicle_onEnterWorld')
+            LOG_DEBUG('[INIT_STEPS] Avatar.vehicle_onEnterWorld', vehicle.id)
             vehicle.isPlayer = True
             self.__physicMode = vehicle.physicsMode
             if not self.__initProgress & _INIT_STEPS.VEHICLE_ENTERED:
@@ -762,7 +752,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
 
     def vehicle_onLeaveWorld(self, vehicle):
         if vehicle.id == self.playerVehicleID:
-            LOG_DEBUG('[INIT_STEPS] Avatar.vehicle_onLeaveWorld')
+            LOG_DEBUG('[INIT_STEPS] Avatar.vehicle_onLeaveWorld', vehicle.id)
             self.__initProgress &= ~_INIT_STEPS.VEHICLE_ENTERED
         if not vehicle.isStarted:
             return
@@ -837,9 +827,6 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
             self.gunRotator.start()
             self.__disableRespawnMode = True
             g_sessionProvider.movingToRespawnBase()
-            if self.__setOwnVehicleMatrixTimerID is None:
-                self.__ownVehicleMProv.target = None
-                self.__setOwnVehicleMatrixCallback()
         if not isAlive and wasAlive:
             self.gunRotator.stop()
             if health > 0 and not isCrewActive:
@@ -862,7 +849,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                     prevHealth = vehicle.health
                     vehicle.health = rawHealth
                     vehicle.set_health(prevHealth)
-        if not isRespawn and self.inputHandler.ctrlModeName == 'falloutdeath':
+        if not isAlive and not isRespawn and self.inputHandler.ctrlModeName == 'falloutdeath':
             g_sessionProvider.switchToPostmortem()
             self.inputHandler.activatePostmortem(False)
         return
@@ -979,17 +966,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
         self.gunRotator.setShotPosition(shotPos, shotVec, dispersionAngle)
 
     def updateOwnVehiclePosition(self, position, direction, speed, rspeed):
-        if self.__setOwnVehicleMatrixTimerID is not None:
-            BigWorld.cancelCallback(self.__setOwnVehicleMatrixTimerID)
-            self.__setOwnVehicleMatrixTimerID = None
-        m = Math.Matrix()
-        m.setRotateYPR(direction)
-        m.translation = position
-        self.__ownVehicleMProv.setStaticTransform(m)
         self.__lastVehicleSpeeds = (speed, rspeed)
-        self.__ownVehicleMProv.target = None
-        self.__setOwnVehicleMatrixTimerID = BigWorld.callback(SERVER_TICK_LENGTH / 10, self.__setOwnVehicleMatrixCallback)
-        return
 
     def updateVehicleDestroyTimer(self, code, time, warnLvl = None):
         state = VEHICLE_VIEW_STATE.HIDE_DESTROY_TIMER
@@ -1555,12 +1532,10 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
         return self.__ownVehicleMProv
 
     def getOwnVehicleSpeeds(self, getInstantaneous = False):
-        if self.__ownVehicleMProv.target is None:
+        vehicle = BigWorld.entity(self.playerVehicleID)
+        if vehicle is None or not vehicle.isStarted:
             return self.__lastVehicleSpeeds
         else:
-            vehicle = BigWorld.entity(self.playerVehicleID)
-            if vehicle is None or not vehicle.isStarted:
-                return self.__lastVehicleSpeeds
             speedInfo = vehicle.filter.speedInfo.value
             if getInstantaneous:
                 speed = speedInfo[2]
@@ -1728,7 +1703,6 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
         DecalMap.g_instance.initGroups(1.0)
         if self.__isForcedGuiControlMode:
             self.__doSetForcedGuiControlMode(True, True)
-        self.__setOwnVehicleMatrixCallback()
         for v in BigWorld.entities.values():
             if v.inWorld and isinstance(v, Vehicle.Vehicle) and not v.isStarted:
                 self.__startVehicleVisual(v)
@@ -1756,7 +1730,6 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
             clientVisibilityFlags |= ClientVisibilityFlags.OBSERVER_OBJECTS
         ClientVisibilityFlags.updateSpaceVisibility(self.spaceID, clientVisibilityFlags)
         g_playerEvents.onAvatarReady()
-        self.gunRotator.init_sound()
         BigWorld.enableLoadingTimer(False)
         BigWorld.callback(10.0, partial(BigWorld.pauseDRRAutoscaling, False))
 
@@ -1959,23 +1932,6 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
      'DEVICE_CRITICAL_AT_DROWNING',
      'DEVICE_DESTROYED_AT_DROWNING',
      'TANKMAN_HIT_AT_DROWNING')
-
-    def __setOwnVehicleMatrixCallback(self):
-        self.__setOwnVehicleMatrixTimerID = None
-        if not self.__ownVehicleMProv.target is None:
-            raise AssertionError
-            vehicle = self.vehicle
-            if vehicle is not None and not vehicle.isDestroyed and vehicle.isStarted and vehicle.id == self.playerVehicleID:
-                self.__ownVehicleMProv.target = isinstance(vehicle.filter, BigWorld.WGVehicleFilter) and vehicle.filter.bodyMatrix
-            else:
-                self.__ownVehicleMProv.target = vehicle.matrix
-            return
-        else:
-            period = SERVER_TICK_LENGTH
-            if BattleReplay.isPlaying():
-                period = 0
-            self.__setOwnVehicleMatrixTimerID = BigWorld.callback(period, self.__setOwnVehicleMatrixCallback)
-            return
 
     def __onArenaVehicleKilled(self, targetID, attackerID, equipmentID, reason):
         isMyVehicle = targetID == self.playerVehicleID

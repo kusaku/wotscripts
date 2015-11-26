@@ -2,9 +2,9 @@
 import weakref
 import BigWorld
 from adisp import process
-from debug_utils import LOG_DEBUG
 from helpers import time_utils
 from helpers.i18n import makeString as _ms
+from gui.clans import items
 from gui.shared.formatters import text_styles
 from gui.Scaleform.daapi.view.lobby.clans.profile.clan_statistics_vos import FortGlobalMapStatistics
 from gui.Scaleform.daapi.view.meta.ClanProfileGlobalMapInfoViewMeta import ClanProfileGlobalMapInfoViewMeta
@@ -29,10 +29,11 @@ class ClanProfileGlobalMapInfoView(ClanProfileGlobalMapInfoViewMeta):
         favouriteAttrs = yield clanDossier.requestFavouriteAttributes()
         if self.isDisposed():
             return
-        primeTime = favouriteAttrs.getFavoritePrimetime()
-        primeTime = text_styles.standard(_ms(CLANS.GLOBALMAPVIEW_POPULARPRIMETIME, time=text_styles.main(BigWorld.wg_getShortTimeFormat(primeTime.hour * time_utils.ONE_HOUR + primeTime.minute * time_utils.ONE_MINUTE)))) if primeTime else ''
+        primeTime = items.formatField(getter=favouriteAttrs.getFavoritePrimetime, formatter=lambda x: BigWorld.wg_getShortTimeFormat(x.hour * time_utils.ONE_HOUR + x.minute * time_utils.ONE_MINUTE))
+        primeTime = text_styles.standard(_ms(CLANS.GLOBALMAPVIEW_POPULARPRIMETIME, time=text_styles.main(primeTime)))
         data = FortGlobalMapStatistics({'stats': globalMapStats,
-         'ratings': ratings})
+         'ratings': ratings,
+         'favouriteAttrs': favouriteAttrs})
         data['primeTimeText'] = primeTime
         self.as_setDataS(data)
         proxy.hideWaiting()

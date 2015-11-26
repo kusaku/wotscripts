@@ -2,10 +2,11 @@
 from gui.Scaleform.daapi.view.meta.ClanInvitesWindowAbstractTabViewMeta import ClanInvitesWindowAbstractTabViewMeta
 from gui.Scaleform.locale.CLANS import CLANS
 from gui.Scaleform.genConsts.CLANS_ALIASES import CLANS_ALIASES
+from gui.clans.clan_helpers import ClanListener
 from helpers.i18n import makeString as _ms
 from gui.shared.utils.functions import makeTooltip
 
-class ClanInvitesWindowAbstractTabView(ClanInvitesWindowAbstractTabViewMeta):
+class ClanInvitesWindowAbstractTabView(ClanInvitesWindowAbstractTabViewMeta, ClanListener):
 
     def __init__(self):
         super(ClanInvitesWindowAbstractTabView, self).__init__()
@@ -44,6 +45,10 @@ class ClanInvitesWindowAbstractTabView(ClanInvitesWindowAbstractTabViewMeta):
         order = sort[0][1]
         secondSort = tuple(((item, order) for item in self._getSecondSortFields()))
         self._sendSortRequest(self._getCurrentPaginator(), sort + secondSort)
+
+    def onClanAppsCountReceived(self, clanDbID, appsCount):
+        super(ClanInvitesWindowAbstractTabView, self).onClanAppsCountReceived(clanDbID, appsCount)
+        self._enableRefreshBtn(True)
 
     def formatInvitesCount(self, paginator):
         return self._parentWnd.formatInvitesCount(paginator)
@@ -108,7 +113,6 @@ class ClanInvitesWindowAbstractTabView(ClanInvitesWindowAbstractTabViewMeta):
 
     def _sendRefreshRequest(self, paginator):
         self.showWaiting(True)
-        self._parentWnd.resyncClanInfo()
         if not paginator.isInProgress():
             paginator.refresh()
         else:
@@ -120,7 +124,12 @@ class ClanInvitesWindowAbstractTabView(ClanInvitesWindowAbstractTabViewMeta):
             paginator.sort(sort)
 
     def _populate(self):
+        self.startClanListening()
         super(ClanInvitesWindowAbstractTabView, self)._populate()
+
+    def _dispose(self):
+        self.stopClanListening()
+        super(ClanInvitesWindowAbstractTabView, self)._dispose()
 
     def _onAttachedToWindow(self):
         super(ClanInvitesWindowAbstractTabView, self)._onAttachedToWindow()

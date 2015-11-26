@@ -180,7 +180,7 @@ class FortMainViewComponent(FortMainViewMeta, FortViewHelper, ClanListener):
     def onCreateDirectionClick(self, dirId):
         self.__requestToCreate(dirId)
 
-    def onClanAvailabilityChanged(self, isAvailable):
+    def onClanStateChanged(self, oldStateID, newStateID):
         self.__currentMode = FortificationEffects.NONE_STATE
         self.__refreshCurrentMode()
 

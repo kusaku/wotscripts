@@ -89,7 +89,7 @@ class Vehicle(BigWorld.Entity):
     def respawn(self, compactDescr):
         self.onLeaveWorld()
         self.typeDescriptor = None
-        self.isCrewActiv = True
+        self.isCrewActive = True
         self.__isUnderWater = False
         prereqs = self.prerequisites(compactDescr)
         time = BigWorld.time()
@@ -425,7 +425,7 @@ class Vehicle(BigWorld.Entity):
             self.isStarted = True
             self.set_publicStateModifiers()
             self.set_damageStickers()
-            g_sessionProvider.getFeedback().startVehicleVisual(self.proxy)
+            g_sessionProvider.getFeedback().startVehicleVisual(self.proxy, True)
             if not self.isAlive():
                 self.__onVehicleDeath(True)
             if self.isTurretMarkedForDetachment:

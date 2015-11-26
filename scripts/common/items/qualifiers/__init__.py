@@ -1,7 +1,8 @@
 # Embedded file name: scripts/common/items/qualifiers/__init__.py
 import os
 import ResMgr
-from constants import ITEM_DEFS_PATH
+from constants import ITEM_DEFS_PATH, KNOWN_QUALIFIER_CONDITION_PARAMS
+from itertools import chain
 from debug_utils import *
 from ._qualifier import QUALIFIER_TYPE, parseQualifier, CREW_ROLE, QUALIFIER_TYPE_NAMES
 _XML_FILE = os.path.join(ITEM_DEFS_PATH, 'qualifiers.xml')
@@ -36,4 +37,9 @@ def init():
         return
     else:
         g_cache = QualifiersCache.fromXmlFile(_XML_FILE)
+        items = (q.conditionParams for q in g_cache.qualifiers.itervalues())
+        allParameters = set(chain(*items))
+        diff = allParameters - KNOWN_QUALIFIER_CONDITION_PARAMS
+        if diff:
+            LOG_WARNING('During parsing {0} found unregistered condition parameters({1})'.format(_XML_FILE, ','.join(diff)))
         return

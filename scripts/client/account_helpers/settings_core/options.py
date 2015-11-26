@@ -39,6 +39,7 @@ from account_helpers.settings_core.SettingsCore import g_settingsCore
 from account_helpers.settings_core.settings_constants import GRAPHICS
 from shared_utils import CONST_CONTAINER
 from gui import GUI_SETTINGS
+from gui.clans.clan_controller import g_clanCtrl
 from gui.shared.utils import graphics, functions
 from gui.shared.utils.graphics import g_monitorSettings
 from gui.shared.utils.key_mapping import getScaleformKey, getBigworldKey, getBigworldNameFromKey
@@ -689,6 +690,15 @@ class MessengerDateTimeSetting(MessengerSetting):
 
     def getDumpValue(self):
         return super(MessengerDateTimeSetting, self)._get()
+
+
+class ClansSetting(MessengerSetting):
+
+    def _get(self):
+        if g_clanCtrl.isEnabled():
+            return super(ClansSetting, self)._get()
+        else:
+            return None
 
 
 class GameplaySetting(StorageAccountSetting):

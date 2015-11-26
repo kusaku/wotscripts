@@ -9,6 +9,7 @@ import constants
 import GUI
 import BigWorld
 from gui.battle_control.dyn_squad_functional import IDynSquadEntityClient
+from gui.battle_control.gas_attack_controller import GAS_ATTACK_STATE
 from gui.shared import g_eventBus, EVENT_BUS_SCOPE
 from gui.shared.events import GameEvent
 from gui.shared.utils.plugins import PluginsCollection, IPlugin
@@ -47,6 +48,7 @@ class _FLAG_TYPE():
 
 
 _REPAIR_MARKER_TYPE = 'RepairPointIndicatorUI'
+_SAFE_ZONE_MARKER_TYPE = 'SafeZoneIndicatorUI'
 _RESOURCE_MARKER_TYPE = 'ResourcePointMarkerUI'
 
 class _RESOURCE_STATE():
@@ -83,6 +85,8 @@ class MarkersManager(Flash, IDynSquadEntityClient):
             plugins['repairs'] = _RepairsMarkerPlugin
         if arena_info.hasResourcePoints():
             plugins['resources'] = _ResourceMarkerPlugin
+        if arena_info.hasGasAttack():
+            plugins['safe_zone'] = _GasAttackSafeZonePlugin
         self.__plugins.addPlugins(plugins)
         self.__ownUI = None
         self.__parentUI = parentUI
@@ -754,3 +758,43 @@ class _ResourceMarkerPlugin(IPlugin):
         progress = float(amount) / totalAmount * 100
         handle, _, _, _ = self.__markers[pointID]
         self._parentObj.invokeMarker(handle, 'as_setProgress', [progress])
+
+
+class _GasAttackSafeZonePlugin(IPlugin):
+
+    def __init__(self, parentObj):
+        super(_GasAttackSafeZonePlugin, self).__init__(parentObj)
+        self.__safeZoneMarkerHandle = None
+        return
+
+    def init(self):
+        super(_GasAttackSafeZonePlugin, self).init()
+        g_sessionProvider.getGasAttackCtrl().onUpdated += self.__onGasAttackUpdate
+
+    def fini(self):
+        g_sessionProvider.getGasAttackCtrl().onUpdated -= self.__onGasAttackUpdate
+        super(_GasAttackSafeZonePlugin, self).fini()
+
+    def start(self):
+        super(_GasAttackSafeZonePlugin, self).start()
+
+    def stop(self):
+        self.__delSafeZoneMarker()
+        super(_GasAttackSafeZonePlugin, self).stop()
+
+    def __addSafeZoneMarker(self, pos):
+        if self.__safeZoneMarkerHandle is None:
+            _, self.__safeZoneMarkerHandle = self._parentObj.createStaticMarker(pos + _MARKER_POSITION_ADJUSTMENT, _SAFE_ZONE_MARKER_TYPE)
+        return
+
+    def __delSafeZoneMarker(self):
+        if self.__safeZoneMarkerHandle is not None:
+            self._parentObj.destroyStaticMarker(self.__safeZoneMarkerHandle)
+            self.__safeZoneMarkerHandle = None
+        return
+
+    def __onGasAttackUpdate(self, state):
+        if state.state == GAS_ATTACK_STATE.INSIDE_SAFE_ZONE:
+            self.__delSafeZoneMarker()
+        else:
+            self.__addSafeZoneMarker(state.center)

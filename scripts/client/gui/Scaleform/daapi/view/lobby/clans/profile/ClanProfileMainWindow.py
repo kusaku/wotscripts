@@ -2,7 +2,6 @@
 import weakref
 from gui.Scaleform.daapi.view.lobby.clans.clan_profile_event import ClanProfileEvent
 from gui.clans.clan_helpers import ClanListener
-from gui.clans.settings import CLAN_CONTROLLER_STATES
 from gui.Scaleform.daapi.view.lobby.clans.profile.ClanProfileBaseView import ClanProfileBaseView
 from gui.Scaleform.daapi.view.meta.ClanProfileMainWindowMeta import ClanProfileMainWindowMeta
 from gui.Scaleform.genConsts.CLANS_ALIASES import CLANS_ALIASES
@@ -24,9 +23,11 @@ class ClanProfileMainWindow(ClanProfileMainWindowMeta, ClanListener):
     def getClanDossier(self):
         return self.__clanDossier
 
-    def onClansStateChanged(self, oldStateID, newStateID):
-        if newStateID == CLAN_CONTROLLER_STATES.STATE_UNAVAILABLE:
-            self.destroy()
+    def onClanStateChanged(self, oldStateID, newStateID):
+        if not self.clansCtrl.isEnabled():
+            self.onWindowClose()
+        if not self.clansCtrl.isAvailable():
+            pass
 
     def _populate(self):
         super(ClanProfileMainWindow, self)._populate()

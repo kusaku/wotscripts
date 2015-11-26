@@ -225,7 +225,9 @@ class ArcadeCamera(ICamera, CallbackDelayer, TimeDeltaMeter):
             replayCtrl.setAimClipPosition(Vector2(self.__aim.offset()))
         self.measureDeltaTime()
         camDist = None
-        vehicleMProv = BigWorld.player().consistentMatrices.attachedVehicleMatrix
+        vehicle = BigWorld.player().getVehicleAttached()
+        initialVehicleMatrix = BigWorld.player().getOwnVehicleMatrix() if vehicle is None else vehicle.matrix
+        vehicleMProv = initialVehicleMatrix
         if not self.__postmortemMode:
             if closesDist:
                 camDist = self.__cfg['distRange'][0]

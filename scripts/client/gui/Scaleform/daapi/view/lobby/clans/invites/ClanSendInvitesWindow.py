@@ -27,12 +27,18 @@ class ClanSendInvitesWindow(SendInvitesWindow, UsersInfoHelper, ClanListener):
     @process
     def sendInvites(self, accountsToInvite, comment):
         self.as_showWaitingS(WAITING.CLANS_INVITES_SEND, {})
+        accountsToInvite = [ int(userDbID) for userDbID in accountsToInvite ]
         ctx = clan_ctx.CreateInviteCtx(self.__clanDbID, accountsToInvite, comment)
         self.__cooldown = ctx.getCooldown()
         result = yield self.clansCtrl.sendRequest(ctx)
-        if result.isSuccess():
-            accountNames = [ self.getUserName(userDbID) for userDbID in accountsToInvite ]
+        successAccounts = [ item.getAccountDbID() for item in ctx.getDataObj(result.data) ]
+        failedAccounts = set(accountsToInvite) - set(successAccounts)
+        if successAccounts:
+            accountNames = [ self.getUserName(userDbID) for userDbID in successAccounts ]
             SystemMessages.pushMessage(clans_fmts.getInvitesSentSysMsg(accountNames))
+        if failedAccounts:
+            accountNames = [ self.getUserName(userDbID) for userDbID in failedAccounts ]
+            SystemMessages.pushMessage(clans_fmts.getInvitesNotSentSysMsg(accountNames), type=SystemMessages.SM_TYPE.Error)
         self.as_hideWaitingS()
 
     def _populate(self):

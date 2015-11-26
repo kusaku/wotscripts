@@ -22,19 +22,24 @@ class _StatsForm(object):
 
     def getFormattedStrings(self, vInfoVO, vStatsVO, viStatsVO, ctx, fullPlayerName):
         format = self._findPlayerHTMLFormat(vInfoVO, ctx, self._ui.colorManager)
-        unicodeStr, _ = unicode_from_utf8(fullPlayerName)
-        if len(unicodeStr) > ctx.labelMaxLength:
-            fullPlayerName = '{0}..'.format(normalized_unicode_trim(fullPlayerName, ctx.labelMaxLength - 2))
+        fullPlayerName = self._trimLongName(fullPlayerName, ctx.playerLabelMaxLength)
+        vehicleName = self._trimLongName(vInfoVO.vehicleType.shortName, ctx.vehicleLabelMaxLength)
         fragsString = format % ' '
         if vStatsVO.frags:
             fragsString = format % str(vStatsVO.frags)
         return (format % fullPlayerName,
          fragsString,
-         format % vInfoVO.vehicleType.shortName,
+         format % vehicleName,
          ())
 
     def _findPlayerHTMLFormat(self, item, ctx, csManager):
         return findHTMLFormat(item, ctx, csManager)
+
+    def _trimLongName(self, name, maxLength):
+        unicodeStr, _ = unicode_from_utf8(name)
+        if len(unicodeStr) > maxLength:
+            name = '{0}..'.format(normalized_unicode_trim(name, maxLength - 2))
+        return name
 
 
 class _FalloutStatsForm(_StatsForm):
@@ -56,13 +61,11 @@ class _FalloutStatsForm(_StatsForm):
         padding = makeHtmlString('html_templates:battle', 'multiteamPadding', {})
         format = self._findPlayerHTMLFormat(vInfoVO, ctx, self._ui.colorManager)
         formatWithPadding = format + padding
-        unicodeStr, _ = unicode_from_utf8(fullPlayerName)
-        maxLabelLength = ctx.labelMaxLength
+        maxLabelLength = ctx.playerLabelMaxLength
         isIGR = vInfoVO.player.isIGR()
         if isIGR:
             maxLabelLength = maxLabelLength - 2
-        if len(unicodeStr) > maxLabelLength:
-            fullPlayerName = '{0}..'.format(normalized_unicode_trim(fullPlayerName, maxLabelLength - 2))
+        fullPlayerName = self._trimLongName(fullPlayerName, maxLabelLength)
         fragsString = formatWithPadding % ' '
         if vStatsVO.frags or viStatsVO.equipmentKills:
             fragsString = formatWithPadding % str(vStatsVO.frags + viStatsVO.equipmentKills)

@@ -25,3 +25,11 @@ class ClanProfileBaseViewMeta(BaseDAAPIComponent):
     def as_showWaitingS(self, value):
         if self._isDAAPIInited():
             return self.flashObject.as_showWaiting(value)
+
+    def as_showDummyS(self, data):
+        if self._isDAAPIInited():
+            return self.flashObject.as_showDummy(data)
+
+    def as_hideDummyS(self):
+        if self._isDAAPIInited():
+            return self.flashObject.as_hideDummy()

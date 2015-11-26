@@ -13,7 +13,7 @@ from helpers.CallbackDelayer import CallbackDelayer
 def logFunc(func):
 
     def wrapped(*args, **kwargs):
-        print '|||||||||||||||||| %s(%s, %s) |||||||||||' % (func.func_name, args, kwargs)
+        LOG_DEBUG('|||||||||||||||||| %s(%s, %s) |||||||||||' % (func.func_name, args, kwargs))
         func(*args, **kwargs)
 
     return wrapped
@@ -21,10 +21,13 @@ def logFunc(func):
 
 class ConsistentMatrices(object):
     attachedVehicleMatrix = property(lambda self: self.__attachedVehicleMatrix)
+    ownVehicleMatrix = property(lambda self: self.__ownVehicleMProv)
 
     def __init__(self):
         self.__attachedVehicleMatrix = Math.WGAdaptiveMatrixProvider()
         self.__attachedVehicleMatrix.target = mathUtils.createIdentityMatrix()
+        self.__ownVehicleMProv = Math.WGAdaptiveMatrixProvider()
+        self.__ownVehicleMProv.target = mathUtils.createIdentityMatrix()
         self.onVehicleMatrixBindingChanged = Event()
 
     def notifyEnterWorld(self, avatar):
@@ -38,11 +41,11 @@ class ConsistentMatrices(object):
             self.notifyVehicleChanged(avatar)
 
     def notifyPreBind(self, avatar, targetVehicleID = None):
-        bindMatrix = avatar.matrix
+        bindMatrix = Math.Matrix(self.attachedVehicleMatrix)
         useStatic = True
-        if avatar.vehicle is not None:
+        if avatar.vehicle is not None and avatar.vehicle.id == targetVehicleID:
             bindMatrix = avatar.vehicle.matrix
-            useStatic = avatar.vehicle.id != targetVehicleID
+            useStatic = False
         self.__setTarget(bindMatrix, useStatic)
         return
 
@@ -52,6 +55,8 @@ class ConsistentMatrices(object):
             self.onVehicleMatrixBindingChanged(True)
             return
         else:
+            if avatar.vehicle.id == avatar.playerVehicleID:
+                self.__linkOwnVehicle(avatar.vehicle)
             self.__setTarget(avatar.vehicle.matrix, False)
             return
 
@@ -68,6 +73,12 @@ class ConsistentMatrices(object):
             self.__attachedVehicleMatrix.target = matrix
         self.onVehicleMatrixBindingChanged(asStatic)
         return
+
+    def __linkOwnVehicle(self, vehicle):
+        if isinstance(vehicle.filter, BigWorld.WGVehicleFilter):
+            self.__ownVehicleMProv.target = vehicle.filter.bodyMatrix
+        else:
+            self.__ownVehicleMProv.target = vehicle.matrix
 
 
 class AvatarPositionControl(CallbackDelayer):

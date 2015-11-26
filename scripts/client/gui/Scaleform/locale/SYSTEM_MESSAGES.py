@@ -766,6 +766,12 @@ class SYSTEM_MESSAGES(object):
     CLANS_NOTIFICATIONS_REQUESTSENT = '#system_messages:clans/notifications/requestSent'
     CLANS_NOTIFICATIONS_INVITESENT = '#system_messages:clans/notifications/inviteSent'
     CLANS_NOTIFICATIONS_INVITESSENT = '#system_messages:clans/notifications/invitesSent'
+    CLANS_NOTIFICATIONS_INVITESENDERROR = '#system_messages:clans/notifications/inviteSendError'
+    CLANS_NOTIFICATIONS_INVITESSENDERROR = '#system_messages:clans/notifications/invitesSendError'
+    CLANS_NOTIFICATIONS_PERSONAL_APPACCEPTED = '#system_messages:clans/notifications/personal/appAccepted'
+    CLANS_NOTIFICATIONS_PERSONAL_APPDECLINED = '#system_messages:clans/notifications/personal/appDeclined'
+    CLANS_NOTIFICATIONS_INVITEACCEPTED = '#system_messages:clans/notifications/inviteAccepted'
+    CLANS_NOTIFICATIONS_INVITEDECLINED = '#system_messages:clans/notifications/inviteDeclined'
     EXCHANGE_SUCCESS = '#system_messages:exchange/success'
     EXCHANGE_NOT_ENOUGH_GOLD = '#system_messages:exchange/not_enough_gold'
     EXCHANGE_WALLET_NOT_AVAILABLE = '#system_messages:exchange/wallet_not_available'
@@ -1995,6 +2001,12 @@ class SYSTEM_MESSAGES(object):
      CLANS_NOTIFICATIONS_REQUESTSENT,
      CLANS_NOTIFICATIONS_INVITESENT,
      CLANS_NOTIFICATIONS_INVITESSENT,
+     CLANS_NOTIFICATIONS_INVITESENDERROR,
+     CLANS_NOTIFICATIONS_INVITESSENDERROR,
+     CLANS_NOTIFICATIONS_PERSONAL_APPACCEPTED,
+     CLANS_NOTIFICATIONS_PERSONAL_APPDECLINED,
+     CLANS_NOTIFICATIONS_INVITEACCEPTED,
+     CLANS_NOTIFICATIONS_INVITEDECLINED,
      EXCHANGE_SUCCESS,
      EXCHANGE_NOT_ENOUGH_GOLD,
      EXCHANGE_WALLET_NOT_AVAILABLE,

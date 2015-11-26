@@ -405,8 +405,14 @@ def __readMapActivitiesTimeframes(section):
     timeframes = []
     for activityXML in mapActivitiesXML.values():
         startTimes = activityXML.readVector2('startTime')
+        if (startTimes[0] >= 0) != (startTimes[1] >= 0):
+            raise Exception, "wrong subsection 'mapActivities/startTime'. All values of startTime must have same sign"
         possibility = activityXML.readFloat('possibility', 1.0)
-        timeframes.append((startTimes[0], startTimes[1], possibility))
+        visibilityMask = activityXML.readInt('visibilityMask', 255)
+        timeframes.append((startTimes[0],
+         startTimes[1],
+         possibility,
+         visibilityMask))
 
     return timeframes
 

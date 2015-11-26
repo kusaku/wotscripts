@@ -10,6 +10,7 @@ from datetime import datetime, timedelta, time as dt_time
 from client_request_lib import exceptions
 from client_request_lib.data_sources import base
 from base64 import b64encode
+import urllib
 EXAMPLES = {}
 DEFAULT_SINCE_DELAY = timedelta(days=1)
 SUCCESS_STATUSES = [200, 201]
@@ -217,7 +218,10 @@ class GatewayDataAccessor(base.BaseDataAccessor):
                 .. _favorite_attributes API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/statistics/favorite_attributes.html
         """
         url = '/clans/%s/favorite_attributes/' % clan_id
-        return self._request_data(callback, url, converters={'favorite_primetime': lambda x: x and datetime.strptime(x, '%H:%M').time()})
+        return self._request_data(callback, url, converters={'favorite_primetime': lambda x: x and datetime.strptime(x, '%H:%M').time(),
+         'favorite_arena_6': int,
+         'favorite_arena_8': int,
+         'favorite_arena_10': int})
 
     def get_accounts_clans(self, callback, account_ids, fields = None):
         """
@@ -349,13 +353,23 @@ class GatewayDataAccessor(base.BaseDataAccessor):
         data = {'status': 'declined'}
         return self._request_data(callback, url, method='PATCH', post_data=data)
 
+    def bulk_decline_invites(self, callback, invite_ids, fields = None):
+        """
+        decline application for accounts into clan using `decline invites API method`_
+                .. _decline invites API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/wgcc/invites.html#patch
+        """
+        url = '/clans/decline_invites/'
+        data = {'invite_ids': invite_ids}
+        return self._request_data(callback, url, method='PATCH', post_data=data)
+
     def search_clans(self, callback, search, get_total_count = False, fields = None, offset = None, limit = None):
         """
         return data from WGCCBE backend using `clans API method`_
         
                 .. _clans API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/api-common/clans.html
         """
-        get_params = {'search': search,
+        encoded_search = urllib.quote(search.encode('utf-8'))
+        get_params = {'search': encoded_search,
          'fields': fields}
         if get_total_count:
             get_params['get_total_count'] = 'true'

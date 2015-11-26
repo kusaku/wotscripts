@@ -3,6 +3,7 @@ from gui.Scaleform.locale.CUSTOMIZATION import CUSTOMIZATION
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.Scaleform.genConsts.BLOCKS_TOOLTIP_TYPES import BLOCKS_TOOLTIP_TYPES
 from gui.Scaleform.locale.VEHICLE_CUSTOMIZATION import VEHICLE_CUSTOMIZATION
+from gui.customization_2_0.data_aggregator import CUSTOMIZATION_TYPE
 from gui.shared.formatters import text_styles
 from gui.shared.tooltips.common import BlocksTooltipData
 from gui.shared.tooltips import formatters, TOOLTIP_TYPE
@@ -34,30 +35,54 @@ class CustomizationBonusTooltip(BlocksTooltipData):
         self._setWidth(330)
 
     def _packBlocks(self, *args):
+        self.__hasAppliedElements = False
         data = g_customizationController.carousel.slots.bonusPanel.bonusData[args[0]]
         bonuses = super(CustomizationBonusTooltip, self)._packBlocks()
         bonus = self.__getData(data, args[0])
         bonuses.append(self._packTitleBlock(bonus['title']))
         bonuses.append(self._packDescriptionBlock(bonus['description']))
-        bonuses.append(self._packBonusBlock(bonus['customizationTypes']['inscription'], CUSTOMIZATION.TYPESWITCHSCREEN_TYPENAME_PLURAL_2))
-        bonuses.append(self._packBonusBlock(bonus['customizationTypes']['embleb'], CUSTOMIZATION.TYPESWITCHSCREEN_TYPENAME_PLURAL_1))
-        if g_customizationController.carousel.slots.cart.items:
+        if CUSTOMIZATION_TYPE.CAMOUFLAGE in bonus['customizationTypes']:
+            bonuses.append(self._packBonusBlock(bonus['customizationTypes'][CUSTOMIZATION_TYPE.CAMOUFLAGE], CUSTOMIZATION.TYPESWITCHSCREEN_TYPENAME_PLURAL_0))
+        if CUSTOMIZATION_TYPE.EMBLEM in bonus['customizationTypes']:
+            bonuses.append(self._packBonusBlock(bonus['customizationTypes'][CUSTOMIZATION_TYPE.EMBLEM], CUSTOMIZATION.TYPESWITCHSCREEN_TYPENAME_PLURAL_1))
+        if CUSTOMIZATION_TYPE.INSCRIPTION in bonus['customizationTypes']:
+            bonuses.append(self._packBonusBlock(bonus['customizationTypes'][CUSTOMIZATION_TYPE.INSCRIPTION], CUSTOMIZATION.TYPESWITCHSCREEN_TYPENAME_PLURAL_2))
+        if self.__hasAppliedElements:
             bonuses.append(self._packFooterBlock(bonus))
         return bonuses
 
-    def __aggregateBonusesInfo(self):
-        return {'embleb': [{'power': text_styles.stats('+2%*'),
-                     'title': 'Skunk (forever)',
-                     'isTemporarily': True,
-                     'description': '*Lalalala Lalalala Lalalala Lalalala la la lala la la lalala la lalalal lalal la lalala.'}, {'power': text_styles.stats('+1%'),
-                     'title': 'Yeisk farmer (30 days)',
-                     'isTemporarily': False}],
-         'inscription': [{'power': text_styles.stats('+4%'),
-                          'title': 'Farmer (30 days)',
-                          'isTemporarily': False}, {'power': text_styles.stats('+8%*'),
-                          'title': 'Yeisk Skunk (30 days)',
-                          'isTemporarily': True,
-                          'description': '*Lalalala Lalalala Lalalala Lalalala la la lala la la lalala la lalalal lalal la lalala.'}]}
+    def __aggregateBonusesInfo(self, singleBonusData):
+        bonusVOs = {}
+        for cType in (CUSTOMIZATION_TYPE.CAMOUFLAGE, CUSTOMIZATION_TYPE.EMBLEM, CUSTOMIZATION_TYPE.INSCRIPTION):
+            if not singleBonusData[cType]:
+                continue
+            bonusVOs[cType] = []
+            for cItemData in singleBonusData[cType]:
+                if cItemData['isApplied'] and not self.__hasAppliedElements:
+                    self.__hasAppliedElements = True
+                cItem = cItemData['available']
+                cInstalledItem = cItemData['installed']
+                bonusDescription = cItem.qualifier.getDescription()
+                if cItemData['isApplied']:
+                    durationInfo = ''
+                    powerFormatter = text_styles.bonusAppliedText
+                    titleFormatter = text_styles.bonusAppliedText
+                else:
+                    powerFormatter = text_styles.stats
+                    titleFormatter = text_styles.main
+                    if cItem.isInDossier:
+                        durationInfo = ' ({0})'.format(_ms('#customization:bonusPanel/tooltip/duration/0'))
+                    else:
+                        durationInfo = ' ({0})'.format(_ms('#customization:bonusPanel/tooltip/duration/1', numberOfDaysLeft=cInstalledItem.getNumberOfDaysLeft()))
+                power = '+{0}%{1}'.format(cItem.qualifier.getValue(), '*' if bonusDescription is not None else '')
+                singleBonus = {'power': powerFormatter(power),
+                 'title': '{0}{1}'.format(titleFormatter(cItem.getName()), durationInfo),
+                 'isTemporarily': bonusDescription is not None}
+                if bonusDescription is not None:
+                    singleBonus['description'] = text_styles.standard(bonusDescription)
+                bonusVOs[cType].append(singleBonus)
+
+        return bonusVOs
 
     def _packTitleBlock(self, title):
         return formatters.packTitleDescBlock(title=text_styles.highTitle(title), padding={'top': -5})
@@ -70,7 +95,7 @@ class CustomizationBonusTooltip(BlocksTooltipData):
         for bonus in customizationTypeData:
             bonusPartDescription = text_styles.main(bonus['title'])
             if bonus['isTemporarily']:
-                bonusPartDescription += '\n' + text_styles.standard(bonus['description'])
+                bonusPartDescription += '\n' + text_styles.standard('*' + bonus['description'])
             subBlocks.append(formatters.packTextParameterBlockData(name=bonusPartDescription, value=bonus['power'], padding={'bottom': 8}, valueWidth=45))
 
         return formatters.packBuildUpBlockData(subBlocks, 0, BLOCKS_TOOLTIP_TYPES.TOOLTIP_BUILDUP_BLOCK_LINKAGE, {'left': 3})
@@ -81,9 +106,9 @@ class CustomizationBonusTooltip(BlocksTooltipData):
          'message': status}), padding={'bottom': -4,
          'top': -4})
 
-    def __getData(self, bonusData, qTypeName):
-        item = {'title': _ms(TOOLTIPS.CUSTOMIZATION_BONUSPANEL_BONUS_HEADER, bonus=_ms(_BONUS_TOOLTIP_NAME[qTypeName]), bonusPower='+{0}%'.format(bonusData['bonusTotalCount'])),
-         'description': {'img': bonusData['bonusIcon'],
+    def __getData(self, singleBonusData, qTypeName):
+        item = {'title': _ms(TOOLTIPS.CUSTOMIZATION_BONUSPANEL_BONUS_HEADER, bonus=_ms(_BONUS_TOOLTIP_NAME[qTypeName]), bonusPower='+{0}%'.format(singleBonusData['bonusTotalCount'])),
+         'description': {'img': singleBonusData['bonusIcon'],
                          'description': text_styles.main(_BONUS_TOOLTIP_BODY[qTypeName])},
-         'customizationTypes': self.__aggregateBonusesInfo()}
+         'customizationTypes': self.__aggregateBonusesInfo(singleBonusData)}
         return item

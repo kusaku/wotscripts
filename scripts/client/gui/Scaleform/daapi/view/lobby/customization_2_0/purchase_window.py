@@ -10,7 +10,7 @@ from gui.shared.ItemsCache import g_itemsCache
 from gui.shared.formatters import text_styles, icons
 from gui.shared.utils.functions import makeTooltip
 from helpers.i18n import makeString as _ms
-from gui.customization_2_0 import g_customizationController
+from gui.customization_2_0 import g_customizationController, shared
 from gui.customization_2_0.shared import formatPriceCredits, formatPriceGold, isSale, getSalePriceString
 
 class PurchaseWindow(CustomizationBuyWindowMeta):
@@ -193,7 +193,7 @@ class PurchaseDataProvider(SortableDAAPIDataProvider):
              'imgCurrency': item['currencyIcon'],
              'lblPrice': priceFormatter(item['price']),
              'price': item['price'],
-             'lblBonus': text_styles.stats('+{0}%'.format(item['bonusValue']))}
+             'lblBonus': text_styles.stats('+{0}%{1}'.format(item['bonusValue'], item['isConditional']))}
             if isSale(item['type'], item['duration']):
                 isGold = item['currencyIcon'] != RES_ICONS.MAPS_ICONS_LIBRARY_CREDITSICON_2
                 dpItem['salePrice'] = getSalePriceString(isGold, item['price'])

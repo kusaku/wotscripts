@@ -64,17 +64,20 @@ class _EventsCache(object):
         self.__random.init()
         self.__fallout.init()
 
-    def start(self):
-        self.__companies.start()
-
     def fini(self):
         self.__fallout.fini()
         self.__random.fini()
         self.__em.clear()
         self.__clearInvalidateCallback()
 
-    def clear(self):
+    def start(self):
+        self.__companies.start()
+
+    def stop(self):
         self.__companies.stop()
+
+    def clear(self):
+        self.stop()
         quests_caches.clearNavInfo()
 
     @property

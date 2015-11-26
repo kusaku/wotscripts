@@ -48,11 +48,11 @@ class CustomizationItemTooltip(BlocksTooltipData):
         if len(args) == 1:
             self.__cItem = g_customizationController.carousel.items[args[0]]['object']
             self.__cItemType = g_customizationController.carousel.currentType
-            self.__cSlotId = g_customizationController.carousel.slots.currentIdx
+            self.__currentSlotIdx = g_customizationController.carousel.currentSlotIdx
         else:
             self.__cItem = g_customizationController.carousel.slots.getSlotItem(*args)
             self.__cItemType = args[1]
-            self.__cSlotId = args[0]
+            self.__currentSlotIdx = args[0]
         item = self.__getItemData()
         items = super(CustomizationItemTooltip, self)._packBlocks()
         items.append(self._packTitleBlock(item))
@@ -78,7 +78,7 @@ class CustomizationItemTooltip(BlocksTooltipData):
         return formatters.packImageBlockData(img=item['icon'], align=BLOCKS_TOOLTIP_TYPES.ALIGN_CENTER, width=actualWidth, height=84)
 
     def _packBonusBlock(self, item):
-        bonusTitleLocal = makeHtmlString('html_templates:lobby/textStyle', 'bonusLocalText', {'message': item['bonus_title_local']})
+        bonusTitleLocal = makeHtmlString('html_templates:lobby/textStyle', 'bonusLocalText', {'message': '{0}{1}'.format(item['bonus_title_local'], item['isConditional'])})
         return formatters.packBuildUpBlockData([formatters.packImageTextBlockData(title=text_styles.concatStylesWithSpace(bonusTitleLocal, text_styles.stats(item['bonus_title_global'])), desc=text_styles.main(item['bonus_desc']), img=item['bonus_icon'], imgPadding={'left': 11,
           'top': 3}, txtGap=-4, txtOffset=70, padding={'top': -1,
           'left': 7})], 0, BLOCKS_TOOLTIP_TYPES.TOOLTIP_BUILDUP_BLOCK_WHITE_BG_LINKAGE)
@@ -124,7 +124,7 @@ class CustomizationItemTooltip(BlocksTooltipData):
             descriptionMsgID = VEHICLE_CUSTOMIZATION.CUSTOMIZATION_TOOLTIP_DESCRIPTION_HISTORY_TITLE
         else:
             descriptionMsgID = VEHICLE_CUSTOMIZATION.CUSTOMIZATION_TOOLTIP_DESCRIPTION_CONDITIONS_TITLE
-        return formatters.packImageTextBlockData(title=text_styles.middleTitle(_ms(descriptionMsgID)), desc=text_styles.standard(item['description']), txtGap=8)
+        return formatters.packImageTextBlockData(title=text_styles.middleTitle(_ms(descriptionMsgID)), desc=text_styles.standard('{0}{1}'.format(item['isConditional'], item['description'])), txtGap=8)
 
     def _packStatusBlock(self, item):
         status = ''
@@ -143,7 +143,7 @@ class CustomizationItemTooltip(BlocksTooltipData):
          'top': -4})
 
     def __getItemData(self):
-        selectedSlotItemID = g_customizationController.carousel.slots.getInstallItemID(self.__cSlotId, self.__cItemType)
+        selectedSlotItemID = g_customizationController.carousel.slots.getInstalledItem(self.__currentSlotIdx, self.__cItemType).getID()
         isInSlot = selectedSlotItemID == self.__cItem.getID()
         wasBought = False
         if self.__cItem.getIgrType() != IGR_TYPE.NONE:
@@ -168,8 +168,8 @@ class CustomizationItemTooltip(BlocksTooltipData):
             wasBought = True
             status = STATUS.ON_BOARD if isInSlot else STATUS.ALREADY_HAVE
         elif isInSlot:
-            days = g_customizationController.carousel.slots.getInstallDays(self.__cSlotId, self.__cItemType)
-            leftDays = g_customizationController.carousel.slots.getInstallDaysLeft(self.__cSlotId, self.__cItemType)
+            days = g_customizationController.carousel.slots.getInstalledItem(self.__currentSlotIdx, self.__cItemType).duration
+            leftDays = g_customizationController.carousel.slots.getInstalledItem(self.__currentSlotIdx, self.__cItemType).getNumberOfDaysLeft()
             buyItems = [{'value': 0,
               'type': BUY_ITEM_TYPE.ALREADY_HAVE_TEMP,
               'isSale': False,
@@ -198,8 +198,15 @@ class CustomizationItemTooltip(BlocksTooltipData):
          'wasBought': wasBought,
          'buyItems': buyItems,
          'status': status,
-         'description': self.__cItem.getDescription()}
+         'description': self.__cItem.getDescription(),
+         'isConditional': self.__isSituationBonus(self.__cItem)}
         return item
+
+    def __isSituationBonus(self, item):
+        if self.__cItemType != CUSTOMIZATION_TYPE.CAMOUFLAGE:
+            return shared.isConditional(item)
+        else:
+            return ''
 
     def __isSale(self, wayToBuy):
         if wayToBuy == BUY_ITEM_TYPE.WAYS_TO_BUY_FOREVER:

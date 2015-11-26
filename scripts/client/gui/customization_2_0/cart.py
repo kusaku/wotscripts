@@ -7,6 +7,7 @@ from gui import SystemMessages, g_tankActiveCamouflage
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.Scaleform.locale.SYSTEM_MESSAGES import SYSTEM_MESSAGES
 from data_aggregator import CUSTOMIZATION_TYPE
+from gui.customization_2_0 import shared
 from items import vehicles
 from helpers.i18n import makeString as _ms
 from shared import forEachSlotIn
@@ -92,7 +93,7 @@ class Cart(object):
         self.__elementsToProcess = len(cartItems - excludedItems)
         for item in self.__purchaseData:
             if (item['itemID'], item['type']) not in excludedItems:
-                self.buyItem(item['type'], item['spot'], item['idx'], item['itemID'], item['duration'], item['price'], item['currencyIcon'])
+                self.buyItem(item['type'], item['spot'], self.__calculateVehicleIndex(item['idx'], item['type']), item['itemID'], item['duration'], item['price'], item['currencyIcon'])
 
     def buyItem(self, cType, cSpot, slotIdx, cItemID, duration, price = -1, currencyIcon = RES_ICONS.MAPS_ICONS_LIBRARY_GOLDICON_2):
         purchaseFunction = {CUSTOMIZATION_TYPE.CAMOUFLAGE: BigWorld.player().inventory.changeVehicleCamouflage,
@@ -127,7 +128,8 @@ class Cart(object):
              'bonusValue': cItem.qualifier.getValue(),
              'bonusIcon': cItem.qualifier.getIcon16x16(),
              'duration': newSlotItem['duration'],
-             'spot': newSlotItem['spot']})
+             'spot': newSlotItem['spot'],
+             'isConditional': shared.isConditional(cItem)})
 
     def __synchronizeDossierIfRequired(self):
         self.__elementsToProcess -= 1
@@ -173,3 +175,13 @@ class Cart(object):
         SystemMessages.pushMessage(message)
         self.__synchronizeDossierIfRequired()
         self.purchaseProcessed()
+
+    def __calculateVehicleIndex(self, initialIndex, cType):
+        if initialIndex == 1:
+            slotItem = self.__initialSlotsData['data'][cType]['data'][initialIndex]
+            adjacentSlotItem = self.__initialSlotsData['data'][cType]['data'][0]
+            if slotItem['spot'] != adjacentSlotItem['spot']:
+                return initialIndex - 1
+            else:
+                return initialIndex
+        return initialIndex

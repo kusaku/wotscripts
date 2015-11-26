@@ -14,7 +14,7 @@ from Math import Vector3
 from shared_utils import makeTupleByDict
 _WARNING_DISTANCE = 30
 
-class _GAS_ATTACK_STATE(object):
+class GAS_ATTACK_STATE(object):
     NO_ATTACK = 0
     PREPEARING = 1
     INSIDE_SAFE_ZONE = 2
@@ -24,8 +24,8 @@ class _GAS_ATTACK_STATE(object):
 
 
 _GasAttackState = namedtuple('_GasAttackState', ('state', 'prevState', 'center', 'currentRadius', 'safeZoneRadius', 'centerDistance', 'safeZoneDistance', 'gasCloudDistance', 'timeLeft'))
-_GasAttackState.__new__.__defaults__ = (_GAS_ATTACK_STATE.NO_ATTACK,
- _GAS_ATTACK_STATE.NO_ATTACK,
+_GasAttackState.__new__.__defaults__ = (GAS_ATTACK_STATE.NO_ATTACK,
+ GAS_ATTACK_STATE.NO_ATTACK,
  0,
  Vector3(0, 0, 0),
  0,
@@ -48,7 +48,6 @@ class _SafeZoneDirectionIndicator(Flash):
         self.movie.scaleMode = 'NoScale'
         self.component.focus = False
         self.component.moveFocus = False
-        self.component.showAlways = True
         self.component.heightMode = 'PIXEL'
         self.component.widthMode = 'PIXEL'
         self.flashSize = self.__FLASH_SIZE
@@ -182,13 +181,13 @@ class GasAttackController(object):
 
     def __updatePanel(self):
         if self.__panelUI is not None and self.__state.state != self.__state.prevState:
-            if self.__state.state == _GAS_ATTACK_STATE.PREPEARING:
+            if self.__state.state == GAS_ATTACK_STATE.PREPEARING:
                 self.__panelUI.showStart()
-            elif self.__state.state == _GAS_ATTACK_STATE.INSIDE_SAFE_ZONE:
+            elif self.__state.state == GAS_ATTACK_STATE.INSIDE_SAFE_ZONE:
                 self.__panelUI.showSafeZone()
-            elif self.__state.state == _GAS_ATTACK_STATE.INSIDE_CLOUD:
+            elif self.__state.state == GAS_ATTACK_STATE.INSIDE_CLOUD:
                 self.__panelUI.showGasAttack()
-            elif self.__state.state in (_GAS_ATTACK_STATE.NEAR_SAFE, _GAS_ATTACK_STATE.NEAR_CLOUD):
+            elif self.__state.state in (GAS_ATTACK_STATE.NEAR_SAFE, GAS_ATTACK_STATE.NEAR_CLOUD):
                 self.__panelUI.showGasAttackNear()
             else:
                 self.__panelUI.hide()
@@ -196,20 +195,20 @@ class GasAttackController(object):
 
     def __updateSafeZone(self):
         if self.__safeZoneUI is not None:
-            if self.__state.state == _GAS_ATTACK_STATE.NEAR_SAFE:
+            if self.__state.state == GAS_ATTACK_STATE.NEAR_SAFE:
                 self.__safeZoneUI.showTimer(time_utils.getTimeLeftFormat(self.__state.timeLeft))
             elif self.__state.state != self.__state.prevState:
                 self.__safeZoneUI.hideTimer()
         return
 
     def __initIndicator(self):
-        if self.__state.state in (_GAS_ATTACK_STATE.NEAR_SAFE, _GAS_ATTACK_STATE.NEAR_CLOUD, _GAS_ATTACK_STATE.INSIDE_CLOUD) and self.__indicatorCtrl is None:
+        if self.__state.state in (GAS_ATTACK_STATE.NEAR_SAFE, GAS_ATTACK_STATE.NEAR_CLOUD, GAS_ATTACK_STATE.INSIDE_CLOUD) and self.__indicatorCtrl is None:
             indicator = _SafeZoneDirectionIndicator()
             self.__indicatorCtrl = _SafeZoneDirectionIndicatorCtrl(indicator, self.__state.center, self.__state.safeZoneDistance)
         return
 
     def __updateIndicator(self):
-        isVisible = self.__state.state in (_GAS_ATTACK_STATE.NEAR_SAFE, _GAS_ATTACK_STATE.NEAR_CLOUD, _GAS_ATTACK_STATE.INSIDE_CLOUD)
+        isVisible = self.__state.state in (GAS_ATTACK_STATE.NEAR_SAFE, GAS_ATTACK_STATE.NEAR_CLOUD, GAS_ATTACK_STATE.INSIDE_CLOUD)
         if self.__indicatorCtrl is not None:
             if isVisible:
                 self.__indicatorCtrl.update(self.__state.safeZoneDistance)
@@ -227,16 +226,16 @@ class GasAttackController(object):
 
     def __updateDeathZoneIndicator(self):
         if self.__battleUI is not None and self.__state.state != self.__state.prevState:
-            if self.__state.state == _GAS_ATTACK_STATE.NEAR_CLOUD:
+            if self.__state.state == GAS_ATTACK_STATE.NEAR_CLOUD:
                 self.__battleUI.showDeathzoneTimer((DEATH_ZONES.GAS_ATTACK, -1, 'warning'))
-            elif self.__state.state != _GAS_ATTACK_STATE.INSIDE_CLOUD:
+            elif self.__state.state != GAS_ATTACK_STATE.INSIDE_CLOUD:
                 self.__battleUI.hideDeathzoneTimer(DEATH_ZONES.GAS_ATTACK)
         return
 
     def __updateState(self):
         params = {}
         if self.__gasAttackMgr.state == GasAttackState.PREPARE:
-            params['state'] = _GAS_ATTACK_STATE.PREPEARING
+            params['state'] = GAS_ATTACK_STATE.PREPEARING
             params['prevState'] = self.__state.state
             params['center'] = self.__gasAttackMgr.settings.position
             params['timeLeft'] = self.__getTimeLeft()
@@ -246,13 +245,13 @@ class GasAttackController(object):
             cloudDistance = self.__getCloudDistance(currentRadius)
             safeZoneDistance = self.__getSafeZoneDistance()
             if safeZoneDistance == 0:
-                state = _GAS_ATTACK_STATE.INSIDE_SAFE_ZONE
+                state = GAS_ATTACK_STATE.INSIDE_SAFE_ZONE
             elif cloudDistance == 0:
-                state = _GAS_ATTACK_STATE.INSIDE_CLOUD
+                state = GAS_ATTACK_STATE.INSIDE_CLOUD
             elif cloudDistance <= _WARNING_DISTANCE:
-                state = _GAS_ATTACK_STATE.NEAR_CLOUD
+                state = GAS_ATTACK_STATE.NEAR_CLOUD
             else:
-                state = _GAS_ATTACK_STATE.NEAR_SAFE
+                state = GAS_ATTACK_STATE.NEAR_SAFE
             params['state'] = state
             params['prevState'] = self.__state.state
             params['center'] = self.__gasAttackMgr.settings.position
@@ -265,7 +264,7 @@ class GasAttackController(object):
         self.__state = makeTupleByDict(_GasAttackState, params)
 
     def __startTimer(self):
-        if self.__state.state not in (_GAS_ATTACK_STATE.NO_ATTACK, _GAS_ATTACK_STATE.PREPEARING):
+        if self.__state.state not in (GAS_ATTACK_STATE.NO_ATTACK, GAS_ATTACK_STATE.PREPEARING):
             self.__updateIndicator()
             self.__updateDeathZoneIndicator()
             self.__updateSafeZone()
@@ -293,9 +292,12 @@ class GasAttackController(object):
         return max(0, attackEndTime - BigWorld.serverTime())
 
     def __getCenterDistance(self):
-        x0, y0, z0 = self.__gasAttackMgr.settings.position
-        x1, y1, z1 = BigWorld.player().vehicle.position
-        return math.sqrt(math.pow(x0 - x1, 2) + math.pow(z0 - z1, 2) + math.pow(y0 - y1, 2))
+        player = BigWorld.player()
+        if player.isVehicleAlive:
+            x0, y0, z0 = self.__gasAttackMgr.settings.position
+            x1, y1, z1 = player.vehicle.position
+            return math.sqrt(math.pow(x0 - x1, 2) + math.pow(z0 - z1, 2) + math.pow(y0 - y1, 2))
+        return 0
 
     def __getSafeZoneDistance(self):
         return max(0, self.__getCenterDistance() - self.__gasAttackMgr.settings.endRadius)

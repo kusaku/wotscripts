@@ -13,6 +13,7 @@ from gui.prb_control.functional import interfaces
 from gui.prb_control.settings import FUNCTIONAL_FLAG, CTRL_ENTITY_TYPE
 from gui.prb_control.settings import REQUEST_TYPE
 from gui.shared.utils.ListenersCollection import ListenersCollection
+from helpers import isPlayerAccount
 __all__ = ('PreQueueEntry', 'PlayersEventsSubscriber', 'NoPreQueueFunctional', 'AccountQueueFunctional')
 
 class PreQueueEntry(interfaces.IPrbEntry):
@@ -88,8 +89,9 @@ class PreQueueFunctional(ListenersCollection, interfaces.IPreQueueFunctional):
 
     def fini(self, woEvents = False):
         self._hasEntity = False
-        for listener in self._listeners:
-            listener.onPreQueueFunctionalFinished()
+        if isPlayerAccount():
+            for listener in self._listeners:
+                listener.onPreQueueFunctionalFinished()
 
         self._setListenerClass(None)
         self._subscriber.unsubscribe(self)

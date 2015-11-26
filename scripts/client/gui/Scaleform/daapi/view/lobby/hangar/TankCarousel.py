@@ -185,9 +185,10 @@ class TankCarousel(TankCarouselMeta, GlobalListener):
             vehicle = filteredVehs.get(intCD)
             if vehicle is not None:
                 vState, vStateLvl = vehicle.getState()
-                isSuitableVeh = vState != Vehicle.VEHICLE_STATE.BATTLE and not isSuitablePredicate(vehicle.intCD)
-                isSuitableVeh |= self.__multiselectionMode and not vehicle.isFalloutAvailable
-                if isSuitableVeh:
+                isNotSuitableVeh = vState != Vehicle.VEHICLE_STATE.BATTLE and not isSuitablePredicate(vehicle.intCD)
+                isNotSuitableVeh |= self.__multiselectionMode and not vehicle.isFalloutAvailable
+                isNotSuitableVeh |= vehicle.getCustomState() == Vehicle.VEHICLE_STATE.UNSUITABLE_TO_QUEUE
+                if isNotSuitableVeh:
                     vState, vStateLvl = Vehicle.VEHICLE_STATE.NOT_SUITABLE, Vehicle.VEHICLE_STATE_LEVEL.WARNING
                 canSelect, tooltip = self.__falloutCtrl.canSelectVehicle(vehicle)
                 rentInfoStr = RentLeftFormatter(vehicle.rentInfo, vehicle.isPremiumIGR).getRentLeftStr()
@@ -201,7 +202,7 @@ class TankCarousel(TankCarouselMeta, GlobalListener):
         if self.__updateVehiclesTimerId is None and (isVehTypeLock or isGlobalVehLock):
             self.__updateVehiclesTimerId = BigWorld.callback(self.UPDATE_LOCKS_PERIOD, self.updateLockTimers)
             LOG_DEBUG('Lock timer updated')
-        if updateFallout:
+        if self.__multiselectionMode and updateFallout and not isSet:
             self._updateFallout()
         return
 

@@ -7,10 +7,10 @@ from gui.LobbyContext import g_lobbyContext
 from gui.clans.restrictions import AccountClanLimits, DefaultAccountClanLimits
 from gui.clans import contexts
 from gui.clans.factory import g_clanFactory
-from gui.clans.settings import CLAN_CONTROLLER_STATES, LOGIN_STATE
+from gui.clans.settings import CLAN_CONTROLLER_STATES, LOGIN_STATE, CLAN_REQUESTED_DATA_TYPE
 from gui.clans.requests import ClanRequestResponse
 from gui.shared.utils.decorators import ReprInjector
-from gui.shared.utils import backoff, getPlayerDatabaseID
+from gui.shared.utils import getPlayerDatabaseID
 from debug_utils import LOG_WARNING, LOG_DEBUG
 _PING_TIME_INTERVAL = 2
 _BACK_OFF_MIN_DELAY = 10
@@ -86,7 +86,7 @@ class _ClanState(object):
         return state
 
     def _makeErrorResponse(self):
-        return ClanRequestResponse(ResponseCodes.UNKNOWN_ERROR, str(), None)
+        return ClanRequestResponse(ResponseCodes.UNKNOWN_ERROR, 'Request cannot be sent from the current state', None)
 
 
 @ReprInjector.withParent()
@@ -186,6 +186,16 @@ class ClanUnavailableState(_ClanWebState):
     def invalidate(self):
         self._ping()
 
+    @async
+    @process
+    def sendRequest(self, ctx, callback, allowDelay = True):
+        if ctx.getRequestType() == CLAN_REQUESTED_DATA_TYPE.PING:
+            result = yield super(ClanUnavailableState, self).sendRequest(ctx, allowDelay=allowDelay)
+        else:
+            result = ClanRequestResponse(ResponseCodes.WGCG_ERROR, 'WGCG is not available.', None)
+        callback(result)
+        return
+
     @process
     def _ping(self):
         if self.__isPingRunning:
@@ -194,13 +204,13 @@ class ClanUnavailableState(_ClanWebState):
         self.__isPingRunning = True
         result = yield self.sendRequest(self.__ctx, allowDelay=True)
         self.__isPingRunning = False
-        if result.isSuccess():
+        if result.isSuccess() and self._clanCtrl.simWGCGEnabled():
             self._changeState(ClanAvailableState(self._clanCtrl))
         else:
             self._schedulePingCB()
 
     def _schedulePingCB(self):
-        if self.__bwCbId is not None:
+        if self.__bwCbId is None:
             self.__bwCbId = BigWorld.callback(_PING_TIME_INTERVAL, self._ping)
         return
 
@@ -247,11 +257,14 @@ class ClanAvailableState(_ClanWebState):
         if ctx.isAuthorizationRequired() and not self.isLoggedOn():
             self.__waitingRequests.append((ctx,
              callback,
-             self._makeErrorResponse(),
+             ClanRequestResponse(ResponseCodes.AUTHENTIFICATION_ERROR, 'The user is not authorized.', None),
              allowDelay))
             self.login()
         else:
-            result = yield super(ClanAvailableState, self).sendRequest(ctx, allowDelay=allowDelay)
+            if self._clanCtrl.simWGCGEnabled():
+                result = yield super(ClanAvailableState, self).sendRequest(ctx, allowDelay=allowDelay)
+            else:
+                result = ClanRequestResponse(ResponseCodes.WGCG_ERROR, 'Simulated WGCG error!', None)
             if result.code == ResponseCodes.WGCG_ERROR:
                 LOG_DEBUG('WGCG error has occurred! The state will be changed to NA.')
                 self._changeState(ClanUnavailableState(self._clanCtrl))
@@ -265,6 +278,7 @@ class ClanAvailableState(_ClanWebState):
                 self.login()
             else:
                 callback(result)
+        return
 
     @process
     def login(self):

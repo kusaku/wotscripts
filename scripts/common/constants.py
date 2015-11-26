@@ -17,7 +17,7 @@ else:
     IS_BASEAPP = BigWorld.component in ('base', 'service')
     IS_WEB = False
 
-CURRENT_REALM = 'ST'
+CURRENT_REALM = 'CT'
 DEFAULT_LANGUAGE = 'ru'
 AUTH_REALM = 'RU'
 IS_DEVELOPMENT = CURRENT_REALM == 'DEV'
@@ -1595,6 +1595,21 @@ class DEATH_ZONES:
     STATIC = 0
     GAS_ATTACK = 1
 
+
+KNOWN_QUALIFIER_CONDITION_PARAMS = {'aliveSquadMembersCount',
+ 'aliveAlliesCount',
+ 'enemiesCountNearby',
+ 'lightTankEnemiesCountNearby',
+ 'heavyTankEnemiesCountNearby',
+ 'mediumTankEnemiesCountNearby',
+ 'AT_SPGEnemiesCountNearby',
+ 'now',
+ 'playerTankHealthPercent',
+ 'enemyTankDetectionTime',
+ 'mapKind',
+ 'playerTankUnproductiveHitTime',
+ 'enemyTankDestructionTime',
+ 'enemyTankCriticalHitTime'}
 
 class FALLOUT_ARENA_TYPE:
     GAMEPLAY_NAMES = {'steelHunt': ('fallout', 'fallout2', 'fallout3'),
