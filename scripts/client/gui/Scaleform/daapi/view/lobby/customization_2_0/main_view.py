@@ -72,9 +72,9 @@ class MainView(CustomizationMainViewMeta):
         isContinue = True
         installedItem = g_customizationController.carousel.slots.getInstalledItem()
         slotItem = g_customizationController.carousel.slots.getSlotItem()
-        type = g_customizationController.carousel.currentType
+        cType = g_customizationController.carousel.currentType
         if installedItem.getID() == slotItem.getID() and installedItem.duration > 0:
-            isContinue = yield DialogsInterface.showDialog(getDialogRemoveElement(slotItem.getName(), type))
+            isContinue = yield DialogsInterface.showDialog(getDialogRemoveElement(slotItem.getName(), cType))
         if isContinue:
             g_customizationController.carousel.slots.updateSlot({'id': -1})
 
@@ -90,10 +90,10 @@ class MainView(CustomizationMainViewMeta):
         carouselItem = g_customizationController.carousel.items[idx]['object']
         cType = g_customizationController.carousel.currentType
         if carouselItem.isInDossier:
-            if g_customizationController.carousel.slots.getInstalledItem().getNumberOfDaysLeft() > 0:
+            if g_customizationController.carousel.slots.getInstalledItem().getNumberOfDaysLeft() > 0 and carouselItem.getIgrType() != IGR_TYPE.PREMIUM:
                 slotItem = g_customizationController.carousel.slots.getSlotItem()
                 isContinue = yield DialogsInterface.showDialog(getDialogReplaceElement(slotItem.getName(), cType))
-            if carouselItem.numberOfDays is not None:
+            if carouselItem.numberOfDays is not None and not carouselItem.isReplacedByIGRItem:
                 isContinue = yield DialogsInterface.showDialog(self.__getInvoiceItemDialogMeta('temporary', cType, carouselItem, {'willBeDeleted': text_styles.error(_ms('#dialogs:customization/install_invoice_item/will_be_deleted'))}))
             elif carouselItem.numberOfItems is not None:
                 if carouselItem.numberOfItems > 1:

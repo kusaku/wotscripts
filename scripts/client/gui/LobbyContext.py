@@ -6,6 +6,7 @@ from helpers.ServerSettings import ServerSettings
 from account_helpers import isRoamingEnabled
 from debug_utils import LOG_ERROR, LOG_NOTE
 from gui.shared import g_itemsCache
+from ids_generators import Int32IDGenerator
 from predefined_hosts import g_preDefinedHosts
 
 def _isSkipPeripheryChecking():
@@ -18,14 +19,17 @@ class _LobbyContext(object):
         super(_LobbyContext, self).__init__()
         self.__credentials = None
         self.__guiCtx = {}
+        self.__arenaUniqueIDs = {}
         self.__serverSettings = None
         self.__battlesCount = None
+        self.__clientArenaIDGenerator = Int32IDGenerator()
         return
 
     def clear(self):
         self.__credentials = None
         self.__battlesCount = None
         self.__guiCtx.clear()
+        self.__arenaUniqueIDs.clear()
         if self.__serverSettings:
             self.__serverSettings.clear()
         return
@@ -35,6 +39,21 @@ class _LobbyContext(object):
 
     def onAccountShowGUI(self, ctx):
         self.__guiCtx = ctx or {}
+
+    def getArenaUniqueIDByClientID(self, clientArenaID):
+        for arenaUniqueID, cArenaID in self.__arenaUniqueIDs.iteritems():
+            if cArenaID == clientArenaID:
+                return arenaUniqueID
+
+        return 0
+
+    def getClientIDByArenaUniqueID(self, arenaUniqueID):
+        if arenaUniqueID in self.__arenaUniqueIDs:
+            return self.__arenaUniqueIDs[arenaUniqueID]
+        else:
+            clientID = self.__clientArenaIDGenerator.next()
+            self.__arenaUniqueIDs[arenaUniqueID] = clientID
+            return clientID
 
     def setCredentials(self, login, token):
         self.__credentials = (login, token)

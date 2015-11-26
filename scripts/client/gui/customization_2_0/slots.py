@@ -128,28 +128,29 @@ class Slots(object):
                 itemInAnotherSlot = self.getSlotItem(cType=cType, slotIdx=anotherSlotIdx)
                 if itemInAnotherSlot is not None:
                     typedData[anotherSlotIdx]['price'] = itemInAnotherSlot.getPrice(typedData[anotherSlotIdx]['duration'])
-        oldSlotItem = self.__data['data'][cType]['data'][slotIdx]
+        currentSlotItem = self.__data['data'][cType]['data'][slotIdx]
         newSlotItem = {'itemID': item['id'],
          'img': img,
          'purchaseTypeIcon': RES_ICONS.MAPS_ICONS_LIBRARY_GOLDICON_2 if duration == 0 else RES_ICONS.MAPS_ICONS_LIBRARY_CREDITSICON_2,
          'bonus': bonus,
          'duration': duration,
-         'spot': oldSlotItem['spot'],
+         'spot': currentSlotItem['spot'],
          'price': price,
          'isInDossier': isInDossier,
          'slotTooltip': makeTooltip(_ms(TOOLTIPS.CUSTOMIZATION_SLOT_HEADER, groupName=_ms(_SLOT_TOOLTIP_MAPPING[self.__currentType])), TOOLTIPS.CUSTOMIZATION_SLOT_BODY),
          'removeBtnTooltip': makeTooltip(TOOLTIPS.CUSTOMIZATION_SLOTREMOVE_HEADER, TOOLTIPS.CUSTOMIZATION_SLOTREMOVE_BODY)}
         self.__updateViewModel(cType, slotIdx, newSlotItem)
-        if newSlotItem['itemID'] < 0:
-            if oldSlotItem['itemID'] >= 0:
-                if oldSlotItem['isInDossier']:
-                    self.cart.buyItem(cType, newSlotItem['spot'], self.calculateVehicleIndex(slotIdx, cType), oldSlotItem['itemID'], 0, price=-1)
-                else:
-                    initialSlotItem = copy.deepcopy(self.__initialData['data'][cType]['data'][slotIdx])
-                    self.__setSlotAndUpdateView(cType, slotIdx, initialSlotItem)
+        initialSlotItem = self.__initialData['data'][cType]['data'][slotIdx]
+        if newSlotItem['itemID'] < 0 or initialSlotItem['itemID'] == newSlotItem['itemID']:
+            if currentSlotItem['isInDossier']:
+                self.cart.buyItem(cType, newSlotItem['spot'], self.calculateVehicleIndex(slotIdx, cType), currentSlotItem['itemID'], 0, price=-1)
+            else:
+                initialSlotItem = copy.deepcopy(initialSlotItem)
+                self.__setSlotAndUpdateView(cType, slotIdx, initialSlotItem)
         elif newSlotItem['isInDossier']:
-            if item['object'].numberOfDays is not None:
-                itemDuration = 7
+            numberOfDays = item['object'].numberOfDays
+            if numberOfDays is not None:
+                itemDuration = numberOfDays if numberOfDays == 30 else 7
                 price = -2
             else:
                 itemDuration = 0

@@ -54,14 +54,12 @@ class PurchaseWindow(CustomizationBuyWindowMeta):
         self.__searchDP.fini()
         if g_customizationController.carousel is not None:
             g_customizationController.carousel.slots.cart.purchaseProcessed -= self.destroy
-            g_customizationController.carousel.slots.cart.purchaseProcessed -= self.__emptyCart
         super(PurchaseWindow, self)._dispose()
         return
 
     def _populate(self):
         super(PurchaseWindow, self)._populate()
         g_customizationController.carousel.slots.cart.purchaseProcessed += self.destroy
-        g_customizationController.carousel.slots.cart.purchaseProcessed += self.__emptyCart
         self.__totalPrice = {'gold': g_customizationController.carousel.slots.cart.totalPriceGold,
          'credits': g_customizationController.carousel.slots.cart.totalPriceCredits}
         self.__searchDP = PurchaseDataProvider(g_customizationController.carousel.slots.cart.items, self.__totalPrice)
@@ -96,10 +94,6 @@ class PurchaseWindow(CustomizationBuyWindowMeta):
          'enoughCredits': enoughCredits,
          'notEnoughGoldTooltip': notEnoughGoldTooltip,
          'notEnoughCreditsTooltip': notEnoughCreditsTooltip})
-
-    def __emptyCart(self):
-        for item in g_customizationController.carousel.slots.cart.items:
-            g_customizationController.carousel.slots.updateSlot({'id': -1}, cType=item['type'], slotIdx=item['idx'])
 
     @staticmethod
     def __packHeaderColumnData(idx, label, buttonWidth, tooltip = '', icon = '', sortOrder = -1, showSeparator = True):

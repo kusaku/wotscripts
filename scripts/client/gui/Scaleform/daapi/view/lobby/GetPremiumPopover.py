@@ -1,5 +1,6 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/GetPremiumPopover.py
 import BigWorld
+from gui.LobbyContext import g_lobbyContext
 from gui.Scaleform.daapi.view.meta.GetPremiumPopoverMeta import GetPremiumPopoverMeta
 from gui.prb_control.dispatcher import g_prbLoader
 from gui.shared import event_dispatcher
@@ -18,8 +19,13 @@ class GetPremiumPopover(GetPremiumPopoverMeta):
         super(GetPremiumPopover, self)._populate()
         self.as_setDataS(self.__makeVO(self.__context))
 
-    def onActionBtnClick(self, arenaUniqueID):
-        event_dispatcher.showPremiumWindow(arenaUniqueID)
+    def _dispose(self):
+        super(GetPremiumPopover, self)._dispose()
+        self.__context = None
+        return
+
+    def onActionBtnClick(self, clientUniqueID):
+        event_dispatcher.showPremiumWindow(g_lobbyContext.getArenaUniqueIDByClientID(clientUniqueID))
         self.destroy()
 
     def __makeVO(self, data):

@@ -35,13 +35,17 @@ class DataAggregator(object):
         self.updated = Event()
         self.viewModel = []
         self.__installed = ()
-        self.__availableItems = [{}, {}, {}]
-        self.__displayedItems = [{}, {}, {}]
+        self.__availableItems = None
+        self.__displayedItems = None
+        self.__igrReplacedItems = None
+        self.__notMigratedItems = None
+        self.__itemGroups = None
         self.__initialViewModel = ()
         self.__cNationID = None
+        self.__rawItems = None
         self.__vehicleInventoryID = None
         self.__displayIgrItems = getIGRCtrl().getRoomType() == 2 and GUI_SETTINGS.igrEnabled
-        self.__availableGroupNames = []
+        self.__availableGroupNames = None
         self.__gatherDataForVehicle(CACHE_SYNC_REASON.DOSSIER_RESYNC, None)
         _g_currentVehicle.onChanged += self.__onCurrentVehicleChanged
         _g_itemsCache.onSyncCompleted += self.__gatherDataForVehicle
@@ -50,11 +54,15 @@ class DataAggregator(object):
     def fini(self):
         _g_currentVehicle.onChanged -= self.__gatherDataForVehicle
         _g_currentVehicle.onChanged -= self.__onCurrentVehicleChanged
+        self.__rawItems = None
         self.__installed = None
         self.__availableItems = None
+        self.__notMigratedItems = None
         self.__displayedItems = None
         self.__initialViewModel = None
         self.__availableGroupNames = None
+        self.__igrReplacedItems = None
+        self.__itemGroups = None
         self.viewModel = None
         return
 
@@ -90,18 +98,20 @@ class DataAggregator(object):
             curVehDescr = curVehItem.descriptor
             self.__cNationID = curVehDescr.type.customizationNationID
             inDossier = (_g_itemsCache.items.getVehicleDossier(curVehItem.intCD).getBlock('camouflages'), _g_itemsCache.items.getVehicleDossier(curVehItem.intCD).getBlock('emblems'), _g_itemsCache.items.getVehicleDossier(curVehItem.intCD).getBlock('inscriptions'))
-            rawItems = [_g_vehiclesCache.customization(self.__cNationID)['camouflages'], _g_vehiclesCache.playerEmblems()[1], _g_vehiclesCache.customization(self.__cNationID)['inscriptions']]
-            itemGroups = (_g_vehiclesCache.customization(self.__cNationID)['camouflageGroups'], _g_vehiclesCache.playerEmblems()[0], _g_vehiclesCache.customization(self.__cNationID)['inscriptionGroups'])
+            self.__rawItems = [_g_vehiclesCache.customization(self.__cNationID)['camouflages'], _g_vehiclesCache.playerEmblems()[1], _g_vehiclesCache.customization(self.__cNationID)['inscriptions']]
+            self.__itemGroups = (_g_vehiclesCache.customization(self.__cNationID)['camouflageGroups'], _g_vehiclesCache.playerEmblems()[0], _g_vehiclesCache.customization(self.__cNationID)['inscriptionGroups'])
             self.__availableGroupNames = []
             self.__displayedItems = [{}, {}, {}]
             self.__availableItems = [{}, {}, {}]
-            inventoryItems = self.__setInventoryItems(rawItems)
+            self.__igrReplacedItems = [{}, {}, {}]
+            self.__notMigratedItems = [set([]), set([]), set([])]
+            inventoryItems = self.__setInventoryItems()
             installedRawItems = self.__setInstalledRawItems(curVehDescr)
             self.__installed = self.__setInstalledCustomization(curVehDescr.hull['emblemSlots'], curVehDescr.turret['emblemSlots'], installedRawItems)
             for cType in [CUSTOMIZATION_TYPE.CAMOUFLAGE, CUSTOMIZATION_TYPE.EMBLEM, CUSTOMIZATION_TYPE.INSCRIPTION]:
-                self.__fillAvailableItems(cType, inDossier, rawItems, itemGroups)
+                self.__fillAvailableItems(cType, inDossier)
                 self.__fillDisplayedItems(cType, inventoryItems)
-                self.__fillDisplayedGroups(cType, inDossier, inventoryItems, itemGroups)
+                self.__fillDisplayedGroups(cType, inDossier, inventoryItems)
 
             self.updated(updateReason == VEHICLE_CHANGED_EVENT)
 
@@ -136,6 +146,12 @@ class DataAggregator(object):
         installedRawItems = {'camouflages': list(curVehDescr.camouflages),
          'emblems': list(curVehDescr.playerEmblems),
          'inscriptions': list(curVehDescr.playerInscriptions)}
+        for key in installedRawItems.keys():
+            for installedRawItem in installedRawItems[key]:
+                installedItemID = installedRawItem[0]
+                if installedRawItem[2] == 0 and installedItemID is not None and (_TYPE_NAME[key] != CUSTOMIZATION_TYPE.EMBLEM or _TYPE_NAME[key] == CUSTOMIZATION_TYPE.EMBLEM) and installedItemID not in self.__itemGroups[CUSTOMIZATION_TYPE.EMBLEM]['auto'][0]:
+                    self.__notMigratedItems[_TYPE_NAME[key]].add(installedItemID)
+
         if self.__displayIgrItems:
             igrLayout = g_itemsCache.items.inventory.getIgrCustomizationsLayout()
             vehicleId = g_currentVehicle.item.invID
@@ -146,13 +162,17 @@ class DataAggregator(object):
                     igrVehDescr = igrLayout[vehicleId][igrRoomType]
             for key in igrVehDescr:
                 for index in igrVehDescr[key]:
+                    replacedItemID = installedRawItems[key][index][0]
+                    replacedItemDaysLeft = installedRawItems[key][index][2]
+                    if replacedItemID is not None:
+                        self.__igrReplacedItems[_TYPE_NAME[key]][replacedItemID] = replacedItemDaysLeft
                     installedRawItems[key][index] = igrVehDescr[key][index]
 
         self.__initialViewModel = (installedRawItems['emblems'], installedRawItems['inscriptions'])
         self.viewModel = [copy.deepcopy(installedRawItems['camouflages']), copy.deepcopy(installedRawItems['emblems']), copy.deepcopy(installedRawItems['inscriptions'])]
         return installedRawItems
 
-    def __setInventoryItems(self, rawItems):
+    def __setInventoryItems(self):
         inventoryItems = [{}, {}, {}]
         inventoryCustomization = g_itemsCache.items.inventory.getItemsData('customizations')
         for isGold, itemsData in inventoryCustomization.iteritems():
@@ -173,7 +193,7 @@ class DataAggregator(object):
                                 allowedVehicles.append(key)
                             if self.__cNationID == nationID or cType == CUSTOMIZATION_TYPE.EMBLEM:
                                 inventoryItems[cType][itemID] = [itemID,
-                                 rawItems[cType][itemID],
+                                 self.__rawItems[cType][itemID],
                                  None,
                                  isGold,
                                  allowedVehicles,
@@ -182,11 +202,11 @@ class DataAggregator(object):
 
         return inventoryItems
 
-    def __fillAvailableItems(self, cType, inDossier, rawItems, itemGroups):
+    def __fillAvailableItems(self, cType, inDossier):
         containerToFill = self.__availableItems[cType]
-        groups = itemGroups[cType]
+        groups = self.__itemGroups[cType]
         class_ = _ITEM_CLASS[cType]
-        availableRawItems = rawItems[cType]
+        availableRawItems = self.__rawItems[cType]
         for itemID, availableRawItem in availableRawItems.iteritems():
             if cType != CUSTOMIZATION_TYPE.CAMOUFLAGE:
                 if availableRawItem[7] in _g_qualifiersCache.qualifiers:
@@ -208,7 +228,11 @@ class DataAggregator(object):
                 allowedNations = None
                 allowedVehicles = availableRawItem['allow']
                 notAllowedVehicles = availableRawItem['deny']
-            containerToFill[itemID] = class_(itemID, availableRawItem, qualifier, itemID in inDossier[cType], allowedVehicles, notAllowedVehicles, allowedNations)
+            replacedByIGRItem = itemID in self.__igrReplacedItems[cType]
+            isNotMigrated = itemID in self.__notMigratedItems[cType]
+            containerToFill[itemID] = class_(itemID, availableRawItem, qualifier, itemID in inDossier[cType] or replacedByIGRItem or isNotMigrated, allowedVehicles, notAllowedVehicles, allowedNations, replacedByIGRItem)
+            if itemID in self.__igrReplacedItems[cType]:
+                containerToFill[itemID].numberOfDays = self.__igrReplacedItems[cType][itemID]
 
         return
 
@@ -237,10 +261,10 @@ class DataAggregator(object):
     def __groupIsInShop(self, groupName, cType):
         return [lambda group: group not in g_itemsCache.items.shop.getCamouflagesHiddens(self.__cNationID), lambda group: group not in g_itemsCache.items.shop.getEmblemsGroupHiddens() and (group != 'group5' or self.__displayIgrItems), lambda group: group not in g_itemsCache.items.shop.getInscriptionsGroupHiddens(self.__cNationID) and (group != 'IGR' or self.__displayIgrItems)][cType](groupName)
 
-    def __fillDisplayedGroups(self, cType, inDossier, inventoryItems, itemGroups):
+    def __fillDisplayedGroups(self, cType, inDossier, inventoryItems):
         groups = []
         uniqueGroups = []
-        for key, value in itemGroups[cType].iteritems():
+        for key, value in self.__itemGroups[cType].iteritems():
             if cType == CUSTOMIZATION_TYPE.CAMOUFLAGE:
                 itemIDsInGroup = value['ids']
                 groupUserName = value['userString']

@@ -316,7 +316,8 @@ class Vehicle(BigWorld.Entity):
             return
         if not self.isPlayer:
             g_sessionProvider.getFeedback().setVehicleNewHealth(self.id, newHealth, attackerID, attackReasonID)
-        self.appearance.onVehicleHealthChanged()
+        if not self.appearance.destroyedState:
+            self.appearance.onVehicleHealthChanged()
         if self.health <= 0 and self.isCrewActive:
             self.__onVehicleDeath()
 

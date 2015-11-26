@@ -1,6 +1,8 @@
 # Embedded file name: scripts/client/gui/customization_2_0/carousel.py
 import copy
 import time
+from collections import defaultdict
+from itertools import chain
 from Event import Event
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.shared.utils.HangarSpace import g_hangarSpace
@@ -93,14 +95,19 @@ class Carousel(object):
     def __onSlotUpdated(self, newSlotData):
         if self.__currentType == newSlotData['type'] and self.__currentSlotIdx == newSlotData['idx']:
             self.filter.setTypeAndIdx(newSlotData['type'], newSlotData['idx'], newSlotData['data']['itemID'], self.slots.getInstalledItem(self.__currentSlotIdx, self.__currentType).getID())
-        self.__updateCarouselData()
+            self.__updateCarouselData()
 
     def __updateCarouselData(self):
         oldItemsCount = len(self.__carouselItems)
         del self.__carouselItems[:]
-        appliedItems = []
-        purchasedItems = []
-        otherItems = []
+        appliedItems = defaultdict(list)
+        featuredItems = defaultdict(list)
+        purchasedItems = defaultdict(list)
+        otherItems = defaultdict(list)
+        allItems = [appliedItems,
+         purchasedItems,
+         featuredItems,
+         otherItems]
         currentSlotItem = None
         installedItemID = self.slots.getInstalledItem(self.__currentSlotIdx, self.__currentType).getID()
         if self.__currentType == CUSTOMIZATION_TYPE.CAMOUFLAGE:
@@ -128,13 +135,17 @@ class Carousel(object):
             if appliedToCurrentSlot:
                 currentSlotItem = carouselItem
             if installedInSlot:
-                appliedItems.append(carouselItem)
+                appliedItems[item.getGroup()].append(carouselItem)
             elif item.isInDossier:
-                purchasedItems.append(carouselItem)
+                purchasedItems[item.getGroup()].append(carouselItem)
+            elif self.__currentType == CUSTOMIZATION_TYPE.INSCRIPTION and item.isFeatured():
+                featuredItems[item.getGroup()].append(carouselItem)
             else:
-                otherItems.append(carouselItem)
+                otherItems[item.getGroup()].append(carouselItem)
 
-        self.__carouselItems = appliedItems + purchasedItems + otherItems
+        for groupedItems in allItems:
+            self.__carouselItems += chain(*groupedItems.values())
+
         if currentSlotItem is not None:
             goToIndex = currentSlotCarouselItemIdx = self.__carouselItems.index(currentSlotItem)
         else:

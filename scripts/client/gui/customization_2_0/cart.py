@@ -144,6 +144,7 @@ class Cart(object):
         if self.__elementsToProcess == 0:
             BigWorld.player().resyncDossiers()
             self.__elementsToProcess = 1
+            self.purchaseProcessed()
 
     def __onCustomizationChange(self, price, cType, resultID):
         if resultID < 0:
@@ -166,7 +167,6 @@ class Cart(object):
                 message = _ms(key, fCost)
         SystemMessages.pushMessage(message, type=sysMessageType)
         self.__synchronizeDossierIfRequired()
-        self.purchaseProcessed()
 
     def __onCustomizationDrop(self, resultID, cItemID, cType):
         if resultID < 0:
@@ -184,7 +184,6 @@ class Cart(object):
                 del g_tankActiveCamouflage[g_currentVehicle.item.intCD]
         SystemMessages.pushMessage(message, type=sysMessageType)
         self.__synchronizeDossierIfRequired()
-        self.purchaseProcessed()
 
     def __calculateVehicleIndex(self, initialIndex, cType):
         if initialIndex == 1:

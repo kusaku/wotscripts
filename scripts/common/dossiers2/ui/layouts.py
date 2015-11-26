@@ -43,7 +43,7 @@ POTAPOV_QUESTS_GROUP = [_single('firstMerit'),
  _total('tankwomenProgress')]
 IGNORED_BY_BATTLE_RESULTS = [achievements.MARK_OF_MASTERY_RECORD, _single7x7('victoryMarch')]
 for record in records.RECORD_DB_IDS:
-    if record[1] in ('maxXP', 'maxFrags', 'maxDamage'):
+    if record[1] in ('maxXP', 'maxFrags', 'maxDamage', 'maxWinPoints', 'maxCoins'):
         IGNORED_BY_BATTLE_RESULTS.append(record)
 
 _COMMON_DOSSIERS_TYPE = 0

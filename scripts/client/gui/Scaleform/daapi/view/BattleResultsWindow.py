@@ -110,6 +110,10 @@ FALLOUT_ONLY_STATS = ('killed', 'killsByOrder', 'damageDealtByOrder', 'flags', '
 FALLOUT_ORDER_STATS = ('damageDealtByOrder', 'killsByOrder')
 FALLOUT_EXCLUDE_VEHICLE_STATS = ('damagedKilled', 'sniperDamageDealt', 'capturePoints', 'droppedCapturePoints', 'capturePointsVal', 'mileage')
 
+def _skip(a, b):
+    return a
+
+
 def _intSum(a, b):
     return a + b
 
@@ -133,11 +137,11 @@ def _uniqueListCollect(a, b):
 
 
 def _calculateDailyXP(oritinalData, data):
-    return (data['originalXP'] - int(data.get('xpPenaltyBase', 0))) * data['dailyXPFactor10'] / 10.0
+    return (data.get('originalXP', 0) - int(data.get('xpPenaltyBase', 0))) * data.get('dailyXPFactor10', 0) / 10.0
 
 
 def _calculateDailyFreeXP(oritinalData, data):
-    return data['originalFreeXP'] * data['dailyXPFactor10'] / 10.0
+    return data.get('originalFreeXP', 0) * data.get('dailyXPFactor10', 0) / 10.0
 
 
 def _calculateBaseXpPenalty(originalData, data):
@@ -148,7 +152,7 @@ def _calculateBaseXpPenalty(originalData, data):
     igrXpFactor = originalData.get('igrXPFactor10', 10) / 10.0
     premXpFactor = originalData.get('premiumXPFactor10', 10) / 10.0
     dailyXpFactor = originalData.get('dailyXPFactor10', 10) / 10.0
-    xpPenalty = data['xpPenalty']
+    xpPenalty = data.get('xpPenalty', 0)
     xpPenalty = math.ceil(int(xpPenalty / aogasFactor) / dailyXpFactor)
     if isPremium:
         xpPenalty = math.ceil(xpPenalty / premXpFactor)
@@ -160,23 +164,18 @@ def _calculateBaseXpPenalty(originalData, data):
 RELATED_ACCOUNT_DATA = {'dailyXP': _calculateDailyXP,
  'dailyFreeXP': _calculateDailyFreeXP,
  'xpPenaltyBase': _calculateBaseXpPenalty}
-CUMULATIVE_ACCOUNT_DATA = (('credits', (0, _intSum)),
- ('achievementCredits', (0, _intSum)),
+COMMON_DATA = (('achievementCredits', (0, _intSum)),
  ('creditsContributionIn', (0, _intSum)),
  ('creditsToDraw', (0, _intSum)),
  ('creditsPenalty', (0, _intSum)),
  ('creditsContributionOut', (0, _intSum)),
  ('originalCredits', (0, _intSum)),
- ('eventCredits', (0, _intSum)),
- ('eventGold', (0, _intSum)),
  ('orderCredits', (0, _intSum)),
  ('boosterCredits', (0, _intSum)),
  ('autoRepairCost', (0, _intSum)),
  ('autoLoadCost', ((0, 0), _listSum)),
  ('autoEquipCost', ((0, 0), _listSum)),
  ('histAmmoCost', ((0, 0), _listSum)),
- ('xp', (0, _intSum)),
- ('freeXP', (0, _intSum)),
  ('achievementXP', (0, _intSum)),
  ('achievementFreeXP', (0, _intSum)),
  ('xpPenalty', (0, _intSum)),
@@ -187,13 +186,27 @@ CUMULATIVE_ACCOUNT_DATA = (('credits', (0, _intSum)),
  ('boosterXP', (0, _intSum)),
  ('orderFreeXP', (0, _intSum)),
  ('boosterFreeXP', (0, _intSum)),
- ('eventXP', (0, _intSum)),
- ('eventFreeXP', (0, _intSum)),
  ('premiumVehicleXP', (0, _intSum)),
  ('dailyXPFactor10', (10, _intMax)),
  ('xpPenaltyBase', (0, _intSum)),
  ('dailyXP', (0, _intSum)),
  ('dailyFreeXP', (0, _intSum)))
+VEHICLE_DATA = (('credits', (0, _skip)),
+ ('xp', (0, _skip)),
+ ('freeXP', (0, _skip)),
+ ('eventCredits', (0, _skip)),
+ ('eventGold', (0, _skip)),
+ ('eventXP', (0, _skip)),
+ ('eventFreeXP', (0, _skip)))
+AVATAR_DATA = (('credits', (0, _intSum)),
+ ('xp', (0, _intSum)),
+ ('freeXP', (0, _intSum)),
+ ('eventCredits', (0, _intSum)),
+ ('eventGold', (0, _intSum)),
+ ('eventXP', (0, _intSum)),
+ ('eventFreeXP', (0, _intSum)))
+CUMULATIVE_VEHICLE_DATA = list(COMMON_DATA + VEHICLE_DATA)
+CUMULATIVE_ACCOUNT_DATA = list(COMMON_DATA + AVATAR_DATA)
 CUMULATIVE_STATS_DATA = {'shots': (0, _intSum),
  'tkills': (0, _intSum),
  'damageDealt': (0, _intSum),
@@ -444,7 +457,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
 
         return result
 
-    def __populateAccounting(self, commonData, personalCommonData, personalData, playersData, personalDataOutput):
+    def __populateAccounting(self, commonData, personalCommonData, personalData, playersData, personalDataOutput, playerAvatarData):
         if self.dataProvider.getArenaUniqueID() in self.__buyPremiumCache:
             isPostBattlePremium = True
         else:
@@ -474,7 +487,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
         igrType = playerData.get('igrType', 0)
         vehsCreditsData = []
         vehsXPData = []
-        personalDataSource = self.__buildPersonalDataSource(personalData)
+        personalDataSource = self.__buildPersonalDataSource(personalData, playerAvatarData)
         for vehIntCD, sourceData in personalDataSource:
             dailyXpFactor = sourceData['dailyXPFactor10'] / 10.0
             creditsData = []
@@ -696,7 +709,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
             self.__premiumBonusesDiff = {'xpDiff': xpDiff,
              'creditDiff': creditsDiff}
             if g_lobbyContext.getServerSettings().isPremiumInPostBattleEnabled() and not isPremium and not g_itemsCache.items.stats.isPremium and commonData.get('bonusType', 0) == ARENA_BONUS_TYPE.REGULAR and xpDiff > 0 and creditsDiff > 0:
-                personalDataOutput['getPremVO'] = {'arenaUniqueID': self.dataProvider.getArenaUniqueID(),
+                personalDataOutput['getPremVO'] = {'arenaUniqueID': g_lobbyContext.getClientIDByArenaUniqueID(self.dataProvider.getArenaUniqueID()),
                  'creditsDiff': creditsDiff,
                  'xpDiff': xpDiff}
                 showDiffs = True
@@ -728,26 +741,32 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
             personalDataOutput['resourceData'] = resData
         return
 
-    def __buildPersonalDataSource(self, personalData):
+    def __buildPersonalDataSource(self, personalData, playerAvatarData):
         totalData = {}
+        data = {}
+        self.__aggregateData(data, playerAvatarData, totalData, CUMULATIVE_ACCOUNT_DATA)
         personaDataSource = [(None, totalData)]
         for vehIntCD, pData in personalData:
             data = {}
-            for k, (d, func) in CUMULATIVE_ACCOUNT_DATA:
-                if k in RELATED_ACCOUNT_DATA:
-                    v = RELATED_ACCOUNT_DATA[k](pData, data)
-                else:
-                    v = pData.get(k, d)
-                data[k] = v
-                if func is not None:
-                    totalData.setdefault(k, d)
-                    totalData[k] = func(totalData[k], v)
-                else:
-                    totalData[k] = d
-
+            self.__aggregateData(data, pData, totalData, CUMULATIVE_VEHICLE_DATA)
             personaDataSource.append((vehIntCD, data))
 
         return personaDataSource
+
+    def __aggregateData(self, data, pData, totalData, params):
+        for k, (d, func) in params:
+            if k in RELATED_ACCOUNT_DATA:
+                v = RELATED_ACCOUNT_DATA[k](pData, data)
+            else:
+                v = pData.get(k, d)
+            data[k] = v
+            if func is not None:
+                totalData.setdefault(k, d)
+                totalData[k] = func(totalData[k], v)
+            else:
+                totalData[k] = d
+
+        return
 
     def __buildEfficiencyDataSource(self, pData, pCommonData, playersData, commonData):
         totalEnemies = []
@@ -1709,7 +1728,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
             self.__populateResultStrings(commonData, personalCommonData, playerAvatarData, commonDataOutput, isMultiTeamMode)
             self.__populatePersonalMedals(personalData, personalDataOutput)
             self.__populateArenaData(commonData, personalCommonData, commonDataOutput, isMultiTeamMode, isResource)
-            self.__populateAccounting(commonData, personalCommonData, personalData, playersData, personalDataOutput)
+            self.__populateAccounting(commonData, personalCommonData, personalData, playersData, personalDataOutput, playerAvatarData)
             self.__populateTankSlot(commonDataOutput, personalData, personalCommonData, commonData)
             self.__populateEfficiency(personalData, personalCommonData, playersData, commonData, personalDataOutput)
             team1, team2 = self.__populateTeamsData(personalCommonData, playersData, commonData, commonDataOutput, avatarsData, isMultiTeamMode)

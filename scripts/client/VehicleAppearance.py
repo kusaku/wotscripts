@@ -111,6 +111,7 @@ class VehicleAppearance(object):
     physicLoad = property(lambda self: self.__physicLoad)
     rightTrackScroll = property(lambda self: self.__rightTrackScroll)
     leftTrackScroll = property(lambda self: self.__leftTrackScroll)
+    destroyedState = property(lambda self: self.__currentDamageState.model == 'destroyed')
 
     def __init__(self):
         self.__vt = None
