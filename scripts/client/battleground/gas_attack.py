@@ -51,7 +51,7 @@ def _getDefaultScenario():
 class GasCloud(object):
 
     def __setModel(self, model):
-        if self.__cloud is None:
+        if self.__cloud is None or model is None:
             return
         else:
             self.__model = model

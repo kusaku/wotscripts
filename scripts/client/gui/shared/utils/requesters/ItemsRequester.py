@@ -1,6 +1,7 @@
 # Embedded file name: scripts/client/gui/shared/utils/requesters/ItemsRequester.py
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict
+from constants import ARENA_BONUS_TYPE
 import dossiers2
 import nations
 import constants
@@ -131,6 +132,7 @@ class REQ_CRITERIA(object):
         FULLY_ELITE = RequestCriteria(PredicateCondition(lambda item: item.isFullyElite))
         EVENT = RequestCriteria(PredicateCondition(lambda item: item.isEvent))
         EVENT_BATTLE = RequestCriteria(PredicateCondition(lambda item: item.isOnlyForEventBattles))
+        LOCKED_BY_FALLOUT = RequestCriteria(PredicateCondition(lambda item: item.isLocked and item.typeOfLockingArena == ARENA_BONUS_TYPE.EVENT_BATTLES))
 
         class FALLOUT:
             SELECTED = RequestCriteria(PredicateCondition(lambda item: item.isFalloutSelected))

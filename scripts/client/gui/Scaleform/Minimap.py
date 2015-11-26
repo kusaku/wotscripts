@@ -28,6 +28,8 @@ from helpers.gui_utils import *
 from debug_utils import *
 from account_helpers.AccountSettings import AccountSettings
 from gui.battle_control import vehicle_getter
+from battleground.gas_attack import _getDefaultScenario
+from time import time
 CURSOR_NORMAL = 'cursorNormal'
 CURSOR_NORMAL_WITH_DIRECTION = 'cursorNormalWithDirection'
 CURSOR_STRATEGIC = 'cursorStrategic'
@@ -230,7 +232,7 @@ class Minimap(IDynSquadEntityClient):
         if hasGasAttack():
             g_sessionProvider.getGasAttackCtrl().onPreparing += self.__onGasAttackPreparing
             g_sessionProvider.getGasAttackCtrl().onStarted += self.__onGasAttackStarted
-            g_sessionProvider.getGasAttackCtrl().onUpdated += self.__onGasAttackUpdated
+            self.__initGasAttackArea()
         self.__marks = {}
         if not g_sessionProvider.getCtx().isPlayerObserver():
             mp = player.getOwnVehicleMatrix()
@@ -498,7 +500,6 @@ class Minimap(IDynSquadEntityClient):
             if hasGasAttack():
                 g_sessionProvider.getGasAttackCtrl().onPreparing -= self.__onGasAttackPreparing
                 g_sessionProvider.getGasAttackCtrl().onStarted -= self.__onGasAttackStarted
-                g_sessionProvider.getGasAttackCtrl().onUpdated -= self.__onGasAttackUpdated
             self.__marks = None
             self.__backMarkers.clear()
             setattr(self.__parentUI.component, 'minimap', None)
@@ -1379,13 +1380,15 @@ class Minimap(IDynSquadEntityClient):
 
     def __onGasAttackStarted(self, state):
         self.__delFlagCaptureMarkers()
+
+    def __initGasAttackArea(self):
+        _, settings = _getDefaultScenario()
         bottomLeft, upperRight = BigWorld.player().arena.arenaType.boundingBox
         arenaWidth = upperRight[0] - bottomLeft[0]
         arenaHeight = upperRight[1] - bottomLeft[1]
-        self.initGasAtackArea(arenaWidth, arenaHeight, state.center[0], state.center[2], state.currentRadius, state.safeZoneRadius)
-
-    def __onGasAttackUpdated(self, state):
-        self.updateGasAtackArea(state.currentRadius)
+        shiftX = (upperRight[0] + bottomLeft[0]) / 2
+        shiftY = (upperRight[1] + bottomLeft[1]) / 2
+        self.initGasAtackArea(arenaWidth, arenaHeight, settings.position[0] - shiftX, settings.position[2] - shiftY, settings.startRadius, settings.endRadius)
 
 
 class EntryInfo(object):

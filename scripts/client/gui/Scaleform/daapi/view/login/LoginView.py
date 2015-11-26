@@ -44,6 +44,7 @@ class INVALID_FIELDS:
 _STATUS_TO_INVALID_FIELDS_MAPPING = defaultdict(lambda : INVALID_FIELDS.ALL_VALID, {LOGIN_STATUS.LOGIN_REJECTED_INVALID_PASSWORD: INVALID_FIELDS.PWD_INVALID,
  LOGIN_STATUS.LOGIN_REJECTED_ILLEGAL_CHARACTERS: INVALID_FIELDS.LOGIN_PWD_INVALID,
  LOGIN_STATUS.LOGIN_REJECTED_SERVER_NOT_READY: INVALID_FIELDS.SERVER_INVALID})
+_ValidateCredentialsResult = namedtuple('ValidateCredentialsResult', ('isValid', 'errorMessage', 'invalidFields'))
 
 class LoginView(LoginPageMeta):
 
@@ -285,26 +286,25 @@ class LoginView(LoginPageMeta):
         return
 
     def __validateCredentials(self, userName, password, isToken2Login):
-        result = namedtuple('ValidateCredentialsResult', ('isValid', 'errorMessage', 'invalidFields'))
-        result.isValid = True
-        result.errorMessage = None
-        result.invalidFields = None
+        isValid = True
+        errorMessage = None
+        invalidFields = None
         if isToken2Login or constants.IS_DEVELOPMENT:
-            return result
+            return _ValidateCredentialsResult(isValid, errorMessage, invalidFields)
         else:
             if len(userName) < _LOGIN_NAME_MIN_LENGTH:
-                result.isValid = False
-                result.errorMessage = _ms(MENU.LOGIN_STATUS_INVALID_LOGIN_LENGTH) % {'count': _LOGIN_NAME_MIN_LENGTH}
-                result.invalidFields = INVALID_FIELDS.LOGIN_INVALID
+                isValid = False
+                errorMessage = _ms(MENU.LOGIN_STATUS_INVALID_LOGIN_LENGTH) % {'count': _LOGIN_NAME_MIN_LENGTH}
+                invalidFields = INVALID_FIELDS.LOGIN_INVALID
             elif not isAccountLoginValid(userName):
-                result.isValid = False
-                result.errorMessage = _ms(MENU.LOGIN_STATUS_INVALID_LOGIN)
-                result.invalidFields = INVALID_FIELDS.LOGIN_INVALID
+                isValid = False
+                errorMessage = _ms(MENU.LOGIN_STATUS_INVALID_LOGIN)
+                invalidFields = INVALID_FIELDS.LOGIN_INVALID
             elif not isPasswordValid(password):
-                result.isValid = False
-                result.errorMessage = _ms(MENU.LOGIN_STATUS_INVALID_PASSWORD)
-                result.invalidFields = INVALID_FIELDS.LOGIN_PWD_INVALID
-            return result
+                isValid = False
+                errorMessage = _ms(MENU.LOGIN_STATUS_INVALID_PASSWORD)
+                invalidFields = INVALID_FIELDS.LOGIN_PWD_INVALID
+            return _ValidateCredentialsResult(isValid, errorMessage, invalidFields)
 
     def __loadRandomBgImage(self):
         wallpaperSettings = self.__loadLastBackgroundImage()

@@ -400,7 +400,8 @@ class FakeDataAccessor(base.BaseDataAccessor):
      'id': random.randrange(1, 1000000),
      'account_id': random.randrange(1, 10000),
      'clan_id': clan_id,
-     'comment': 'Welcome {}!'.format(random.randrange(1, 10000)) if random.choice((1, 0)) else ''} for i in range(random.randrange(0, 1000)) ])
+     'comment': 'Welcome {}!'.format(random.randrange(1, 10000)) if random.choice((1, 0)) else '',
+     'status_changer_id': 2132} for i in range(random.randrange(0, 1000)) ])
     @paginated_method
     def get_clan_invites(self, clan_id, fields = None, statuses = None):
         """
@@ -437,6 +438,8 @@ class FakeDataAccessor(base.BaseDataAccessor):
 
     @fake_method(example=[{'front_name': 'some_front',
       'province_id': 'some_province',
+      'front_name_localized': 'some_front_localized',
+      'province_id_localized': 'some_province_localized',
       'revenue': 324,
       'hq_connected': True,
       'prime_time': dt_time(18, 0, 0),
@@ -452,6 +455,7 @@ class FakeDataAccessor(base.BaseDataAccessor):
     @fake_method(example={'battles_lost': 12,
      'influence_points': 121,
      'provinces_captured': 23,
+     'provinces_count': 234,
      'battles_played': 332,
      'battles_won': 232,
      'battles_played_on_6_level': 21,
@@ -467,6 +471,7 @@ class FakeDataAccessor(base.BaseDataAccessor):
         return self._request_data('clan_globalmap_stats', clan_id, fields=fields)
 
     @fake_method(example=[{'front_name': 'front_name',
+      'front_name_localized': 'front_name_localized',
       'min_vehicle_level': 2,
       'max_vehicle_level': 4}])
     def get_fronts_info(self, front_names = None, fields = None):
@@ -568,14 +573,18 @@ class FakeDataAccessor(base.BaseDataAccessor):
         return self._request_data('create_applications', clan_ids, fields=fields)
 
     @fake_method(example=lambda obj_id: {'transaction_id': 213,
-     'id': obj_id})
+     'id': obj_id,
+     'account_id': 343,
+     'clan_id': 17})
     def accept_application(self, application_id, fields = None):
         """
         return fake data from `accept_application` section
         """
         return self._request_data('accept_application', application_id, fields=fields)
 
-    @fake_method(example=lambda obj_id: {'id': obj_id})
+    @fake_method(example=lambda obj_id: {'id': obj_id,
+     'account_id': 343,
+     'clan_id': 17})
     def decline_application(self, application_id, fields = None):
         """
         return fake data from `decline_application` section
@@ -583,14 +592,18 @@ class FakeDataAccessor(base.BaseDataAccessor):
         return self._request_data('decline_application', application_id, fields=fields)
 
     @fake_method(example=lambda obj_id: {'transaction_id': 213,
-     'id': obj_id})
+     'id': obj_id,
+     'account_id': 343,
+     'clan_id': 17})
     def accept_invite(self, application_id, fields = None):
         """
         return fake data from `accept_invite` section
         """
         return self._request_data('accept_invite', application_id, fields=fields)
 
-    @fake_method(example=lambda obj_id: {'id': obj_id})
+    @fake_method(example=lambda obj_id: {'id': obj_id,
+     'account_id': 343,
+     'clan_id': 17})
     def decline_invite(self, application_id, fields = None):
         """
         return fake data from `decline_invite` section

@@ -2,10 +2,10 @@
 import weakref
 from constants import CLAN_MEMBER_FLAGS
 from debug_utils import LOG_DEBUG, LOG_WARNING
-from account_helpers import isOutOfWallet
+from account_helpers import isOutOfWallet, isClanEnabled
 from gui.shared import g_itemsCache
 from gui.clans.settings import error, success, CLIENT_CLAN_RESTRICTIONS as _CCR
-from gui.clans.settings import MAX_ACCOUNT_APPLICATIONS_COUNT, isValidPattern
+from gui.clans.settings import isValidPattern
 
 class ClanMemberPermissions(object):
 
@@ -40,20 +40,24 @@ class ClanMemberPermissions(object):
         return self.__checkFlags(CLAN_MEMBER_FLAGS.MAY_EXCHANGE_MONEY)
 
     def canSendApplication(self):
-        return not isOutOfWallet(g_itemsCache.items.stats.attributes)
+        return self.isValidAccountType()
 
     def canRevokeApplication(self):
         LOG_DEBUG('Application revoking is not supported')
         return False
 
     def canAcceptInvite(self):
-        return not isOutOfWallet(g_itemsCache.items.stats.attributes)
+        return self.isValidAccountType()
 
     def canDeclineInvite(self):
-        return not isOutOfWallet(g_itemsCache.items.stats.attributes)
+        return self.isValidAccountType()
 
     def canSeeClans(self):
         return True
+
+    def isValidAccountType(self):
+        attrs = g_itemsCache.items.stats.attributes
+        return not (isOutOfWallet(attrs) and not isClanEnabled(attrs))
 
     def __checkFlags(self, flags):
         return self.__roleMask & flags != 0
@@ -128,10 +132,14 @@ class AccountClanLimits(BaseAccountClanLimits):
             return error(_CCR.CLAN_APPLICATION_ALREADY_SENT)
         if self.__profile.isInClanEnterCooldown():
             return error(_CCR.CLAN_LEAVE_COOLDOWN)
-        if self.__profile.getApplicationsCount() >= MAX_ACCOUNT_APPLICATIONS_COUNT:
+        if self.__profile.isInvitesLimitReached():
             return error(_CCR.SENT_INVITES_LIMIT_REACHED)
         if not clan.canAcceptsJoinRequests():
             return error(_CCR.CLAN_CONSCRIPTION_CLOSED)
+        if not self.__profile.getPermissions(clan).isValidAccountType():
+            return error(_CCR.FORBIDDEN_ACCOUNT_TYPE)
+        if not clan.hasFreePlaces():
+            return error(_CCR.CLAN_IS_FULL)
         return self.__checkPermissions('canSendApplication', clan)
 
     def canRevokeApplication(self, clan):

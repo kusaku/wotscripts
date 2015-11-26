@@ -407,11 +407,11 @@ def packTextBlock(label, value = None, relation = None, questID = None, isAvaila
     return UiElement(blockData, 'label')
 
 
-def packSimpleBonusesBlock(bonusesList, itemsLimit = None, charsLimit = 200):
-    data = {'linkage': 'SimpleBonusElement_UI',
-     'bonusesList': bonusesList,
-     'itemsLimit': itemsLimit,
-     'charsLimit': charsLimit}
+def packSimpleBonusesBlock(bonusesList):
+    data = {'linkage': 'QuestTextAwardBlockUI',
+     'items': bonusesList,
+     'separator': ', ',
+     'ellipsis': '..'}
     return UiElement(data)
 
 

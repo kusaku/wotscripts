@@ -2,7 +2,7 @@
 import copy
 from Event import Event
 from adisp import process
-from debug_utils import LOG_ERROR, LOG_DEBUG
+from debug_utils import LOG_ERROR
 from gui import DialogsInterface
 from gui.Scaleform.daapi.view.lobby.customization_2_0.shared import getDialogReplaceElement, getDialogReplaceElements
 from gui.Scaleform.daapi.view.meta.CustomizationBuyWindowMeta import CustomizationBuyWindowMeta
@@ -14,7 +14,7 @@ from gui.shared.ItemsCache import g_itemsCache
 from gui.shared.formatters import text_styles, icons
 from gui.shared.utils.functions import makeTooltip
 from helpers.i18n import makeString as _ms
-from gui.customization_2_0 import g_customizationController, shared
+from gui.customization_2_0 import g_customizationController
 from gui.customization_2_0.shared import formatPriceCredits, formatPriceGold, isSale, getSalePriceString
 
 class PurchaseWindow(CustomizationBuyWindowMeta):
@@ -34,21 +34,18 @@ class PurchaseWindow(CustomizationBuyWindowMeta):
     @process
     def buy(self):
         isContinue = True
-        replaceElementsName = []
+        isShowReplaceDialog = False
+        replaceElements = [[], [], []]
         for item in self.__searchDP.collection:
-            cType = item['cType']
             if item['selected']:
-                installedItem = g_customizationController.carousel.slots.getInstalledItem(item['slotIdx'], cType)
+                installedItem = g_customizationController.carousel.slots.getInstalledItem(item['slotIdx'], item['cType'])
                 if installedItem.duration > 0:
-                    availableItem = g_customizationController.carousel.slots.getItemById(cType, installedItem.getID())
-                    replaceElementsName.append(availableItem.getName())
+                    isShowReplaceDialog = True
+                    availableItem = g_customizationController.carousel.slots.getItemById(item['cType'], installedItem.getID())
+                    replaceElements[item['cType']].append(text_styles.main(availableItem.getName()))
 
-        replaceElementsCount = len(replaceElementsName)
-        if replaceElementsCount > 0:
-            if replaceElementsCount == 1:
-                isContinue = yield DialogsInterface.showDialog(getDialogReplaceElement(replaceElementsName[0]))
-            else:
-                isContinue = yield DialogsInterface.showDialog(getDialogReplaceElements(replaceElementsName))
+        if isShowReplaceDialog:
+            isContinue = yield DialogsInterface.showDialog(getDialogReplaceElements(replaceElements))
         if isContinue:
             g_customizationController.carousel.slots.cart.buyItems(copy.deepcopy(self.__searchDP.collection))
 
@@ -57,12 +54,14 @@ class PurchaseWindow(CustomizationBuyWindowMeta):
         self.__searchDP.fini()
         if g_customizationController.carousel is not None:
             g_customizationController.carousel.slots.cart.purchaseProcessed -= self.destroy
+            g_customizationController.carousel.slots.cart.purchaseProcessed -= self.__emptyCart
         super(PurchaseWindow, self)._dispose()
         return
 
     def _populate(self):
         super(PurchaseWindow, self)._populate()
         g_customizationController.carousel.slots.cart.purchaseProcessed += self.destroy
+        g_customizationController.carousel.slots.cart.purchaseProcessed += self.__emptyCart
         self.__totalPrice = {'gold': g_customizationController.carousel.slots.cart.totalPriceGold,
          'credits': g_customizationController.carousel.slots.cart.totalPriceCredits}
         self.__searchDP = PurchaseDataProvider(g_customizationController.carousel.slots.cart.items, self.__totalPrice)
@@ -97,6 +96,10 @@ class PurchaseWindow(CustomizationBuyWindowMeta):
          'enoughCredits': enoughCredits,
          'notEnoughGoldTooltip': notEnoughGoldTooltip,
          'notEnoughCreditsTooltip': notEnoughCreditsTooltip})
+
+    def __emptyCart(self):
+        for item in g_customizationController.carousel.slots.cart.items:
+            g_customizationController.carousel.slots.updateSlot({'id': -1}, cType=item['type'], slotIdx=item['idx'])
 
     @staticmethod
     def __packHeaderColumnData(idx, label, buttonWidth, tooltip = '', icon = '', sortOrder = -1, showSeparator = True):
@@ -192,7 +195,7 @@ class PurchaseDataProvider(SortableDAAPIDataProvider):
                             thisPriceFormatter = text_styles.credits
                         else:
                             thisPriceFormatter = text_styles.gold
-                        if thisCartItem['duration'] == 0 and thisCartItem['price'] > anotherCartItem['price']:
+                        if thisCartItem['duration'] == 0:
                             if not selected:
                                 anotherItem['price'] = anotherCartItem['object'].getPrice(anotherCartItem['duration'])
                                 anotherItem['lblPrice'] = anotherPriceFormatter(anotherItem['price'])

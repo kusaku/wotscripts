@@ -103,13 +103,15 @@ class Cart(object):
         purchaseFunction = {CUSTOMIZATION_TYPE.CAMOUFLAGE: BigWorld.player().inventory.changeVehicleCamouflage,
          CUSTOMIZATION_TYPE.EMBLEM: BigWorld.player().inventory.changeVehicleEmblem,
          CUSTOMIZATION_TYPE.INSCRIPTION: BigWorld.player().inventory.changeVehicleInscription}[cType]
+        if not (price > 0 or currencyIcon == RES_ICONS.MAPS_ICONS_LIBRARY_GOLDICON_2):
+            duration = 0
         arguments = [g_currentVehicle.item.invID,
          cSpot + slotIdx,
-         cItemID if price >= 0 else 0,
+         cItemID if price != -1 else 0,
          duration]
         if cType == CUSTOMIZATION_TYPE.INSCRIPTION:
             arguments.append(1)
-        if price < 0:
+        if price == -1:
             arguments.append(lambda resultID: self.__onCustomizationDrop(resultID, cItemID, cType))
         else:
             arguments.append(functools.partial(self.__onCustomizationChange, (price, currencyIcon == RES_ICONS.MAPS_ICONS_LIBRARY_GOLDICON_2), cType))
@@ -149,7 +151,7 @@ class Cart(object):
             sysMessageType = SystemMessages.SM_TYPE.Error
         else:
             cost, isGold = price
-            if cost == 0:
+            if cost <= 0:
                 message = _ms(_INSTALLATION_MESSAGE[cType]['free'])
                 sysMessageType = SystemMessages.SM_TYPE.Information
             else:

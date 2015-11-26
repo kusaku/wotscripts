@@ -7,13 +7,14 @@ from helpers.i18n import makeString as _ms
 from CurrentVehicle import g_currentVehicle
 
 class Item(object):
-    __slots__ = ('_qualifier', '_rawData', '_price', '__isInDossier', '__itemID', '__allowedVehicles', '__notAllowedVehicles', 'numberOfItems', 'numberOfDays')
+    __slots__ = ('_qualifier', '_rawData', '_price', '__isInDossier', '__itemID', '__allowedVehicles', '__notAllowedVehicles', '__allowedNations', 'numberOfItems', 'numberOfDays')
 
-    def __init__(self, itemID, rawData, qualifier, isInDossier, allowedVehicles, notAllowedVehicles):
+    def __init__(self, itemID, rawData, qualifier, isInDossier, allowedVehicles, notAllowedVehicles, allowedNations):
         self.__isInDossier = isInDossier
         self.__itemID = itemID
         self.__allowedVehicles = allowedVehicles
         self.__notAllowedVehicles = notAllowedVehicles
+        self.__allowedNations = allowedNations
         self.numberOfItems = None
         self.numberOfDays = None
         self._qualifier = qualifier
@@ -41,6 +42,9 @@ class Item(object):
     @property
     def isAllowedForCurrentVehicle(self):
         intCD = g_currentVehicle.item.intCD
+        cNationID = g_currentVehicle.item.descriptor.type.customizationNationID
+        if self.__allowedNations and cNationID not in self.__allowedNations:
+            return False
         if not self.__allowedVehicles and not self.__notAllowedVehicles:
             return True
         if self.__allowedVehicles and intCD in self.__allowedVehicles:
@@ -69,8 +73,8 @@ class Item(object):
 
 class Emblem(Item):
 
-    def __init__(self, itemID, rawData, qualifier, isInDossier, allowedVehicles, notAllowedVehicles):
-        Item.__init__(self, itemID, rawData, qualifier, isInDossier, allowedVehicles, notAllowedVehicles)
+    def __init__(self, itemID, rawData, qualifier, isInDossier, allowedVehicles, notAllowedVehicles, allowedNations):
+        Item.__init__(self, itemID, rawData, qualifier, isInDossier, allowedVehicles, notAllowedVehicles, allowedNations)
         self._price = g_itemsCache.items.shop.playerEmblemCost
 
     def getTexturePath(self):
@@ -94,8 +98,8 @@ class Emblem(Item):
 
 class Inscription(Item):
 
-    def __init__(self, itemID, rawData, qualifier, isInDossier, allowedVehicles, notAllowedVehicles):
-        Item.__init__(self, itemID, rawData, qualifier, isInDossier, allowedVehicles, notAllowedVehicles)
+    def __init__(self, itemID, rawData, qualifier, isInDossier, allowedVehicles, notAllowedVehicles, allowedNations):
+        Item.__init__(self, itemID, rawData, qualifier, isInDossier, allowedVehicles, notAllowedVehicles, allowedNations)
         self._price = g_itemsCache.items.shop.playerInscriptionCost
 
     def getTexturePath(self):
@@ -114,13 +118,13 @@ class Inscription(Item):
         return self._rawData[1]
 
     def getPrice(self, duration):
-        return int(round(self._price[duration][0] * g_currentVehicle.item.level * g_itemsCache.items.shop.getInscriptionsGroupPriceFactors(g_currentVehicle.item.nationID)[self.getGroup()]))
+        return int(round(self._price[duration][0] * g_currentVehicle.item.level * g_itemsCache.items.shop.getInscriptionsGroupPriceFactors(g_currentVehicle.item.descriptor.type.customizationNationID)[self.getGroup()]))
 
 
 class Camouflage(Item):
 
-    def __init__(self, itemID, rawData, qualifier, isInDossier, allowedVehicles, notAllowedVehicles):
-        Item.__init__(self, itemID, rawData, qualifier, isInDossier, allowedVehicles, notAllowedVehicles)
+    def __init__(self, itemID, rawData, qualifier, isInDossier, allowedVehicles, notAllowedVehicles, allowedNations):
+        Item.__init__(self, itemID, rawData, qualifier, isInDossier, allowedVehicles, notAllowedVehicles, allowedNations)
         self._price = g_itemsCache.items.shop.camouflageCost
 
     def getTexturePath(self):
@@ -129,7 +133,10 @@ class Camouflage(Item):
         return 'img://camouflage,{0:d},{1:d},"{2:>s}",{3[0]:d},{3[1]:d},{3[2]:d},{3[3]:d},{4[0]:n},{4[1]:n},{4[2]:n},{4[3]:n},{5:d}'.format(128, 128, self._rawData['texture'], colors, weights, self._rawData.get('armorColor', 0))
 
     def getGroup(self):
-        return self._rawData['groupName']
+        groupName = self._rawData['groupName']
+        if getIGRCtrl().getRoomType() == IGR_TYPE.PREMIUM:
+            groupName = groupName[3:] if groupName.startswith('IGR') else groupName
+        return groupName
 
     def getName(self):
         return _ms('{}/label'.format(self._rawData['description']))
@@ -141,4 +148,4 @@ class Camouflage(Item):
         return self._rawData['igrType']
 
     def getPrice(self, duration):
-        return int(round(self._price[duration][0] * g_itemsCache.items.shop.getVehCamouflagePriceFactor(g_currentVehicle.item.descriptor.type.compactDescr) * g_itemsCache.items.shop.getCamouflagesPriceFactors(g_currentVehicle.item.nationID)[self.getID()]))
+        return int(round(self._price[duration][0] * g_itemsCache.items.shop.getVehCamouflagePriceFactor(g_currentVehicle.item.descriptor.type.compactDescr) * g_itemsCache.items.shop.getCamouflagesPriceFactors(g_currentVehicle.item.descriptor.type.customizationNationID)[self.getID()]))

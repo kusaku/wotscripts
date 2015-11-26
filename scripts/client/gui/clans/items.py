@@ -181,6 +181,7 @@ _ClanExtInfoData.__new__.__defaults__ = ('',
  0,
  False,
  0)
+_ClanExtInfoDataCritical = ('name', 'tag', 'members_count', 'clan_id')
 
 class ClanExtInfoData(_ClanExtInfoData, FieldsCheckerMixin):
 
@@ -196,6 +197,9 @@ class ClanExtInfoData(_ClanExtInfoData, FieldsCheckerMixin):
         if self.tag:
             return '%s %s' % (clans_fmts.getClanAbbrevString(self.getTag()), self.getClanName())
         return ''
+
+    def _getCriticalFields(self):
+        return _ClanExtInfoDataCritical
 
     @fmtUnavailableValue(fields=('tag',))
     def getTag(self):
@@ -334,7 +338,14 @@ class ClanRatingsData(_ClanRatingsData, FieldsCheckerMixin):
         return self.fs_battles_count_10_28d <= 0
 
     def hasFortRating(self):
-        return bool(self.fs_battles_count_28d) or bool(self.fb_battles_count_28d) or self.fb_elo_rating_10 != 1000 or self.fb_elo_rating_8 != 1000
+        for gtr in (self.getFsBattlesCount28d,
+         self.getFbBattlesCount28d,
+         self.getEloRating10,
+         self.getEloRating8):
+            if not isValueAvailable(gtr):
+                return False
+
+        return self.fs_battles_count_28d > 0 or self.fb_battles_count_28d > 0 or self.fb_elo_rating_10 != 1000 or self.fb_elo_rating_8 != 1000
 
     def _getCriticalFields(self):
         return _ClanRatingsDataCriticalFields
@@ -350,7 +361,8 @@ _ClanGlobalMapStatsData = namedtuple('ClanGlobalMapStatsData', ['battles_lost',
  'battles_played_on_8_level',
  'battles_won_on_8_level',
  'battles_played_on_10_level',
- 'battles_won_on_10_level'])
+ 'battles_won_on_10_level',
+ 'provinces_count'])
 _ClanGlobalMapStatsData.__new__.__defaults__ = tuple([0] * len(_ClanGlobalMapStatsData._fields))
 
 class ClanGlobalMapStatsData(_ClanGlobalMapStatsData, FieldsCheckerMixin):
@@ -382,6 +394,10 @@ class ClanGlobalMapStatsData(_ClanGlobalMapStatsData, FieldsCheckerMixin):
     @fmtUnavailableValue(fields=('provinces_captured',))
     def getCapturedProvincesCount(self):
         return self.provinces_captured
+
+    @fmtUnavailableValue(fields=('provinces_count',))
+    def getCurrentProvincesCount(self):
+        return self.provinces_count
 
     @fmtUnavailableValue(fields=('battles_played_on_6_level',))
     def getBattles6LevelCount(self):
@@ -447,9 +463,10 @@ _ClanStrongholdInfoData = namedtuple('ClanStrongholdData', ['buildings',
  'defence_attack_efficiency',
  'fb_battles_count_8',
  'fb_battles_count_10',
- 'defence_mode_is_activated'])
+ 'defence_mode_is_activated',
+ 'defence_hour'])
 _ClanStrongholdInfoData.__new__.__defaults__ = ([],) + tuple([0] * (len(_ClanStrongholdInfoData._fields) - 1))
-DefClanStrongholdInfoData = _ClanStrongholdInfoData([], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+DefClanStrongholdInfoData = _ClanStrongholdInfoData([], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, None)
 
 class ClanStrongholdInfoData(_ClanStrongholdInfoData, FieldsCheckerMixin):
     _Building = namedtuple('_Building', 'type direction level position')
@@ -547,6 +564,10 @@ class ClanStrongholdInfoData(_ClanStrongholdInfoData, FieldsCheckerMixin):
     def getDefencesCount(self):
         return self.defence_defence_count
 
+    @fmtUnavailableValue(fields=('defence_hour',))
+    def getDefenceHour(self):
+        return self.defence_hour
+
     @fmtUnavailableValue(fields=('defence_success_defence_count',))
     def getSuccessDefencesCount(self):
         return self.defence_success_defence_count
@@ -634,10 +655,6 @@ class ClanStrongholdStatisticsData(_ClanStrongholdStatisticsData, FieldsCheckerM
     @fmtUnavailableValue(fields=('off_day',))
     def getOffDay(self):
         return self.off_day
-
-    @fmtUnavailableValue(fields=('TODO', 'TODO'))
-    def getDefHour(self):
-        return (0, 0)
 
 
 _AccountClanData = namedtuple('_AccountClanData', ('account_id', 'joined_at', 'clan_id', 'role_bw_flag', 'role_name', 'in_clan_cooldown_till'))
@@ -938,15 +955,19 @@ _ClanInviteData.__new__.__defaults__ = (0,
 
 class ClanInviteData(_ClanInviteData, FieldsCheckerMixin):
 
+    @fmtUnavailableValue(fields=('id',))
     def getDbID(self):
         return self.id
 
+    @fmtUnavailableValue(fields=('account_id',))
     def getAccountDbID(self):
         return self.account_id
 
+    @fmtUnavailableValue(fields=('sender_id',))
     def getSenderDbID(self):
         return self.sender_id
 
+    @fmtUnavailableValue(fields=('clan_id',))
     def getClanDbID(self):
         return self.clan_id
 
@@ -987,29 +1008,42 @@ _ClanCreateInviteData.__new__.__defaults__ = (0, 0, 0)
 
 class ClanCreateInviteData(_ClanCreateInviteData, FieldsCheckerMixin):
 
+    @fmtUnavailableValue(fields=('id',))
     def getDbID(self):
         return self.id
 
+    @fmtUnavailableValue(fields=('account_id',))
     def getAccountDbID(self):
         return self.account_id
 
+    @fmtUnavailableValue(fields=('clan_id',))
     def getClanDbID(self):
         return self.clan_id
 
 
-_ClanADInviteData = namedtuple('_ClanADInviteData', ['id', 'transaction_id', 'clan_id'])
-_ClanADInviteData.__new__.__defaults__ = (0, 0)
+_ClanADInviteData = namedtuple('_ClanADInviteData', ['id',
+ 'transaction_id',
+ 'clan_id',
+ 'account_id'])
+_ClanADInviteData.__new__.__defaults__ = (0, 0, 0, 0)
 
-class ClanADInviteData(_ClanADInviteData):
+class ClanADInviteData(_ClanADInviteData, FieldsCheckerMixin):
 
+    @fmtUnavailableValue(fields=('id',))
     def getDbID(self):
         return self.id
 
+    @fmtUnavailableValue(fields=('transaction_id',))
     def getTransactionID(self):
         return self.transaction_id
 
+    @fmtUnavailableValue(fields=('clan_id',))
     def getClanDbID(self):
         return self.clan_id
+
+    @fmtUnavailableValue(fields=('account_id',))
+    def getAccountDbID(self):
+        return self.account_id
 
 
 class ClanInviteWrapper(object):

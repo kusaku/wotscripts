@@ -314,8 +314,8 @@ class _QuestInfo(_EventInfo):
         if len(vehiclesList) > 0:
             vehiclesLbl, _ = self._joinUpToMax(vehiclesList)
             result.append(formatters.packVehiclesBonusBlock(vehiclesLbl, str(self.event.getID())))
-        label, fullLabel = self._joinUpToMax(simpleBonusesList)
-        result.append(formatters.packTextBlock(label, fullLabel=fullLabel))
+        if len(simpleBonusesList) > 0:
+            result.append(formatters.packSimpleBonusesBlock(simpleBonusesList))
         parents = [ qID for _, qIDs in self.event.getParents().iteritems() for qID in qIDs ]
         for qID, q in self._getEventsByIDs(parents, svrEvents or {}).iteritems():
             result.append(formatters.packTextBlock(i18n.makeString('#quests:bonuses/item/task', q.getUserName()), questID=qID))

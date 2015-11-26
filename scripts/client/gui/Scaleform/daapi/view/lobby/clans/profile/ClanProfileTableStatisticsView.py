@@ -1,5 +1,4 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/clans/profile/ClanProfileTableStatisticsView.py
-import operator
 import BigWorld
 from debug_utils import LOG_ERROR
 from gui.Scaleform.daapi.view.lobby.clans.profile import getI18ArenaById
@@ -61,8 +60,6 @@ class ClanProfileTableStatisticsView(ClanProfileTableStatisticsViewMeta):
         data = {'rendererLinkage': listItemRendererLinkage,
          'headers': headers,
          'isListVisible': hasProvinces,
-         'additionalText': text_styles.standard(_ms(CLANS.GLOBALMAPVIEW_TOTALINCOME, icon=icons.gold(), value=text_styles.gold(BigWorld.wg_getIntegralFormat(sum(map(operator.methodcaller('getRevenue'), provinces)))))),
-         'isAdditionalTextVisible': hasProvinces and isMyClan,
          'noDataText': text_styles.highTitle(_ms(CLANS.GLOBALMAPVIEW_NOPROVINCE)),
          'isNoDataTextVisible': not hasProvinces}
         if hasProvinces:
@@ -72,6 +69,7 @@ class ClanProfileTableStatisticsView(ClanProfileTableStatisticsViewMeta):
         self.__provincesDP = _ClanProfileProvinceDataProvider(isMyClan)
         self.__provincesDP.setFlashObject(self.as_getDPS())
         self.__provincesDP.buildList(provinces)
+        self.as_setAdditionalTextS(hasProvinces and isMyClan, text_styles.standard(_ms(CLANS.GLOBALMAPVIEW_TOTALINCOME, icon=icons.gold(), value=text_styles.gold(BigWorld.wg_getIntegralFormat(self.__provincesDP.getCommonRevenue())))))
         proxy.hideWaiting()
 
     def _dispose(self):
@@ -99,6 +97,7 @@ class _ClanProfileProvinceDataProvider(SortableDAAPIDataProvider):
         self.__selectedID = None
         self.__isMyClan = isMyClan
         self.__dataList = []
+        self.__commonRevenue = 0
         self.__sortMapping = {_SORT_IDS.FRONT: self.__getFront,
          _SORT_IDS.PROVINCE: self.__getProvinceName,
          _SORT_IDS.MAP: self.__getMap,
@@ -106,6 +105,9 @@ class _ClanProfileProvinceDataProvider(SortableDAAPIDataProvider):
          _SORT_IDS.DAYS: self.__getDays,
          _SORT_IDS.INCOME: self.__getIncome}
         return
+
+    def getCommonRevenue(self):
+        return self.__commonRevenue
 
     @property
     def collection(self):
@@ -123,6 +125,7 @@ class _ClanProfileProvinceDataProvider(SortableDAAPIDataProvider):
         self.__dataList = []
         self.__mapping.clear()
         self.__selectedID = None
+        self.__commonRevenue = 0
         return
 
     def fini(self):
@@ -148,10 +151,13 @@ class _ClanProfileProvinceDataProvider(SortableDAAPIDataProvider):
         return vo
 
     def buildList(self, provinces):
+        self.__commonRevenue = 0
         self.clear()
         self.__dataList = provinces
-        for p in provinces:
-            self._list.append(self._makeVO(p))
+        for province in provinces:
+            self._list.append(self._makeVO(province))
+            if province.isHqConnected():
+                self.__commonRevenue += self.__getIncome(province)
 
     def rebuildList(self, cache):
         self.buildList(cache)
@@ -204,7 +210,7 @@ class _ClanProfileProvinceDataProvider(SortableDAAPIDataProvider):
         return primeTime.hour * time_utils.ONE_MINUTE + primeTime.minute
 
     def __getDays(self, province):
-        return province.getTurnsOwned()
+        return int(province.getTurnsOwned() / time_utils.HOURS_IN_DAY)
 
     def __getIncome(self, province):
         return province.getRevenue()

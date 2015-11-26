@@ -231,7 +231,7 @@ class WarplaneActivity(IMapActivity):
         return self.__model is not None
 
     def canStart(self):
-        return Timer.getTime() >= self.__startTime and self.__model is not None
+        return self.__startTime != -1.0 and Timer.getTime() >= self.__startTime and self.__model is not None
 
     def isPeriodic(self):
         return self.__period > 0.0

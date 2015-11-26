@@ -41,6 +41,7 @@ class ClanSearchWindow(ClanSearchWindowMeta, ClanListener):
         self.__clanFinder.init()
         self._cooldown = CooldownHelper(self.__coolDownRequests, self._onCooldownHandle, CoolDownEvent.CLAN)
         self.__isFirstPageRequested = False
+        self.__invitesLimitReached = False
         return
 
     def onWindowClose(self):
@@ -63,6 +64,12 @@ class ClanSearchWindow(ClanSearchWindowMeta, ClanListener):
     def nextPage(self):
         self.as_showWaitingS(WAITING.PREBATTLE_AUTO_SEARCH, {})
         self.__clanFinder.right()
+
+    def isInvitesLimitReached(self):
+        return self.__invitesLimitReached
+
+    def setInvitesLimitReached(self):
+        return self.__invitesLimitReached
 
     def _populate(self):
         super(ClanSearchWindow, self)._populate()

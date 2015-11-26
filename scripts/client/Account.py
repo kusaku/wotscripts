@@ -91,6 +91,7 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
         self.eventNotifications = g_accountRepository.eventNotifications
         self.clanMembers = g_accountRepository.clanMembers
         self.eventsData = g_accountRepository.eventsData
+        self.potapovQuestsLock = {}
         self.isInRandomQueue = False
         self.isInTutorialQueue = False
         self.isInUnitAssembler = False
@@ -902,7 +903,8 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
             self.__synchronizeCacheDict(self.prebattleAutoInvites, diff.get('account', None), 'prebattleAutoInvites', 'replace', events.onPrebattleAutoInvitesChanged)
             self.__synchronizeCacheDict(self.prebattleInvites, diff, 'prebattleInvites', 'update', lambda : events.onPrebattleInvitesChanged(diff))
             self.__synchronizeCacheDict(self.clanMembers, diff.get('cache', None), 'clanMembers', 'replace', events.onClanMembersListChanged)
-            self.__synchronizeCacheDict(self.eventsData, diff, 'eventsData', 'replace', lambda : events.onEventsDataChanged())
+            self.__synchronizeCacheDict(self.eventsData, diff, 'eventsData', 'replace', events.onEventsDataChanged)
+            self.__synchronizeCacheDict(self.potapovQuestsLock, diff.get('cache', None), 'potapovQuestIDs', 'replace', events.onPQLocksChanged)
             self.__synchronizeCacheSimpleValue('globalRating', diff.get('account', None), 'globalRating', events.onAccountGlobalRatingChanged)
             cacheDiff = diff.get('cache', {})
             clanFortState = cacheDiff.get('clanFortState', None)

@@ -156,7 +156,7 @@ class Vehicle(FittingItem, HasStrCD):
         if data is not None:
             self.rentInfo = RentalInfoProvider(isRented=True, *data)
         self.settings = invData.get('settings', 0)
-        self.lock = invData.get('lock', 0)
+        self.lock = invData.get('lock', (0, 0))
         self.repairCost, self.health = invData.get('repair', (0, 0))
         self.gun = VehicleGun(vehDescr.gun['compactDescr'], proxy, vehDescr.gun)
         self.turret = VehicleTurret(vehDescr.turret['compactDescr'], proxy, vehDescr.turret)
@@ -649,23 +649,31 @@ class Vehicle(FittingItem, HasStrCD):
 
     @property
     def isLocked(self):
-        return self.lock != LOCK_REASON.NONE
+        return self.lock[0] != LOCK_REASON.NONE
 
     @property
     def isInBattle(self):
-        return self.lock == LOCK_REASON.ON_ARENA
+        return self.lock[0] == LOCK_REASON.ON_ARENA
 
     @property
     def isInPrebattle(self):
-        return self.lock in (LOCK_REASON.PREBATTLE, LOCK_REASON.UNIT, LOCK_REASON.UNIT_CLUB)
+        return self.lock[0] in (LOCK_REASON.PREBATTLE, LOCK_REASON.UNIT, LOCK_REASON.UNIT_CLUB)
 
     @property
     def isAwaitingBattle(self):
-        return self.lock == LOCK_REASON.IN_QUEUE
+        return self.lock[0] == LOCK_REASON.IN_QUEUE
 
     @property
     def isInUnit(self):
-        return self.lock in (LOCK_REASON.UNIT, LOCK_REASON.UNIT_CLUB)
+        return self.lock[0] in (LOCK_REASON.UNIT, LOCK_REASON.UNIT_CLUB)
+
+    @property
+    def typeOfLockingArena(self):
+        if not self.isLocked:
+            return None
+        else:
+            return self.lock[1]
+            return None
 
     @property
     def isBroken(self):
@@ -827,7 +835,7 @@ class Vehicle(FittingItem, HasStrCD):
             return self.descriptor.type.id == other.descriptor.type.id
 
     def __repr__(self):
-        return 'Vehicle<id:%d, intCD:%d, nation:%d, lock:%d>' % (self.invID,
+        return 'Vehicle<id:%d, intCD:%d, nation:%d, lock:%s>' % (self.invID,
          self.intCD,
          self.nationID,
          self.lock)

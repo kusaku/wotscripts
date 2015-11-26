@@ -9,6 +9,7 @@ class MINICLIENT(object):
     FORT_WELCOME_VIEW_DESCRIPTION = '#miniclient:fort_welcome_view/description'
     SQUAD_PROMO_WINDOW_HEADER = '#miniclient:squad_promo_window/header'
     SQUAD_PROMO_WINDOW_DESCRIPTION = '#miniclient:squad_promo_window/description'
+    SQUAD_PROMO_WINDOW_BTN = '#miniclient:squad_promo_window/btn'
     BATTLE_TYPE_SELECT_POPOVER_MESSAGE = '#miniclient:battle_type_select_popover/message'
     TECH_TREE_DESCRIPTION = '#miniclient:tech_tree/description'
     TECH_TREE_CONTINUE_DOWNLOAD = '#miniclient:tech_tree/continue_download'

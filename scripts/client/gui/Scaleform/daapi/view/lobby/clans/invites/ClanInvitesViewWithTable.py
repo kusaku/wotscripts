@@ -37,7 +37,6 @@ class ClanInvitesViewWithTable(ClanInvitesViewWithTableMeta):
 
     def _onAttachedToWindow(self):
         self.as_setDataS(self._makeData())
-        self._updateSortField(self._getDefaultSortFields())
 
     def _updateSortField(self, sort):
         if sort is not None and len(sort):

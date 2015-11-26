@@ -2,16 +2,17 @@
 import weakref
 from collections import namedtuple, defaultdict
 from adisp import process
+from client_request_lib.exceptions import ResponseCodes
 from helpers import time_utils
 from account_helpers import getAccountDatabaseID
 from messenger.ext import passCensor
 from shared_utils import CONST_CONTAINER
 from debug_utils import LOG_DEBUG
 from gui.shared import g_itemsCache
-from gui.clans import items, contexts, formatters as clans_fmts
+from gui.clans import contexts, formatters as clans_fmts
 from gui.clans.restrictions import ClanMemberPermissions, DefaultClanMemberPermissions
-from gui.clans.settings import CLAN_REQUESTED_DATA_TYPE, COUNT_THRESHOLD, CLAN_INVITE_STATES
-from gui.clans.clan_helpers import ClanCache
+from gui.clans.settings import CLAN_REQUESTED_DATA_TYPE, CLAN_INVITE_STATES, INVITE_LIMITS_LIFE_TIME
+from gui.clans.clan_helpers import ClanCache, CachedValue
 from gui.wgnc.settings import WGNC_DATA_PROXY_TYPE
 
 class SYNC_KEYS(CONST_CONTAINER):
@@ -43,6 +44,7 @@ class ClanAccountProfile(object):
         self._syncState = 0
         self._vitalWebInfo = defaultdict(lambda : None)
         self._cache = defaultdict(lambda : None)
+        self._isInvitesLimitReached = CachedValue(INVITE_LIMITS_LIFE_TIME)
 
     def fini(self):
         self._waitForSync = 0
@@ -123,6 +125,9 @@ class ClanAccountProfile(object):
     def getApplicationsCount(self):
         self.resyncApps()
         return self._vitalWebInfo[SYNC_KEYS.APPS]
+
+    def isInvitesLimitReached(self):
+        return self._isInvitesLimitReached.get(defValue=False)
 
     def resync(self, force = False):
         LOG_DEBUG('Full account clan profile resync initiated')
@@ -206,19 +211,28 @@ class ClanAccountProfile(object):
             elif requestType == CLAN_REQUESTED_DATA_TYPE.ACCOUNT_INVITES:
                 statuses = ctx.getStatuses() or []
                 if len(statuses) == 1 and statuses[0] == CLAN_INVITE_STATES.ACTIVE:
-                    cached = self._cache[_CACHE_KEYS.INVITES] or set()
-                    for item in ctx.getDataObj(response.data):
+                    count = ctx.getTotalCount(response.data)
+                    items = ctx.getDataObj(response.data)
+                    if count is not None and count <= len(items):
+                        cached = set()
+                    else:
+                        cached = self._cache[_CACHE_KEYS.INVITES] or set()
+                    for item in items:
                         cached.add(item.getClanDbID())
 
                     self._cache[_CACHE_KEYS.INVITES] = cached
-                    count = ctx.getTotalCount(response.data)
                     if count is not None and count != self._vitalWebInfo[SYNC_KEYS.INVITES]:
                         self.__changeWebInfo(SYNC_KEYS.INVITES, count, 'onAccountInvitesReceived')
             elif requestType == CLAN_REQUESTED_DATA_TYPE.GET_ACCOUNT_APPLICATIONS:
                 statuses = ctx.getStatuses() or []
                 if len(statuses) == 1 and statuses[0] == CLAN_INVITE_STATES.ACTIVE:
-                    cached = self._cache[_CACHE_KEYS.APPS] or set()
-                    for item in ctx.getDataObj(response.data):
+                    count = ctx.getTotalCount(response.data)
+                    items = ctx.getDataObj(response.data)
+                    if count is not None and count <= len(items):
+                        cached = set()
+                    else:
+                        cached = self._cache[_CACHE_KEYS.APPS] or set()
+                    for item in items:
                         cached.add(item.getClanDbID())
 
                     self._cache[_CACHE_KEYS.APPS] = cached
@@ -226,23 +240,23 @@ class ClanAccountProfile(object):
                     if count is not None and count != self._vitalWebInfo[SYNC_KEYS.APPS]:
                         self.__changeWebInfo(SYNC_KEYS.APPS, count, 'onAccountAppsReceived')
         elif requestType == CLAN_REQUESTED_DATA_TYPE.CREATE_APPLICATIONS:
-            extraCode = response.getExtraCode()
-            if extraCode == 1000:
+            code = response.getCode()
+            if code == ResponseCodes.ACCOUNT_ALREADY_APPLIED:
                 cached = self._cache[_CACHE_KEYS.APPS] or set()
                 for clanDbID in ctx.getClanDbIDs():
                     cached.add(clanDbID)
 
                 self._cache[_CACHE_KEYS.APPS] = cached
-            elif extraCode == 2000:
+            elif code == ResponseCodes.ACCOUNT_ALREADY_INVITED:
                 cached = self._cache[_CACHE_KEYS.INVITES] or set()
                 for clanDbID in ctx.getClanDbIDs():
                     cached.add(clanDbID)
 
                 self._cache[_CACHE_KEYS.INVITES] = cached
-            elif extraCode == 3000:
+            elif code == ResponseCodes.ACCOUNT_IN_COOLDOWN:
                 pass
-            elif extraCode == 4000:
-                pass
+            elif code == ResponseCodes.TOO_MANY_APPLICATIONS:
+                self._isInvitesLimitReached.set(True)
         if self.isInClan():
             self.getClanDossier().processRequestResponse(ctx, response)
         return
@@ -263,7 +277,7 @@ class ClanAccountProfile(object):
             self._syncState |= SYNC_KEYS.INVITES
         elif item.getType() == WGNC_DATA_PROXY_TYPE.CLAN_APP_ACCEPTED or item.getType() == WGNC_DATA_PROXY_TYPE.CLAN_APP_DECLINED:
             apps = self._cache[_CACHE_KEYS.APPS] or set()
-            apps.remove(item.getClanId())
+            apps.discard(item.getClanId())
             self._cache[_CACHE_KEYS.APPS] = apps
             count = self._vitalWebInfo[SYNC_KEYS.APPS]
             if count:

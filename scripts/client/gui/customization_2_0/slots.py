@@ -59,7 +59,11 @@ class Slots(object):
         slotIdx = self.__currentIdx if slotIdx is None else slotIdx
         cType = self.__currentType if cType is None else cType
         itemID = self.__data['data'][cType]['data'][slotIdx]['itemID']
-        return self.__aData.available[cType][itemID]
+        if itemID < 0:
+            return
+        else:
+            return self.__aData.available[cType][itemID]
+            return
 
     def getItemById(self, cType, itemId):
         return self.__aData.available[cType][itemId]
@@ -120,6 +124,10 @@ class Slots(object):
                     typedData[anotherSlotIdx]['price'] = 0
                 elif typedData[anotherSlotIdx]['duration'] == 0:
                     price = 0
+            else:
+                itemInAnotherSlot = self.getSlotItem(cType=cType, slotIdx=anotherSlotIdx)
+                if itemInAnotherSlot is not None:
+                    typedData[anotherSlotIdx]['price'] = itemInAnotherSlot.getPrice(typedData[anotherSlotIdx]['duration'])
         oldSlotItem = self.__data['data'][cType]['data'][slotIdx]
         newSlotItem = {'itemID': item['id'],
          'img': img,
@@ -135,16 +143,18 @@ class Slots(object):
         if newSlotItem['itemID'] < 0:
             if oldSlotItem['itemID'] >= 0:
                 if oldSlotItem['isInDossier']:
-                    self.cart.buyItem(cType, newSlotItem['spot'], self.calculateVehicleIndex(slotIdx, cType), oldSlotItem['itemID'], 0)
+                    self.cart.buyItem(cType, newSlotItem['spot'], self.calculateVehicleIndex(slotIdx, cType), oldSlotItem['itemID'], 0, price=-1)
                 else:
                     initialSlotItem = copy.deepcopy(self.__initialData['data'][cType]['data'][slotIdx])
                     self.__setSlotAndUpdateView(cType, slotIdx, initialSlotItem)
         elif newSlotItem['isInDossier']:
             if item['object'].numberOfDays is not None:
-                itemDuration = item['object'].numberOfDays
+                itemDuration = 7
+                price = -2
             else:
                 itemDuration = 0
-            self.cart.buyItem(cType, newSlotItem['spot'], self.calculateVehicleIndex(slotIdx, cType), newSlotItem['itemID'], itemDuration, price=0)
+                price = 0
+            self.cart.buyItem(cType, newSlotItem['spot'], self.calculateVehicleIndex(slotIdx, cType), newSlotItem['itemID'], itemDuration, price=price)
         else:
             self.__setSlotAndUpdateView(cType, slotIdx, newSlotItem)
         return

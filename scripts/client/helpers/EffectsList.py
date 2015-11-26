@@ -516,7 +516,6 @@ class _SoundEffectDesc(_EffectDesc):
         self._soundName = None
         self._soundNames = None
         self._impactNames = None
-        self._node = None
         if dataSection.has_key('soundPC') and dataSection.has_key('soundNPC'):
             self._soundNames = (dataSection.readString('soundPC'), dataSection.readString('soundNPC'))
         else:
@@ -539,33 +538,37 @@ class _SoundEffectDesc(_EffectDesc):
         part = args.get('modelMap', {}).get(self.modelPart)
         if part is not None:
             model = part
+        elem = {}
+        elem['typeDesc'] = self
+        node = None
         if len(self._pos) > 0:
-            self._node = _findTargetNode(model, self._pos)
-        if self._node is None:
-            self._node = model.root
+            node = _findTargetNode(model, self._pos)
+        if node is None:
+            node = model.root
+        elem['node'] = node
         sound = None
-        sound = SoundGroups.g_instance.getSound3D(self._node, soundName)
-        if sound is not None:
+        elem['sound'] = SoundGroups.g_instance.getSound3D(node, soundName)
+        if elem['sound'] is not None:
             startParams = args.get('soundParams', ())
             for soundStartParam in startParams:
                 sound.setParameterByName(soundStartParam.name, soundStartParam.value)
 
-            sound.play()
-            list.append({'typeDesc': self,
-             'sound': sound})
+            elem['sound'].play()
+        list.append(elem)
         return
 
     def delete(self, elem, reason):
-        self._node = None
-        if reason == 2:
-            if self.endKey:
+        elem['node'] = None
+        if elem['sound'] is not None:
+            if reason == 2:
+                if self.endKey:
+                    elem['sound'].stop()
+                    return True
+                return False
+            else:
                 elem['sound'].stop()
                 return True
-            return False
-        else:
-            elem['sound'].stop()
-            return True
-            return
+        return
 
     def prerequisites(self):
         return []

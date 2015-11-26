@@ -78,7 +78,7 @@ class Carousel(object):
     def __onSlotSelected(self, newType, newSlotIdx):
         self.__currentType = newType
         self.__currentSlotIdx = newSlotIdx
-        self.filter.setTypeAndIdx(newType, newSlotIdx)
+        self.filter.setTypeAndIdx(newType, newSlotIdx, self.slots.getSelectedSlotItemID(), self.slots.getInstalledItem(self.__currentSlotIdx, self.__currentType).getID())
         if newType == CUSTOMIZATION_TYPE.CAMOUFLAGE:
             self.filter.set(FILTER_TYPE.GROUP, CAMOUFLAGE_GROUP_MAPPING[newSlotIdx])
         self.filter.apply()
@@ -91,6 +91,8 @@ class Carousel(object):
         return makeTooltip(*params)
 
     def __onSlotUpdated(self, newSlotData):
+        if self.__currentType == newSlotData['type'] and self.__currentSlotIdx == newSlotData['idx']:
+            self.filter.setTypeAndIdx(newSlotData['type'], newSlotData['idx'], newSlotData['data']['itemID'], self.slots.getInstalledItem(self.__currentSlotIdx, self.__currentType).getID())
         self.__updateCarouselData()
 
     def __updateCarouselData(self):

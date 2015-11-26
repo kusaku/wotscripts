@@ -79,6 +79,7 @@ class _PlayerEvents(object):
         self.onLoginQueueNumberReceived = Event.Event()
         self.onKickWhileLoginReceived = Event.Event()
         self.onGuiCacheSyncCompleted = Event.Event()
+        self.onPQLocksChanged = Event.Event()
 
 
 g_playerEvents = _PlayerEvents()

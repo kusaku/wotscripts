@@ -267,8 +267,8 @@ class BattleSessionProvider(object):
         self.__vehicleStateCtrl.movingToRespawn()
         self.__respawnsCtrl.movingToRespawn()
 
-    def invalidateVehicleState(self, state, value):
-        self.__vehicleStateCtrl.invalidate(state, value)
+    def invalidateVehicleState(self, state, value, vehicleID = 0):
+        self.__vehicleStateCtrl.invalidate(state, value, vehicleID)
 
     def repairPointAction(self, repairPointIndex, action, nextActionTime):
         self.__repairCtrl.action(repairPointIndex, action, nextActionTime)

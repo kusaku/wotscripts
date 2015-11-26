@@ -5,6 +5,7 @@ import zlib
 import cPickle as pickle
 from collections import defaultdict
 import BigWorld
+from PlayerEvents import g_playerEvents
 import clubs_quests
 from Event import Event, EventManager
 from adisp import async, process
@@ -94,6 +95,7 @@ class _EventsCache(object):
         self.onSelectedQuestsChanged = Event(self.__em)
         self.onSlotsCountChanged = Event(self.__em)
         self.onProgressUpdated = Event(self.__em)
+        self.__lockedQuestIds = {}
         return
 
     def init(self):
@@ -108,8 +110,11 @@ class _EventsCache(object):
 
     def start(self):
         self.__companies.start()
+        self.__lockedQuestIds = BigWorld.player().potapovQuestsLock
+        g_playerEvents.onPQLocksChanged += self.__onLockedQuestsChanged
 
     def stop(self):
+        g_playerEvents.onPQLocksChanged -= self.__onLockedQuestsChanged
         self.__companies.stop()
 
     def clear(self):
@@ -147,6 +152,20 @@ class _EventsCache(object):
     @property
     def companies(self):
         return self.__companies
+
+    def getLockedQuestTypes(self):
+        questIDs = set()
+        result = set()
+        allQuests = self.potapov.getQuests()
+        for lockedList in self.__lockedQuestIds.values():
+            if lockedList is not None:
+                questIDs.update(lockedList)
+
+        for questID in questIDs:
+            if questID in allQuests:
+                result.add(allQuests[questID].getMajorTag())
+
+        return result
 
     @async
     @process
@@ -590,6 +609,9 @@ class _EventsCache(object):
                 self.__potapovHidden[quest[0]] = quest[3]
 
         return self.__potapovHidden.copy()
+
+    def __onLockedQuestsChanged(self):
+        self.__lockedQuestIds = BigWorld.player().potapovQuestsLock
 
 
 g_eventsCache = _EventsCache()

@@ -587,7 +587,8 @@ class Token(_Requirement):
 
     def _format(self, svrEvents, event = None):
         result = []
-        for eID, e in svrEvents.iteritems():
+        eventScope = [event] if event is not None else svrEvents.values()
+        for e in eventScope:
             if e.getType() not in _TOKEN_REQUIREMENT_QUESTS:
                 continue
             children = e.getChildren()

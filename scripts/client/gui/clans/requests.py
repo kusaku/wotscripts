@@ -183,7 +183,7 @@ class ClanRequestsController(RequestsController):
     def __getProvinces(self, ctx, callback = None):
 
         def __onProvincesReceived(response):
-            if response.isSuccess():
+            if response.isSuccess() and response.data:
                 frontsCtx = GetFrontsCtx(map(lambda v: v['front_name'], response.data))
 
                 def __onFrontsReceived(frontsResponse):

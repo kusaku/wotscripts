@@ -1145,6 +1145,7 @@ class MENU(object):
     CONTEXTMENU_VEHICLEREMOVE = '#menu:contextMenu/vehicleRemove'
     CONTEXTMENU_USERINFO = '#menu:contextMenu/userInfo'
     CONTEXTMENU_CLANINFO = '#menu:contextMenu/clanInfo'
+    CONTEXTMENU_SENDCLANINVITE = '#menu:contextMenu/sendClanInvite'
     CONTEXTMENU_MONEYTRANSFER = '#menu:contextMenu/moneyTransfer'
     CONTEXTMENU_CREATEPRIVATECHANNEL = '#menu:contextMenu/createPrivateChannel'
     CONTEXTMENU_ADDTOFRIENDS = '#menu:contextMenu/addToFriends'
@@ -1986,6 +1987,7 @@ class MENU(object):
      CONTEXTMENU_VEHICLEREMOVE,
      CONTEXTMENU_USERINFO,
      CONTEXTMENU_CLANINFO,
+     CONTEXTMENU_SENDCLANINVITE,
      CONTEXTMENU_MONEYTRANSFER,
      CONTEXTMENU_CREATEPRIVATECHANNEL,
      CONTEXTMENU_ADDTOFRIENDS,

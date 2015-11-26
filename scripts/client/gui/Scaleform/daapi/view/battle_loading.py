@@ -35,7 +35,6 @@ class BattleLoading(LobbySubView, BattleLoadingMeta, IArenaVehiclesController):
         self._battleCtx = None
         self._isArenaTypeDataInited = False
         self.__isTipInited = False
-        self.__isFalloutMultiTeam = False
         return
 
     @storage_getter('users')
@@ -44,8 +43,6 @@ class BattleLoading(LobbySubView, BattleLoadingMeta, IArenaVehiclesController):
 
     def _populate(self):
         super(BattleLoading, self)._populate()
-        arena = getClientArena()
-        self.__isFalloutMultiTeam = getIsMultiteam()
         g_sessionProvider.addArenaCtrl(self)
         BigWorld.wg_updateColorGrading()
         BigWorld.wg_enableGUIBackground(True, False)
@@ -82,10 +79,8 @@ class BattleLoading(LobbySubView, BattleLoadingMeta, IArenaVehiclesController):
             for vInfoVO, _, viStatsVO in arenaDP.getVehiclesIterator(isEnemy):
                 result.append(self._makeItem(vInfoVO, viStatsVO, userGetter, isSpeaking, actionGetter, regionGetter, playerTeam, isEnemy, self._getSquadIdx(arenaDP, vInfoVO), isFallout))
 
-            data = {'vehiclesInfo': result}
-            if not self.__isFalloutMultiTeam:
-                data['isEnemy'] = isEnemy
-            self.as_setVehiclesDataS(data)
+            self.as_setVehiclesDataS({'vehiclesInfo': result,
+             'isEnemy': isEnemy})
 
     def addVehicleInfo(self, vo, arenaDP):
         playerTeam = arenaDP.getNumberOfTeam()
@@ -93,9 +88,8 @@ class BattleLoading(LobbySubView, BattleLoadingMeta, IArenaVehiclesController):
         viStatsVO = arenaDP.getVehicleInteractiveStats(vo.vehicleID)
         item = self._makeItem(vo, viStatsVO, self.usersStorage.getUser, self.app.voiceChatManager.isPlayerSpeaking, VehicleActions.getBitMask, self._battleCtx.getRegionCode, playerTeam, isEnemy, self._getSquadIdx(arenaDP, vo))
         data = {'vehicleInfo': item,
-         'vehiclesIDs': arenaDP.getVehiclesIDs(isEnemy)}
-        if not self.__isFalloutMultiTeam:
-            data['isEnemy'] = isEnemy
+         'vehiclesIDs': arenaDP.getVehiclesIDs(isEnemy),
+         'isEnemy': isEnemy}
         self.as_addVehicleInfoS(data)
 
     def invalidateVehicleInfo(self, flags, vo, arenaDP):
@@ -107,11 +101,9 @@ class BattleLoading(LobbySubView, BattleLoadingMeta, IArenaVehiclesController):
         else:
             vehiclesIDs = None
         item = self._makeItem(vo, viStatsVO, self.usersStorage.getUser, self.app.voiceChatManager.isPlayerSpeaking, VehicleActions.getBitMask, self._battleCtx.getRegionCode, playerTeam, isEnemy, self._getSquadIdx(arenaDP, vo))
-        data = {'vehicleInfo': item,
-         'vehiclesIDs': vehiclesIDs}
-        if not self.__isFalloutMultiTeam:
-            data['isEnemy'] = isEnemy
-        self.as_updateVehicleInfoS(data)
+        self.as_updateVehicleInfoS({'vehicleInfo': item,
+         'vehiclesIDs': vehiclesIDs,
+         'isEnemy': isEnemy})
         return
 
     def invalidateVehicleStatus(self, flags, vo, arenaDP):
@@ -120,20 +112,16 @@ class BattleLoading(LobbySubView, BattleLoadingMeta, IArenaVehiclesController):
             vehiclesIDs = arenaDP.getVehiclesIDs(isEnemy)
         else:
             vehiclesIDs = None
-        data = {'vehicleID': vo.vehicleID,
+        self.as_setVehicleStatusS({'vehicleID': vo.vehicleID,
          'status': vo.vehicleStatus,
-         'vehiclesIDs': vehiclesIDs}
-        if not self.__isFalloutMultiTeam:
-            data['isEnemy'] = isEnemy
-        self.as_setVehicleStatusS(data)
+         'vehiclesIDs': vehiclesIDs,
+         'isEnemy': isEnemy})
         return
 
     def invalidatePlayerStatus(self, flags, vo, arenaDP):
-        data = {'vehicleID': vo.vehicleID,
-         'status': vo.playerStatus}
-        if not self.__isFalloutMultiTeam:
-            data['isEnemy'] = arenaDP.isEnemyTeam(vo.team)
-        self.as_setPlayerStatusS(data)
+        self.as_setPlayerStatusS({'vehicleID': vo.vehicleID,
+         'status': vo.playerStatus,
+         'isEnemy': arenaDP.isEnemyTeam(vo.team)})
 
     def invalidateUsersTags(self):
         self.invalidateVehiclesInfo(self._battleCtx.getArenaDP())
@@ -268,6 +256,41 @@ class BattleLoading(LobbySubView, BattleLoadingMeta, IArenaVehiclesController):
 
 
 class FalloutMultiTeamBattleLoading(BattleLoading):
+
+    def addVehicleInfo(self, vo, arenaDP):
+        playerTeam = arenaDP.getNumberOfTeam()
+        isEnemy = arenaDP.isEnemyTeam(vo.team)
+        viStatsVO = arenaDP.getVehicleInteractiveStats(vo.vehicleID)
+        item = self._makeItem(vo, viStatsVO, self.usersStorage.getUser, self.app.voiceChatManager.isPlayerSpeaking, VehicleActions.getBitMask, self._battleCtx.getRegionCode, playerTeam, isEnemy, self._getSquadIdx(arenaDP, vo))
+        self.as_addVehicleInfoS({'vehicleInfo': item,
+         'vehiclesIDs': arenaDP.getAllVehiclesIDs()})
+
+    def invalidateVehicleInfo(self, flags, vo, arenaDP):
+        playerTeam = arenaDP.getNumberOfTeam()
+        isEnemy = arenaDP.isEnemyTeam(vo.team)
+        viStatsVO = arenaDP.getVehicleInteractiveStats(vo.vehicleID)
+        if flags & INVALIDATE_OP.SORTING > 0:
+            vehiclesIDs = arenaDP.getAllVehiclesIDs()
+        else:
+            vehiclesIDs = None
+        item = self._makeItem(vo, viStatsVO, self.usersStorage.getUser, self.app.voiceChatManager.isPlayerSpeaking, VehicleActions.getBitMask, self._battleCtx.getRegionCode, playerTeam, isEnemy, self._getSquadIdx(arenaDP, vo))
+        self.as_updateVehicleInfoS({'vehicleInfo': item,
+         'vehiclesIDs': vehiclesIDs})
+        return
+
+    def invalidateVehicleStatus(self, flags, vo, arenaDP):
+        if flags & INVALIDATE_OP.SORTING > 0:
+            vehiclesIDs = arenaDP.getAllVehiclesIDs()
+        else:
+            vehiclesIDs = None
+        self.as_setVehicleStatusS({'vehicleID': vo.vehicleID,
+         'status': vo.vehicleStatus,
+         'vehiclesIDs': vehiclesIDs})
+        return
+
+    def invalidatePlayerStatus(self, flags, vo, arenaDP):
+        self.as_setPlayerStatusS({'vehicleID': vo.vehicleID,
+         'status': vo.playerStatus})
 
     def invalidateVehiclesInfo(self, arenaDP):
         regionGetter = self._battleCtx.getRegionCode

@@ -11,6 +11,11 @@ class ClanProfileGlobalMapView(ClanProfileBaseView):
         super(ClanProfileGlobalMapView, self).setClanDossier(clanDossier)
         self._showWaiting()
         clanInfo = yield clanDossier.requestClanInfo()
+        if not clanInfo.isValid():
+            self._dummyMustBeShown = True
+            self._updateDummy()
+            self._hideWaiting()
+            return
         globalMapStats = yield clanDossier.requestGlobalMapStats()
         if self.isDisposed():
             return
@@ -22,7 +27,8 @@ class ClanProfileGlobalMapView(ClanProfileBaseView):
                 linkage = CLANS_ALIASES.CLAN_PROFILE_GLOBALMAP_PROMO_VIEW_LINKAGE
             self.as_setDataS(linkage)
         else:
-            self._showDefDummy()
+            self._dummyMustBeShown = True
+            self._updateDummy()
         self._updateHeaderState()
         self._hideWaiting()
 

@@ -1,5 +1,5 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/customization_2_0/main_view.py
-from gui import makeHtmlString, DialogsInterface
+from gui import DialogsInterface
 from constants import IGR_TYPE
 from adisp import process
 from CurrentVehicle import g_currentVehicle
@@ -17,7 +17,7 @@ from gui.shared import events
 from gui.shared.ItemsCache import g_itemsCache
 from gui.shared.event_bus import EVENT_BUS_SCOPE
 from gui.shared.events import LobbySimpleEvent
-from gui.shared.utils.functions import makeTooltip, getAbsoluteUrl
+from gui.shared.utils.functions import makeTooltip
 from helpers.i18n import makeString as _ms
 from gui.shared.formatters import text_styles, icons
 from gui.customization_2_0.filter import QUALIFIER_TYPE_INDEX, FILTER_TYPE
@@ -63,7 +63,7 @@ class MainView(CustomizationMainViewMeta):
         installedItem = g_customizationController.carousel.slots.getInstalledItem(slotIdx, cType)
         slotItem = g_customizationController.carousel.slots.getSlotItem(slotIdx, cType)
         if installedItem.getID() == slotItem.getID() and installedItem.duration > 0:
-            isContinue = yield DialogsInterface.showDialog(getDialogRemoveElement(slotItem.getName()))
+            isContinue = yield DialogsInterface.showDialog(getDialogRemoveElement(slotItem.getName(), cType))
         if isContinue:
             g_customizationController.carousel.slots.updateSlot({'id': -1}, cType=cType, slotIdx=slotIdx)
 
@@ -72,8 +72,9 @@ class MainView(CustomizationMainViewMeta):
         isContinue = True
         installedItem = g_customizationController.carousel.slots.getInstalledItem()
         slotItem = g_customizationController.carousel.slots.getSlotItem()
+        type = g_customizationController.carousel.currentType
         if installedItem.getID() == slotItem.getID() and installedItem.duration > 0:
-            isContinue = yield DialogsInterface.showDialog(getDialogRemoveElement(slotItem.getName()))
+            isContinue = yield DialogsInterface.showDialog(getDialogRemoveElement(slotItem.getName(), type))
         if isContinue:
             g_customizationController.carousel.slots.updateSlot({'id': -1})
 
@@ -91,7 +92,7 @@ class MainView(CustomizationMainViewMeta):
         if carouselItem.isInDossier:
             if g_customizationController.carousel.slots.getInstalledItem().getNumberOfDaysLeft() > 0:
                 slotItem = g_customizationController.carousel.slots.getSlotItem()
-                isContinue = yield DialogsInterface.showDialog(getDialogReplaceElement(slotItem.getName()))
+                isContinue = yield DialogsInterface.showDialog(getDialogReplaceElement(slotItem.getName(), cType))
             if carouselItem.numberOfDays is not None:
                 isContinue = yield DialogsInterface.showDialog(self.__getInvoiceItemDialogMeta('temporary', cType, carouselItem, {'willBeDeleted': text_styles.error(_ms('#dialogs:customization/install_invoice_item/will_be_deleted'))}))
             elif carouselItem.numberOfItems is not None:
@@ -118,8 +119,8 @@ class MainView(CustomizationMainViewMeta):
     def showBuyWindow(self):
         self.app.loadView(VIEW_ALIAS.CUSTOMIZATION_PURCHASE_WINDOW)
 
-    def showOnlyPurchased(self, value):
-        g_customizationController.carousel.filter.set(FILTER_TYPE.IS_IN_DOSSIER, value)
+    def showPurchased(self, value):
+        g_customizationController.carousel.filter.set(FILTER_TYPE.SHOW_IN_DOSSIER, value)
         g_customizationController.carousel.filter.apply()
 
     def _dispose(self):
@@ -217,7 +218,7 @@ class MainView(CustomizationMainViewMeta):
         self.as_setCarouselInitS({'icoFilter': RES_ICONS.MAPS_ICONS_BUTTONS_FILTER,
          'durationType': [self.__getDurationTypeVO('{0}{1}'.format(_ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_FILTER_DURATION_ALWAYS), icons.gold()), makeTooltip(_ms(TOOLTIPS.CUSTOMIZATION_CAROUSEL_DURATIONTYPE_HEADER, time=_ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_FILTER_DURATION_ALWAYS)), _ms(TOOLTIPS.CUSTOMIZATION_CAROUSEL_DURATIONTYPE_BODY, time=_ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_FILTER_DURATION_LOWERCASE_ALWAYS))), makeTooltip(_ms(TOOLTIPS.CUSTOMIZATION_CAROUSEL_DURATIONTYPE_HEADER, time=_ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_FILTER_DURATION_ALWAYS)), VEHICLE_CUSTOMIZATION.CUSTOMIZATION_FILTER_DURATION_DISABLED)), self.__getDurationTypeVO('{0}{1}'.format(_ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_FILTER_DURATION_MONTH), icons.credits()), makeTooltip(_ms(TOOLTIPS.CUSTOMIZATION_CAROUSEL_DURATIONTYPE_HEADER, time=_ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_FILTER_DURATION_MONTH)), _ms(TOOLTIPS.CUSTOMIZATION_CAROUSEL_DURATIONTYPE_BODY, time=_ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_FILTER_DURATION_LOWERCASE_MONTH))), makeTooltip(_ms(TOOLTIPS.CUSTOMIZATION_CAROUSEL_DURATIONTYPE_HEADER, time=_ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_FILTER_DURATION_MONTH)), VEHICLE_CUSTOMIZATION.CUSTOMIZATION_FILTER_DURATION_DISABLED)), self.__getDurationTypeVO('{0}{1}'.format(_ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_FILTER_DURATION_WEEK), icons.credits()), makeTooltip(_ms(TOOLTIPS.CUSTOMIZATION_CAROUSEL_DURATIONTYPE_HEADER, time=_ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_FILTER_DURATION_WEEK)), _ms(TOOLTIPS.CUSTOMIZATION_CAROUSEL_DURATIONTYPE_BODY, time=_ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_FILTER_DURATION_LOWERCASE_WEEK))), makeTooltip(_ms(TOOLTIPS.CUSTOMIZATION_CAROUSEL_DURATIONTYPE_HEADER, time=_ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_FILTER_DURATION_WEEK)), VEHICLE_CUSTOMIZATION.CUSTOMIZATION_FILTER_DURATION_DISABLED))],
          'durationSelectIndex': 0,
-         'onlyPurchased': False,
+         'onlyPurchased': True,
          'icoPurchased': RES_ICONS.MAPS_ICONS_FILTERS_PRESENCE,
          'message': '{2}{0}\n{1}'.format(text_styles.neutral(VEHICLE_CUSTOMIZATION.CAROUSEL_MESSAGE_HEADER), text_styles.main(VEHICLE_CUSTOMIZATION.CAROUSEL_MESSAGE_DESCRIPTION), icons.makeImageTag(RES_ICONS.MAPS_ICONS_LIBRARY_ATTENTIONICONFILLED, 16, 16, -3, 0)),
          'fitterTooltip': makeTooltip(TOOLTIPS.CUSTOMIZATION_CAROUSEL_FILTER_HEADER, TOOLTIPS.CUSTOMIZATION_CAROUSEL_FILTER_BODY),

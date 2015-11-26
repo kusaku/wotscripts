@@ -24,19 +24,16 @@ class WebBrowser(object):
     isFocused = property(lambda self: self.__isFocused)
     updateInterval = 0.01
 
-    def __init__(self, browserID, uiObj, texName, size, url = 'about:blank', isFocused = False, backgroundUrl = 'file:///gui/maps/bg.png'):
+    def __init__(self, browserID, uiObj, texName, size, url = 'about:blank', isFocused = False):
         self.__browserID = browserID
         self.__cbID = None
-        if url == 'about:blank':
-            self.__baseUrl = backgroundUrl
-        else:
-            self.__baseUrl = url
+        self.__baseUrl = url
         self.onLoadStart = Event()
         self.onLoadEnd = Event()
         self.onReadyToShowContent = Event()
         self.onNavigate = Event()
         LOG_BROWSER('__init__', self.__baseUrl, texName, size)
-        self.__browser = uiObj.movie.createBrowser(texName, self.__baseUrl, size[0], size[1])
+        self.__browser = uiObj.movie.createBrowser(texName, '', size[0], size[1])
         if self.__browser is None:
             return
         else:
@@ -133,7 +130,7 @@ class WebBrowser(object):
                 self.focus()
             g_mgr.addBrowser(self)
             self.update()
-            self.navigate(self.__baseUrl)
+            self.navigate(url)
             return
 
     def __processDelayedNavigation(self):

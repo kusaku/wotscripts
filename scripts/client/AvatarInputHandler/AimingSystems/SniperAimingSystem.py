@@ -89,6 +89,7 @@ class SniperAimingSystem(IAimingSystem):
 
     def handleMovement(self, dx, dy):
         self.__idealTurretYaw, self.__idealGunPitch = self.__worldYawPitchToTurret(self.__worldYaw, self.__worldPitch)
+        self.__pitchCompensating = 0.0
         self.__idealTurretYaw, self.__idealGunPitch = self.__clampToLimits(self.__idealTurretYaw + dx, self.__idealGunPitch + dy)
         currentGunMat = AimingSystems.getPlayerGunMat(self.__idealTurretYaw, self.__idealGunPitch)
         self.__worldYaw = currentGunMat.yaw

@@ -166,10 +166,15 @@ class CustomizationItemTooltip(BlocksTooltipData):
                   'desc': _ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_TOOLTIP_WAYTOBUY_IGR)}]
                 status = STATUS.DO_IGR
         elif self.__cItem.isInDossier:
-            buyItems = [{'value': 0,
-              'type': BUY_ITEM_TYPE.ALREADY_HAVE_FOREVER,
-              'isSale': False,
-              'desc': VEHICLE_CUSTOMIZATION.CUSTOMIZATION_TOOLTIP_WAYTOBUY_FOREVER}]
+            data = {'value': 0,
+             'isSale': False}
+            if self.__cItem.numberOfDays is not None:
+                data['type'] = BUY_ITEM_TYPE.WAYS_TO_BUY_TEMP
+                data['desc'] = _ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_TOOLTIP_WAYTOBUY_TEMP, days=self.__cItem.numberOfDays)
+            else:
+                data['type'] = BUY_ITEM_TYPE.ALREADY_HAVE_FOREVER
+                data['desc'] = VEHICLE_CUSTOMIZATION.CUSTOMIZATION_TOOLTIP_WAYTOBUY_FOREVER
+            buyItems = [data]
             wasBought = True
             status = STATUS.ON_BOARD if isInSlot else STATUS.ALREADY_HAVE
         elif isInSlot:

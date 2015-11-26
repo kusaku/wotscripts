@@ -340,7 +340,7 @@ class ResearchItemsData(_ItemsData):
 
     def isInstallItemsEnabled(self):
         rootItem = self.getRootItem()
-        return rootItem.isInInventory and not rootItem.lock and not rootItem.repairCost
+        return rootItem.isInInventory and not rootItem.isLocked and not rootItem.repairCost
 
     def load(self):
         g_techTreeDP.load()

@@ -70,7 +70,7 @@ class ResearchItemContextMenuHandler(AbstractContextMenuHandler, EventSystemEnti
 
     def _canInstallItems(self):
         rootItem = g_itemsCache.items.getItemByCD(self._rootCD)
-        return rootItem.isInInventory and not rootItem.lock and not rootItem.repairCost
+        return rootItem.isInInventory and not rootItem.isLocked and not rootItem.repairCost
 
 
 class ResearchVehicleContextMenuHandler(SimpleVehicleCMHandler):

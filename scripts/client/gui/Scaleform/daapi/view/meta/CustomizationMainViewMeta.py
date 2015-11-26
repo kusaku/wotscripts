@@ -27,8 +27,8 @@ class CustomizationMainViewMeta(View):
     def setDurationType(self, id):
         self._printOverrideError('setDurationType')
 
-    def showOnlyPurchased(self, value):
-        self._printOverrideError('showOnlyPurchased')
+    def showPurchased(self, value):
+        self._printOverrideError('showPurchased')
 
     def removeSlot(self, groupId, id):
         self._printOverrideError('removeSlot')

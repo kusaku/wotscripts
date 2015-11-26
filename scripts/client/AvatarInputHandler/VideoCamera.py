@@ -284,6 +284,12 @@ class VideoCamera(CallbackDelayer, TimeDeltaMeter):
         self.__entityPicker = _VehiclePicker()
         return
 
+    def getReasonsAffectCameraDirectly(self):
+        return ()
+
+    def applyImpulse(self, position, impulse, reason = 1):
+        pass
+
     def create(self):
         pass
 

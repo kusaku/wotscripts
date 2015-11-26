@@ -56,8 +56,10 @@ class Vehicle(BigWorld.Entity):
         return
 
     def __del__(self):
-        if _g_respawnCache.has_key(self.id):
+        respInfo = _g_respawnCache.get(self.id, None)
+        if respInfo is not None and respInfo[2] == self:
             del _g_respawnCache[self.id]
+        return
 
     def reload(self):
         wasStarted = self.isStarted
@@ -96,20 +98,23 @@ class Vehicle(BigWorld.Entity):
         self.isCrewActive = True
         self.__isUnderWater = False
         prereqs = self.prerequisites(compactDescr)
-        time = BigWorld.time()
-        loadFunc = partial(self.__resourcesLoaded, id=self.id, seqtime=time)
-        _g_respawnCache[self.id] = (loadFunc, time)
+        mark = random.random()
+        loadFunc = partial(self.__resourcesLoaded, id=self.id, mark=mark)
+        _g_respawnCache[self.id] = (loadFunc, mark, weakref.ref(self))
         BigWorld.loadResourceListBG(list(prereqs), loadFunc)
         return
 
-    def __resourcesLoaded(self, resourceRefs, id, seqtime):
-        respCallback = _g_respawnCache.get(id, None)
-        if respCallback is not None:
-            if respCallback[1] != seqtime:
+    def __resourcesLoaded(self, resourceRefs, id, mark):
+        respInfo = _g_respawnCache.get(id, None)
+        if respInfo is not None:
+            if respInfo[1] != mark:
                 return
+            respVehicle = respInfo[2]()
+            if respVehicle is None or respVehicle != self:
+                return
+            del _g_respawnCache[self.id]
         else:
             return
-        del _g_respawnCache[self.id]
         vehicle = BigWorld.entities.get(id, None)
         if vehicle is None or vehicle != self:
             return
@@ -138,11 +143,13 @@ class Vehicle(BigWorld.Entity):
         self.__isEnteringWorld = False
 
     def onLeaveWorld(self):
-        if _g_respawnCache.has_key(self.id):
+        respInfo = _g_respawnCache.get(self.id, None)
+        if respInfo is not None and respInfo[2] == self:
             del _g_respawnCache[self.id]
         self.__stopExtras()
         BigWorld.player().vehicle_onLeaveWorld(self)
         raise not self.isStarted or AssertionError
+        return
 
     def showShooting(self, burstCount, isPredictedShot = False):
         if not self.isStarted:

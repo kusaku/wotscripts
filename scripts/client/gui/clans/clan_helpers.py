@@ -15,6 +15,7 @@ from gui.clans.settings import CLAN_INVITE_STATES, DATA_UNAVAILABLE_PLACEHOLDER
 from gui.shared.utils.ListPaginator import ListPaginator
 from gui.shared.utils import getPlayerDatabaseID
 from gui.shared.view_helpers import UsersInfoHelper
+from helpers import time_utils
 from shared_utils import CONST_CONTAINER
 _RequestData = namedtuple('_RequestData', ['pattern',
  'offset',
@@ -628,3 +629,35 @@ class ClanCache(FileLocalCache):
 
     def _setCache(self, data):
         self.__cache = data
+
+
+class CachedValue(object):
+
+    def __init__(self, lifeTime):
+        super(CachedValue, self).__init__()
+        self.__lifeTime = lifeTime
+        self.__value = None
+        self.__validTill = None
+        return
+
+    def set(self, value):
+        self.__validTill = self._now() + self.__lifeTime
+        self.__value = value
+
+    def get(self, defValue = None):
+        if self.isExpired():
+            self.sync()
+            return defValue
+        return self.__value
+
+    def getCachedValue(self):
+        return self.__value
+
+    def isExpired(self):
+        return self.__validTill < self._now()
+
+    def sync(self):
+        pass
+
+    def _now(self):
+        return time_utils.getTimestampFromUTC(datetime.utcnow().timetuple())

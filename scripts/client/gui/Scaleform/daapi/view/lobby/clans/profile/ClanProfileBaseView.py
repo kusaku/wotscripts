@@ -22,6 +22,7 @@ class ClanProfileBaseView(ClanProfileBaseViewMeta, ClanEmblemsHelper, ClanListen
         super(ClanProfileBaseView, self).__init__()
         self._clanDossier = None
         self.__headerBtnStates = None
+        self._dummyMustBeShown = False
         return
 
     def setClanDossier(self, clanDossier):
@@ -100,15 +101,12 @@ class ClanProfileBaseView(ClanProfileBaseViewMeta, ClanEmblemsHelper, ClanListen
         self.as_showWaitingS(False)
 
     def _updateDummy(self):
-        if self.clansCtrl.isAvailable():
+        if self.clansCtrl.isAvailable() and not self._dummyMustBeShown:
             self.as_hideDummyS()
         else:
-            self._showDefDummy()
-
-    def _showDefDummy(self):
-        self.as_showDummyS({'iconSource': RES_ICONS.MAPS_ICONS_LIBRARY_ALERTBIGICON,
-         'htmlText': str().join((text_styles.middleTitle(i18n.makeString(CLANS.CLANPROFILE_MAINWINDOW_DUMMY_HEADER)), clans_fmts.getHtmlLineDivider(3), text_styles.main(i18n.makeString(CLANS.CLANPROFILE_MAINWINDOW_DUMMY_BODY)))),
-         'alignCenter': False,
-         'btnVisible': False,
-         'btnLabel': '',
-         'btnTooltip': ''})
+            self.as_showDummyS({'iconSource': RES_ICONS.MAPS_ICONS_LIBRARY_ALERTBIGICON,
+             'htmlText': str().join((text_styles.middleTitle(i18n.makeString(CLANS.CLANPROFILE_MAINWINDOW_DUMMY_HEADER)), clans_fmts.getHtmlLineDivider(3), text_styles.main(i18n.makeString(CLANS.CLANPROFILE_MAINWINDOW_DUMMY_BODY)))),
+             'alignCenter': False,
+             'btnVisible': False,
+             'btnLabel': '',
+             'btnTooltip': ''})

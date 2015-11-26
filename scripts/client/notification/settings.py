@@ -59,6 +59,7 @@ class LAYOUT_PADDING(object):
     HANGAR = (4, 235)
     OTHER = (0, 35)
     LIST = (45, 34)
+    CUSTOMIZATION = (4, 210)
 
 
 def makePathToIcon(iconName):

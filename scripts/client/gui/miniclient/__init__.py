@@ -6,6 +6,7 @@ import contacts as _contacts
 import dynamic_squads as _dynamic_squads
 import promo_controller as _promo_controller
 import fallout_controller as _fallout_controller
+from gui.miniclient.notifications import configure_pointcuts as _notifications_configure_pointcuts
 from lobby import configure_pointcuts as _configure_lobby_pointcuts
 from tech_tree import configure_pointcuts as _configure_tech_tree_pointcuts
 from invitations import configure_pointcuts as _configure_invitation_pointcuts
@@ -25,6 +26,7 @@ def configure_state():
         _continue_download.OnFailLoadingFramePointcut()
         _contacts.CreateSquadPointcut()
         _configure_lobby_pointcuts(config)
+        _notifications_configure_pointcuts()
         _configure_fort_pointcuts()
         _configure_tech_tree_pointcuts(config)
         _configure_invitation_pointcuts()

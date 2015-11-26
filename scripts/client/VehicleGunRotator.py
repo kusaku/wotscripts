@@ -14,6 +14,7 @@ import BattleReplay
 from gun_rotation_shared import calcPitchLimitsFromDesc
 import SoundGroups
 _ENABLE_TURRET_ROTATOR_SOUND = True
+_ENABLE_RELATIVE_SHOT_POINT = True
 g__attachToCam = False
 
 class VehicleGunRotator(object):
@@ -300,9 +301,13 @@ class VehicleGunRotator(object):
             else:
                 vehicle = BigWorld.entity(avatar.playerVehicleID)
                 if vehicle is not None and vehicle is avatar.vehicle:
-                    vehicle.cell.trackPointWithGun(shotPoint)
+                    if _ENABLE_RELATIVE_SHOT_POINT:
+                        shotPoint = shotPoint - Math.Matrix(avatar.getOwnVehicleMatrix()).translation
+                        vehicle.cell.trackRelativePointWithGun(shotPoint)
+                    else:
+                        vehicle.cell.trackWorldPointWithGun(shotPoint)
                 else:
-                    avatar.base.vehicle_trackPointWithGun(shotPoint)
+                    avatar.base.vehicle_trackWorldPointWithGun(shotPoint)
             return
 
     def __rotate(self, shotPoint, timeDiff):

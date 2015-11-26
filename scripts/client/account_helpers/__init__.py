@@ -32,6 +32,10 @@ def isOutOfWallet(attrs):
     return __checkAccountAttr(attrs, ACCOUNT_ATTR.OUT_OF_SESSION_WALLET)
 
 
+def isClanEnabled(attrs):
+    return __checkAccountAttr(attrs, ACCOUNT_ATTR.CLAN)
+
+
 def getPremiumExpiryDelta(expiryTime):
     check = datetime.datetime.utcfromtimestamp(expiryTime)
     now = datetime.datetime.utcnow()

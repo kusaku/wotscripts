@@ -93,7 +93,6 @@ class _BattleRespawnView(BattleRespawnViewMeta):
     def showGasAttackInfo(self, vehsList, cooldowns):
         self.__disabled = True
         self.__selectedVehicleID = None
-        g_sessionProvider.getGasAttackCtrl().showPanelMessage()
         slotsStatesData = self.__getSlotsStatesData(vehsList, cooldowns)
         self.as_updateRespawnViewS('', slotsStatesData)
         self.as_showGasAtackMode()
@@ -103,7 +102,6 @@ class _BattleRespawnView(BattleRespawnViewMeta):
         g_sessionProvider.getRespawnsCtrl().chooseVehicleForRespawn(vehicleID)
 
     def onPostmortemBtnClickS(self):
-        g_sessionProvider.getGasAttackCtrl().hidePanelMessage()
         self.hide()
 
     def __showRespawnView(self, vehsList, cooldowns):

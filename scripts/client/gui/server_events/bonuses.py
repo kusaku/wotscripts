@@ -257,15 +257,7 @@ class BoosterBonus(SimpleBonus):
         return boosters
 
     def format(self):
-        result = []
-        for booster, count in self.getBoosters().iteritems():
-            if booster is not None:
-                result.append(i18n.makeString('#quests:bonuses/boosters/name', name=booster.userName, quality=booster.qualityStr, count=count))
-
-        if result:
-            return ', '.join(result)
-        else:
-            return
+        return ', '.join(self.formattedList())
 
     @staticmethod
     def __makeBoosterVO(booster):
@@ -285,6 +277,14 @@ class BoosterBonus(SimpleBonus):
                 result.append({'value': BigWorld.wg_getIntegralFormat(count),
                  'tooltip': makeTooltip(header=booster.userName, body=booster.description),
                  'boosterVO': self.__makeBoosterVO(booster)})
+
+        return result
+
+    def formattedList(self):
+        result = []
+        for booster, count in self.getBoosters().iteritems():
+            if booster is not None:
+                result.append(i18n.makeString('#quests:bonuses/boosters/name', name=booster.userName, quality=booster.qualityStr, count=count))
 
         return result
 

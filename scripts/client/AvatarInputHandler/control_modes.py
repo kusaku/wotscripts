@@ -174,6 +174,7 @@ class _GunControlMode(IControlMode):
         self._gunMarker.destroy()
         self._aih = None
         self._cam.destroy()
+        self._cam = None
         if self._aim is not None:
             self._aim.destroy()
         return
@@ -998,6 +999,7 @@ class PostMortemControlMode(IControlMode):
     def destroy(self):
         self.disable()
         self.__aim.destroy()
+        self.__cam.destroy()
         self.__cam = None
         return
 
@@ -1017,17 +1019,17 @@ class PostMortemControlMode(IControlMode):
         _setCameraFluency(self.__cam.camera, self.__CAM_FLUENCY)
         self.__isEnabled = True
         BigWorld.player().consistentMatrices.onVehicleMatrixBindingChanged += self.__onMatrixBound
-        if self.__isObserverMode:
-            self.__switchViewpoint(False)
-            return
-        else:
+        if not BattleReplay.g_replayCtrl.isPlaying:
+            if self.__isObserverMode:
+                self.__switchViewpoint(False)
+                return
             if PostMortemControlMode.getIsPostmortemDelayEnabled() and bool(args.get('bPostmortemDelay')):
                 self.__postmortemDelay = PostmortemDelay(self.__cam, self.__onPostmortemDelayStop)
                 self.__postmortemDelay.start()
             else:
                 self.__switchToVehicle(None)
-            g_postProcessing.enable('postmortem')
-            return
+        g_postProcessing.enable('postmortem')
+        return
 
     def disable(self):
         BigWorld.player().consistentMatrices.onVehicleMatrixBindingChanged -= self.__onMatrixBound

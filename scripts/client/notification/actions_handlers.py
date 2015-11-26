@@ -197,7 +197,7 @@ class _ShowClanAppUserInfoHandler(_ClanAppHandler):
         def onDossierReceived(databaseID, userName):
             event_dispatcher.showProfileWindow(databaseID, userName)
 
-        event_dispatcher.requestProfile(accID, '', successCallback=onDossierReceived)
+        event_dispatcher.requestProfile(accID, model.getNotification(self.getNotType(), entityID).getUserName(), successCallback=onDossierReceived)
         return None
 
 

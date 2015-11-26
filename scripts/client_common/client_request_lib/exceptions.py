@@ -45,6 +45,9 @@ class ResponseCodes(object):
     WGCCBE_DISABLED = 38
     ACCOUNT_IN_TRANSACTION = 39
     CLAN_IN_TRANSACTION = 40
+    ACCOUNT_ALREADY_INVITED = 41
+    ACCOUNT_ALREADY_APPLIED = 42
+    ACCOUNT_IN_COOLDOWN = 43
 
 
 class BaseRequestError(Exception):
@@ -55,7 +58,7 @@ class BaseRequestError(Exception):
 
 
 class AuthentificationError(BaseRequestError):
-    status_code = 403
+    status_code = 401
     response_code = ResponseCodes.AUTHENTIFICATION_ERROR
     description = 'User is not authentificated'
 
@@ -224,37 +227,37 @@ class WgcgError(BaseRequestError):
 
 class ExporterDisabled(BaseRequestError):
     description = 'Exporter proxying is disabled'
-    status_code = 500
+    status_code = 503
     response_code = ResponseCodes.EXPORTER_DISABLED
 
 
 class GlobalMapDisabled(BaseRequestError):
     description = 'Global map proxying is disabled'
-    status_code = 500
+    status_code = 503
     response_code = ResponseCodes.GLOBAL_MAP_DISABLED
 
 
 class WgrsDisabled(BaseRequestError):
     description = 'WGRS proxying is disabled'
-    status_code = 500
+    status_code = 503
     response_code = ResponseCodes.WGRS_DISABLED
 
 
 class WgccfeDisabled(BaseRequestError):
     description = 'WGCCFE proxying is disabled'
-    status_code = 500
+    status_code = 503
     response_code = ResponseCodes.WGCCFE_DISABLED
 
 
 class SpaDisabled(BaseRequestError):
     description = 'SPA proxying is disabled'
-    status_code = 500
+    status_code = 503
     response_code = ResponseCodes.SPA_DISABLED
 
 
 class WgccbeDisabled(BaseRequestError):
     description = 'WGCCBE proxying is disabled'
-    status_code = 500
+    status_code = 503
     response_code = ResponseCodes.WGCCBE_DISABLED
 
 
@@ -268,3 +271,21 @@ class ClanInTransaction(BaseRequestError):
     description = 'Clan in transaction'
     status_code = 409
     response_code = ResponseCodes.CLAN_IN_TRANSACTION
+
+
+class AccountAlreadyInvited(BaseRequestError):
+    description = 'Account already invited'
+    status_code = 409
+    response_code = ResponseCodes.ACCOUNT_ALREADY_INVITED
+
+
+class AccountAlreadyApplied(BaseRequestError):
+    description = 'Account already applied'
+    status_code = 409
+    response_code = ResponseCodes.ACCOUNT_ALREADY_APPLIED
+
+
+class AccountInCooldown(BaseRequestError):
+    description = 'Account in cooldown'
+    status_code = 409
+    response_code = ResponseCodes.ACCOUNT_IN_COOLDOWN

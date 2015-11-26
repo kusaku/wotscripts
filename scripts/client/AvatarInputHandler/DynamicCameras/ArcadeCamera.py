@@ -120,6 +120,17 @@ class ArcadeCamera(ICamera, CallbackDelayer, TimeDeltaMeter):
         self.__dynamicCfg = CameraDynamicConfig()
         self.__accelerationSmoother = None
         self.__readCfg(dataSec)
+        self.__cam = None
+        self.__aim = None
+        self.__onChangeControlMode = None
+        self.__aimingSystem = None
+        self.__curSense = 0
+        self.__curScrollSense = 0
+        self.__postmortemMode = False
+        self.__modelsToCollideWith = []
+        self.__focalPointDist = 1.0
+        self.__autoUpdateDxDyDz = Vector3(0.0)
+        self.__defaultAimOffset = (0.0, 0.0)
         if aim is None:
             return
         else:
@@ -127,15 +138,7 @@ class ArcadeCamera(ICamera, CallbackDelayer, TimeDeltaMeter):
             self.__cam = BigWorld.HomingCamera()
             aimOffset = self.__aim.offset()
             self.__cam.aimPointClipCoords = Vector2(aimOffset)
-            self.__curSense = 0
-            self.__curScrollSense = 0
             self.__defaultAimOffset = (aimOffset[0], aimOffset[1])
-            self.__postmortemMode = False
-            self.__modelsToCollideWith = []
-            self.__onChangeControlMode = None
-            self.__aimingSystem = None
-            self.__focalPointDist = 1.0
-            self.__autoUpdateDxDyDz = Vector3(0.0)
             return
 
     def create(self, pivotPos, onChangeControlMode = None, postmortemMode = False):
@@ -174,6 +177,11 @@ class ArcadeCamera(ICamera, CallbackDelayer, TimeDeltaMeter):
         self._writeUserPreferences()
         self.__aimingSystem.destroy()
         self.__aimingSystem = None
+        return
+
+    def __del__(self):
+        if self.__cam is not None:
+            self.destroy()
         return
 
     def getPivotSettings(self):

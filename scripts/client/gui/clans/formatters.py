@@ -1,8 +1,8 @@
 # Embedded file name: scripts/client/gui/clans/formatters.py
 import BigWorld
+from client_request_lib.exceptions import ResponseCodes
 from gui import makeHtmlString
 from helpers.i18n import doesTextExist, makeString
-from gui.clans.settings import ERROR_CODES as ERROR
 from gui.clans.settings import CLAN_REQUESTED_DATA_TYPE as REQUEST_TYPE
 from gui.clans.settings import CLAN_MEMBERS
 ERROR_SYS_MSG_TPL = '#system_messages:clans/request/errors/%s'
@@ -43,15 +43,21 @@ def formatShortDateShortTimeString(timestamp):
 
 
 _CUSTOM_ERR_MESSAGES_BY_REQUEST = {REQUEST_TYPE.CREATE_INVITES: lambda result, ctx: ''}
-_CUSTOM_ERR_MESSAGES = {(REQUEST_TYPE.CLAN_GLOBAL_MAP_STATS, ERROR.GLOBAL_MAP_UNAVAILABLE): ''}
+_CUSTOM_ERR_MESSAGES = {(REQUEST_TYPE.CLAN_GLOBAL_MAP_STATS, ResponseCodes.GLOBAL_MAP_ERROR): '',
+ (REQUEST_TYPE.CLAN_INFO, ResponseCodes.WGCCBE_ERROR): '',
+ (REQUEST_TYPE.ACCEPT_INVITE, ResponseCodes.CLAN_IN_TRANSACTION): 'DEFAULT',
+ (REQUEST_TYPE.DECLINE_INVITE, ResponseCodes.CLAN_IN_TRANSACTION): 'DEFAULT',
+ (REQUEST_TYPE.DECLINE_INVITES, ResponseCodes.CLAN_IN_TRANSACTION): 'DEFAULT',
+ (REQUEST_TYPE.ACCEPT_APPLICATION, ResponseCodes.CLAN_IN_TRANSACTION): 'DEFAULT',
+ (REQUEST_TYPE.DECLINE_APPLICATION, ResponseCodes.CLAN_IN_TRANSACTION): 'DEFAULT'}
 
 def getRequestErrorMsg(result, ctx):
     msgReqKey = ctx.getRequestType()
     msgKey = (ctx.getRequestType(), result.code)
-    if msgReqKey in _CUSTOM_ERR_MESSAGES_BY_REQUEST:
-        errorMsg = _CUSTOM_ERR_MESSAGES_BY_REQUEST[msgReqKey]
-    elif msgKey in _CUSTOM_ERR_MESSAGES:
+    if msgKey in _CUSTOM_ERR_MESSAGES:
         errorMsg = _CUSTOM_ERR_MESSAGES[msgKey]
+    elif msgReqKey in _CUSTOM_ERR_MESSAGES_BY_REQUEST:
+        errorMsg = _CUSTOM_ERR_MESSAGES_BY_REQUEST[msgReqKey]
     else:
         errorMsg = result.errStr
     msg = ''
@@ -112,3 +118,92 @@ def getInvitesSentSysMsg(accountNames):
 
 def _sysMsg(i18nKey, *args, **kwargs):
     return makeString(('#system_messages:%s' % i18nKey), *args, **kwargs)
+
+
+class _BaseClanAppHtmlTextFormatter(object):
+
+    def __init__(self, titleKey, commentKey):
+        super(_BaseClanAppHtmlTextFormatter, self).__init__()
+        self._commentKey = commentKey
+        self._titleKey = titleKey
+
+    def getText(self, entity):
+        result = []
+        text = self.getTitle(entity)
+        if len(text):
+            result.append(text)
+        text = self.getComment(entity)
+        if len(text):
+            result.append(text)
+        return ''.join(result)
+
+    def getTitle(self, entity):
+        return makeHtmlString('html_templates:lobby/clans', self._titleKey, {'appsCount': entity})
+
+    def getComment(self, entity):
+        return makeHtmlString('html_templates:lobby/clans', self._commentKey)
+
+
+class ClanMultiNotificationsHtmlTextFormatter(_BaseClanAppHtmlTextFormatter):
+
+    def __init__(self, titleKey, commentKey, commentAction):
+        self.__commentAction = commentAction
+        super(ClanMultiNotificationsHtmlTextFormatter, self).__init__(titleKey, commentKey)
+
+    def getTitle(self, entity):
+        return makeHtmlString('html_templates:lobby/clans', self._titleKey, {'appsCount': entity})
+
+    def getComment(self, entity):
+        return makeHtmlString('html_templates:lobby/clans', self._commentKey) % {'eventType': self.__commentAction}
+
+
+class ClanSingleNotificationHtmlTextFormatter(_BaseClanAppHtmlTextFormatter):
+
+    def __init__(self, titleKey, commentKey, commentAction):
+        self.__commentAction = commentAction
+        super(ClanSingleNotificationHtmlTextFormatter, self).__init__(titleKey, commentKey)
+
+    def getTitle(self, uName):
+        return makeHtmlString('html_templates:lobby/clans', self._titleKey, {'name': uName})
+
+    def getComment(self, _):
+        return makeHtmlString('html_templates:lobby/clans', self._commentKey) % {'eventType': self.__commentAction}
+
+    def getText(self, data):
+        userName, state = data
+        text = super(ClanSingleNotificationHtmlTextFormatter, self).getText(userName)
+        stateTxt = self._getStateText(state)
+        if stateTxt:
+            text += stateTxt
+        return text
+
+    def _getStateText(self, state):
+        if not doesTextExist(state):
+            return ''
+        stateStr = makeString(state)
+        if stateStr:
+            stateStr = makeHtmlString('html_templates:lobby/clans', 'inviteState', {'state': stateStr})
+        return stateStr
+
+
+class ClanAppActionHtmlTextFormatter(object):
+
+    def __init__(self, actType):
+        super(ClanAppActionHtmlTextFormatter, self).__init__()
+        self.__actType = actType
+
+    def getTitle(self):
+        return ''
+
+    def getComment(self, clanName):
+        return makeHtmlString('html_templates:lobby/clans/', self.__actType, ctx={'name': clanName})
+
+    def getText(self, clanName):
+        result = []
+        text = self.getTitle()
+        if len(text):
+            result.append(text)
+        text = self.getComment(clanName)
+        if len(text):
+            result.append(text)
+        return ''.join(result)

@@ -45,14 +45,13 @@ class BrowserController(Controller):
 
     @async
     @process
-    def load(self, url = None, title = None, showActionBtn = True, showWaiting = True, browserID = None, isAsync = False, browserSize = None, background = None, isDefault = True, callback = None, showCloseBtn = False):
+    def load(self, url = None, title = None, showActionBtn = True, showWaiting = True, browserID = None, isAsync = False, browserSize = None, isDefault = True, callback = None, showCloseBtn = False):
         url = url or GUI_SETTINGS.browser.url
         suffix = yield self.__urlMacros.parse(GUI_SETTINGS.browser.params)
         concatenator = '&' if '?' in url else '?'
         if suffix not in url:
             url = concatenator.join([url, suffix])
         size = browserSize or BROWSER.SIZE
-        background = background or BROWSER.BACKGROUND
         if browserID is None:
             browserID = self.__browserIDGenerator.next()
         if browserID not in self.__browsers:
@@ -60,7 +59,7 @@ class BrowserController(Controller):
             app = g_appLoader.getApp()
             if not app:
                 raise AssertionError('Application can not be None')
-                self.__browsers[browserID] = WebBrowser(browserID, app, texture, size, url, backgroundUrl=background)
+                self.__browsers[browserID] = WebBrowser(browserID, app, texture, size, url)
                 self.onBrowserAdded(browserID)
             ctx = {'url': url,
              'title': title,

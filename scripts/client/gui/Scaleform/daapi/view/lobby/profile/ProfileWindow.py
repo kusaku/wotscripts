@@ -30,6 +30,12 @@ class ProfileWindow(ProfileWindowMeta, ClanListener):
     def onClanStateChanged(self, oldStateID, newStateID):
         self.__updateAddToClanBtn()
 
+    def onClanInvitesCountReceived(self, clanDbID, invitesCount):
+        self.__updateAddToClanBtn()
+
+    def onClanAppsCountReceived(self, clanDbID, appsCount):
+        self.__updateAddToClanBtn()
+
     def _populate(self):
         super(ProfileWindow, self)._populate()
         g_playerEvents.onDossiersResync += self.__dossierResyncHandler
@@ -58,9 +64,12 @@ class ProfileWindow(ProfileWindowMeta, ClanListener):
 
     def __updateAddToClanBtn(self):
         clanDBID, clanInfo = g_itemsCache.items.getClanInfo(self.__databaseID)
-        candidateIsInClan = clanInfo is not None
-        canIHandleInvites = self.clansCtrl.getAccountProfile().getMyClanPermissions().canHandleClanInvites()
-        self.as_addToClanAvailableS(self.clansCtrl.isAvailable() and not candidateIsInClan and canIHandleInvites)
+        isEnabled = self.clansCtrl.isAvailable()
+        if isEnabled and clanInfo is None:
+            profile = self.clansCtrl.getAccountProfile()
+            dossier = profile.getClanDossier()
+            isEnabled = profile.getMyClanPermissions().canHandleClanInvites() and not dossier.isClanInviteSent(self.__databaseID) and not dossier.hasClanApplication(self.__databaseID)
+        self.as_addToClanAvailableS(isEnabled)
         self.as_addToClanVisibleS(self.clansCtrl.isEnabled())
         return
 
@@ -120,6 +129,9 @@ class ProfileWindow(ProfileWindowMeta, ClanListener):
         result = yield g_clanCtrl.sendRequest(context, allowDelay=True)
         if result.isSuccess():
             SystemMessages.pushMessage(clans_fmts.getAppSentSysMsg(profile.getClanName(), profile.getClanAbbrev()))
+        else:
+            SystemMessages.pushMessage(clans_fmts.getInvitesNotSentSysMsg([self.__userName]), type=SystemMessages.SM_TYPE.Error)
+        self.__updateAddToClanBtn()
         self.as_hideWaitingS()
 
     def userSetIgnored(self):

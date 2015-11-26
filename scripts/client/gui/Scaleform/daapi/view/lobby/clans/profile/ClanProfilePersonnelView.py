@@ -26,17 +26,17 @@ from messenger.proto.events import g_messengerEvents
 from messenger.storage import storage_getter
 OPEN_INVITES_ACTION_ID = 'openInvites'
 OPEN_CLAN_CHANNEL_ACTION_ID = 'openClanChannel'
-_CLAN_MEMBERS_SORT_INDEXES = (CLAN_MEMBER_FLAGS.LEADER,
- CLAN_MEMBER_FLAGS.VICE_LEADER,
- CLAN_MEMBER_FLAGS.STAFF,
- CLAN_MEMBER_FLAGS.COMMANDER,
- CLAN_MEMBER_FLAGS.DIPLOMAT,
- CLAN_MEMBER_FLAGS.TREASURER,
- CLAN_MEMBER_FLAGS.RECRUITER,
- CLAN_MEMBER_FLAGS.JUNIOR,
- CLAN_MEMBER_FLAGS.PRIVATE,
+_CLAN_MEMBERS_SORT_INDEXES = (CLAN_MEMBER_FLAGS.RESERVIST,
  CLAN_MEMBER_FLAGS.RECRUIT,
- CLAN_MEMBER_FLAGS.RESERVIST)
+ CLAN_MEMBER_FLAGS.PRIVATE,
+ CLAN_MEMBER_FLAGS.JUNIOR,
+ CLAN_MEMBER_FLAGS.RECRUITER,
+ CLAN_MEMBER_FLAGS.TREASURER,
+ CLAN_MEMBER_FLAGS.DIPLOMAT,
+ CLAN_MEMBER_FLAGS.COMMANDER,
+ CLAN_MEMBER_FLAGS.STAFF,
+ CLAN_MEMBER_FLAGS.VICE_LEADER,
+ CLAN_MEMBER_FLAGS.LEADER)
 
 class _SORT_IDS:
     USER_NAME = 'userName'
@@ -64,7 +64,7 @@ def _packColumn(columdID, label, buttonWidth, tooltip, icon = '', sortOrder = -1
      'buttonWidth': buttonWidth,
      'toolTip': tooltip,
      'sortOrder': sortOrder,
-     'defaultSortDirection': 'ascending',
+     'defaultSortDirection': 'descending',
      'buttonHeight': 34,
      'showSeparator': showSeparator}
 
@@ -119,16 +119,28 @@ class ClanProfilePersonnelView(ClanProfilePersonnelViewMeta):
     def channelsStorage(self):
         return None
 
+    def _dispose(self):
+        if self.__membersDP:
+            self.__membersDP.fini()
+            self.__membersDP = None
+        super(ClanProfilePersonnelView, self)._dispose()
+        return
+
     @process
     def setClanDossier(self, clanDossier):
         super(ClanProfilePersonnelView, self).setClanDossier(clanDossier)
         self._showWaiting()
-        self.__membersDP = _ClanMembersDataProvider()
-        self.__membersDP.setFlashObject(self.as_getMembersDPS())
         clanInfo = yield clanDossier.requestClanInfo()
+        if not clanInfo.isValid():
+            self._dummyMustBeShown = True
+            self._updateDummy()
+            self._hideWaiting()
+            return
         members = yield clanDossier.requestMembers()
         if self.isDisposed():
             return
+        self.__membersDP = _ClanMembersDataProvider()
+        self.__membersDP.setFlashObject(self.as_getMembersDPS())
         self._updateClanInfo(clanInfo)
         membersCount = len(members)
         self.__membersDP.buildList(members, syncUserInfo=True)
@@ -147,7 +159,7 @@ class ClanProfilePersonnelView(ClanProfilePersonnelViewMeta):
          'tableHeaders': headers,
          'statistics': statistics,
          'defaultSortField': _SORT_IDS.POST,
-         'defaultSortDirection': 'ascending'})
+         'defaultSortDirection': 'descending'})
         self._updateHeaderState()
         self._hideWaiting()
 
@@ -335,7 +347,7 @@ class _ClanMembersDataProvider(SortableDAAPIDataProvider, UsersInfoHelper):
         return memberData.getBattlesPerformanceAvg()
 
     def __getMemberAwgExp(self, memberData):
-        return memberData.getXp()
+        return memberData.getBattleXpAvg()
 
     def __getMemberDaysInClan(self, memberData):
         return memberData.getDaysInClan()

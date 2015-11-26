@@ -149,7 +149,7 @@ class Battle(BattleWindow):
             plugins['flagNotification'] = FlagNotificationPlugin
         if hasRepairPoints():
             plugins['repairTimer'] = RepairTimerPlugin
-        if hasRespawns() and not BattleReplay.g_replayCtrl.isPlaying:
+        if hasRespawns() and (constants.IS_DEVELOPMENT or not BattleReplay.g_replayCtrl.isPlaying):
             plugins['respawnView'] = RespawnViewPlugin
         if hasResourcePoints():
             plugins['resources'] = ResourcePointsPlugin

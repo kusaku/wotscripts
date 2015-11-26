@@ -2,6 +2,7 @@
 import BigWorld
 from debug_utils import LOG_ERROR
 from gui.clans.clan_controller import g_clanCtrl
+from gui.clans.formatters import ClanSingleNotificationHtmlTextFormatter, ClanMultiNotificationsHtmlTextFormatter, ClanAppActionHtmlTextFormatter
 from gui.clans.settings import CLAN_APPLICATION_STATES, CLAN_INVITE_STATES
 from gui.prb_control.formatters.invites import getPrbInviteHtmlFormatter
 from gui.prb_control.prb_helpers import prbInvitesProperty
@@ -16,7 +17,7 @@ from notification.settings import NOTIFICATION_TYPE, NOTIFICATION_BUTTON_STATE
 from notification.settings import makePathToIcon
 from gui.wgnc.settings import WGNC_DEFAULT_ICON, WGNC_POP_UP_BUTTON_WIDTH
 from gui.clubs.ClubsController import g_clubsCtrl
-from gui.clubs.formatters import ClubInviteHtmlTextFormatter, ClubAppsHtmlTextFormatter, ClanMultiNotificationsHtmlTextFormatter, ClanAppActionHtmlTextFormatter, ClanSingleNotificationHtmlTextFormatter
+from gui.clubs.formatters import ClubInviteHtmlTextFormatter, ClubAppsHtmlTextFormatter
 from helpers import time_utils
 
 def _makeShowTime():
@@ -549,6 +550,9 @@ class ClanSingleAppDecorator(_ClanSingleDecorator):
     def __init__(self, entityID, entity = None, userName = None, settings = None):
         self.__userName = userName
         super(ClanSingleAppDecorator, self).__init__(entityID, entity, settings)
+
+    def getUserName(self):
+        return self.__userName
 
     def getType(self):
         return NOTIFICATION_TYPE.CLAN_APP

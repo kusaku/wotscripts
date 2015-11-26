@@ -1,4 +1,7 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/customization_2_0/filter_popover.py
+from constants import IGR_TYPE
+from gui import GUI_SETTINGS
+from gui.game_control import getIGRCtrl
 from helpers.i18n import makeString as _ms
 from gui.Scaleform.locale.CUSTOMIZATION import CUSTOMIZATION
 from gui.Scaleform.locale.VEHICLE_CUSTOMIZATION import VEHICLE_CUSTOMIZATION
@@ -26,12 +29,16 @@ class FilterPopover(CustomizationFiltersPopoverMeta):
         self.__groupsMap = [[('all_groups', CUSTOMIZATION.FILTER_POPOVER_GROUPS_ALL)], [('all_groups', CUSTOMIZATION.FILTER_POPOVER_GROUPS_ALL)], [('all_groups', CUSTOMIZATION.FILTER_POPOVER_GROUPS_ALL)]]
         for cType in (CUSTOMIZATION_TYPE.CAMOUFLAGE, CUSTOMIZATION_TYPE.EMBLEM, CUSTOMIZATION_TYPE.INSCRIPTION):
             for groupName, userName in self.__filter.availableGroupNames[cType]:
-                self.__groupsMap[cType].append((groupName, userName))
+                if groupName != 'group5':
+                    self.__groupsMap[cType].append((groupName, userName))
 
         self.__purchaseTypeMap = {PURCHASE_TYPE.PURCHASE: CUSTOMIZATION.FILTER_POPOVER_WAYSTOBUY_BUY,
          PURCHASE_TYPE.QUEST: CUSTOMIZATION.FILTER_POPOVER_WAYSTOBUY_MISSIONS,
          PURCHASE_TYPE.ACTION: CUSTOMIZATION.FILTER_POPOVER_WAYSTOBUY_EVENT,
          PURCHASE_TYPE.IGR: icons.premiumIgrSmall()}
+        self.__purchaseTypeList = [PURCHASE_TYPE.PURCHASE, PURCHASE_TYPE.QUEST]
+        if GUI_SETTINGS.igrEnabled:
+            self.__purchaseTypeList.append(PURCHASE_TYPE.IGR)
 
     def _populate(self):
         super(FilterPopover, self)._populate()
@@ -41,14 +48,18 @@ class FilterPopover(CustomizationFiltersPopoverMeta):
     def changeFilter(self, filterGroup, filterGroupValue):
         if filterGroup == FILTER_TYPE.GROUP:
             filterGroupValue = self.__groupsMap[self.__filter.currentType][filterGroupValue][0]
+        if filterGroup == FILTER_TYPE.PURCHASE_TYPE:
+            filterGroupValue = self.__purchaseTypeList[filterGroupValue]
         self.__filter.set(filterGroup, filterGroupValue)
         self.__filter.apply()
         self.as_enableDefBtnS(not self.__filter.isDefaultFilterSet())
 
     def createInitVO(self):
         groupsUserNames = []
+        groupsList = []
         for groupData in self.__groupsMap[self.__filter.currentType]:
             groupsUserNames.append(groupData[1])
+            groupsList.append(groupData[0])
 
         return {'lblTitle': text_styles.highTitle(CUSTOMIZATION.FILTER_POPOVER_TITLE),
          'lblBonusType': text_styles.standard(CUSTOMIZATION.FILTER_POPOVER_BONUSTYPE_TITLE),
@@ -60,17 +71,22 @@ class FilterPopover(CustomizationFiltersPopoverMeta):
          'customizationBonusTypeVisible': self.__filter.currentType != CUSTOMIZATION_TYPE.CAMOUFLAGE,
          'customizationTypeId': FILTER_TYPE.GROUP,
          'customizationType': groupsUserNames,
-         'customizationTypeSelectedIndex': 0,
+         'customizationTypeSelectedIndex': groupsList.index(self.__filter.currentGroup),
          'customizationTypeVisible': self.__filter.currentType != CUSTOMIZATION_TYPE.CAMOUFLAGE,
          'refreshTooltip': makeTooltip(TOOLTIPS.CUSTOMIZATION_FILTERPOPOVER_REFRESH_HEADER, TOOLTIPS.CUSTOMIZATION_FILTERPOPOVER_REFRESH_BODY),
          'purchaseTypeId': FILTER_TYPE.PURCHASE_TYPE,
          'purchaseType': self.__getPurchaseTypeVO(),
-         'purchaseTypeSelectedIndex': 0}
+         'purchaseTypeSelectedIndex': self.__purchaseTypeList.index(self.__filter.purchaseType)}
 
     def __getPurchaseTypeVO(self):
         result = []
-        for purchaseType in [PURCHASE_TYPE.PURCHASE, PURCHASE_TYPE.QUEST]:
-            result.append({'label': self.__purchaseTypeMap[purchaseType]})
+        for purchaseType in self.__purchaseTypeList:
+            purchaseVO = {'label': self.__purchaseTypeMap[purchaseType],
+             'enabled': True}
+            if purchaseType == PURCHASE_TYPE.IGR:
+                purchaseVO['enabled'] = getIGRCtrl().getRoomType() == IGR_TYPE.PREMIUM
+                purchaseVO['tooltipDisabled'] = makeTooltip(_ms(CUSTOMIZATION.FILTER_TOOLTIP_IGR_DISABLED_HEADER), _ms(CUSTOMIZATION.FILTER_TOOLTIP_IGR_DISABLED_BODY, icon=_ms(icons.premiumIgrSmall())))
+            result.append(purchaseVO)
 
         return result
 

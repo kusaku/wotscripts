@@ -190,6 +190,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
             self.onGunShotChanged = Event.Event()
             self.invRotationOnBackMovement = False
             self.__isVehicleAlive = True
+            self.__firstHealthUpdate = True
             self.__lastVehicleSpeeds = (0.0, 0.0)
             self.__aimingInfo = [0.0,
              0.0,
@@ -260,7 +261,11 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
 
     def onBecomeNonPlayer(self):
         LOG_DEBUG('[INIT_STEPS] Avatar.onBecomeNonPlayer')
-        gas_attack.finiAttackManager()
+        try:
+            gas_attack.finiAttackManager()
+        except Exception:
+            LOG_CURRENT_EXCEPTION()
+
         self.__flockMangager.stop(self)
         self.__physicMode = VEHICLE_PHYSICS_MODE.STANDARD
         from helpers import statistics
@@ -297,6 +302,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
             except Exception:
                 LOG_CURRENT_EXCEPTION()
 
+        g_sessionProvider.stop()
         try:
             if self.positionControl is not None:
                 self.positionControl.destroy()
@@ -604,7 +610,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                         if newVoIPState:
                             message = makeString(MESSENGER.CLIENT_DYNSQUAD_ENABLEVOIP)
                         else:
-                            message = makeString(MESSENGER.CLIENT_DYNSQUAD_DISABLEVOIP)
+                            message = makeString(MESSENGER.CLIENT_DYNSQUAD_DISABLEVOIP, hotkey='ALT+Q')
                         MessengerEntry.g_instance.gui.addClientMessage(g_settings.htmlTemplates.format('battleErrorMessage', ctx={'error': message}))
                     return True
                 if cmdMap.isFired(CommandMapping.CMD_VEHICLE_MARKERS_SHOW_INFO, key):
@@ -656,6 +662,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
         if ownVehicle is not None and ownVehicle.inWorld and not ownVehicle.isPlayer:
             ownVehicle.isPlayer = True
             self.vehicleTypeDescriptor = ownVehicle.typeDescriptor
+            self.__isVehicleAlive = ownVehicle.isAlive()
             g_sessionProvider.setPlayerVehicle(self.playerVehicleID, self.vehicleTypeDescriptor)
             self.__initProgress |= _INIT_STEPS.VEHICLE_ENTERED
             self.__onInitStepCompleted()
@@ -746,6 +753,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                 self.inputHandler.deactivatePostmortem()
                 self.gunRotator.reset()
                 self.enableServerAim(self.gunRotator.showServerMarker)
+            self.__isVehicleAlive = vehicle.isAlive()
             g_sessionProvider.setPlayerVehicle(self.playerVehicleID, self.vehicleTypeDescriptor)
         if self.__initProgress & _INIT_STEPS.INIT_COMPLETED and not vehicle.isStarted:
             self.__startVehicleVisual(vehicle)
@@ -820,17 +828,18 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                 replayCtrl.onLockTarget(2)
             self.soundNotifications.play('target_lost')
 
-    def updateVehicleHealth(self, health, deathReasonID, isCrewActive, isRespawn):
+    def updateVehicleHealth(self, vehicleID, health, deathReasonID, isCrewActive, isRespawn):
         rawHealth = health
         health = max(0, health)
         isAlive = health > 0 and isCrewActive
-        wasAlive = self.__isVehicleAlive
+        wasAlive = self.__isVehicleAlive or self.__firstHealthUpdate
+        self.__firstHealthUpdate = False
         self.__isVehicleAlive = isAlive
-        LOG_TU('[RESPAWN] client.Avatar.updateVehicleHealth', health, deathReasonID, isCrewActive, isRespawn, wasAlive)
+        LOG_TU('[RESPAWN] client.Avatar.updateVehicleHealth', vehicleID, health, deathReasonID, isCrewActive, isRespawn, wasAlive)
         aim = self.inputHandler.aim
-        if aim:
+        if aim is not None:
             aim.setHealth(health)
-        g_sessionProvider.invalidateVehicleState(VEHICLE_VIEW_STATE.HEALTH, health)
+        g_sessionProvider.invalidateVehicleState(VEHICLE_VIEW_STATE.HEALTH, health, vehicleID)
         if not wasAlive and isAlive:
             self.__deviceStates = {}
             self.gunRotator.start()
@@ -1001,7 +1010,9 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
             value = (zoneID, time, 'critical')
         g_sessionProvider.invalidateVehicleState(state, value)
 
-    def showOwnVehicleHitDirection(self, hitDirYaw, isDamage):
+    def showOwnVehicleHitDirection(self, damagedVehicleID, hitDirYaw, isDamage):
+        if not self.__isVehicleAlive:
+            return
         if BattleReplay.g_replayCtrl.isPlaying and BattleReplay.g_replayCtrl.isTimeWarpInProgress:
             return
         g_sessionProvider.addHitDirection(hitDirYaw, isDamage)
@@ -1793,7 +1804,6 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
         self.soundNotifications = None
         self.inputHandler.stop()
         self.inputHandler = None
-        g_sessionProvider.stop()
         return
 
     def __reloadGUI(self):

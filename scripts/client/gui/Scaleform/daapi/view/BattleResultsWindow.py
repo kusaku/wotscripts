@@ -26,7 +26,7 @@ from debug_utils import LOG_DEBUG
 from helpers import i18n, time_utils
 from adisp import async, process
 from CurrentVehicle import g_currentVehicle
-from constants import ARENA_BONUS_TYPE, IS_DEVELOPMENT, ARENA_GUI_TYPE, IGR_TYPE, EVENT_TYPE, FINISH_REASON as FR, FLAG_ACTION, TEAMS_IN_ARENA
+from constants import ARENA_BONUS_TYPE, ARENA_GUI_TYPE, IGR_TYPE, EVENT_TYPE, FINISH_REASON as FR, FLAG_ACTION, TEAMS_IN_ARENA
 from dossiers2.custom.records import RECORD_DB_IDS, DB_ID_TO_RECORD
 from dossiers2.ui import achievements
 from dossiers2.ui.achievements import ACHIEVEMENT_TYPE, MARK_ON_GUN_RECORD, MARK_OF_MASTERY_RECORD
@@ -471,7 +471,8 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
         igrType = playerData.get('igrType', 0)
         vehsCreditsData = []
         vehsXPData = []
-        for vehIntCD, sourceData in self.__buildPersonalDataSource(personalData):
+        personalDataSource = self.__buildPersonalDataSource(personalData)
+        for vehIntCD, sourceData in personalDataSource:
             dailyXpFactor = sourceData['dailyXPFactor10'] / 10.0
             creditsData = []
             creditsToDraw = self.__calculateBaseParam('creditsToDraw', sourceData, premCreditsFactor, isPremium)
@@ -585,16 +586,19 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
             xpPenalty = int(sourceData.get('xpPenaltyBase', 0))
             xpBase = int(sourceData['originalXP'])
             xpCell = xpBase - achievementXP
-            xpCellPrem = int(round(xpCell * premXpFactor))
+            keys = ('originalXP', 'achievementXP')
+            xpCellPrem = self.__getPremCellValue(vehIntCD, keys, personalDataSource, premXpFactor, isPremium)
             dailyXP = sourceData['dailyXP']
             dailyXPCell = dailyXP - achievementXP
             dailyXPCellPrem = int(round(dailyXPCell * premXpFactor))
             xpCellStr = self.__makeXpLabel(xpCell, not isPostBattlePremium)
             xpCellPremStr = self.__makeXpLabel(xpCellPrem, isPostBattlePremium)
             freeXpBase = sourceData['originalFreeXP']
+            freeXpCell = freeXpBase - achievementFreeXP
             dailyFreeXP = sourceData['dailyFreeXP']
-            freeXpBaseStr = self.__makeFreeXpLabel(freeXpBase - achievementFreeXP, not isPostBattlePremium)
-            freeXpBasePremStr = self.__makeFreeXpLabel(int(round((freeXpBase - achievementFreeXP) * premXpFactor)), isPostBattlePremium)
+            freeXpBaseStr = self.__makeFreeXpLabel(freeXpCell, not isPostBattlePremium)
+            keys = ('originalFreeXP', 'achievementFreeXP')
+            freeXpBasePremStr = self.__makeFreeXpLabel(self.__getPremCellValue(vehIntCD, keys, personalDataSource, premXpFactor, isPremium), isPostBattlePremium)
             medals = sourceData['dossierPopUps']
             if RECORD_DB_IDS[('max15x15', 'maxXP')] in map(lambda (id, value): id, medals):
                 label = makeHtmlString('html_templates:lobby/battle_results', 'xpRecord', {})
@@ -1895,3 +1899,17 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
         results = self.dataProvider.getResults()
         self.onWindowClose()
         showBattleResultsFromData(results)
+
+    def __getPremCellValue(self, calcVehIntCD, keys, personalDataSource, premXpFactor, isPremium):
+        premSum = 0
+        xpKey, achievementKey = keys
+        for vehIntCD, sourceData in personalDataSource:
+            xpCell = sourceData[xpKey] - sourceData[achievementKey]
+            if calcVehIntCD is not None and calcVehIntCD == vehIntCD:
+                return int(round(xpCell * premXpFactor))
+            if not isPremium and calcVehIntCD is None and calcVehIntCD == vehIntCD:
+                return int(round(xpCell * premXpFactor))
+            if vehIntCD is not None:
+                premSum += int(round(xpCell * premXpFactor))
+
+        return premSum

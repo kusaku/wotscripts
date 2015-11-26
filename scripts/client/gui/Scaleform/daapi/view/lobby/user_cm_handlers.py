@@ -1,8 +1,9 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/user_cm_handlers.py
-import BigWorld
-import constants
+from adisp import process
 from constants import PREBATTLE_TYPE
 from debug_utils import LOG_DEBUG
+from gui.clans.contexts import CreateInviteCtx
+from gui.clans import formatters as clans_fmts
 from gui.prb_control.settings import PREBATTLE_ACTION_NAME
 from helpers import i18n
 from gui import SystemMessages
@@ -25,6 +26,7 @@ from messenger.storage import storage_getter
 class USER(object):
     INFO = 'userInfo'
     CLAN_INFO = 'clanInfo'
+    SEND_CLAN_INVITE = 'sendClanInvite'
     CREATE_PRIVATE_CHANNEL = 'createPrivateChannel'
     ADD_TO_FRIENDS = 'addToFriends'
     ADD_TO_FRIENDS_AGAIN = 'addToFriendsAgain'
@@ -100,6 +102,16 @@ class BaseUserCMHandler(AbstractContextMenuHandler, EventSystemEntity):
 
         shared_events.requestProfile(self.databaseID, self.userName, successCallback=onDossierReceived)
 
+    @process
+    def sendClanInvite(self):
+        profile = g_clanCtrl.getAccountProfile()
+        context = CreateInviteCtx(profile.getClanDbID(), [self.databaseID])
+        result = yield g_clanCtrl.sendRequest(context, allowDelay=True)
+        if result.isSuccess():
+            SystemMessages.pushMessage(clans_fmts.getAppSentSysMsg(profile.getClanName(), profile.getClanAbbrev()))
+        else:
+            SystemMessages.pushMessage(clans_fmts.getInvitesNotSentSysMsg([self.userName or '']), type=SystemMessages.SM_TYPE.Error)
+
     def createPrivateChannel(self):
         self.proto.contacts.createPrivateChannel(self.databaseID, self.userName)
 
@@ -147,6 +159,7 @@ class BaseUserCMHandler(AbstractContextMenuHandler, EventSystemEntity):
     def _getHandlers(self):
         return {USER.INFO: 'showUserInfo',
          USER.CLAN_INFO: 'showClanInfo',
+         USER.SEND_CLAN_INVITE: 'sendClanInvite',
          USER.CREATE_PRIVATE_CHANNEL: 'createPrivateChannel',
          USER.ADD_TO_FRIENDS: 'addFriend',
          USER.REMOVE_FROM_FRIENDS: 'removeFriend',
@@ -197,6 +210,7 @@ class BaseUserCMHandler(AbstractContextMenuHandler, EventSystemEntity):
         options = self._addRejectFriendshipInfo(options, userCMInfo)
         options = self._addRemoveFromGroupInfo(options, userCMInfo)
         options = self._addRemoveFriendInfo(options, userCMInfo)
+        options = self._addInviteClanInfo(options, userCMInfo)
         return options
 
     def _addIgnoreInfo(self, options, userCMInfo):
@@ -254,6 +268,13 @@ class BaseUserCMHandler(AbstractContextMenuHandler, EventSystemEntity):
     def _addClanProfileInfo(self, options, userCMInfo):
         if g_lobbyContext.getServerSettings().clanProfile.isEnabled() and userCMInfo.hasClan:
             options.append(self._makeItem(USER.CLAN_INFO, MENU.contextmenu(USER.CLAN_INFO), optInitData={'enabled': g_clanCtrl.isAvailable()}))
+        return options
+
+    def _addInviteClanInfo(self, options, userCMInfo):
+        if g_lobbyContext.getServerSettings().clanProfile.isEnabled() and not userCMInfo.hasClan:
+            profile = g_clanCtrl.getAccountProfile()
+            if profile.isInClan() and profile.getMyClanPermissions().canHandleClanInvites():
+                options.append(self._makeItem(USER.SEND_CLAN_INVITE, MENU.contextmenu(USER.SEND_CLAN_INVITE), optInitData={'enabled': g_clanCtrl.isAvailable()}))
         return options
 
     @classmethod

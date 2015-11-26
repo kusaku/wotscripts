@@ -1,5 +1,4 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/customization_2_0/purchases_popover.py
-from debug_utils import LOG_DEBUG
 from gui import DialogsInterface
 from gui.Scaleform.daapi.view.dialogs import I18nConfirmDialogMeta
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS

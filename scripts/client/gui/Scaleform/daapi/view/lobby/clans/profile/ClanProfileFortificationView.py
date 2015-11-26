@@ -16,12 +16,17 @@ class ClanProfileFortificationView(ClanProfileBaseView):
     def setClanDossier(self, clanDossier):
         super(ClanProfileFortificationView, self).setClanDossier(clanDossier)
         self._showWaiting()
+        clanInfo = yield clanDossier.requestClanInfo()
+        if not clanInfo.isValid():
+            self._dummyMustBeShown = True
+            self._updateDummy()
+            self._hideWaiting()
+            return
         if clanDossier.isMyClan():
             self._fortDP = data_receivers.OwnClanDataReceiver()
         else:
             self._fortDP = data_receivers.ClanDataReceiver()
         hasFort = yield self._fortDP.hasFort(clanDossier)
-        clanInfo = yield clanDossier.requestClanInfo()
         if self.isDisposed():
             return
         self._updateClanInfo(clanInfo)

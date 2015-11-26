@@ -37,6 +37,7 @@ _STATES = {_RES.NO_RESTRICTIONS: _stateVO(True, enabledRequestBtn=True),
  _RES.OWN_CLAN: _stateVO(False, showPersonalBtn=True),
  _RES.ALREADY_IN_CLAN: _stateVO(False, addStatus=_status('inAnotherClan', text_styles.success)),
  _RES.FORBIDDEN_ACCOUNT_TYPE: _stateVO(False, addStatus=_status('banned', text_styles.error)),
+ _RES.CLAN_IS_FULL: _stateVO(False, addStatus=_status('banned', text_styles.error)),
  _RES.CLAN_LEAVE_COOLDOWN: _stateVO(True, mainStatus=_status('isInCooldown', text_styles.alert, RES_ICONS.MAPS_ICONS_LIBRARY_ALERTICON), tooltip=CLANS.CLANPROFILE_SUMMARYVIEW_TOOLTIP_JOINUNAVAILABLE_AFTERCLANLEAVE),
  _RES.CLAN_APPLICATION_ALREADY_SENT: _stateVO(False, addStatus=_status('requestSubmitted', text_styles.success)),
  _RES.CLAN_INVITE_ALREADY_RECEIVED: _stateVO(False, addStatus=_status('invitationSubmitted', text_styles.success)),
@@ -147,6 +148,11 @@ class ClanProfileSummaryView(ClanProfileSummaryViewMeta, UsersInfoHelper):
         super(ClanProfileSummaryView, self).setClanDossier(clanDossier)
         self._showWaiting()
         clanInfo = yield clanDossier.requestClanInfo()
+        if not clanInfo.isValid():
+            self._dummyMustBeShown = True
+            self._updateDummy()
+            self._hideWaiting()
+            return
         ratings = yield clanDossier.requestClanRatings()
         globalMapStats = yield clanDossier.requestGlobalMapStats()
         if self.isDisposed():
@@ -271,7 +277,7 @@ class ClanProfileSummaryView(ClanProfileSummaryViewMeta, UsersInfoHelper):
               'value': formatField(getter=ratings.getGlobalMapBattlesFor28Days, formatter=BigWorld.wg_getIntegralFormat),
               'tooltip': CLANS.CLANPROFILE_SUMMARYVIEW_TOOLTIP_GMAP_BATTLES_COUNT_BODY},
              {'local': 'provinces',
-              'value': formatField(getter=globalMapStats.getCapturedProvincesCount, formatter=BigWorld.wg_getIntegralFormat),
+              'value': formatField(getter=globalMapStats.getCurrentProvincesCount, formatter=BigWorld.wg_getIntegralFormat),
               'tooltip': CLANS.CLANPROFILE_SUMMARYVIEW_TOOLTIP_GMAP_PROVINCE_BODY}]
             statsBlock = self.__makeStatsBlock(stats)
             emptyLbl = ''

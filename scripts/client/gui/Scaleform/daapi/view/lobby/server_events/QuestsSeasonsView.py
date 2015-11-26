@@ -178,7 +178,7 @@ class QuestsSeasonsView(QuestsSeasonsViewMeta):
 
         self.as_setSlotsDataS({'questSlots': slots,
          'hasActiveQuests': len(selectedQuests) > 0,
-         'noActiveQuestsText': text_styles.concatStylesToMultiLine((TEXT_MANAGER_STYLES.MIDDLE_TITLE, QUESTS.PERSONAL_SEASONS_SLOTS_NOACTIVESLOTS_HEADER), (TEXT_MANAGER_STYLES.STANDARD_TEXT, QUESTS.PERSONAL_SEASONS_SLOTS_NOACTIVESLOTS_BODY))})
+         'noActiveQuestsText': text_styles.builder('\n').addStyledText(TEXT_MANAGER_STYLES.MIDDLE_TITLE, QUESTS.PERSONAL_SEASONS_SLOTS_NOACTIVESLOTS_HEADER).addStyledText(TEXT_MANAGER_STYLES.STANDARD_TEXT, QUESTS.PERSONAL_SEASONS_SLOTS_NOACTIVESLOTS_BODY).render()})
 
     def __packQuestSlot(self, quest = None):
         ttHeader, ttBody, ttAttention, ttNote = (None, None, None, None)

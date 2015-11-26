@@ -591,20 +591,23 @@ class BattleReplay():
 
     def onBattleSwfLoaded(self):
         if self.isPlaying:
-            self.__replayCtrl.onBattleSwfLoaded()
             self.__serverSettings = dict()
             try:
                 self.__serverSettings = json.loads(self.__replayCtrl.getArenaInfoStr()).get('serverSettings')
-                from gui.LobbyContext import g_lobbyContext
-                g_lobbyContext.setServerSettings(self.__serverSettings)
             except:
-                pass
+                LOG_ERROR('There is exception while getting serverSettings from replay')
+                LOG_CURRENT_EXCEPTION()
+
+        from gui.LobbyContext import g_lobbyContext
+        g_lobbyContext.setServerSettings(self.__serverSettings)
 
     def onCommonSwfLoaded(self):
         self.__enableTimeWarp = False
 
     def onCommonSwfUnloaded(self):
-        self.__enableTimeWarp = True
+        if self.isPlaying:
+            self.__enableTimeWarp = True
+            self.__replayCtrl.onCommonSfwUnloaded()
 
     def onReplayFinished(self):
         if not self.scriptModalWindowsEnabled:
@@ -856,7 +859,7 @@ class BattleReplay():
         BigWorld.wg_clearDecals()
         if self.__replayCtrl.isTimeWarpInProgress:
             self.__enableInGameEffects(False)
-            self.__timeWarpCleanupCb = BigWorld.callback(0, self.__cleanupAfterTimeWarp)
+            self.__timeWarpCleanupCb = BigWorld.callback(0.0, self.__cleanupAfterTimeWarp)
         else:
             if self.__timeWarpCleanupCb is not None:
                 BigWorld.cancelCallback(self.__timeWarpCleanupCb)

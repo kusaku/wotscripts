@@ -1,8 +1,11 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/clans/invites/ClanInvitesWindowAbstractTabView.py
+from gui import SystemMessages
 from gui.Scaleform.daapi.view.meta.ClanInvitesWindowAbstractTabViewMeta import ClanInvitesWindowAbstractTabViewMeta
 from gui.Scaleform.locale.CLANS import CLANS
 from gui.Scaleform.genConsts.CLANS_ALIASES import CLANS_ALIASES
+from gui.clans import formatters as clans_fmts
 from gui.clans.clan_helpers import ClanListener
+from gui.clans.settings import CLAN_INVITE_STATES
 from helpers.i18n import makeString as _ms
 from gui.shared.utils.functions import makeTooltip
 
@@ -82,17 +85,19 @@ class ClanInvitesWindowAbstractTabView(ClanInvitesWindowAbstractTabViewMeta, Cla
     def _onListUpdated(self, selectedID, isFullUpdate, isReqInCoolDown, result):
         self._updateFiltersState()
         paginator = self._getCurrentPaginator()
-        self._updateSortField(paginator.getLastSort() or self._getDefaultSortFields())
         status, data = result
         if status is True:
             self._enableRefreshBtn(False)
             if len(data) == 0:
+                self._updateSortField(None)
                 self.as_showDummyS(self._getDummyByFilterName(self.currentFilterName))
                 self.dataProvider.rebuildList(None, False)
             else:
+                self._updateSortField(paginator.getLastSort() or self._getDefaultSortFields())
                 self.dataProvider.rebuildList(data, paginator.canMoveRight())
                 self.as_hideDummyS()
         else:
+            self._updateSortField(None)
             self._enableRefreshBtn(True, toolTip=CLANS.CLANINVITESWINDOW_TOOLTIPS_REFRESHBUTTON_ENABLEDTRYTOREFRESH)
             self.as_showDummyS(CLANS_ALIASES.INVITE_WINDOW_DUMMY_SERVER_ERROR)
         self.showWaiting(False)
@@ -102,6 +107,10 @@ class ClanInvitesWindowAbstractTabView(ClanInvitesWindowAbstractTabViewMeta, Cla
         currentPaginator = self._getCurrentPaginator()
         if currentPaginator == paginator:
             self.dataProvider.refreshItems(items)
+        for item in items:
+            status = item.getStatus()
+            if status == CLAN_INVITE_STATES.EXPIRED_RESENT or status == CLAN_INVITE_STATES.DECLINED_RESENT:
+                SystemMessages.pushMessage(clans_fmts.getInvitesSentSysMsg([item.getAccountName()]))
 
     def _getPaginatorByFilterName(self, filterName):
         return self.paginatorsController.getPanginator(self._getViewAlias(), filterName)

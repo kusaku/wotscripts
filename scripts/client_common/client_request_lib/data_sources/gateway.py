@@ -148,10 +148,8 @@ class GatewayDataAccessor(base.BaseDataAccessor):
         self._request_data(inner_callback, '/login/', headers=extra_headers)
 
     def logout(self, callback):
+        self._request_data(callback, '/logout/')
         self._session_id = None
-        result, status_code = ('ok', 200)
-        response_code = exceptions.ResponseCodes.NO_ERRORS
-        callback(result, status_code, response_code)
         return
 
     def _request_data(self, callback, url, get_data = {}, method = 'GET', post_data = None, headers = None, converters = None):
@@ -162,10 +160,9 @@ class GatewayDataAccessor(base.BaseDataAccessor):
             for k, val in get_data.iteritems():
                 if not isinstance(val, (list, tuple)):
                     val = [val]
-                for v in val:
-                    values.append('{}={}'.format(k, urllib.quote(str(v))))
+                values.append((k, ','.join((str(i) for i in val))))
 
-            urlencoded_string = '&'.join(values)
+            urlencoded_string = urllib.urlencode(values)
             url = '{}?{}'.format(url, urlencoded_string)
         default_headers = {}
         if self.client_lang:

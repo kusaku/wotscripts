@@ -74,7 +74,7 @@ class Manager(object):
         if self._preferences['remember_user']:
             self._preferences['name'] = name
             self._preferences['token2'] = token2
-            if not constants.IS_DEVELOPMENT:
+            if not constants.IS_DEVELOPMENT and 'server_name' in self._preferences:
                 del self._preferences['server_name']
         else:
             email = self._preferences['login']

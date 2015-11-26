@@ -323,7 +323,10 @@ class StagingDataAccessor(base.BaseDataAccessor):
         callback(result, status_code, response_code)
 
     def _request_data(self, callback, service, url, method = 'GET', postData = None):
-        url = '/'.join([self.staging_hosts[service]] + url.split('/'))
+        service_host = self.staging_hosts[service].strip('/')
+        url = '/'.join([service_host] + url.strip('/').split('/'))
+        if '?' not in url:
+            url = url + '/'
         args = [None, 30.0, method]
         if postData:
             args.append(json.dumps(postData))
@@ -584,7 +587,9 @@ class StagingDataAccessor(base.BaseDataAccessor):
         return self._request_data(inner_callback, 'clans', url, method='POST', postData=data)
 
     @mapped_fields({'transaction_id': 'transaction_id',
-     'id': 'id'})
+     'id': 'id',
+     'account_id': 'account_id',
+     'clan_id': 'clan_id'})
     def accept_application(self, callback, application_id, fields = None):
         """
         accept application for accounts into clan using `accept applications API method`_
@@ -597,13 +602,16 @@ class StagingDataAccessor(base.BaseDataAccessor):
         @preprocess_callback(callback, 'clans')
         def inner_callback(data):
             data = data or {}
+            data['account_id'] = data.pop('account_ids')[0]
             data['id'] = application_id
             return data
 
         return self._request_data(inner_callback, 'clans', url, method='PATCH', postData=data)
 
     @mapped_fields({'transaction_id': 'transaction_id',
-     'id': 'id'})
+     'id': 'id',
+     'account_id': 'account_id',
+     'clan_id': 'clan_id'})
     def decline_application(self, callback, application_id, fields = None):
         """
         decline application for accounts into clan using `decline applications API method`_
@@ -642,7 +650,9 @@ class StagingDataAccessor(base.BaseDataAccessor):
         return self._request_data(inner_callback, 'clans', url, method='POST', postData=data)
 
     @mapped_fields({'transaction_id': 'transaction_id',
-     'id': 'id'})
+     'id': 'id',
+     'account_id': 'account_id',
+     'clan_id': 'clan_id'})
     def accept_invite(self, callback, invite_id, fields = None):
         """
         accept application for accounts into clan using `accept invite API method`_
@@ -655,13 +665,16 @@ class StagingDataAccessor(base.BaseDataAccessor):
         @preprocess_callback(callback, 'clans')
         def inner_callback(data):
             data = data or {}
+            data['account_id'] = data.pop('account_ids')[0]
             data['id'] = invite_id
             return data
 
         return self._request_data(inner_callback, 'clans', url, method='PATCH', postData=data)
 
     @mapped_fields({'transaction_id': 'transaction_id',
-     'id': 'id'})
+     'id': 'id',
+     'account_id': 'account_id',
+     'clan_id': 'clan_id'})
     def decline_invite(self, callback, invite_id, fields = None):
         """
         decline application for accounts into clan using `decline invites API method`_
@@ -755,7 +768,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
      'id': 'id',
      'account_id': 'account_id',
      'clan_id': 'clan_id',
-     'comment': 'data.comment'}, paginated=True)
+     'comment': 'data.comment',
+     'status_changer_id': 'data.status_changer_id'}, paginated=True)
     def get_clan_invites(self, callback, clan_id, fields = None, statuses = None, get_total_count = False, limit = 18, offset = 0):
         """
         return data from WGCCBE backend using `invites API method`_
@@ -839,6 +853,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
     @convert_data({'prime_time': lambda x: x and datetime.strptime(x, '%H:%M').time()})
     @mapped_fields({'front_name': 'frontname',
      'province_id': 'province_id',
+     'front_name_localized': 'frontname_localized',
+     'province_id_localized': 'province_id_localized',
      'revenue': 'daily_revenue',
      'hq_connected': 'hq_connected',
      'prime_time': 'primetime',
@@ -856,7 +872,12 @@ class StagingDataAccessor(base.BaseDataAccessor):
 
         @preprocess_callback(callback, 'global_map')
         def inner_callback(data):
-            return data['clans'] and data['clans'][0]['provinces']
+            res = data['clans'] and data['clans'][0]['provinces']
+            for i in res:
+                i['frontname_localized'] = i['frontname']
+                i['province_id_localized'] = i['province_id']
+
+            return res
 
         return self._request_data(inner_callback, 'global_map', url)
 
@@ -870,7 +891,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
      'battles_won_on_6_level': 'battles_won_on_6_level',
      'battles_won_on_8_level': 'battles_won_on_8_level',
      'influence_points': 'influence_points',
-     'provinces_captured': 'provinces_captured'})
+     'provinces_captured': 'provinces_captured',
+     'provinces_count': 'provinces_count'})
     def get_clan_globalmap_stats(self, callback, clan_id, fields = None):
         """
         return data from WGCW backend using `clans stats API method`_
@@ -887,6 +909,7 @@ class StagingDataAccessor(base.BaseDataAccessor):
         return self._request_data(inner_callback, 'global_map', url)
 
     @mapped_fields({'front_name': 'id',
+     'front_name_localized': 'id_localized',
      'min_vehicle_level': 'min_vehicle_level',
      'max_vehicle_level': 'max_vehicle_level'})
     def get_fronts_info(self, callback, front_names = None, fields = None):
@@ -899,7 +922,11 @@ class StagingDataAccessor(base.BaseDataAccessor):
 
         @preprocess_callback(callback, 'global_map')
         def inner_callback(data):
-            return data['fronts']
+            res = data['fronts']
+            for i in res:
+                i['id_localized'] = i['id']
+
+            return res
 
         return self._request_data(inner_callback, 'global_map', url)
 

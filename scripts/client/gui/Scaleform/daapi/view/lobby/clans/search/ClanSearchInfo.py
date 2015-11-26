@@ -8,11 +8,12 @@ from gui.clans.clan_controller import g_clanCtrl
 from gui.clans.contexts import CreateApplicationCtx
 from gui.clans.clan_helpers import ClanListener
 from gui.clans.items import formatField
-from gui.clans.settings import CLIENT_CLAN_RESTRICTIONS
+from gui.clans.settings import CLIENT_CLAN_RESTRICTIONS, MAX_CLAN_MEMBERS_COUNT
 from gui.Scaleform.daapi.view.lobby.profile.ProfileUtils import HeaderItemsTypes, ProfileUtils
 from gui.Scaleform.daapi.view.meta.ClanSearchInfoMeta import ClanSearchInfoMeta
 from gui.Scaleform.locale.CLANS import CLANS
 from gui.shared.formatters import text_styles
+from gui.shared.utils.functions import makeTooltip
 from gui.shared.view_helpers import ClanEmblemsHelper
 from helpers.i18n import makeString as _ms
 from gui.shared import event_dispatcher as shared_events
@@ -50,7 +51,7 @@ class ClanSearchInfo(ClanSearchInfoMeta, ClanListener, ClanEmblemsHelper):
         result = yield g_clanCtrl.sendRequest(context, allowDelay=True)
         if result.isSuccess():
             SystemMessages.pushMessage(clans_fmts.getAppSentSysMsg(self.__selectedClan.getClanName(), self.__selectedClan.getClanAbbrev()))
-            self._updateSetaledState()
+        self._updateSetaledState()
         self.as_setWaitingVisibleS(False)
 
     def requestData(self, clanId):
@@ -97,9 +98,9 @@ class ClanSearchInfo(ClanSearchInfoMeta, ClanListener, ClanEmblemsHelper):
             sendRequestBtnVisible = False
         elif reason == CLIENT_CLAN_RESTRICTIONS.ALREADY_IN_CLAN:
             sendRequestBtnVisible = False
-        elif reason == CLIENT_CLAN_RESTRICTIONS.FORBIDDEN_ACCOUNT_TYPE:
+        elif reason == CLIENT_CLAN_RESTRICTIONS.CLAN_IS_FULL:
             sendRequestBtnEnabled = False
-            sendRequestTooltip = CLANS.SEARCH_INFO_BANNED_TOOLTIP
+            sendRequestTooltip = makeTooltip(CLANS.SEARCH_INFO_BANNED_TOOLTIP_HEADER, text_styles.error(_ms(CLANS.SEARCH_INFO_BANNED_TOOLTIP_BODY)))
         elif reason == CLIENT_CLAN_RESTRICTIONS.CLAN_INVITE_ALREADY_RECEIVED:
             sendRequestBtnEnabled = False
             sendRequestTooltip = CLANS.SEARCH_INFO_INVITEALREADYACHIEVED_TOOLTIP
@@ -115,6 +116,10 @@ class ClanSearchInfo(ClanSearchInfoMeta, ClanListener, ClanEmblemsHelper):
         elif reason == CLIENT_CLAN_RESTRICTIONS.CLAN_CONSCRIPTION_CLOSED:
             sendRequestBtnEnabled = False
             sendRequestTooltip = CLANS.SEARCH_INFO_REQUESTSARENOTACCEPTED_TOOLTIP
+        elif reason == CLIENT_CLAN_RESTRICTIONS.FORBIDDEN_ACCOUNT_TYPE:
+            requestSentVisible = True
+            sendRequestBtnEnabled = False
+            sendRequestTooltip = makeTooltip(CLANS.SEARCH_INFO_FORBIDDENACCOUNTTYPE_TOOLTIP_HEADER, text_styles.error(_ms(CLANS.SEARCH_INFO_FORBIDDENACCOUNTTYPE_TOOLTIP_BODY)))
         else:
             sendRequestBtnVisible = False
         self.as_setStateDataS({'requestSentVisible': requestSentVisible,
@@ -144,3 +149,6 @@ class _ClanAdapter(object):
 
     def canAcceptsJoinRequests(self):
         return self.__clanInfo.canAcceptsJoinRequests()
+
+    def hasFreePlaces(self):
+        return MAX_CLAN_MEMBERS_COUNT - self.__clanInfo.getMembersCount() > 0

@@ -1,12 +1,14 @@
 # Embedded file name: scripts/client/gui/customization_2_0/filter.py
 from Event import Event
+from constants import IGR_TYPE
 from elements.qualifier import QUALIFIER_TYPE
+from gui.customization_2_0.data_aggregator import CUSTOMIZATION_TYPE
 
 class FILTER_TYPE:
     QUALIFIER = 0
     GROUP = 1
     PURCHASE_TYPE = 2
-    IS_IN_DOSSIER = 3
+    SHOW_IN_DOSSIER = 3
 
 
 QUALIFIER_TYPE_INDEX = (QUALIFIER_TYPE.ALL,
@@ -31,8 +33,12 @@ class Filter(object):
         self.__currentSlotIdx = None
         self.__availableGroupNames = availableGroupNames
         self.__currentGroup = 'all_groups'
-        self.__showOnlyInDossier = False
-        self.__rules = [self.__hasSelectedBonus, self.__isInSelectedGroup, self.__isInDossier]
+        self.__showInDossier = True
+        self.__purchaseType = PURCHASE_TYPE.PURCHASE
+        self.__rules = [self.__hasSelectedBonus,
+         self.__isInSelectedGroup,
+         self.__isInDossier,
+         self.__hasPurchaseType]
         self.__selectedBonuses = {QUALIFIER_TYPE.ALL: False,
          QUALIFIER_TYPE.COMMANDER: False,
          QUALIFIER_TYPE.GUNNER: False,
@@ -56,16 +62,25 @@ class Filter(object):
         return self.__selectedBonuses
 
     def isDefaultFilterSet(self):
-        return not self.__bonusSelected() and self.__currentGroup == 'all_groups'
+        if self.__currentType == CUSTOMIZATION_TYPE.CAMOUFLAGE:
+            return self.__purchaseType == PURCHASE_TYPE.PURCHASE
+        else:
+            return not self.__bonusSelected() and self.__currentGroup == 'all_groups' and self.__purchaseType == PURCHASE_TYPE.PURCHASE
 
     def setDefaultFilter(self):
         self.__currentGroup = 'all_groups'
         for key in QUALIFIER_TYPE_INDEX:
             self.__selectedBonuses[key] = False
 
+        self.__purchaseType = PURCHASE_TYPE.PURCHASE
+
     @property
     def currentType(self):
         return self.__currentType
+
+    @property
+    def purchaseType(self):
+        return self.__purchaseType
 
     @property
     def currentSlotIdx(self):
@@ -85,13 +100,17 @@ class Filter(object):
     def set(self, filterGroup, filterGroupValue):
         if filterGroup == FILTER_TYPE.QUALIFIER:
             self.__selectedBonuses[QUALIFIER_TYPE_INDEX[filterGroupValue]] ^= True
-        if filterGroup == FILTER_TYPE.GROUP:
+        elif filterGroup == FILTER_TYPE.GROUP:
             self.__currentGroup = filterGroupValue
-        if filterGroup == FILTER_TYPE.IS_IN_DOSSIER:
-            self.__showOnlyInDossier = filterGroupValue
+        elif filterGroup == FILTER_TYPE.SHOW_IN_DOSSIER:
+            self.__showInDossier = filterGroupValue
+        elif filterGroup == FILTER_TYPE.PURCHASE_TYPE:
+            self.__purchaseType = filterGroupValue
 
-    def setTypeAndIdx(self, cType, slotIdx):
+    def setTypeAndIdx(self, cType, slotIdx, customizationId, oldCustomizationId):
         self.__currentSlotIdx = slotIdx
+        self.__customizationId = customizationId
+        self.__oldCustomizationId = oldCustomizationId
         if self.__currentType != cType:
             self.__currentType = cType
             self.setDefaultFilter()
@@ -113,10 +132,11 @@ class Filter(object):
             return item.getGroup() == self.__currentGroup
 
     def __isInDossier(self, item):
-        if self.__showOnlyInDossier:
-            return item.isInDossier
-        else:
+        if self.__showInDossier:
             return True
+        else:
+            needShow = self.__customizationId == item.getID() or self.__oldCustomizationId == item.getID()
+            return not item.isInDossier or needShow
 
     def __bonusSelected(self):
         for key in QUALIFIER_TYPE_INDEX:
@@ -124,3 +144,11 @@ class Filter(object):
                 return True
 
         return False
+
+    def __hasPurchaseType(self, item):
+        if self.__purchaseType == PURCHASE_TYPE.PURCHASE:
+            return item.getIgrType() == IGR_TYPE.NONE
+        if self.__purchaseType == PURCHASE_TYPE.QUEST:
+            return False
+        if self.__purchaseType == PURCHASE_TYPE.IGR:
+            return item.getIgrType() == IGR_TYPE.PREMIUM

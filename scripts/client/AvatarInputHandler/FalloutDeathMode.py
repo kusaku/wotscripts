@@ -28,6 +28,7 @@ class FalloutDeathMode(IControlMode):
     def destroy(self):
         self.disable()
         self.__aim.destroy()
+        self.__cam.destroy()
         self.__cam = None
         return
 

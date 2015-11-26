@@ -5,6 +5,7 @@ from constants import FORT_BUILDING_TYPE, DOSSIER_TYPE
 from debug_utils import LOG_ERROR
 from gui.Scaleform.locale.CLANS import CLANS
 from gui.clans.settings import DATA_UNAVAILABLE_PLACEHOLDER
+from helpers import time_utils
 from helpers.i18n import makeString as _ms
 from predefined_hosts import g_preDefinedHosts
 from FortifiedRegionBase import NOT_ACTIVATED
@@ -39,7 +40,7 @@ def _getFortSortiesSchemaTexts(activatedDefModeParams, peripheryID, buildingsCou
             dayOffString = _ms(TOOLTIPS.FORTIFICATION_TOOLTIPENEMYCLANINFO_NODAYOFF)
         else:
             dayOffString = fort_fmts.getDayOffString(dayOff)
-        defHourStart, _ = defHour
+        defHourStart, _ = defHour or (None, None)
         if defHourStart is not None:
             defHour = fort_fmts.getDefencePeriodString(defHourStart)
         else:
@@ -118,7 +119,12 @@ class ClanDataReceiver(_BaseDataReceiver, FortViewHelper):
             dossierDescriptor = _UserDossierAdapter(sInfo)
             defModeParams = None
             if sInfo.isDefenceModeActivated():
-                defModeParams = (sStats.getOffDay(), sStats.getDefHour(), sStats.getVacationInfo())
+                defence_hour = sInfo.getDefenceHour()
+                dHours = None
+                if defence_hour is not None:
+                    hour = time_utils.getTimeTodayForUTC(defence_hour.hour)
+                    dHours = (hour, hour + time_utils.ONE_HOUR)
+                defModeParams = (sStats.getOffDay(), dHours, sStats.getVacationInfo())
             data = _getFortBuildingsVO(FortSortiesStatisticsVO(FortRegionSortiesStats(dossierDescriptor), ratings.getFsBattlesCount28d(), sStats.getFsWinsCount28d()), FortBattlesStatisticsVO(FortRegionBattlesStats(dossierDescriptor), sInfo.getFbBattlesCount8(), sInfo.getFbBattlesCount10()), buildings, _getFortSortiesSchemaTexts(defModeParams, sStats.getPeripheryID(), len(buildings), sStats.getDirectionsCount()))
         else:
             data = _getNoFortBuildingsVO()

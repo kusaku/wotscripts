@@ -35,7 +35,7 @@ class LobbyEntry(App):
         self._tweenMgr = TweenManager()
         self._gameInputMgr = GameInputMgr()
         self._cacheMgr = CacheManager()
-        self._tutorialMgr = TutorialManager(True, 'gui/tutorial-lobby-gui.xml')
+        self._tutorialMgr = TutorialManager(self.proxy, True, 'gui/tutorial-lobby-gui.xml')
 
     def _loadCursor(self):
         self._containerMgr.load(VIEW_ALIAS.CURSOR)

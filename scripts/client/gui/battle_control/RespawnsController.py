@@ -72,6 +72,8 @@ class RespawnsController(IArenaRespawnController):
         return
 
     def spawnVehicle(self, vehicleID):
+        if BigWorld.player().isVehicleAlive:
+            self.__respawnInfo = None
         if self.__ui is not None:
             self.__ui.hide()
             self.__battle.minimap.useNormalSize()

@@ -72,10 +72,12 @@ class TutorialHangarQuestDetails(TutorialHangarQuestDetailsMeta):
                         if b.hasIconFormat() and useIconFormat:
                             iconResult.extend(b.getList())
                         else:
-                            result.append(b.format())
+                            flist = b.formattedList()
+                            if flist:
+                                result.extend(flist)
 
             if len(result):
-                output.append(formatters.packTextBlock(', '.join(result)))
+                output.append(formatters.packSimpleBonusesBlock(result))
             if len(iconResult):
                 output.append(formatters.packIconAwardBonusBlock(iconResult))
             return formatters.todict(output)

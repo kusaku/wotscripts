@@ -1,6 +1,5 @@
 # Embedded file name: scripts/client/gui/battle_control/gas_attack_controller.py
 from collections import namedtuple
-import weakref
 import BigWorld
 import math
 import Event
@@ -52,6 +51,7 @@ class _SafeZoneDirectionIndicator(Flash):
         self.component.heightMode = 'PIXEL'
         self.component.widthMode = 'PIXEL'
         self.flashSize = self.__FLASH_SIZE
+        self.__isVisible = True
         self.component.relativeRadius = 0.5
         self.__dObject = getattr(self.movie, self.__FLASH_MC_NAME, None)
         return
@@ -77,6 +77,11 @@ class _SafeZoneDirectionIndicator(Flash):
         self.close()
         return
 
+    def setVisibility(self, isVisible):
+        if not self.__isVisible == isVisible:
+            self.__isVisible = isVisible
+            self.component.visible = isVisible
+
 
 class _SafeZoneDirectionIndicatorCtrl(object):
 
@@ -99,6 +104,9 @@ class _SafeZoneDirectionIndicatorCtrl(object):
         self.__indicator = None
         return
 
+    def setVisibility(self, isVisible):
+        self.__indicator.setVisibility(isVisible)
+
 
 class GasAttackController(object):
 
@@ -107,9 +115,8 @@ class GasAttackController(object):
         self.__state = _GasAttackState()
         self.__gasAttackMgr = ctx.gasAttackMgr
         self.__battleUI = None
+        self.__falloutItems = None
         self.__indicatorCtrl = None
-        self.__panelUI = None
-        self.__safeZoneUI = None
         self.__isAlive = False
         self.__timerCallback = None
         self.__evtManager = Event.EventManager()
@@ -121,6 +128,8 @@ class GasAttackController(object):
 
     def start(self, battleUI):
         self.__battleUI = battleUI
+        self.__falloutItems = battleUI.movie.falloutItems
+        self.__settings = BigWorld.player().arena.arenaType.gasAttackSettings
         self.__gasAttackMgr.onAttackPreparing += self.__onAttackPreparing
         self.__gasAttackMgr.onAttackStarted += self.__onAttackStarted
         self.__gasAttackMgr.onAttackStopped += self.__onAttackStopped
@@ -131,6 +140,8 @@ class GasAttackController(object):
     def stop(self):
         self.__state = None
         self.__battleUI = None
+        self.__falloutItems = None
+        self.__settings = None
         self.__stopTimer()
         self.__finiIndicator()
         if self.__gasAttackMgr is not None:
@@ -144,31 +155,14 @@ class GasAttackController(object):
     def clear(self):
         self.__isAlive = False
 
-    def setPanel(self, panelUI):
-        self.__panelUI = weakref.proxy(panelUI)
-        self.__updatePanel()
-
-    def setSafeZoneTimer(self, safeZoneUI):
-        self.__safeZoneUI = weakref.proxy(safeZoneUI)
-        self.__updateSafeZone()
-
-    def showPanelMessage(self):
-        if self.__panelUI is not None:
-            self.__panelUI.showStart()
-        return
-
-    def hidePanelMessage(self):
-        if self.__panelUI is not None:
-            self.__panelUI.hide()
-        return
-
     def __onAttackPreparing(self):
+        self.__initIndicator()
         self.__updateState()
-        self.__updatePanel()
-        self.__updateSafeZone()
+        self.__updateBattleGasItems()
         self.onPreparing(self.__state)
 
     def __onAttackStarted(self):
+        self.__initIndicator()
         self.__updateState()
         self.onStarted(self.__state)
         self.__startTimer()
@@ -177,43 +171,19 @@ class GasAttackController(object):
         self.clear()
         self.onEnded(self.__state)
 
-    def __updatePanel(self):
-        if self.__panelUI is not None and self.__state.state != self.__state.prevState:
-            if self.__state.state == GAS_ATTACK_STATE.PREPEARING:
-                self.__panelUI.showStart()
-            elif self.__state.state == GAS_ATTACK_STATE.INSIDE_SAFE_ZONE:
-                self.__panelUI.showSafeZone()
-            elif self.__state.state == GAS_ATTACK_STATE.INSIDE_CLOUD:
-                self.__panelUI.showGasAttack()
-            elif self.__state.state in (GAS_ATTACK_STATE.NEAR_SAFE, GAS_ATTACK_STATE.NEAR_CLOUD):
-                self.__panelUI.showGasAttackNear()
-            else:
-                self.__panelUI.hide()
-        return
-
-    def __updateSafeZone(self):
-        if self.__safeZoneUI is not None:
-            if self.__state.state == GAS_ATTACK_STATE.NEAR_SAFE:
-                self.__safeZoneUI.showTimer(time_utils.getTimeLeftFormat(self.__state.timeLeft))
-            elif self.__state.state != self.__state.prevState:
-                self.__safeZoneUI.hideTimer()
-        return
-
     def __initIndicator(self):
-        if self.__state.state in (GAS_ATTACK_STATE.NEAR_SAFE, GAS_ATTACK_STATE.NEAR_CLOUD, GAS_ATTACK_STATE.INSIDE_CLOUD) and self.__indicatorCtrl is None:
+        if self.__indicatorCtrl is None:
             indicator = _SafeZoneDirectionIndicator()
-            self.__indicatorCtrl = _SafeZoneDirectionIndicatorCtrl(indicator, self.__state.center, self.__state.safeZoneDistance)
+            self.__indicatorCtrl = _SafeZoneDirectionIndicatorCtrl(indicator, self.__settings.position, self.__state.safeZoneDistance)
+            self.__indicatorCtrl.setVisibility(False)
         return
 
     def __updateIndicator(self):
         isVisible = self.__state.state in (GAS_ATTACK_STATE.NEAR_SAFE, GAS_ATTACK_STATE.NEAR_CLOUD, GAS_ATTACK_STATE.INSIDE_CLOUD)
         if self.__indicatorCtrl is not None:
+            self.__indicatorCtrl.setVisibility(isVisible)
             if isVisible:
                 self.__indicatorCtrl.update(self.__state.safeZoneDistance)
-            else:
-                self.__finiIndicator()
-        elif isVisible:
-            self.__initIndicator()
         return
 
     def __finiIndicator(self):
@@ -267,13 +237,18 @@ class GasAttackController(object):
         if self.__state.state not in (GAS_ATTACK_STATE.NO_ATTACK, GAS_ATTACK_STATE.PREPEARING):
             self.__updateIndicator()
             self.__updateDeathZoneIndicator()
-            self.__updateSafeZone()
-            self.__updatePanel()
+            self.__updateBattleGasItems()
             self.onUpdated(self.__state)
             if self.__state.timeLeft > 0:
                 self.__timerCallback = BigWorld.callback(1, self.__processTimer)
         else:
             self.__stopTimer()
+
+    def __updateBattleGasItems(self):
+        isSafeZoneTimerVisible = self.__state.state == GAS_ATTACK_STATE.NEAR_SAFE
+        minimapGasIsVisible = not self.__state.state == GAS_ATTACK_STATE.PREPEARING
+        timeStr = time_utils.getTimeLeftFormat(self.__state.timeLeft)
+        self.__falloutItems.as_gasAtackUpdate(self.__state.state, minimapGasIsVisible, self.__state.currentRadius, isSafeZoneTimerVisible, timeStr)
 
     def __processTimer(self):
         self.__timerCallback = None
@@ -292,18 +267,19 @@ class GasAttackController(object):
         return max(0, attackEndTime - BigWorld.serverTime())
 
     def __getCenterDistance(self):
-        if self.__isAlive:
-            x0, y0, z0 = self.__gasAttackMgr.settings.position
+        if self.__isAlive and BigWorld.player().getVehicleAttached() is not None:
+            x0, y0, z0 = self.__settings.position
             x1, y1, z1 = BigWorld.player().getVehicleAttached().position
             return math.sqrt(math.pow(x0 - x1, 2) + math.pow(z0 - z1, 2) + math.pow(y0 - y1, 2))
-        return 0
+        else:
+            return 0
 
     def __getSafeZoneDistance(self):
-        return max(0, self.__getCenterDistance() - self.__gasAttackMgr.settings.endRadius)
+        return max(0, self.__getCenterDistance() - self.__settings.endRadius)
 
     def __getCurrentRadius(self):
         timeFromActivation = max(0, BigWorld.serverTime() - self.__gasAttackMgr.startTime)
-        _, (_, currentRadius) = self.__gasAttackMgr.settings.stateFor(timeFromActivation)
+        _, (_, currentRadius) = self.__settings.stateFor(timeFromActivation)
         return currentRadius
 
     def __getCloudDistance(self, currentRadius):

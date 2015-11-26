@@ -760,11 +760,14 @@ class _GasAttackSafeZonePlugin(IPlugin):
     def __init__(self, parentObj):
         super(_GasAttackSafeZonePlugin, self).__init__(parentObj)
         self.__safeZoneMarkerHandle = None
+        self.__isMarkerVisible = False
+        self.__settings = BigWorld.player().arena.arenaType.gasAttackSettings
         return
 
     def init(self):
         super(_GasAttackSafeZonePlugin, self).init()
         g_sessionProvider.getGasAttackCtrl().onUpdated += self.__onGasAttackUpdate
+        self.__initMarker(self.__settings.position)
 
     def fini(self):
         g_sessionProvider.getGasAttackCtrl().onUpdated -= self.__onGasAttackUpdate
@@ -777,9 +780,14 @@ class _GasAttackSafeZonePlugin(IPlugin):
         self.__delSafeZoneMarker()
         super(_GasAttackSafeZonePlugin, self).stop()
 
-    def __addSafeZoneMarker(self, pos):
+    def __updateSafeZoneMarker(self, isVisible):
+        if not self.__isMarkerVisible == isVisible:
+            self.__isMarkerVisible = isVisible
+            self._parentObj.invokeMarker(self.__safeZoneMarkerHandle, 'update', [self.__isMarkerVisible])
+
+    def __initMarker(self, center):
         if self.__safeZoneMarkerHandle is None:
-            _, self.__safeZoneMarkerHandle = self._parentObj.createStaticMarker(pos + _MARKER_POSITION_ADJUSTMENT, _SAFE_ZONE_MARKER_TYPE)
+            _, self.__safeZoneMarkerHandle = self._parentObj.createStaticMarker(center + _MARKER_POSITION_ADJUSTMENT, _SAFE_ZONE_MARKER_TYPE)
         return
 
     def __delSafeZoneMarker(self):
@@ -789,7 +797,5 @@ class _GasAttackSafeZonePlugin(IPlugin):
         return
 
     def __onGasAttackUpdate(self, state):
-        if state.state in (GAS_ATTACK_STATE.INSIDE_SAFE_ZONE, GAS_ATTACK_STATE.DEAD):
-            self.__delSafeZoneMarker()
-        else:
-            self.__addSafeZoneMarker(state.center)
+        isVisible = not state.state == GAS_ATTACK_STATE.INSIDE_SAFE_ZONE
+        self.__updateSafeZoneMarker(isVisible)
