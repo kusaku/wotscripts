@@ -86,7 +86,7 @@ def init():
      'ERROR': BigWorld.logError,
      'CRITICAL': BigWorld.logCritical,
      'HACK': BigWorld.logHack}
-    excepthook.init(not IS_CLIENT and _logLevel < LOG_LEVEL.RELEASE, _src_file_trim_to)
+    excepthook.init(not IS_CLIENT and _logLevel < LOG_LEVEL.SVR_RELEASE, _src_file_trim_to)
 
 
 @_LogWrapper(LOG_LEVEL.RELEASE)

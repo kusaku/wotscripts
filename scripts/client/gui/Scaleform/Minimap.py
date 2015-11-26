@@ -533,25 +533,26 @@ class Minimap(IDynSquadEntityClient):
                 location = entries[vehicleID]['location']
                 if location == VehicleLocation.AOI:
                     ownPos = Math.Matrix(BigWorld.camera().invViewMatrix).translation
-                    entryPos = Math.Matrix(entries[vehicleID]['matrix']).translation
+                    entryMatitx = entries[vehicleID]['matrix']
+                    entryPos = Math.Matrix(entryMatitx).translation
                     if AOI.ENABLE_MANUAL_RULES:
                         inAoI = (ownPos.x - entryPos.x) ** 2 + (ownPos.z - entryPos.z) ** 2 < self.__AOI_ESTIMATE ** 2
                     else:
                         inAoI = bool(abs(ownPos.x - entryPos.x) < self.__AOI_ESTIMATE and abs(ownPos.z - entryPos.z) < self.__AOI_ESTIMATE)
                     guiProps = g_sessionProvider.getCtx().getPlayerGuiProps(vehicleID, vInfo.team)
-                    if self.__permanentNamesShow or self.__onAltNamesShow:
-                        battleCtx = g_sessionProvider.getCtx()
-                        if not battleCtx.isObserver(self.__playerVehicleID):
-                            if entries[vehicleID]['matrix'] is not None:
-                                if type(entries[vehicleID]['matrix']) == Math.WGTranslationOnlyMP:
-                                    self.__addEntryLit(vInfo, guiProps, Math.Matrix(entries[vehicleID]['matrix'].source), not self.__onAltNamesShow or self.__isShowExtendedInfoActive)
-                                else:
-                                    mp = Math.WGTranslationOnlyMP()
-                                    mp.source = Math.Matrix(entries[vehicleID]['matrix'])
-                                    self.__addEntryLit(vInfo, guiProps, mp, not self.__onAltNamesShow or self.__isShowExtendedInfoActive)
                     self.__delEntry(vehicleID)
+                    self.__delEntryLit(vehicleID)
                     if not inAoI:
                         self.__addEntry(vInfo, guiProps, VehicleLocation.AOI_TO_FAR, False)
+                    elif self.__permanentNamesShow or self.__onAltNamesShow:
+                        battleCtx = g_sessionProvider.getCtx()
+                        if not battleCtx.isObserver(self.__playerVehicleID):
+                            if type(entryMatitx) == Math.WGTranslationOnlyMP:
+                                self.__addEntryLit(vInfo, guiProps, Math.Matrix(entryMatitx.source), not self.__onAltNamesShow or self.__isShowExtendedInfoActive)
+                            else:
+                                mp = Math.WGTranslationOnlyMP()
+                                mp.source = Math.Matrix(entryMatitx)
+                                self.__addEntryLit(vInfo, guiProps, mp, not self.__onAltNamesShow or self.__isShowExtendedInfoActive)
                 else:
                     LOG_DEBUG('notifyVehicleOnStop, unknown minimap entry location', location)
             return
@@ -570,9 +571,9 @@ class Minimap(IDynSquadEntityClient):
         if vehicleID in entries:
             doMark = False
             self.__delEntry(vehicleID)
-        self.__addEntry(vInfo, guiProps, VehicleLocation.AOI, doMark)
         self.__delEntryLit(vehicleID)
         self.__delCarriedFlagMarker(vehicleID)
+        self.__addEntry(vInfo, guiProps, VehicleLocation.AOI, doMark)
 
     def _playAttention(self, _):
         if FMOD.enabled:
@@ -670,15 +671,15 @@ class Minimap(IDynSquadEntityClient):
 
     def __onVehicleRemoved(self, vehicleID):
         if vehicleID in self.__entries:
-            self.__delEntry(id)
-        self.__delEntryLit(id)
+            self.__delEntry(vehicleID)
+        self.__delEntryLit(vehicleID)
 
     def __onVehicleKilled(self, victimId, *args):
-        self.__delEntryLit(victimId)
         if victimId in self.__entries:
             entry = self.__delEntry(victimId)
             if GUI_SETTINGS.showMinimapDeath:
                 self.__addDeadEntry(entry, victimId)
+        self.__delEntryLit(victimId)
 
     def __onFarPosUpdated(self):
         entries = self.__entries
@@ -695,8 +696,10 @@ class Minimap(IDynSquadEntityClient):
                     entry['matrix'].source.setTranslate(pos)
                 elif location == VehicleLocation.AOI_TO_FAR:
                     self.__delEntry(vehicleID)
+                    self.__delEntryLit(vehicleID)
                     self.__addEntry(vInfo, getPlayerGuiProps(vehicleID, vInfo.team), VehicleLocation.FAR, False)
             elif vInfo.isAlive():
+                self.__delEntryLit(vehicleID)
                 self.__addEntry(vInfo, getPlayerGuiProps(vehicleID, vInfo.team), VehicleLocation.FAR, True)
 
         for vehicleID in set(entries).difference(set(arena.positions)):
@@ -865,8 +868,8 @@ class Minimap(IDynSquadEntityClient):
                 self.__parentUI.call('minimap.entryInited', [])
             return
 
-    def __delEntryLit(self, id):
-        entry = self.__entrieLits.pop(id, None)
+    def __delEntryLit(self, vehicleID):
+        entry = self.__entrieLits.pop(vehicleID, None)
         if entry is not None:
             self.__ownUI.delEntry(entry['handle'])
         return

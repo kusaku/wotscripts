@@ -509,6 +509,10 @@ class ArcadeControlMode(_GunControlMode):
         self.__videoControlModeAvailable = dataSection.readBool('videoModeAvailable', constants.IS_DEVELOPMENT)
         self.__videoControlModeAvailable &= BattleReplay.g_replayCtrl.isPlaying or constants.IS_DEVELOPMENT
 
+    @property
+    def curVehicleID(self):
+        return BigWorld.player().playerVehicleID
+
     def create(self):
         self._cam.create(_ARCADE_CAM_PIVOT_POS, self.onChangeControlModeByScroll)
         super(ArcadeControlMode, self).create()
@@ -1021,7 +1025,11 @@ class PostMortemControlMode(IControlMode):
         BigWorld.player().consistentMatrices.onVehicleMatrixBindingChanged += self.__onMatrixBound
         if not BattleReplay.g_replayCtrl.isPlaying:
             if self.__isObserverMode:
-                self.__switchViewpoint(False)
+                vehicleID = args.get('vehicleID')
+                if vehicleID is None:
+                    self.__switchViewpoint(False)
+                else:
+                    self.__fakeSwitchToVehicle(vehicleID)
                 return
             if PostMortemControlMode.getIsPostmortemDelayEnabled() and bool(args.get('bPostmortemDelay')):
                 self.__postmortemDelay = PostmortemDelay(self.__cam, self.__onPostmortemDelayStop)
@@ -1114,14 +1122,25 @@ class PostMortemControlMode(IControlMode):
         self.__switchToVehicle(None)
         return
 
-    def __switchViewpoint(self, toPrevious):
+    def __fakeSwitchToVehicle(self, vehicleID):
+        if self.__postmortemDelay is not None:
+            return
+        else:
+            self.__doPreBind()
+            self.onSwitchViewpoint(vehicleID, Math.Vector3(0.0, 0.0, 0.0))
+            return
+
+    def __switchViewpoint(self, toPrevious, vehicleID = None):
         if not isinstance(toPrevious, bool):
             raise AssertionError
             return self.__postmortemDelay is not None and None
         else:
             self.__doPreBind()
-            BigWorld.player().positionControl.switchViewpoint(toPrevious)
-            return None
+            if vehicleID is None:
+                BigWorld.player().positionControl.switchViewpoint(toPrevious)
+            else:
+                self.onSwitchViewpoint(vehicleID, Math.Vector3(0.0, 0.0, 0.0))
+            return
 
     def __switchToVehicle(self, toId = None):
         if self.__postmortemDelay is not None:
