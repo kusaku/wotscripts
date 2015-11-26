@@ -936,25 +936,6 @@ class BattleClanMembership(_Condition, _Negatable):
         return 'BattleClanMembership<relation=%r; bonusType=%s>' % (self._value, _getArenaBonusType(self.__proxy))
 
 
-class HistoricalBattles(_Condition, _Negatable):
-
-    def __init__(self, path, data):
-        super(HistoricalBattles, self).__init__('historicalBattleIDs', dict(data), path)
-        self._battlesIDs = self._data.get('value')
-
-    def negate(self):
-        pass
-
-    def _format(self, svrEvents, event = None):
-        result = []
-        if event is None or not event.isGuiDisabled():
-            result.append(formatters.packIconTextBlock(formatters.formatGray('#quests:details/conditions/historicalBattles'), iconTexts=[ formatters.packHistoricalBattleElement(bID) for bID in self._battlesIDs ]))
-        return result
-
-    def __repr__(self):
-        return 'HistoricalBattles<value=%r>' % self._battlesIDs
-
-
 class BattleCamouflage(_Condition, _Negatable):
 
     def __init__(self, path, data):

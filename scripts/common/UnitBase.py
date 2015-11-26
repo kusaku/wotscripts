@@ -37,7 +37,6 @@ class UNIT_FLAGS:
     PRE_QUEUE = 0
     PRE_SEARCH = 0
     MODAL_STATES = IN_QUEUE | IN_SEARCH | IN_ARENA
-    CHANGING_TO_ARENA = IN_QUEUE | IN_ARENA | IN_PRE_ARENA
     CHANGED_STATE_ASQ = IN_ARENA | IN_PRE_ARENA | IN_SEARCH | IN_QUEUE
 
 
@@ -128,6 +127,7 @@ class UNIT_ERROR:
     PLAYER_READY = 73
     SORTIES_FORBIDDEN = 74
     RATED_BATTLE_FORBIDDEN = 75
+    KICKED_PLAYER_AFTER_BATTLE = 76
 
 
 OK = UNIT_ERROR.OK
@@ -174,6 +174,7 @@ class UNIT_ROLE:
     IN_ARENA = 64
     OFFLINE = 128
     CAN_LEAD = 256
+    AUTO_SEARCH = 512
     START_STOP_BATTLE = CHANGE_ROSTER
     ADD_REMOVE_MEMBERS = CHANGE_ROSTER
     INVITE_KICK_PLAYERS = CHANGE_ROSTER
@@ -369,11 +370,11 @@ class UnitBase(OpsUnpacker):
             self.unpack(packedUnit)
         else:
             self._rosterTypeID = rosterTypeID
-            self._prebattleTypeID = prebattleTypeID
             RosterType = ROSTER_TYPE_TO_CLASS.get(rosterTypeID)
             if slotDefs and not slotCount:
                 slotCount = len(slotDefs)
             self._roster = RosterType(slotDefs, slotCount, packedRoster)
+            self._prebattleTypeID = prebattleTypeID
             self._freeSlots = set(xrange(0, slotCount))
             self._dirty = 1
             self._flags = UNIT_FLAGS.DEFAULT
@@ -648,6 +649,9 @@ class UnitBase(OpsUnpacker):
     def isDevMode(self):
         return bool(self._flags & UNIT_FLAGS.DEV_MODE)
 
+    def isInQueue(self):
+        return bool(self._flags & UNIT_FLAGS.IN_QUEUE)
+
     def isInArena(self):
         return bool(self._flags & UNIT_FLAGS.IN_ARENA)
 
@@ -661,7 +665,7 @@ class UnitBase(OpsUnpacker):
         return bool(self._flags & UNIT_FLAGS.RATED_BATTLE_FORBIDDEN)
 
     def shouldPublish(self):
-        return not self.isInviteOnly() and not (self.isSortiesForbidden() or self.isRatedBattle())
+        return not (self.isInviteOnly() or self.isSortiesForbidden() or self.isRatedBattleForbidden())
 
     def __repr__(self):
         repr = 'Unit(\n  _members len=%s {' % len(self._members)

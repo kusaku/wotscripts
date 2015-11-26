@@ -49,7 +49,7 @@ class FunctionalSwitchToRandom(FunctionalEffect):
         from gui.prb_control.settings import PREBATTLE_ACTION_NAME
         dispatcher = g_prbLoader.getDispatcher()
         if dispatcher is not None:
-            dispatcher.doSelectAction(PrebattleAction(PREBATTLE_ACTION_NAME.JOIN_RANDOM_QUEUE))
+            dispatcher.doSelectAction(PrebattleAction(PREBATTLE_ACTION_NAME.RANDOM_QUEUE))
         else:
             LOG_ERROR('Prebattle dispatcher is not defined')
         return

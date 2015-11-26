@@ -41,6 +41,8 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
     def __init__(self):
         global g_accountRepository
         LOG_DEBUG('client Account.init')
+        propertyName, propertyValue = _CLIENT_SERVER_VERSION
+        connectionManager.checkClientServerVersions(propertyValue, getattr(self, propertyName, None))
         ClientChat.__init__(self)
         self.__rangeStreamIDCallbacks = RangeStreamIDCallbacks()
         self.__rangeStreamIDCallbacks.addRangeCallback((STREAM_ID_CHAT_MIN, STREAM_ID_CHAT_MAX), '_ClientChat__receiveStreamedData')
@@ -92,12 +94,10 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
         self.isInRandomQueue = False
         self.isInTutorialQueue = False
         self.isInUnitAssembler = False
-        self.isInHistoricalQueue = False
         self.isInEventBattles = False
+        self.isInSandboxQueue = False
         self.__onCmdResponse = {}
         self.__onStreamComplete = {}
-        propertyName, propertyValue = _CLIENT_SERVER_VERSION
-        connectionManager.checkClientServerVersions(propertyValue, getattr(self, propertyName, None))
         return
 
     def onBecomePlayer(self):
@@ -230,15 +230,15 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
             events.onEnqueuedRandom()
         elif queueType == QUEUE_TYPE.TUTORIAL:
             pass
-        elif queueType == QUEUE_TYPE.HISTORICAL:
-            self.isInHistoricalQueue = True
-            events.onEnqueuedHistorical()
         elif queueType == QUEUE_TYPE.UNIT_ASSEMBLER:
             self.isInUnitAssembler = True
             events.onEnqueuedUnitAssembler()
         elif queueType == QUEUE_TYPE.EVENT_BATTLES:
             self.isInEventBattles = True
             events.onEnqueuedEventBattles()
+        elif queueType == QUEUE_TYPE.SANDBOX:
+            self.isInSandboxQueue = True
+            events.onEnqueuedSandbox()
 
     def onEnqueueFailure(self, queueType, errorCode, errorStr):
         LOG_DEBUG('onEnqueueFailure', queueType, errorCode, errorStr)
@@ -248,10 +248,10 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
             events.onTutorialEnqueueFailure(errorCode, errorStr)
         elif queueType == QUEUE_TYPE.UNIT_ASSEMBLER:
             events.onEnqueueUnitAssemblerFailure(errorCode, errorStr)
-        elif queueType == QUEUE_TYPE.HISTORICAL:
-            events.onEnqueueHistoricalFailure(errorCode, errorStr)
         elif queueType == QUEUE_TYPE.EVENT_BATTLES:
             events.onEnqueueEventBattlesFailure(errorCode, errorStr)
+        elif queueType == QUEUE_TYPE.SANDBOX:
+            events.onEnqueuedSandboxFailure(errorCode, errorStr)
 
     def onDequeued(self, queueType):
         LOG_DEBUG('onDequeued', queueType)
@@ -264,12 +264,12 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
         elif queueType == QUEUE_TYPE.UNIT_ASSEMBLER:
             self.isInUnitAssembler = False
             events.onDequeuedUnitAssembler()
-        elif queueType == QUEUE_TYPE.HISTORICAL:
-            self.isInHistoricalQueue = False
-            events.onDequeuedHistorical()
         elif queueType == QUEUE_TYPE.EVENT_BATTLES:
             self.isInEventBattles = False
             events.onDequeuedEventBattles()
+        elif queueType == QUEUE_TYPE.SANDBOX:
+            self.isInSandboxQueue = False
+            events.onDequeuedSandbox()
 
     def onTutorialEnqueued(self, number, queueLen, avgWaitingTime):
         LOG_DEBUG('onTutorialEnqueued', number, queueLen, avgWaitingTime)
@@ -337,12 +337,12 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
         elif queueType == QUEUE_TYPE.UNIT_ASSEMBLER:
             self.isInUnitAssembler = False
             events.onKickedFromUnitAssembler()
-        elif queueType == QUEUE_TYPE.HISTORICAL:
-            self.isInHistoricalQueue = False
-            events.onKickedFromHistoricalQueue()
         elif queueType == QUEUE_TYPE.EVENT_BATTLES:
             self.isInEventBattles = False
             events.onKickedFromEventBattles()
+        elif queueType == QUEUE_TYPE.SANDBOX:
+            self.isInSandboxQueue = False
+            events.onKickedFromSandboxQueue()
 
     def onArenaCreated(self):
         LOG_DEBUG('onArenaCreated')
@@ -404,7 +404,7 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
         self.isInRandomQueue = False
         self.isInTutorialQueue = False
         self.isInEventBattles = False
-        self.isInHistoricalQueue = False
+        self.isInSandboxQueue = False
         events.isPlayerEntityChanging = False
         events.onPlayerEntityChangeCanceled()
         events.onKickedFromArena(reasonCode)
@@ -466,27 +466,10 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
         events.onAccountShowGUI(ctx)
         BigWorld.Screener.setUserId(self.databaseID)
 
-    def receiveQueueInfo(self, randomsQueueInfo, companiesQueueInfo, historicalQueueInfo, eventQueueInfo):
+    def receiveQueueInfo(self, randomsQueueInfo, companiesQueueInfo, eventQueueInfo):
         unpacked = None
-        if historicalQueueInfo is not None:
-            unpacked = self.__unpackHistoricalQueueInfo(historicalQueueInfo)
         events.onQueueInfoReceived(randomsQueueInfo, companiesQueueInfo, unpacked, eventQueueInfo)
         return
-
-    def __unpackHistoricalQueueInfo(self, historicalQueueInfo):
-        unpacked = {}
-        hqi = historicalQueueInfo
-        numClasses = len(VEHICLE_CLASSES)
-        battleIDs, sides, classes = hqi['battleIDs'], hqi['sides'], hqi['classes']
-        while len(battleIDs) >= 2:
-            (battleID, numSides), battleIDs = battleIDs[:2], battleIDs[2:]
-            curSides, sides = sides[:numSides], sides[numSides:]
-            for side in curSides:
-                curClasses, classes = classes[:numClasses], classes[numClasses:]
-                sideStats = unpacked.setdefault(battleID, {}).setdefault(side, {})
-                sideStats['by_class'] = dict(zip(VEHICLE_CLASSES, curClasses))
-
-        return unpacked
 
     def receivePrebattles(self, isSuccess, data):
         if isSuccess:
@@ -620,6 +603,15 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
         if not events.isPlayerEntityChanging:
             self.base.doCmdInt3(AccountCommands.REQUEST_ID_NO_RESPONSE, AccountCommands.CMD_DEQUEUE_TUTORIAL, 0, 0, 0)
 
+    def enqueueSandbox(self, vehInvID):
+        if events.isPlayerEntityChanging:
+            return
+        self.base.doCmdInt3(AccountCommands.REQUEST_ID_NO_RESPONSE, AccountCommands.CMD_ENQUEUE_SANDBOX, vehInvID, 0, 0)
+
+    def dequeueSandbox(self):
+        if not events.isPlayerEntityChanging:
+            self.base.doCmdInt3(AccountCommands.REQUEST_ID_NO_RESPONSE, AccountCommands.CMD_DEQUEUE_SANDBOX, 0, 0, 0)
+
     def enqueueUnitAssembler(self, compactDescrs):
         if events.isPlayerEntityChanging:
             return
@@ -630,17 +622,9 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
         if not events.isPlayerEntityChanging:
             self.base.doCmdInt3(AccountCommands.REQUEST_ID_NO_RESPONSE, AccountCommands.CMD_DEQUEUE_UNIT_ASSEMBLER, 0, 0, 0)
 
-    def enqueueHistorical(self, vehInvID, histBattleID, isCreditsAmmo = True):
+    def enqueueEventBattles(self, vehInvIDs, battleType, gameplaysMask = 65535, canAddToSquad = False):
         if not events.isPlayerEntityChanging:
-            self.base.doCmdInt3(AccountCommands.REQUEST_ID_NO_RESPONSE, AccountCommands.CMD_ENQUEUE_HISTORICAL, vehInvID, histBattleID, int(isCreditsAmmo))
-
-    def dequeueHistorical(self):
-        if not events.isPlayerEntityChanging:
-            self.base.doCmdInt3(AccountCommands.REQUEST_ID_NO_RESPONSE, AccountCommands.CMD_DEQUEUE_HISTORICAL, 0, 0, 0)
-
-    def enqueueEventBattles(self, vehInvIDs, battleType, gameplaysMask = 65535):
-        if not events.isPlayerEntityChanging:
-            arr = [len(vehInvIDs)] + vehInvIDs + [battleType, gameplaysMask]
+            arr = [len(vehInvIDs)] + vehInvIDs + [battleType, gameplaysMask, canAddToSquad]
             self.base.doCmdIntArr(AccountCommands.REQUEST_ID_NO_RESPONSE, AccountCommands.CMD_ENQUEUE_EVENT_BATTLES, arr)
 
     def dequeueEventBattles(self):
@@ -655,11 +639,6 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
         if events.isPlayerEntityChanging:
             return
         self.base.createTraining(arenaTypeID, roundLength, isOpened, comment)
-
-    def prb_createSquad(self):
-        if events.isPlayerEntityChanging:
-            return
-        self.base.createSquad()
 
     def prb_createCompany(self, isOpened, comment, division = PREBATTLE_COMPANY_DIVISION.ABSOLUTE):
         if events.isPlayerEntityChanging:
@@ -861,15 +840,6 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
             self._doCmdStr(AccountCommands.CMD_STEAM_FINALIZE_TXN, data, lambda requestID, error, errorStr: callback(steamID, orderID, error))
         except:
             callback(steamID, orderID, AccountCommands.RES_FAILURE)
-
-    def ebankGetBalance(self, callback):
-        self._doCmdStr(AccountCommands.CMD_EBANK_GET_BALANCE, '', lambda requestID, error, errorStr, ebankProps = {}: callback(error, errorStr, ebankProps))
-
-    def ebankBuyGold(self, vcoin, callback):
-        self.shop.ebankVCoinExchangeRate(lambda resultID, exchangeRate, rev: self.__ebankBuyGold(rev, vcoin, callback))
-
-    def __ebankBuyGold(self, shopRev, vcoin, callback):
-        self._doCmdInt3(AccountCommands.CMD_EBANK_BUY_GOLD, shopRev, vcoin, 0, lambda requestID, error, errorStr, ebankProps = {}: callback(error, errorStr, ebankProps))
 
     def messenger_onActionByServer_chat2(self, actionID, reqID, args):
         from messenger_common_chat2 import MESSENGER_ACTION_IDS as actions

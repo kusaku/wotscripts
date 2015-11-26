@@ -4,6 +4,7 @@ import BigWorld
 from CurrentVehicle import g_currentVehicle
 import account_helpers
 from account_helpers.AccountSettings import AccountSettings, BOOSTERS
+from constants import PREBATTLE_TYPE, QUEUE_TYPE
 from gui.Scaleform.daapi.view.lobby.header import battle_selector_items
 from gui.Scaleform.framework.managers.containers import POP_UP_CRITERIA
 from gui.Scaleform.genConsts.CYBER_SPORT_ALIASES import CYBER_SPORT_ALIASES
@@ -12,7 +13,7 @@ from gui.game_control import getFalloutCtrl
 from gui.gold_fish import isGoldFishActionActive, isTimeToShowGoldFishPromo
 from gui.goodies.GoodiesCache import g_goodiesCache
 from gui.prb_control.prb_helpers import GlobalListener
-from gui.prb_control.settings import PREBATTLE_ACTION_NAME, REQUEST_TYPE, UNIT_RESTRICTION, PREBATTLE_RESTRICTION
+from gui.prb_control.settings import PREBATTLE_ACTION_NAME, REQUEST_TYPE, UNIT_RESTRICTION, PREBATTLE_RESTRICTION, QUEUE_RESTRICTION
 from gui.shared.formatters.ranges import toRomanRangeString
 from gui.shared.gui_items import GUI_ITEM_TYPE
 from gui.shared.utils.requesters.ItemsRequester import REQ_CRITERIA
@@ -46,7 +47,7 @@ class TOOLTIP_TYPES(object):
     NONE = 'none'
 
 
-class LobbyHeader(LobbyHeaderMeta, GlobalListener, ClanEmblemsHelper):
+class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
 
     class BUTTONS(CONST_CONTAINER):
         SETTINGS = 'settings'
@@ -66,9 +67,12 @@ class LobbyHeader(LobbyHeaderMeta, GlobalListener, ClanEmblemsHelper):
     def _populate(self):
         battle_selector_items.create()
         super(LobbyHeader, self)._populate()
+        self.startGlobalListening()
         self.app.containerManager.onViewAddedToContainer += self.__onViewAddedToContainer
         game_control.g_instance.wallet.onWalletStatusChanged += self.__onWalletChanged
         game_control.g_instance.gameSession.onPremiumNotify += self.__onPremiumTimeChanged
+        game_control.g_instance.igr.onIgrTypeChanged += self.__onIGRChanged
+        g_lobbyContext.getServerSettings().onServerSettingsChange += self.__onServerSettingChanged
         g_currentVehicle.onChanged += self.__onVehicleChanged
         g_eventsCache.onSyncCompleted += self.__onEventsCacheResync
         g_itemsCache.onSyncCompleted += self.__onItemsChanged
@@ -89,7 +93,6 @@ class LobbyHeader(LobbyHeaderMeta, GlobalListener, ClanEmblemsHelper):
         self.as_setFightButtonS(i18n.makeString('#menu:headerButtons/battle'))
         self.as_setWalletStatusS(game_control.g_instance.wallet.componentsStatuses)
         self.updateAccountInfo()
-        self.startGlobalListening()
         self.__updateServerName()
         if not isTimeToShowGoldFishPromo():
             enabledVal = isGoldFishActionActive()
@@ -101,6 +104,32 @@ class LobbyHeader(LobbyHeaderMeta, GlobalListener, ClanEmblemsHelper):
         if not self.isDisposed() and emblem:
             self.as_setClanEmblemS(self.getMemoryTexturePath(emblem))
 
+    def onPlayerStateChanged(self, functional, roster, accountInfo):
+        if accountInfo.isCurrentPlayer():
+            self.__updatePrebattleControls()
+
+    def onUnitPlayerStateChanged(self, pInfo):
+        if pInfo.isCurrentPlayer():
+            self.__updatePrebattleControls()
+
+    def onPrbFunctionalInited(self):
+        self.__updatePrebattleControls()
+
+    def onUnitFunctionalInited(self):
+        self.__updatePrebattleControls()
+
+    def onPrbFunctionalFinished(self):
+        self.__updatePrebattleControls()
+
+    def onUnitFunctionalFinished(self):
+        self.__updatePrebattleControls()
+
+    def onPreQueueFunctionalInited(self):
+        self.__updatePrebattleControls()
+
+    def onPreQueueFunctionalFinished(self):
+        self.__updatePrebattleControls()
+
     def __updateServerName(self):
         serverShortName = connectionManager.serverUserNameShort.split()[-1].strip()
         if len(serverShortName) > _MAX_HEADER_SERVER_NAME_LEN:
@@ -110,12 +139,15 @@ class LobbyHeader(LobbyHeaderMeta, GlobalListener, ClanEmblemsHelper):
     def _dispose(self):
         battle_selector_items.clear()
         g_clientUpdateManager.removeObjectCallbacks(self)
+        self.stopGlobalListening()
         self.removeListener(events.FightButtonEvent.FIGHT_BUTTON_UPDATE, self.__handleFightButtonUpdated, scope=EVENT_BUS_SCOPE.LOBBY)
         self.removeListener(events.CoolDownEvent.PREBATTLE, self.__handleSetPrebattleCoolDown, scope=EVENT_BUS_SCOPE.LOBBY)
         self.removeListener(events.BubbleTooltipEvent.SHOW, self.__showBubbleTooltip, scope=EVENT_BUS_SCOPE.LOBBY)
         self.removeListener(events.CloseWindowEvent.GOLD_FISH_CLOSED, self.__onGoldFishWindowClosed, scope=EVENT_BUS_SCOPE.LOBBY)
         game_control.g_instance.gameSession.onPremiumNotify -= self.__onPremiumTimeChanged
         game_control.g_instance.wallet.onWalletStatusChanged -= self.__onWalletChanged
+        game_control.g_instance.igr.onIgrTypeChanged -= self.__onIGRChanged
+        g_lobbyContext.getServerSettings().onServerSettingsChange += self.__onServerSettingChanged
         g_currentVehicle.onChanged -= self.__onVehicleChanged
         g_eventsCache.onSyncCompleted -= self.__onEventsCacheResync
         g_itemsCache.onSyncCompleted -= self.__onItemsChanged
@@ -123,12 +155,8 @@ class LobbyHeader(LobbyHeaderMeta, GlobalListener, ClanEmblemsHelper):
         self.__falloutCtrl.onSettingsChanged -= self.__updateFalloutSettings
         self.__falloutCtrl = None
         self.app.containerManager.onViewAddedToContainer -= self.__onViewAddedToContainer
-        self.stopGlobalListening()
         super(LobbyHeader, self)._dispose()
         return
-
-    def onPreQueueSettingsChanged(self, _):
-        self.__updatePrebattleControls()
 
     def updateAccountInfo(self):
         self.updateMoneyStats()
@@ -174,23 +202,19 @@ class LobbyHeader(LobbyHeaderMeta, GlobalListener, ClanEmblemsHelper):
         self.fireEvent(events.LoadViewEvent(VIEW_ALIAS.EXCHANGE_XP_WINDOW), EVENT_BUS_SCOPE.LOBBY)
 
     def showPremiumDialog(self):
-        self.fireEvent(events.LoadViewEvent(VIEW_ALIAS.PREMIUM_WINDOW))
+        self.fireEvent(events.LoadViewEvent(VIEW_ALIAS.PREMIUM_WINDOW), EVENT_BUS_SCOPE.LOBBY)
 
     def fightClick(self, mapID, actionName):
-        dispatcher = g_prbLoader.getDispatcher()
-        if dispatcher is not None:
-            dispatcher.doAction(PrebattleAction(actionName, mapID=mapID))
+        if self.prbDispatcher:
+            self.prbDispatcher.doAction(PrebattleAction(actionName, mapID=mapID))
         else:
             LOG_ERROR('Prebattle dispatcher is not defined')
-        return
 
     def showSquad(self):
-        dispatcher = g_prbLoader.getDispatcher()
-        if dispatcher is not None:
-            dispatcher.doSelectAction(PrebattleAction(PREBATTLE_ACTION_NAME.SQUAD))
+        if self.prbDispatcher:
+            self.prbDispatcher.doSelectAction(PrebattleAction(PREBATTLE_ACTION_NAME.SQUAD))
         else:
             LOG_ERROR('Prebattle dispatcher is not defined')
-        return
 
     def __setClanInfo(self, clanInfo):
         name = BigWorld.player().name
@@ -221,6 +245,9 @@ class LobbyHeader(LobbyHeaderMeta, GlobalListener, ClanEmblemsHelper):
     def __setAccountsAttrs(self, isPremiumAccount, premiumExpiryTime = 0):
         disableTTHeader = ''
         disableTTBody = ''
+        isNavigationEnabled = True
+        if self.prbDispatcher:
+            isNavigationEnabled = not self.prbDispatcher.getFunctionalState().isNavigationDisabled()
         if isPremiumAccount:
             if not premiumExpiryTime > 0:
                 raise AssertionError
@@ -323,16 +350,19 @@ class LobbyHeader(LobbyHeaderMeta, GlobalListener, ClanEmblemsHelper):
          'body': body,
          'note': ''}
 
+    def __getSandboxTooltipData(self):
+        return {'header': i18n.makeString(MENU.HEADERBUTTONS_FIGHTBTN_TOOLTIP_SANDBOX_INVALID_HEADER),
+         'body': i18n.makeString(MENU.HEADERBUTTONS_FIGHTBTN_TOOLTIP_SANDBOX_INVALID_LEVEL_BODY)}
+
     def __updatePrebattleControls(self):
-        prbDispatcher = g_prbLoader.getDispatcher()
-        if not prbDispatcher:
+        if not self.prbDispatcher:
             return
         else:
             items = battle_selector_items.getItems()
-            state = prbDispatcher.getFunctionalState()
+            state = self.prbDispatcher.getFunctionalState()
             selected = items.update(state)
-            canDo, canDoMsg = prbDispatcher.canPlayerDoAction()
-            playerInfo = prbDispatcher.getPlayerInfo()
+            canDo, canDoMsg = self.prbDispatcher.canPlayerDoAction()
+            playerInfo = self.prbDispatcher.getPlayerInfo()
             if selected.isInSquad(state):
                 isInSquad = True
             else:
@@ -347,8 +377,12 @@ class LobbyHeader(LobbyHeaderMeta, GlobalListener, ClanEmblemsHelper):
                 tooltip = TOOLTIPS.HEADER_DOMINATIONSQUAD if isFallout else TOOLTIPS.HEADER_SQUAD
             self.as_updateSquadS(isInSquad, tooltip, TOOLTIP_TYPES.COMPLEX)
             isFightBtnDisabled = not canDo or selected.isFightButtonForcedDisabled()
-            if isFightBtnDisabled:
-                self.as_setFightBtnTooltipDataS(self.__getFightBtnTooltipData(canDoMsg))
+            if isFightBtnDisabled and not state.hasLockedState:
+                isEventVehicle = g_currentVehicle.isPresent() and g_currentVehicle.item.isEvent
+                if state.isInPreQueue(queueType=QUEUE_TYPE.SANDBOX) and canDoMsg == QUEUE_RESTRICTION.LIMIT_LEVEL:
+                    self.as_setFightBtnTooltipDataS(self.__getSandboxTooltipData())
+                elif isEventVehicle and not state.isInPrebattle(PREBATTLE_TYPE.COMPANY) or isFallout:
+                    self.as_setFightBtnTooltipDataS(self.__getFightBtnTooltipData(canDoMsg))
             else:
                 self.as_setFightBtnTooltipDataS(None)
             self.as_disableFightButtonS(isFightBtnDisabled)
@@ -364,10 +398,9 @@ class LobbyHeader(LobbyHeaderMeta, GlobalListener, ClanEmblemsHelper):
         self.__updatePrebattleControls()
 
     def __handleSetPrebattleCoolDown(self, event):
-        prbDispatcher = g_prbLoader.getDispatcher()
-        if not prbDispatcher:
+        if not self.prbDispatcher:
             return
-        playerInfo = prbDispatcher.getPlayerInfo()
+        playerInfo = self.prbDispatcher.getPlayerInfo()
         isCreator = playerInfo.isCreator
         if event.requestID is REQUEST_TYPE.SET_PLAYER_STATE and not isCreator:
             self.as_setCoolDownForReadyS(event.coolDown)
@@ -382,6 +415,9 @@ class LobbyHeader(LobbyHeaderMeta, GlobalListener, ClanEmblemsHelper):
         self.__updatePrebattleControls()
 
     def __updateFalloutSettings(self, *args):
+        self.__updatePrebattleControls()
+
+    def __onIGRChanged(self, *args):
         self.__updatePrebattleControls()
 
     def __updateGoodies(self, *args):
@@ -405,3 +441,7 @@ class LobbyHeader(LobbyHeaderMeta, GlobalListener, ClanEmblemsHelper):
             if falloutVehicle is not None:
                 self.__updatePrebattleControls()
         return
+
+    def __onServerSettingChanged(self, diff):
+        if 'isSandboxEnabled' in diff:
+            self.__updatePrebattleControls()

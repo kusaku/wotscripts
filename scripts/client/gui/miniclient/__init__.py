@@ -10,15 +10,7 @@ from tech_tree import configure_pointcuts as _configure_tech_tree_pointcuts
 from invitations import configure_pointcuts as _configure_invitation_pointcuts
 from fortified_regions import configure_pointcuts as _configure_fort_pointcuts
 from personal_quests import configure_pointcuts as _configure_personal_quests_pointcuts
-
-class CONTENT_TYPE:
-    DEFAULT = 0
-    SD_TEXTURES = 1
-    HD_TEXTURES = 2
-    INCOMPLETE = 3
-    TUTORIAL = 4
-    SANDBOX = 5
-
+from constants import CONTENT_TYPE
 
 def configure_state():
     content_type = ResMgr.activeContentType()

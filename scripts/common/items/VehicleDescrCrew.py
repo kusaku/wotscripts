@@ -1,17 +1,19 @@
 # Embedded file name: scripts/common/items/VehicleDescrCrew.py
 import tankmen
 from debug_utils import *
+from qualifiers import CREW_ROLE
 _DO_DEBUG_LOG = False
 
 class VehicleDescrCrew(object):
 
-    def __init__(self, vehicleDescr, crewCompactDescrs, activityFlags = None, isFire = False):
+    def __init__(self, vehicleDescr, crewCompactDescrs, mainSkillQualifiersApplier, activityFlags = None, isFire = False):
         if activityFlags is None:
             activityFlags = [True] * len(crewCompactDescrs)
         self._vehicleDescr = vehicleDescr
         self._crewCompactDescrs = crewCompactDescrs
         self._activityFlags = activityFlags
         self._isFire = isFire
+        self._mainSkillQualifiersApplier = mainSkillQualifiersApplier
         skills, femaleCount = self._validateAndComputeCrew()
         self._skills = skills
         if _DO_DEBUG_LOG:
@@ -115,10 +117,20 @@ class VehicleDescrCrew(object):
 
         skillProcessors = self._skillProcessors
         for skillName, efficiency in skillEfficiencies:
-            factor = 0.57 + 0.43 * efficiency
+            updatedFactor = factor = 0.57 + 0.43 * efficiency
+            if skillName in tankmen.ROLES:
+                updatedFactor = self._mainSkillQualifiersApplier[CREW_ROLE.ALL](factor)
+                updatedFactor = self._mainSkillQualifiersApplier[skillName](updatedFactor)
             if _DO_DEBUG_LOG:
-                LOG_DEBUG("Efficiency/factor of skill '%s': (%s, %s)" % (skillName, efficiency, factor))
-            skillProcessors[skillName](self, factor)
+                LOG_DEBUG("Efficiency/factor of skill '%s': (%s, %s, %s)" % (skillName,
+                 efficiency,
+                 factor,
+                 updatedFactor))
+                LOG_OGNICK_DEV("Efficiency/factor of skill '%s': (%s, %s, %s)" % (skillName,
+                 efficiency,
+                 factor,
+                 updatedFactor))
+            skillProcessors[skillName](self, updatedFactor)
 
         markers = {}
         ROLES_AND_COMMON_SKILLS = tankmen.ROLES_AND_COMMON_SKILLS

@@ -6,15 +6,13 @@ import SoundGroups
 from VehicleEffects import DamageFromShotDecoder
 from debug_utils import *
 import constants
-from constants import VEHICLE_HIT_EFFECT
+from constants import VEHICLE_HIT_EFFECT, VEHICLE_PHYSICS_MODE
 from gui.battle_control import g_sessionProvider
 from gui.battle_control.battle_constants import FEEDBACK_EVENT_ID as _GUI_EVENT_ID
 from helpers.EffectMaterialCalculation import calcSurfaceMaterialNearPoint
 from items import vehicles
 from physics_shared import decodeTrackScrolling
-import FMOD
-if FMOD.enabled:
-    import VehicleAppearance
+import VehicleAppearance
 from gui.LobbyContext import g_lobbyContext
 import AreaDestructibles
 import DestructiblesCache
@@ -29,6 +27,10 @@ from ModelHitTester import segmentMayHitVehicle, SegmentCollisionResult
 from gun_rotation_shared import decodeGunAngles
 from constants import SPT_MATKIND
 from material_kinds import EFFECT_MATERIAL_INDEXES_BY_NAMES, EFFECT_MATERIALS
+from functools import partial
+LOW_ENERGY_COLLISION_D = 0.3
+HIGH_ENERGY_COLLISION_D = 0.6
+_g_respawnCache = dict()
 
 class Vehicle(BigWorld.Entity):
     hornMode = property(lambda self: self.__hornMode)
@@ -50,6 +52,7 @@ class Vehicle(BigWorld.Entity):
         self.__stopHornSoundCallback = None
         self.__isEnteringWorld = False
         self.__turretDetachmentConfirmed = False
+        self.__edged = False
         return
 
     def reload(self):
@@ -59,27 +62,59 @@ class Vehicle(BigWorld.Entity):
         vehicles.reload()
         self.typeDescriptor = vehicles.VehicleDescr(compactDescr=self.publicInfo.compDescr)
         if wasStarted:
-            if FMOD.enabled:
-                self.appearance = VehicleAppearance.VehicleAppearance()
+            self.appearance = VehicleAppearance.VehicleAppearance()
             self.appearance.prerequisites(self)
             self.startVisual()
 
-    def prerequisites(self):
-        if self.typeDescriptor is not None:
+    def prerequisites(self, respawnCompactDescr = None):
+        if respawnCompactDescr is None and self.typeDescriptor is not None:
             return ()
         else:
             prereqs = []
-            descr = vehicles.VehicleDescr(compactDescr=_stripVehCompDescrIfRoaming(self.publicInfo.compDescr))
+            if respawnCompactDescr is not None:
+                descr = vehicles.VehicleDescr(respawnCompactDescr)
+                self.health = descr.maxHealth
+            else:
+                descr = vehicles.VehicleDescr(compactDescr=_stripVehCompDescrIfRoaming(self.publicInfo.compDescr))
             self.typeDescriptor = descr
             prereqs += descr.prerequisites()
             for hitTester in descr.getHitTesters():
                 if hitTester.bspModelName is not None and not hitTester.isBspModelLoaded():
                     prereqs.append(hitTester.bspModelName)
 
-            if FMOD.enabled:
-                self.appearance = VehicleAppearance.VehicleAppearance()
+            self.appearance = VehicleAppearance.VehicleAppearance()
             prereqs += self.appearance.prerequisites(self)
             return prereqs
+
+    def respawn(self, compactDescr):
+        self.onLeaveWorld()
+        self.typeDescriptor = None
+        self.isCrewActiv = True
+        self.__isUnderWater = False
+        prereqs = self.prerequisites(compactDescr)
+        time = BigWorld.time()
+        loadFunc = partial(self.__resourcesLoaded, id=self.id, seqtime=time)
+        _g_respawnCache[self.id] = (loadFunc, time)
+        BigWorld.loadResourceListBG(list(prereqs), loadFunc)
+        return
+
+    def __resourcesLoaded(self, resourceRefs, id, seqtime):
+        respCallback = _g_respawnCache.get(id, None)
+        if respCallback is not None:
+            if respCallback[1] != seqtime:
+                return
+        else:
+            return
+        del _g_respawnCache[self.id]
+        vehicle = BigWorld.entities.get(id, None)
+        if vehicle is None:
+            return
+        else:
+            if resourceRefs.failedIDs:
+                LOG_ERROR('Failed to load resources %s' % (resourceRefs.failedIDs,))
+            else:
+                self.onEnterWorld(resourceRefs)
+            return
 
     def onEnterWorld(self, prereqs):
         self.__isEnteringWorld = True
@@ -99,6 +134,8 @@ class Vehicle(BigWorld.Entity):
         self.__isEnteringWorld = False
 
     def onLeaveWorld(self):
+        if _g_respawnCache.has_key(self.id):
+            del _g_respawnCache[self.id]
         self.__stopExtras()
         BigWorld.player().vehicle_onLeaveWorld(self)
         raise not self.isStarted or AssertionError
@@ -119,23 +156,24 @@ class Vehicle(BigWorld.Entity):
                 BigWorld.player().cancelWaitingForShot()
             return
 
-    def showDamageFromShot(self, attackerID, points, effectsIndex):
+    def showDamageFromShot(self, attackerID, points, effectsIndex, damageFactor):
         if not self.isStarted:
             return
         else:
             effectsDescr = vehicles.g_cache.shotEffects[effectsIndex]
             maxHitEffectCode, decodedPoints = DamageFromShotDecoder.decodeHitPoints(points, self.typeDescriptor)
             hasPiercedHit = DamageFromShotDecoder.hasDamaged(maxHitEffectCode)
-            for shotPoint in decodedPoints:
-                showFullscreenEffs = self.isPlayer and self.isAlive()
-                keyPoints, effects, _ = effectsDescr[shotPoint.hitEffectGroup]
-                self.appearance.modelsDesc[shotPoint.componentName]['boundEffects'].addNew(shotPoint.matrix, effects, keyPoints, isPlayer=self.isPlayer, showShockWave=showFullscreenEffs, showFlashBang=showFullscreenEffs, entity_id=self.id)
-
             if decodedPoints:
                 firstHitPoint = decodedPoints[0]
                 compMatrix = Math.Matrix(self.appearance.modelsDesc[firstHitPoint.componentName]['model'].matrix)
                 firstHitDirLocal = firstHitPoint.matrix.applyToAxis(2)
                 firstHitDir = compMatrix.applyVector(firstHitDirLocal)
+            for shotPoint in decodedPoints:
+                showFullscreenEffs = self.isPlayer and self.isAlive()
+                keyPoints, effects, _ = effectsDescr[shotPoint.hitEffectGroup]
+                self.appearance.modelsDesc[shotPoint.componentName]['boundEffects'].addNew(shotPoint.matrix, effects, keyPoints, isPlayer=self.isPlayer, showShockWave=showFullscreenEffs, showFlashBang=showFullscreenEffs, entity_id=self.id, damageFactor=damageFactor, fromPlayer=attackerID == BigWorld.player().playerVehicleID, hitdir=firstHitDir)
+
+            if decodedPoints:
                 self.appearance.receiveShotImpulse(firstHitDir, effectsDescr['targetImpulse'])
                 self.appearance.executeHitVibrations(maxHitEffectCode)
                 player = BigWorld.player()
@@ -150,7 +188,7 @@ class Vehicle(BigWorld.Entity):
                 g_sessionProvider.getFeedback().setVehicleState(self.id, eventID)
             return
 
-    def showDamageFromExplosion(self, attackerID, center, effectsIndex):
+    def showDamageFromExplosion(self, attackerID, center, effectsIndex, damageFactor):
         if not self.isStarted:
             return
         impulse = vehicles.g_cache.shotEffects[effectsIndex]['targetImpulse']
@@ -224,6 +262,10 @@ class Vehicle(BigWorld.Entity):
         if self.isStarted:
             self.appearance.changeEngineMode(self.engineMode, True)
 
+    def set_physicsMode(self, prev):
+        if self.physicsMode != prev:
+            self.respawn(self.publicInfo.compDescr)
+
     def set_isStrafing(self, prev):
         if hasattr(self.filter, 'isStrafing'):
             self.filter.isStrafing = self.isStrafing
@@ -239,10 +281,13 @@ class Vehicle(BigWorld.Entity):
         pass
 
     def set_gear(self, prev):
-        pass
+        self.appearance.set_gear(self.gear, prev)
 
     def set_trackScrolling(self, prev):
         leftScroll, rightScroll = decodeTrackScrolling(self.trackScrolling)
+        self.appearance.updateTracksScroll(leftScroll, rightScroll)
+        if self.physicsMode == VEHICLE_PHYSICS_MODE.DETAILED:
+            self.filter.setTracksSpeed((leftScroll, rightScroll))
 
     def set_isCrewActive(self, prev):
         if self.isStarted:
@@ -374,7 +419,6 @@ class Vehicle(BigWorld.Entity):
             self.appearance.onVehicleHealthChanged()
             if self.isPlayer:
                 if self.isAlive():
-                    BigWorld.wgAddEdgeDetectEntity(self, 0, 1, True)
                     self.appearance.setupGunMatrixTargets(avatar.gunRotator)
             if hasattr(self.filter, 'allowStrafeCompensation'):
                 self.filter.allowStrafeCompensation = not self.isPlayer
@@ -392,9 +436,7 @@ class Vehicle(BigWorld.Entity):
         return
 
     def stopVisual(self):
-        if not self.isStarted:
-            raise AssertionError
-            self.isPlayer and BigWorld.wgDelEdgeDetectEntity(self)
+        raise self.isStarted or AssertionError
         self.__stopExtras()
         g_sessionProvider.getFeedback().stopVehicleVisual(self.id, self.isPlayer)
         self.appearance.destroy()
@@ -453,10 +495,12 @@ class Vehicle(BigWorld.Entity):
     def __showStaticCollisionEffect(self, energy, matKind, effectIdx, hitPoint, normal, isTrackCollision):
         heavyVelocities = self.typeDescriptor.type.heavyCollisionEffectVelocities
         heavyEnergy = heavyVelocities['track'] if isTrackCollision else heavyVelocities['hull']
-        heavyEnergy = 0.5 * heavyEnergy * heavyEnergy
-        postfix = '%sCollisionLight' if energy < heavyEnergy else '%sCollisionHeavy'
-        heavyEnergy = 0.5 * heavyEnergy * heavyEnergy
-        postfix = '%sCollisionLight' if energy < heavyEnergy else '%sCollisionHeavy'
+        if energy < LOW_ENERGY_COLLISION_D * heavyEnergy * heavyEnergy:
+            postfix = '%sCollisionLight'
+        elif energy < HIGH_ENERGY_COLLISION_D * heavyEnergy * heavyEnergy:
+            postfix = '%sCollisionMedium'
+        else:
+            postfix = '%sCollisionHeavy'
         effectName = ''
         if effectIdx < len(EFFECT_MATERIALS):
             effectName = EFFECT_MATERIALS[effectIdx]
@@ -529,25 +573,7 @@ class Vehicle(BigWorld.Entity):
             bwfilter.velocityErrorCompensation = 100.0
 
     def playHornSound(self, hornID):
-        return
-        hornDesc = vehicles.g_cache.horns().get(hornID)
-        if hornDesc is None:
-            return
-        else:
-            self.stopHornSound(True)
-            self.__hornSounds = []
-            self.__hornMode = hornDesc['mode']
-            model = self.appearance.modelsDesc['turret']['model']
-            for sndEventId in hornDesc['sounds']:
-                snd = SoundGroups.g_instance.getSound3D(model, sndEventId)
-                snd.volume *= self.typeDescriptor.type.hornVolumeFactor
-                self.__hornSounds.append(snd)
-
-            if self.__hornSounds[0] is not None:
-                self.__hornSounds[0].play()
-                if self.__hornMode == 'continuous' and hornDesc['maxDuration'] > 0:
-                    self.__stopHornSoundCallback = BigWorld.callback(hornDesc['maxDuration'], self.stopHornSound)
-            return
+        pass
 
     def stopHornSound(self, forceSilence = False):
         if not forceSilence and self.__hornMode == 'twoSounds':
@@ -583,6 +609,16 @@ class Vehicle(BigWorld.Entity):
         if not self.isTurretDetached:
             LOG_ERROR('Vehicle::confirmTurretDetachment: Confirming turret detachment, though the turret is not detached')
         self.appearance.updateTurretVisibility()
+
+    def drawEdge(self, type, color, player = False):
+        if not self.__edged:
+            BigWorld.wgAddEdgeDetectEntity(self, type, color, player)
+            self.__edged = True
+
+    def removeEdge(self):
+        if self.__edged:
+            BigWorld.wgDelEdgeDetectEntity(self)
+            self.__edged = False
 
 
 def _stripVehCompDescrIfRoaming(vehCompDescr):

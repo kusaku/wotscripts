@@ -1,0 +1,309 @@
+# Embedded file name: scripts/client/gui/battle_control/gas_attack_controller.py
+from collections import namedtuple
+import weakref
+import BigWorld
+import math
+import Event
+from GasAttackSettings import GasAttackState
+from constants import DEATH_ZONES
+from gui import DEPTH_OF_Aim
+from gui.Scaleform.Flash import Flash
+from gui.Scaleform.locale.FALLOUT import FALLOUT
+from helpers import time_utils
+from Math import Vector3
+from shared_utils import makeTupleByDict
+_WARNING_DISTANCE = 30
+
+class _GAS_ATTACK_STATE(object):
+    NO_ATTACK = 0
+    PREPEARING = 1
+    INSIDE_SAFE_ZONE = 2
+    NEAR_SAFE = 3
+    NEAR_CLOUD = 4
+    INSIDE_CLOUD = 5
+
+
+_GasAttackState = namedtuple('_GasAttackState', ('state', 'prevState', 'center', 'currentRadius', 'safeZoneRadius', 'centerDistance', 'safeZoneDistance', 'gasCloudDistance', 'timeLeft'))
+_GasAttackState.__new__.__defaults__ = (_GAS_ATTACK_STATE.NO_ATTACK,
+ _GAS_ATTACK_STATE.NO_ATTACK,
+ 0,
+ Vector3(0, 0, 0),
+ 0,
+ 0,
+ 0,
+ 0,
+ 0)
+
+class _SafeZoneDirectionIndicator(Flash):
+    __SWF_FILE_NAME = 'DirectionIndicatorMessage.swf'
+    __FLASH_CLASS = 'WGDirectionIndicatorFlash'
+    __FLASH_MC_NAME = 'directionalIndicatorMc'
+    __FLASH_SIZE = (680, 680)
+
+    def __init__(self):
+        Flash.__init__(self, self.__SWF_FILE_NAME, self.__FLASH_CLASS, [self.__FLASH_MC_NAME])
+        self.component.wg_inputKeyMode = 2
+        self.component.position.z = DEPTH_OF_Aim
+        self.movie.backgroundAlpha = 0.0
+        self.movie.scaleMode = 'NoScale'
+        self.component.focus = False
+        self.component.moveFocus = False
+        self.component.showAlways = True
+        self.component.heightMode = 'PIXEL'
+        self.component.widthMode = 'PIXEL'
+        self.flashSize = self.__FLASH_SIZE
+        self.component.relativeRadius = 0.5
+        self.__dObject = getattr(self.movie, self.__FLASH_MC_NAME, None)
+        return
+
+    def setDistance(self, distance):
+        if self.__dObject:
+            self.__dObject.setDistance(distance)
+
+    def setPosition(self, position):
+        self.component.position3D = position
+
+    def setMessage(self, message):
+        if self.__dObject:
+            self.__dObject.setMessage(message)
+
+    def track(self, position):
+        self.active(True)
+        self.component.visible = True
+        self.component.position3D = position
+
+    def remove(self):
+        self.__dObject = None
+        self.close()
+        return
+
+
+class _SafeZoneDirectionIndicatorCtrl(object):
+
+    def __init__(self, indicator, position, distance):
+        super(_SafeZoneDirectionIndicatorCtrl, self).__init__()
+        self.__indicator = indicator
+        self.__indicator.track(position)
+        self.__indicator.setMessage(FALLOUT.SAFEZONEDIRECTION_MESSAGE)
+        self.__indicator.setDistance(distance)
+
+    def update(self, distance, position = None):
+        self.__indicator.setDistance(distance)
+        if position is not None:
+            self.__indicator.setPosition(position)
+        return
+
+    def clear(self):
+        if self.__indicator is not None:
+            self.__indicator.remove()
+        self.__indicator = None
+        return
+
+
+class GasAttackController(object):
+
+    def __init__(self, ctx):
+        super(GasAttackController, self).__init__()
+        self.__state = _GasAttackState()
+        self.__gasAttackMgr = ctx.gasAttackMgr
+        self.__battleUI = None
+        self.__indicatorCtrl = None
+        self.__panelUI = None
+        self.__safeZoneUI = None
+        self.__timerCallback = None
+        self.__evtManager = Event.EventManager()
+        self.onPreparing = Event.Event(self.__evtManager)
+        self.onStarted = Event.Event(self.__evtManager)
+        self.onUpdated = Event.Event(self.__evtManager)
+        self.onEnded = Event.Event(self.__evtManager)
+        return
+
+    def start(self, battleUI):
+        self.__battleUI = battleUI
+        self.__gasAttackMgr.onAttackPreparing += self.__onAttackPreparing
+        self.__gasAttackMgr.onAttackStarted += self.__onAttackStarted
+        self.__gasAttackMgr.onAttackStopped += self.__onAttackStopped
+        self.__updateState()
+        self.__startTimer()
+
+    def stop(self):
+        self.__state = None
+        self.__battleUI = None
+        self.__stopTimer()
+        self.__finiIndicator()
+        if self.__gasAttackMgr is not None:
+            self.__gasAttackMgr.onAttackPreparing -= self.__onAttackPreparing
+            self.__gasAttackMgr.onAttackStarted -= self.__onAttackStarted
+            self.__gasAttackMgr.onAttackStopped -= self.__onAttackStopped
+            self.__gasAttackMgr = None
+        self.__evtManager.clear()
+        return
+
+    def clear(self):
+        self.stop()
+        if self.__panelUI is not None:
+            self.__panelUI.hide()
+        if self.__safeZoneUI is not None:
+            self.__safeZoneUI.hideTimer()
+        return
+
+    def setPanel(self, panelUI):
+        self.__panelUI = weakref.proxy(panelUI)
+        self.__updatePanel()
+
+    def setSafeZoneTimer(self, safeZoneUI):
+        self.__safeZoneUI = weakref.proxy(safeZoneUI)
+        self.__updateSafeZone()
+
+    def showPanelMessage(self):
+        if self.__panelUI is not None:
+            self.__panelUI.showStart()
+        return
+
+    def hidePanelMessage(self):
+        if self.__panelUI is not None:
+            self.__panelUI.hide()
+        return
+
+    def __onAttackPreparing(self):
+        self.__updateState()
+        self.__updatePanel()
+        self.__updateSafeZone()
+        self.onPreparing(self.__state)
+
+    def __onAttackStarted(self):
+        self.__updateState()
+        self.onStarted(self.__state)
+        self.__startTimer()
+
+    def __onAttackStopped(self):
+        self.clear()
+        self.onEnded(self.__state)
+
+    def __updatePanel(self):
+        if self.__panelUI is not None and self.__state.state != self.__state.prevState:
+            if self.__state.state == _GAS_ATTACK_STATE.PREPEARING:
+                self.__panelUI.showStart()
+            elif self.__state.state == _GAS_ATTACK_STATE.INSIDE_SAFE_ZONE:
+                self.__panelUI.showSafeZone()
+            elif self.__state.state == _GAS_ATTACK_STATE.INSIDE_CLOUD:
+                self.__panelUI.showGasAttack()
+            elif self.__state.state in (_GAS_ATTACK_STATE.NEAR_SAFE, _GAS_ATTACK_STATE.NEAR_CLOUD):
+                self.__panelUI.showGasAttackNear()
+            else:
+                self.__panelUI.hide()
+        return
+
+    def __updateSafeZone(self):
+        if self.__safeZoneUI is not None:
+            if self.__state.state == _GAS_ATTACK_STATE.NEAR_SAFE:
+                self.__safeZoneUI.showTimer(time_utils.getTimeLeftFormat(self.__state.timeLeft))
+            elif self.__state.state != self.__state.prevState:
+                self.__safeZoneUI.hideTimer()
+        return
+
+    def __initIndicator(self):
+        if self.__state.state in (_GAS_ATTACK_STATE.NEAR_SAFE, _GAS_ATTACK_STATE.NEAR_CLOUD, _GAS_ATTACK_STATE.INSIDE_CLOUD) and self.__indicatorCtrl is None:
+            indicator = _SafeZoneDirectionIndicator()
+            self.__indicatorCtrl = _SafeZoneDirectionIndicatorCtrl(indicator, self.__state.center, self.__state.safeZoneDistance)
+        return
+
+    def __updateIndicator(self):
+        isVisible = self.__state.state in (_GAS_ATTACK_STATE.NEAR_SAFE, _GAS_ATTACK_STATE.NEAR_CLOUD, _GAS_ATTACK_STATE.INSIDE_CLOUD)
+        if self.__indicatorCtrl is not None:
+            if isVisible:
+                self.__indicatorCtrl.update(self.__state.safeZoneDistance)
+            else:
+                self.__finiIndicator()
+        elif isVisible:
+            self.__initIndicator()
+        return
+
+    def __finiIndicator(self):
+        if self.__indicatorCtrl is not None:
+            self.__indicatorCtrl.clear()
+            self.__indicatorCtrl = None
+        return
+
+    def __updateDeathZoneIndicator(self):
+        if self.__battleUI is not None and self.__state.state != self.__state.prevState:
+            if self.__state.state == _GAS_ATTACK_STATE.NEAR_CLOUD:
+                self.__battleUI.showDeathzoneTimer((DEATH_ZONES.GAS_ATTACK, -1, 'warning'))
+            elif self.__state.state != _GAS_ATTACK_STATE.INSIDE_CLOUD:
+                self.__battleUI.hideDeathzoneTimer(DEATH_ZONES.GAS_ATTACK)
+        return
+
+    def __updateState(self):
+        params = {}
+        if self.__gasAttackMgr.state == GasAttackState.PREPARE:
+            params['state'] = _GAS_ATTACK_STATE.PREPEARING
+            params['prevState'] = self.__state.state
+            params['center'] = self.__gasAttackMgr.settings.position
+            params['timeLeft'] = self.__getTimeLeft()
+        elif self.__gasAttackMgr.state in (GasAttackState.ATTACK, GasAttackState.DONE):
+            centerDistance = self.__getCenterDistance()
+            currentRadius = self.__getCurrentRadius()
+            cloudDistance = self.__getCloudDistance(currentRadius)
+            safeZoneDistance = self.__getSafeZoneDistance()
+            if safeZoneDistance == 0:
+                state = _GAS_ATTACK_STATE.INSIDE_SAFE_ZONE
+            elif cloudDistance == 0:
+                state = _GAS_ATTACK_STATE.INSIDE_CLOUD
+            elif cloudDistance <= _WARNING_DISTANCE:
+                state = _GAS_ATTACK_STATE.NEAR_CLOUD
+            else:
+                state = _GAS_ATTACK_STATE.NEAR_SAFE
+            params['state'] = state
+            params['prevState'] = self.__state.state
+            params['center'] = self.__gasAttackMgr.settings.position
+            params['timeLeft'] = self.__getTimeLeft()
+            params['currentRadius'] = currentRadius
+            params['safeZoneRadius'] = self.__gasAttackMgr.settings.endRadius
+            params['centerDistance'] = centerDistance
+            params['safeZoneDistance'] = safeZoneDistance
+            params['gasCloudDistance'] = cloudDistance
+        self.__state = makeTupleByDict(_GasAttackState, params)
+
+    def __startTimer(self):
+        if self.__state.state not in (_GAS_ATTACK_STATE.NO_ATTACK, _GAS_ATTACK_STATE.PREPEARING):
+            self.__updateIndicator()
+            self.__updateDeathZoneIndicator()
+            self.__updateSafeZone()
+            self.__updatePanel()
+            self.onUpdated(self.__state)
+            if self.__state.timeLeft > 0:
+                self.__timerCallback = BigWorld.callback(1, self.__processTimer)
+        else:
+            self.__stopTimer()
+
+    def __processTimer(self):
+        self.__timerCallback = None
+        self.__updateState()
+        self.__startTimer()
+        return
+
+    def __stopTimer(self):
+        if self.__timerCallback is not None:
+            BigWorld.cancelCallback(self.__timerCallback)
+            self.__timerCallback = None
+        return
+
+    def __getTimeLeft(self):
+        attackEndTime = self.__gasAttackMgr.startTime + self.__gasAttackMgr.settings.attackLength
+        return max(0, attackEndTime - BigWorld.serverTime())
+
+    def __getCenterDistance(self):
+        x0, y0, z0 = self.__gasAttackMgr.settings.position
+        x1, y1, z1 = BigWorld.player().vehicle.position
+        return math.sqrt(math.pow(x0 - x1, 2) + math.pow(z0 - z1, 2) + math.pow(y0 - y1, 2))
+
+    def __getSafeZoneDistance(self):
+        return max(0, self.__getCenterDistance() - self.__gasAttackMgr.settings.endRadius)
+
+    def __getCurrentRadius(self):
+        timeFromActivation = max(0, BigWorld.serverTime() - self.__gasAttackMgr.startTime)
+        _, (_, currentRadius) = self.__gasAttackMgr.settings.stateFor(timeFromActivation)
+        return currentRadius
+
+    def __getCloudDistance(self, currentRadius):
+        return max(0, currentRadius - self.__getCenterDistance())

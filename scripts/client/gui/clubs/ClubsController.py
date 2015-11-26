@@ -239,7 +239,7 @@ class _AccountClubProfile(object):
                 for uniqueID, invite in invites.iteritems():
                     if uniqueID not in prevInvites:
                         added.append(invite)
-                    elif invite.getStatus() != prevInvites[uniqueID].getStatus():
+                    elif invite.getStatus() != prevInvites[uniqueID].getStatus() or invite.getUpdatingTime() != prevInvites[uniqueID].getUpdatingTime():
                         changed.append(invite)
 
                 for uniqueID, invite in prevInvites.iteritems():

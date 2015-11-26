@@ -1,12 +1,13 @@
 # Embedded file name: scripts/client/gui/battle_control/battle_arena_ctrl.py
 from collections import defaultdict
 import weakref
+import BattleReplay
 import BigWorld
 from account_helpers.settings_core.SettingsCore import g_settingsCore
+from account_helpers.settings_core.settings_constants import SOUND
 from avatar_helpers import getAvatarDatabaseID
-from constants import PREBATTLE_TYPE
+from constants import PREBATTLE_TYPE, IS_CHINA
 from debug_utils import LOG_WARNING, LOG_DEBUG
-from gui import game_control
 from gui.Scaleform import VoiceChatInterface
 from gui.battle_control import avatar_getter, arena_info
 from gui.battle_control.arena_info.arena_vos import VehicleActions, _VEHICLE_STATUS
@@ -117,6 +118,7 @@ class BattleArenaController(IArenaVehiclesController):
             return not roaming.isInRoaming() and not roaming.isPlayerInRoaming(dbID)
 
         self._isMenuEnabled = isMenuEnabled
+        self._isReplayPlaying = BattleReplay.g_replayCtrl.isPlaying
         invitesManager = self.prbInvites
         invitesManager.onReceivedInviteListModified += self.__onReceivedInviteModified
         invitesManager.onSentInviteListModified += self.__onSentInviteListModified
@@ -286,7 +288,12 @@ class BattleArenaController(IArenaVehiclesController):
             isMuted = False
         squadIndex = ctx.getSquadIndex(vInfoVO)
         himself = ctx.isPlayerSelected(vInfoVO)
-        isInvitesForbidden = inviteSendingProhibited or himself or playerVO.forbidInBattleInvitations or isIgnored
+        isActionsDisabled = vInfoVO.isActionsDisabled()
+        isInvitesForbidden = inviteSendingProhibited or himself or playerVO.forbidInBattleInvitations or isIgnored or isActionsDisabled
+        isPlayerInSquad = playerAccountID == dbID and vInfoVO.isSquadMan()
+        squadNoSound = False
+        if isPlayerInSquad and not IS_CHINA:
+            squadNoSound = not g_settingsCore.getSetting(SOUND.VOIP_ENABLE)
         return {'position': index + 1,
          'label': playerFullName,
          'userName': playerVO.getPlayerLabel(),
@@ -319,7 +326,9 @@ class BattleArenaController(IArenaVehiclesController):
          'dynamicSquad': self._getDynamicSquadData(dbID, playerAccountID, isInSquad=squadIndex > 0, inviteSendingProhibited=isInvitesForbidden, invitesReceivingProhibited=invitesReceivingProhibited),
          'vehicleType': vTypeVO.getClassName(),
          'teamColorScheme': 'vm_enemy' if isEnemy else 'vm_ally',
-         'vLevel': vTypeVO.level}
+         'vLevel': vTypeVO.level,
+         'contextMenuDisabled': isActionsDisabled or self._isReplayPlaying,
+         'squadNoSound': squadNoSound}
 
     def _getDynamicSquadData(self, userDBID, currentAccountDBID, isInSquad, inviteSendingProhibited, invitesReceivingProhibited):
         INVITE_DISABLED = 0

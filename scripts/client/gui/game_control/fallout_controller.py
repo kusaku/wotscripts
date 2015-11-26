@@ -2,17 +2,15 @@
 import weakref
 import Event
 from UnitBase import INV_ID_CLEAR_VEHICLE
-from account_helpers.AccountSettings import AccountSettings, FALLOUT_VEHICLES
-from account_helpers.settings_core import g_settingsCore
-from account_helpers.settings_core.ServerSettingsManager import SETTINGS_SECTIONS
 from adisp import process
-from constants import PREBATTLE_TYPE, FALLOUT_BATTLE_TYPE
+from constants import PREBATTLE_TYPE, FALLOUT_BATTLE_TYPE, QUEUE_TYPE
 from debug_utils import LOG_ERROR
 from gui.Scaleform.locale.FALLOUT import FALLOUT
 from gui.game_control.controllers import Controller
 from gui.prb_control.context import unit_ctx
 from gui.prb_control.events_dispatcher import g_eventDispatcher
 from gui.prb_control.prb_helpers import GlobalListener
+from gui.prb_control.storage import prequeue_storage_getter
 from gui.server_events import g_eventsCache
 from gui.shared import g_itemsCache
 from gui.shared.ItemsCache import CACHE_SYNC_REASON
@@ -20,8 +18,6 @@ from gui.shared.formatters.ranges import toRomanRangeString
 from gui.shared.utils import getPlayerDatabaseID
 from helpers import int2roman, i18n
 from shared_utils import findFirst
-_SETTINGS_DEFAULTS = {'isEnabled': False,
- 'falloutBattleType': 0}
 
 class _BaseDataStorage(object):
 
@@ -65,49 +61,41 @@ class _BaseDataStorage(object):
     def canChangeBattleType(self):
         return False
 
+    def canAutomatch(self):
+        return self.getBattleType() == FALLOUT_BATTLE_TYPE.MULTITEAM
+
+    def isAutomatch(self):
+        return False
+
+    def setAutomatch(self, isAutomatch):
+        pass
+
 
 class _UserDataStorage(_BaseDataStorage):
 
     def __init__(self, proxy):
         super(_UserDataStorage, self).__init__(proxy)
-        self.__settings = {}
-        self.__vehicles = {}
+
+    @prequeue_storage_getter(QUEUE_TYPE.EVENT_BATTLES)
+    def eventsStorage(self):
+        return None
 
     def init(self):
-        self.__settings = g_settingsCore.serverSettings.getSection(SETTINGS_SECTIONS.FALLOUT, _SETTINGS_DEFAULTS)
-        self.__vehicles = AccountSettings.getFavorites(FALLOUT_VEHICLES)
-        self.__updateVehicles()
-        g_itemsCache.onSyncCompleted += self.__onItemsResync
-        if self.isEnabled() and self._proxy.isAvailable():
-            g_eventDispatcher.addFalloutToCarousel()
         self._proxy.onSettingsChanged()
+        g_itemsCache.onSyncCompleted += self.__onItemsResync
 
     def fini(self):
-        self.__settings.clear()
-        self.__vehicles.clear()
         g_itemsCache.onSyncCompleted -= self.__onItemsResync
 
     def isEnabled(self):
-        return bool(self.__settings['isEnabled'])
-
-    def setEnabled(self, isEnabled):
-        self.__settings['isEnabled'] = isEnabled
-        if not isEnabled:
-            self.__settings['falloutBattleType'] = FALLOUT_BATTLE_TYPE.UNDEFINED
-        g_settingsCore.serverSettings.setSection(SETTINGS_SECTIONS.FALLOUT, self.__settings)
-        self.__updateVehicles()
-        self._proxy.onSettingsChanged()
+        return self.eventsStorage.isEnabled()
 
     def getBattleType(self):
-        return self.__settings['falloutBattleType']
+        return self.eventsStorage.getBattleType()
 
     def setBattleType(self, battleType):
-        if battleType not in FALLOUT_BATTLE_TYPE.ALL:
-            LOG_ERROR('Unsupported battle type given!', battleType)
-            return
-        self.__settings['falloutBattleType'] = battleType
-        g_settingsCore.serverSettings.setSection(SETTINGS_SECTIONS.FALLOUT, self.__settings)
-        self.__updateVehicles()
+        self.eventsStorage.setBattleType(battleType)
+        self.eventsStorage.validateSelectedVehicles()
         self._proxy.onSettingsChanged()
 
     def addSelectedVehicle(self, vehInvID):
@@ -122,13 +110,13 @@ class _UserDataStorage(_BaseDataStorage):
         firstEmptySlot = emptySlots[0]
         vehicles = self.getSelectedSlots()
         vehicles[firstEmptySlot] = vehInvID
-        AccountSettings.setFavorites(FALLOUT_VEHICLES, self.__vehicles)
+        self.eventsStorage.setVehiclesInvIDs(vehicles)
         self._proxy.onVehiclesChanged()
 
     def removeSelectedVehicle(self, vehInvID):
         vehicles = self.getSelectedSlots()
         vehicles[vehicles.index(vehInvID)] = INV_ID_CLEAR_VEHICLE
-        AccountSettings.setFavorites(FALLOUT_VEHICLES, self.__vehicles)
+        self.eventsStorage.setVehiclesInvIDs(vehicles)
         self._proxy.onVehiclesChanged()
 
     def moveSelectedVehicle(self, vehInvID):
@@ -139,34 +127,26 @@ class _UserDataStorage(_BaseDataStorage):
         else:
             newIndex = currentIndex - 1
         vehicles.insert(newIndex, vehicles.pop(currentIndex))
-        AccountSettings.setFavorites(FALLOUT_VEHICLES, self.__vehicles)
+        self.eventsStorage.setVehiclesInvIDs(vehicles)
         self._proxy.onVehiclesChanged()
 
     def getSelectedSlots(self):
-        return self.__vehicles[self.getBattleType()]
+        return self.eventsStorage.getVehiclesInvIDs()
 
     def canChangeBattleType(self):
         return True
 
-    def __updateVehicles(self):
-        maxVehs = self._proxy.getConfig().maxVehiclesPerPlayer
-        valid = [INV_ID_CLEAR_VEHICLE] * maxVehs
-        battleType = self.getBattleType()
-        vehicles = self.__vehicles.get(battleType, ())
-        vehGetter = g_itemsCache.items.getVehicle
-        for idx, invID in enumerate(vehicles[:maxVehs]):
-            invVehicle = vehGetter(invID)
-            if invVehicle is not None:
-                valid[idx] = invID
+    def isAutomatch(self):
+        return self.eventsStorage.isAutomatch()
 
-        if valid != vehicles:
-            self.__vehicles[battleType] = valid
-            AccountSettings.setFavorites(FALLOUT_VEHICLES, self.__vehicles)
-        return
+    def setAutomatch(self, isAutomatch):
+        self.eventsStorage.setAutomatch(isAutomatch)
+        self._proxy.onSettingsChanged()
 
     def __onItemsResync(self, updateReason, _):
-        if updateReason == CACHE_SYNC_REASON.INVENTORY_RESYNC:
-            self.__updateVehicles()
+        if updateReason in (CACHE_SYNC_REASON.INVENTORY_RESYNC, CACHE_SYNC_REASON.CLIENT_UPDATE):
+            if self.eventsStorage.validateSelectedVehicles():
+                self._proxy.onVehiclesChanged()
         if not (self.isEnabled() and self._proxy.isAvailable()):
             g_eventDispatcher.removeFalloutFromCarousel()
 
@@ -182,7 +162,7 @@ class _SquadDataStorage(_BaseDataStorage, GlobalListener):
         self.__battleType = self.__getExtra().eventType
         self.__updateVehicles()
         self.startGlobalListening()
-        if self.isEnabled() and self.canChangeBattleType():
+        if self.isEnabled():
             g_eventDispatcher.addFalloutToCarousel()
         self._proxy.onSettingsChanged()
 
@@ -297,7 +277,7 @@ class FalloutController(Controller, GlobalListener):
     def onLobbyInited(self, event):
         self.startGlobalListening()
         unitFunc = self.unitFunctional
-        if unitFunc is not None and unitFunc.getPrbType() == PREBATTLE_TYPE.SQUAD and unitFunc.getExtra().eventType != FALLOUT_BATTLE_TYPE.UNDEFINED:
+        if unitFunc is not None and unitFunc.getEntityType() == PREBATTLE_TYPE.SQUAD and unitFunc.getExtra().eventType != FALLOUT_BATTLE_TYPE.UNDEFINED:
             self.__dataStorage = _SquadDataStorage(self)
         else:
             self.__dataStorage = _UserDataStorage(self)
@@ -378,9 +358,18 @@ class FalloutController(Controller, GlobalListener):
     def canChangeBattleType(self):
         return self.__dataStorage.canChangeBattleType()
 
+    def canAutomatch(self):
+        return self.__dataStorage.canAutomatch()
+
+    def isAutomatch(self):
+        return self.__dataStorage.isAutomatch()
+
+    def setAutomatch(self, isAutomatch):
+        self.__dataStorage.setAutomatch(isAutomatch)
+
     def onUnitFunctionalInited(self):
         unitFunc = self.unitFunctional
-        if unitFunc is not None and unitFunc.getPrbType() == PREBATTLE_TYPE.SQUAD and unitFunc.getExtra().eventType != FALLOUT_BATTLE_TYPE.UNDEFINED:
+        if unitFunc is not None and unitFunc.getEntityType() == PREBATTLE_TYPE.SQUAD and unitFunc.getExtra().eventType != FALLOUT_BATTLE_TYPE.UNDEFINED:
             self.__dataStorage.fini()
             self.__dataStorage = _SquadDataStorage(self)
             self.__dataStorage.init()
@@ -393,11 +382,15 @@ class FalloutController(Controller, GlobalListener):
 
     def onUnitRejoin(self):
         unitFunc = self.unitFunctional
-        if unitFunc is not None and unitFunc.getPrbType() == PREBATTLE_TYPE.SQUAD and unitFunc.getExtra().eventType != FALLOUT_BATTLE_TYPE.UNDEFINED:
+        if unitFunc is not None and unitFunc.getEntityType() == PREBATTLE_TYPE.SQUAD and unitFunc.getExtra().eventType != FALLOUT_BATTLE_TYPE.UNDEFINED:
             self.__dataStorage.fini()
             self.__dataStorage = _SquadDataStorage(self)
             self.__dataStorage.init()
         return
+
+    def onPreQueueFunctionalFinished(self):
+        self.onSettingsChanged()
+        self.onVehiclesChanged()
 
     def __onEventsCacheResync(self):
         self.onSettingsChanged()

@@ -2,19 +2,20 @@
 import weakref
 import BigWorld
 from collections import namedtuple
-import operator
-from gui.shared import g_itemsCache
+import FMOD
+from GasAttackSettings import GasAttackState
+import SoundGroups
+from gui.battle_control.arena_info import hasGasAttack
 from items import vehicles
 from gui.battle_control.arena_info.interfaces import IArenaRespawnController
-from gui.battle_control.event_dispatcher import setGUIVisibility
+_SHOW_UI_COOLDOWN = 3.0
 _Vehicle = namedtuple('_Vehicle', ('intCD', 'type', 'vehAmmo'))
 _RespawnInfo = namedtuple('_RespawnInfo', ('vehicleID', 'respawnTime'))
 
 class RespawnsController(IArenaRespawnController):
-    __slots__ = ('__ui', '__vehicles', '__cooldowns', '__respawnInfo', '__timerCallback', '__battle', '__showUICallback')
-    __SHOW_UI_COOLDOWN = 3.0
+    __slots__ = ('__ui', '__vehicles', '__cooldowns', '__respawnInfo', '__timerCallback', '__battle', '__showUICallback', '__respawnSndName', '__gasAttackMgr')
 
-    def __init__(self):
+    def __init__(self, ctx):
         super(RespawnsController, self).__init__()
         self.__ui = None
         self.__battle = None
@@ -23,18 +24,23 @@ class RespawnsController(IArenaRespawnController):
         self.__respawnInfo = None
         self.__timerCallback = None
         self.__showUICallback = None
+        self.__respawnSndName = 'ready_for_action'
+        if FMOD.enabled:
+            self.__respawnSndName = '/ingame_voice/ingame_voice_flt/ready_for_action'
+        self.__gasAttackMgr = None
+        if hasGasAttack():
+            self.__gasAttackMgr = ctx.gasAttackMgr
         return
 
     def start(self, ui, battleProxy):
         self.__ui = weakref.proxy(ui)
         self.__battle = battleProxy
         self.__ui.start(self.__vehicles)
+        if hasGasAttack():
+            self.__gasAttackMgr.onAttackPreparing += self.__onGasAttack
+            self.__gasAttackMgr.onAttackStarted += self.__onGasAttack
         if self.__respawnInfo is not None:
-            if BigWorld.player().isGuiVisible:
-                setGUIVisibility(False)
-            self.__ui.show(self.__respawnInfo.vehicleID, self.__vehicles, self.__cooldowns)
-            self.__battle.radialMenu.forcedHide()
-            self.__startTimer()
+            self.__show()
         return
 
     def stop(self):
@@ -42,6 +48,10 @@ class RespawnsController(IArenaRespawnController):
             BigWorld.cancelCallback(self.__showUICallback)
             self.__showUICallback = None
         self.__stopTimer()
+        if hasGasAttack():
+            self.__gasAttackMgr.onAttackPreparing -= self.__onGasAttack
+            self.__gasAttackMgr.onAttackStarted -= self.__onGasAttack
+            self.__gasAttackMgr = None
         self.__ui = None
         self.__battle = None
         return
@@ -66,9 +76,9 @@ class RespawnsController(IArenaRespawnController):
 
     def spawnVehicle(self, vehicleID):
         if self.__ui is not None:
-            if BigWorld.player().isGuiVisible:
-                setGUIVisibility(True)
             self.__ui.hide()
+            self.__battle.minimap.useNormalSize()
+        SoundGroups.g_instance.playSound2D(self.__respawnSndName)
         return
 
     def updateRespawnVehicles(self, vehsList):
@@ -91,17 +101,20 @@ class RespawnsController(IArenaRespawnController):
                 return
 
             if respawnInfo.get('afterDeath', False):
-                self.__showUICallback = BigWorld.callback(self.__SHOW_UI_COOLDOWN, show)
+                self.__showUICallback = BigWorld.callback(_SHOW_UI_COOLDOWN, show)
             else:
                 show()
         return
 
     def __show(self):
-        if BigWorld.player().isGuiVisible:
-            setGUIVisibility(False)
         self.__ui.show(self.__respawnInfo.vehicleID, self.__vehicles, self.__cooldowns)
         self.__battle.radialMenu.forcedHide()
-        self.__startTimer()
+        self.__battle.minimap.useRespawnSize()
+        if self.__gasAttackMgr is not None and self.__gasAttackMgr.state in (GasAttackState.ATTACK, GasAttackState.PREPARE):
+            self.__ui.showGasAttackInfo(self.__vehicles, self.__cooldowns)
+        else:
+            self.__startTimer()
+        return
 
     def __startTimer(self):
         self.__timerCallback = None
@@ -116,4 +129,11 @@ class RespawnsController(IArenaRespawnController):
         if self.__timerCallback is not None:
             BigWorld.cancelCallback(self.__timerCallback)
             self.__timerCallback = None
+        return
+
+    def __onGasAttack(self):
+        if self.__respawnInfo is not None:
+            self.__stopTimer()
+            self.__ui.showGasAttackInfo(self.__vehicles, self.__cooldowns)
+            self.__respawnInfo = None
         return

@@ -1,0 +1,78 @@
+# Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/clans/profile/ClanProfileBaseView.py
+import BigWorld
+from helpers import i18n
+from gui.shared.view_helpers.emblems import ClanEmblemsHelper
+from gui.clans.clan_helpers import ClanListener
+from gui.clans.settings import CLIENT_CLAN_RESTRICTIONS as RES
+from gui.Scaleform.locale.CLANS import CLANS
+from gui.Scaleform.locale.RES_ICONS import RES_ICONS
+from gui.Scaleform.daapi.view.meta.ClanProfileBaseViewMeta import ClanProfileBaseViewMeta
+_JOIN_BTN_ACTION_ID = 'join'
+
+class ClanProfileBaseView(ClanProfileBaseViewMeta, ClanEmblemsHelper, ClanListener):
+
+    def __init__(self):
+        super(ClanProfileBaseView, self).__init__()
+        self._clanDossier = None
+        self.__headerBtnStates = None
+        return
+
+    def setClanDossier(self, clanDossier):
+        self._clanDossier = clanDossier
+        self._updateClanEmblem(clanDossier.getDbID())
+
+    def onHeaderButtonClick(self, actionID):
+        if actionID == _JOIN_BTN_ACTION_ID:
+            pass
+
+    def onClanEmblem128x128Received(self, clanDbID, emblem):
+        self.as_setClanEmblemS(self.getMemoryTexturePath(emblem))
+
+    def _populate(self):
+        super(ClanProfileBaseView, self)._populate()
+        self.startClanListening()
+        self._initHeaderBtnStates()
+
+    def _dispose(self):
+        self._clanDossier = None
+        self.stopClanListening()
+        super(ClanProfileBaseView, self)._dispose()
+        return
+
+    def _updateClanInfo(self, clanInfo):
+        createdAt = clanInfo.getCreatedAt()
+        if createdAt:
+            creationDate = i18n.makeString(CLANS.CLAN_HEADER_CREATIONDATE, creationDate=BigWorld.wg_getLongDateFormat(createdAt))
+        else:
+            creationDate = ''
+        self.as_setClanInfoS({'name': clanInfo.getFullName(),
+         'bgIcon': RES_ICONS.MAPS_ICONS_CLANS_CLAN_CARD_HEADER,
+         'creationDate': creationDate})
+
+    def _updateClanEmblem(self, clanDbID):
+        self.requestClanEmblem128x128(clanDbID)
+
+    def _updateHeaderState(self):
+        canSendApplication = self.clansCtrl.getLimits().canSendApplication(self._clanDossier)
+        self.as_setHeaderStateS(self.__headerBtnStates.get(canSendApplication.reason) or self._getHeaderButtonStateVO())
+
+    def _getHeaderButtonStateVO(self, actionBtnVisible = False, actionBtnLabel = None, iconBtnVisible = False, topTFVisible = False, middleTFVisible = False, actionId = None, actionBtnTooltip = None, middleTF = None):
+        return {'actionBtnVisible': actionBtnVisible,
+         'iconBtnVisible': iconBtnVisible,
+         'topTFVisible': topTFVisible,
+         'middleTFVisible': middleTFVisible,
+         'actionId': actionId,
+         'middleTF': middleTF,
+         'actionBtnTooltip': actionBtnTooltip,
+         'actionBtnLabel': actionBtnLabel}
+
+    def _initHeaderBtnStates(self):
+        self.__headerBtnStates = {RES.NO_RESTRICTIONS: self._getHeaderButtonStateVO(True, i18n.makeString(CLANS.CLAN_HEADER_SENDREQUESTBTN), actionId=_JOIN_BTN_ACTION_ID, actionBtnTooltip=CLANS.CLAN_HEADER_SENDREQUESTBTN_TOOLTIP),
+         RES.CLAN_APPLICATION_ALREADY_SENT: self._getHeaderButtonStateVO(middleTFVisible=True, middleTF=CLANS.CLAN_HEADER_REQUESTSENT)}
+        return self.__headerBtnStates
+
+    def _showWaiting(self):
+        self.as_showWaitingS(True)
+
+    def _hideWaiting(self):
+        self.as_showWaitingS(False)

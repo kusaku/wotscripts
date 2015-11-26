@@ -31,6 +31,7 @@ FALLOUT_VEHICLES = 'FALLOUT_VEHICLES'
 GOLD_FISH_LAST_SHOW_TIME = 'goldFishWindowShowCooldown'
 JOIN_COMMAND_PRESSED = 'joinCommandPressed'
 SHOW_INVITE_COMMAND_BTN_ANIMATION = 'showInviteCommandBtnAnimation'
+DEFAULT_QUEUE = 'defaultQueue'
 KNOWN_SELECTOR_BATTLES = 'knownSelectorBattles'
 DEFAULT_VALUES = {KEY_FILTERS: {'shop_current': (-1, 'vehicle'),
                'shop_vehicle': (5, 'lightTank', 'mediumTank', 'heavyTank', 'at-spg', 'spg', 'locked'),
@@ -89,7 +90,8 @@ DEFAULT_VALUES = {KEY_FILTERS: {'shop_current': (-1, 'vehicle'),
                PROMO: {},
                AWARDS: {'vehicleResearchAward': -1,
                         'victoryAward': -1,
-                        'battlesCountAward': -1},
+                        'battlesCountAward': -1,
+                        'pveBattlesCountAward': -1},
                JOIN_COMMAND_PRESSED: False,
                SHOW_INVITE_COMMAND_BTN_ANIMATION: True},
  KEY_FAVORITES: {CURRENT_VEHICLE: 0,
@@ -197,9 +199,10 @@ DEFAULT_VALUES = {KEY_FILTERS: {'shop_current': (-1, 'vehicle'),
                 'showVehiclesCounter': True,
                 'minimapAlpha': 0,
                 'minimapSize': 0,
+                'minimapRespawnSize': 0,
                 'nationalVoices': False,
                 'enableVoIP': True,
-                'replayEnabled': 1,
+                'replayEnabled': 2,
                 'players_panel': {'state': 'medium',
                                   'showLevels': True,
                                   'showTypes': True},
@@ -219,6 +222,7 @@ DEFAULT_VALUES = {KEY_FILTERS: {'shop_current': (-1, 'vehicle'),
                 'customization': {},
                 'showVehModelsOnMap': 0,
                 'interfaceScale': 0,
+                DEFAULT_QUEUE: constants.QUEUE_TYPE.SANDBOX,
                 'medKitInstalled': False,
                 'repairKitInstalled': False,
                 'fireExtinguisherInstalled': False}}

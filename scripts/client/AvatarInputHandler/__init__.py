@@ -1,12 +1,11 @@
 # Embedded file name: scripts/client/AvatarInputHandler/__init__.py
 import functools
 import math
-from AvatarInputHandler.CallbackDelayer import CallbackDelayer
+from helpers.CallbackDelayer import CallbackDelayer
 import BigWorld
 import Math
 import ResMgr
 import Keys
-import FMOD
 import GUI
 from AvatarInputHandler.AimingSystems.SniperAimingSystem import SniperAimingSystem
 from Event import Event
@@ -118,6 +117,7 @@ class AvatarInputHandler(CallbackDelayer):
     isSPG = property(lambda self: self.__isSPG)
     isATSPG = property(lambda self: self.__isATSPG)
     isFlashBangAllowed = property(lambda self: self.__ctrls['video'] != self.__curCtrl)
+    cursorDetached = property(lambda self: self.__detachCount < 0)
     _DYNAMIC_CAMERAS_ENABLED_KEY = 'global/dynamicCameraEnabled'
 
     @staticmethod
@@ -125,7 +125,7 @@ class AvatarInputHandler(CallbackDelayer):
         for dynamicCameraClass in _DYNAMIC_CAMERAS:
             dynamicCameraClass.enableDynamicCamera(enable)
 
-        SniperAimingSystem.setStabilizerSettings(useHorizontalStabilizer and enable, enable)
+        SniperAimingSystem.setStabilizerSettings(useHorizontalStabilizer, True)
 
     @staticmethod
     def isCameraDynamic():
@@ -277,6 +277,7 @@ class AvatarInputHandler(CallbackDelayer):
         self.setAutorotation(not self.__isAutorotation)
 
     def activatePostmortem(self, isRespawn):
+        BigWorld.player().consistentMatrices.notifyPreBind(BigWorld.player())
         if not isRespawn:
             try:
                 params = self.__curCtrl.postmortemCamParams
@@ -349,7 +350,7 @@ class AvatarInputHandler(CallbackDelayer):
     def stop(self):
         self.__isStarted = False
         import SoundGroups
-        SoundGroups.g_instance.changePlayMode(0)
+        SoundGroups.g_instance.changePlayMode(1)
         self.__removeBattleCtrlListeners()
         for control in self.__ctrls.itervalues():
             control.destroy()
@@ -511,6 +512,21 @@ class AvatarInputHandler(CallbackDelayer):
             vehicleSensitivity *= avatarVehicle.typeDescriptor.hull['swinging']['sensitivityToImpulse']
             _, impulseValue = self.__adjustImpulse(Math.Vector3(0, 0, 0), impulseValue, camera, vehicle.position, vehicleSensitivity, cameras.ImpulseReason.VEHICLE_EXPLOSION)
             camera.applyDistantImpulse(vehicle.position, impulseValue, cameras.ImpulseReason.VEHICLE_EXPLOSION)
+            return
+
+    def onExplosionImpulse(self, position, impulseValue):
+        camera = getattr(self.ctrl, 'camera', None)
+        if camera is None:
+            return
+        else:
+            avatarVehicle = BigWorld.player().getVehicleAttached()
+            if avatarVehicle is None:
+                return
+            avatarVehicleWeightInTons = avatarVehicle.typeDescriptor.physics['weight'] / 1000.0
+            vehicleSensitivity = self.__dynamicCameraSettings.getSensitivityToImpulse(avatarVehicleWeightInTons)
+            vehicleSensitivity *= avatarVehicle.typeDescriptor.hull['swinging']['sensitivityToImpulse']
+            _, impulseValue = self.__adjustImpulse(Math.Vector3(0, 0, 0), impulseValue, camera, position, vehicleSensitivity, cameras.ImpulseReason.HE_EXPLOSION)
+            camera.applyDistantImpulse(position, impulseValue, cameras.ImpulseReason.HE_EXPLOSION)
             return
 
     def onProjectileHit(self, position, caliber, isOwnShot):

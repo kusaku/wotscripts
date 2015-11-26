@@ -1,19 +1,23 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/FalloutBattleSelectorWindow.py
 from adisp import process
 from constants import FALLOUT_BATTLE_TYPE, QUEUE_TYPE
+from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.game_control import getFalloutCtrl
-from gui.prb_control.context import prb_ctx
+from gui.prb_control.context import pre_queue_ctx
 from gui.prb_control.prb_helpers import GlobalListener
 from gui.shared import events, EVENT_BUS_SCOPE
 from gui.Scaleform.daapi.view.meta.FalloutBattleSelectorWindowMeta import FalloutBattleSelectorWindowMeta
 from gui.Scaleform.locale.FALLOUT import FALLOUT
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.shared.formatters.text_styles import promoSubTitle, main
+from gui.shared.utils.functions import makeTooltip
 
 class FalloutBattleSelectorWindow(FalloutBattleSelectorWindowMeta, GlobalListener):
 
     def __init__(self, ctx = None):
         super(FalloutBattleSelectorWindow, self).__init__(ctx)
+        self.__falloutCtrl = None
+        return
 
     def _populate(self):
         super(FalloutBattleSelectorWindow, self)._populate()
@@ -30,11 +34,17 @@ class FalloutBattleSelectorWindow(FalloutBattleSelectorWindowMeta, GlobalListene
          'multiteamTitleStr': promoSubTitle(FALLOUT.BATTLESELECTORWINDOW_MULTITEAM_TITLE),
          'multiteamDescStr': main(FALLOUT.BATTLESELECTORWINDOW_MULTITEAM_DESCR),
          'multiteamBattleBtnStr': FALLOUT.BATTLESELECTORWINDOW_MULTITEAMBATTLEBTNLBL,
-         'bgImg': RES_ICONS.MAPS_ICONS_LOBBY_FALLOUTBATTLESELECTORBG})
-        if self.prbDispatcher.getFunctionalState().hasLockedState:
+         'bgImg': RES_ICONS.MAPS_ICONS_LOBBY_FALLOUTBATTLESELECTORBG,
+         'multiteamAutoSquadEnabled': self.__falloutCtrl.isAutomatch(),
+         'multiteamAutoSquadLabel': FALLOUT.FALLOUTBATTLESELECTORWINDOW_AUTOSQUAD_LABEL,
+         'multiteamAutoSquadInfoTooltip': makeTooltip(TOOLTIPS.FALLOUTBATTLESELECTORWINDOW_INFO_HEADER, TOOLTIPS.FALLOUTBATTLESELECTORWINDOW_INFO_BODY)})
+        if self.prbDispatcher.getFunctionalState().hasLockedState or not self.__falloutCtrl.canChangeBattleType():
             self.as_setBtnStatesS({'dominationBtnEnabled': False,
              'multiteamBtnEnabled': False,
              'closeBtnEnabled': False})
+
+    def onSelectCheckBoxAutoSquad(self, isSelected):
+        self.__falloutCtrl.setAutomatch(isSelected)
 
     def _dispose(self):
         self.stopGlobalListening()
@@ -49,22 +59,25 @@ class FalloutBattleSelectorWindow(FalloutBattleSelectorWindowMeta, GlobalListene
         self.destroy()
 
     def onWindowClose(self):
-        self.__leaveFallout()
+        if self.prbDispatcher.getFunctionalState().hasLockedState:
+            self.destroy()
+        else:
+            self.__leaveFallout()
 
     def onDominationBtnClick(self):
-        getFalloutCtrl().setBattleType(FALLOUT_BATTLE_TYPE.CLASSIC)
+        self.__falloutCtrl.setBattleType(FALLOUT_BATTLE_TYPE.CLASSIC)
         self.onWindowMinimize()
 
     def onMultiteamBtnClick(self):
-        getFalloutCtrl().setBattleType(FALLOUT_BATTLE_TYPE.MULTITEAM)
+        self.__falloutCtrl.setBattleType(FALLOUT_BATTLE_TYPE.MULTITEAM)
         self.onWindowMinimize()
 
-    def onEnqueued(self):
+    def onEnqueued(self, queueType, *args):
         self.as_setBtnStatesS({'dominationBtnEnabled': False,
          'multiteamBtnEnabled': False,
          'closeBtnEnabled': False})
 
-    def onDequeued(self):
+    def onDequeued(self, queueType, *args):
         self.as_setBtnStatesS({'dominationBtnEnabled': True,
          'multiteamBtnEnabled': True,
          'closeBtnEnabled': True})
@@ -83,10 +96,18 @@ class FalloutBattleSelectorWindow(FalloutBattleSelectorWindowMeta, GlobalListene
     def __handleFalloutWindowHide(self, _):
         self.destroy()
 
-    def __updateFalloutSettings(self, *args):
+    def __updateFalloutSettings(self):
         if not self.__falloutCtrl.isEnabled():
-            self.onWindowClose()
+            return self.onWindowClose()
+        if self.__falloutCtrl.canChangeBattleType():
+            self.as_setBtnStatesS({'dominationBtnEnabled': True,
+             'multiteamBtnEnabled': True,
+             'closeBtnEnabled': True})
+        else:
+            self.as_setBtnStatesS({'dominationBtnEnabled': False,
+             'multiteamBtnEnabled': False,
+             'closeBtnEnabled': False})
 
     @process
     def __leaveFallout(self):
-        yield self.prbDispatcher.join(prb_ctx.JoinModeCtx(QUEUE_TYPE.RANDOMS))
+        yield self.prbDispatcher.join(pre_queue_ctx.JoinModeCtx(QUEUE_TYPE.RANDOMS))

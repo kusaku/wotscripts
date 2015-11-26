@@ -1,7 +1,6 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/hangar/TankCarousel.py
 from operator import attrgetter
 import BigWorld
-import constants
 from debug_utils import LOG_DEBUG
 from CurrentVehicle import g_currentVehicle
 from account_helpers.AccountSettings import AccountSettings, CAROUSEL_FILTER, FALLOUT_CAROUSEL_FILTER
@@ -11,7 +10,7 @@ from gui.Scaleform.locale.FALLOUT import FALLOUT
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.game_control import g_instance as g_gameCtrl, getFalloutCtrl
 from gui.shared.formatters.ranges import toRomanRangeString
-from gui.shared.formatters.text_styles import alert, standard, main
+from gui.shared.formatters.text_styles import alert, standard, main, middleTitle, highTitle
 from gui.shared.formatters.time_formatters import RentLeftFormatter
 from gui.shared.tooltips import ACTION_TOOLTIPS_STATE, ACTION_TOOLTIPS_TYPE
 from helpers import i18n, int2roman
@@ -180,10 +179,6 @@ class TankCarousel(TankCarouselMeta, GlobalListener):
         if vehicles is None:
             vehicles = filteredVehs.keys()
         isSuitablePredicate = lambda vehIntCD: True
-        if self.preQueueFunctional.getQueueType() == constants.QUEUE_TYPE.HISTORICAL:
-            battle = self.preQueueFunctional.getItemData()
-            if battle is not None:
-                isSuitablePredicate = battle.canParticipateWith
         hasEmptySlots = self.__multiselectionMode and len(self.__falloutCtrl.getEmptySlots()) > 0
         vehsData = {}
         for intCD in vehicles:
@@ -277,7 +272,7 @@ class TankCarousel(TankCarouselMeta, GlobalListener):
          'current': 0,
          'enabled': True,
          'rentLeft': rentInfoStr,
-         'selectableForSlot': self.__multiselectionMode and vehicle.isFalloutAvailable and hasEmptySlots,
+         'selectableForSlot': self.__multiselectionMode and vehicle.isFalloutAvailable and hasEmptySlots and not vehicle.isDisabledInPremIGR,
          'selectedInSlot': self.__multiselectionMode and vehicle.isFalloutSelected,
          'activateButtonLabel': FALLOUT.TANKCAROUSELSLOT_ACTIVATEBUTTON,
          'deactivateButtonLabel': FALLOUT.TANKCAROUSELSLOT_DEACTIVATEBUTTON,
@@ -312,7 +307,7 @@ class TankCarousel(TankCarouselMeta, GlobalListener):
                     data.update({'isActivated': True,
                      'formattedStatusStr': self.getStringStatus(vState),
                      'inventoryId': vehicle.invID,
-                     'vehicleName': vehicle.shortUserName if vehicle.isPremiumIGR else vehicle.userName,
+                     'vehicleName': vehicle.shortUserName,
                      'vehicleIcon': vehicle.iconSmall,
                      'vehicleType': vehicle.type,
                      'vehicleLevel': vehicle.level,
@@ -331,9 +326,13 @@ class TankCarousel(TankCarouselMeta, GlobalListener):
             if not falloutCfg.hasRequiredVehicles():
                 return (False, i18n.makeString(messageTemplate + '/topTierVehicleRequired', level=int2roman(falloutCfg.vehicleLevelRequired)))
             if self.__falloutCtrl.getSelectedVehicles():
-                return (True, main(i18n.makeString(FALLOUT.MULTISELECTIONSLOT_SELECTIONSTATUS)) + '\n' + standard(i18n.makeString(FALLOUT.MULTISELECTIONSLOT_SELECTIONREQUIREMENTS, level=toRomanRangeString(list(falloutCfg.allowedLevels), 1))))
+                return (True, middleTitle(i18n.makeString(FALLOUT.MULTISELECTIONSLOT_SELECTIONSTATUS)) + '\n' + main(i18n.makeString(FALLOUT.MULTISELECTIONSLOT_SELECTIONREQUIREMENTS, level=toRomanRangeString(list(falloutCfg.allowedLevels), 1))))
             if falloutCfg.getAllowedVehicles():
-                return (False, main(i18n.makeString(messageTemplate + '/descriptionTitle')) + '\n' + standard(i18n.makeString(messageTemplate + '/message', level=toRomanRangeString(list(falloutCfg.allowedLevels), 1))))
+                levels = list(falloutCfg.allowedLevels)
+                topLevel = levels[-1]
+                header = highTitle(messageTemplate + '/descriptionTitle')
+                body = main(i18n.makeString(messageTemplate + '/message', topLevel=int2roman(topLevel), level=toRomanRangeString(levels, 1)))
+                return (False, header + '\n' + body)
         return (False, '')
 
     def __updateMultiselectionData(self):

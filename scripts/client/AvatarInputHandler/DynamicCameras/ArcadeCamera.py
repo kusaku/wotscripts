@@ -8,7 +8,7 @@ import math
 import random
 import weakref
 from AvatarInputHandler import mathUtils, cameras
-from AvatarInputHandler.CallbackDelayer import CallbackDelayer, TimeDeltaMeter
+from helpers.CallbackDelayer import CallbackDelayer, TimeDeltaMeter
 from AvatarInputHandler.DynamicCameras import createOscillatorFromSection, CameraDynamicConfig, AccelerationSmoother
 from AvatarInputHandler.AimingSystems.ArcadeAimingSystem import ArcadeAimingSystem
 from AvatarInputHandler.Oscillator import Oscillator, CompoundOscillator
@@ -64,7 +64,10 @@ class _InputInertia(object):
 
 
 class ArcadeCamera(ICamera, CallbackDelayer, TimeDeltaMeter):
-    REASONS_AFFECT_CAMERA_DIRECTLY = (ImpulseReason.MY_SHOT, ImpulseReason.OTHER_SHOT, ImpulseReason.VEHICLE_EXPLOSION)
+    REASONS_AFFECT_CAMERA_DIRECTLY = (ImpulseReason.MY_SHOT,
+     ImpulseReason.OTHER_SHOT,
+     ImpulseReason.VEHICLE_EXPLOSION,
+     ImpulseReason.HE_EXPLOSION)
     _DYNAMIC_ENABLED = True
 
     @staticmethod
@@ -222,9 +225,7 @@ class ArcadeCamera(ICamera, CallbackDelayer, TimeDeltaMeter):
             replayCtrl.setAimClipPosition(Vector2(self.__aim.offset()))
         self.measureDeltaTime()
         camDist = None
-        vehicle = BigWorld.player().getVehicleAttached()
-        initialVehicleMatrix = BigWorld.player().getOwnVehicleMatrix() if vehicle is None else vehicle.matrix
-        vehicleMProv = initialVehicleMatrix
+        vehicleMProv = BigWorld.player().consistentMatrices.attachedVehicleMatrix
         if not self.__postmortemMode:
             if closesDist:
                 camDist = self.__cfg['distRange'][0]
@@ -524,7 +525,7 @@ class ArcadeCamera(ICamera, CallbackDelayer, TimeDeltaMeter):
         impulse.normalise()
         if reason == ImpulseReason.OTHER_SHOT and distance <= self.__dynamicCfg['maxShotImpulseDistance']:
             impulse *= impulseValue / distance
-        elif reason == ImpulseReason.SPLASH:
+        elif reason == ImpulseReason.SPLASH or reason == ImpulseReason.HE_EXPLOSION:
             impulse *= impulseValue / distance
         elif reason == ImpulseReason.VEHICLE_EXPLOSION and distance <= self.__dynamicCfg['maxExplosionImpulseDistance']:
             impulse *= impulseValue / distance

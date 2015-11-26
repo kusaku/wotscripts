@@ -229,3 +229,9 @@ def getPlayerDatabaseID():
 
 def getPlayerName():
     return getattr(BigWorld.player(), 'name', '')
+
+
+def avg(devidend, devider):
+    if devider > 0:
+        return devidend / devider
+    return 0

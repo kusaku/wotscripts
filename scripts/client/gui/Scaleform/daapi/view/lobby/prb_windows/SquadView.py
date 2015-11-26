@@ -10,7 +10,7 @@ from gui.prb_control.context import unit_ctx
 from gui.Scaleform.daapi.view.meta.SquadViewMeta import SquadViewMeta
 from gui.Scaleform.daapi.view.lobby.rally import vo_converters
 from gui.Scaleform.locale.MENU import MENU
-from gui.prb_control.settings import CTRL_ENTITY_TYPE, REQUEST_TYPE, FUNCTIONAL_EXIT
+from gui.prb_control.settings import CTRL_ENTITY_TYPE, REQUEST_TYPE, FUNCTIONAL_FLAG
 from gui.shared import events, EVENT_BUS_SCOPE
 from gui.shared.ItemsCache import g_itemsCache
 from gui.shared.formatters.ranges import toRomanRangeString
@@ -56,7 +56,7 @@ class SquadView(SquadViewMeta):
         pass
 
     def leaveSquad(self):
-        self.prbDispatcher.doLeaveAction(unit_ctx.LeaveUnitCtx(waitingID='prebattle/leave', funcExit=FUNCTIONAL_EXIT.NO_FUNC))
+        self.prbDispatcher.doLeaveAction(unit_ctx.LeaveUnitCtx(waitingID='prebattle/leave', flags=FUNCTIONAL_FLAG.UNDEFINED))
 
     def onUnitPlayerAdded(self, pInfo):
         super(SquadView, self).onUnitPlayerAdded(pInfo)

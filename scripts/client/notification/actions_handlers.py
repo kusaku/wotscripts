@@ -8,10 +8,10 @@ from gui.clubs import contexts as club_ctx, events_dispatcher as club_events
 from gui.clubs.club_helpers import ClubListener
 from gui.Scaleform.Waiting import Waiting
 from gui.Scaleform.genConsts.FORTIFICATION_ALIASES import FORTIFICATION_ALIASES
-from gui.prb_control import getBattleID
+from gui.prb_control.prb_getters import getBattleID
 from gui.prb_control.prb_helpers import prbInvitesProperty, prbDispatcherProperty
 from gui.shared import g_eventBus, events, actions, EVENT_BUS_SCOPE, event_dispatcher as shared_events
-from gui.shared.utils.requesters import DeprecatedStatsRequester
+from gui.shared.gui_items.processors.common import BattleResultsGetter
 from gui.shared.fortifications import fort_helpers, events_dispatcher as fort_events
 from gui.wgnc import g_wgncProvider
 from messenger.m_constants import PROTO_TYPE
@@ -19,6 +19,7 @@ from messenger.proto import proto_getter
 from notification.tutorial_helper import TutorialGlobalStorage, TUTORIAL_GLOBAL_VAR
 from notification.settings import NOTIFICATION_TYPE, NOTIFICATION_BUTTON_STATE
 from predefined_hosts import g_preDefinedHosts
+from gui.shared.utils import decorators
 
 class _ActionHandler(object):
 
@@ -88,14 +89,12 @@ class ShowBattleResultsHandler(_ShowArenaResultHandler):
     def getActions(self):
         return ('showBattleResults',)
 
-    @process
+    @decorators.process('loadStats')
     def _showWindow(self, notification, arenaUniqueID):
         arenaUniqueID = long(arenaUniqueID)
-        Waiting.show('loadStats')
-        results = yield DeprecatedStatsRequester().getBattleResults(long(arenaUniqueID))
-        Waiting.hide('loadStats')
-        if results:
-            shared_events.showBattleResultsFromData(results)
+        results = yield BattleResultsGetter(arenaUniqueID).request()
+        if results.success:
+            shared_events.showBattleResultsFromData(results.auxData)
         else:
             self._updateNotification(notification)
 

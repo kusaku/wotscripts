@@ -167,10 +167,10 @@ class PrbInvitesListener(_NotificationListener, GlobalListener):
     def onPreQueueFunctionalFinished(self):
         self.__updateInvites()
 
-    def onEnqueued(self):
+    def onEnqueued(self, queueType, *args):
         self.__updateInvites()
 
-    def onDequeued(self):
+    def onDequeued(self, queueType, *args):
         self.__updateInvites()
 
     def __onInviteListInited(self):
@@ -431,10 +431,10 @@ class BattleTutorialListener(_NotificationListener, GlobalListener):
         super(BattleTutorialListener, self).stop()
         self.stopGlobalListening()
 
-    def onEnqueued(self):
+    def onEnqueued(self, queueType, *args):
         self.__updateBattleResultMessage(True)
 
-    def onDequeued(self):
+    def onDequeued(self, queueType, *args):
         self.__updateBattleResultMessage(False)
 
     def __updateBattleResultMessage(self, locked):

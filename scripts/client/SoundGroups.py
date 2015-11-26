@@ -27,7 +27,8 @@ class SoundModes():
 
         def __init__(self, dataSection):
             self.name = dataSection.readString('name', 'default')
-            self.voiceLanguage = dataSection.readString('fmod_language', 'default')
+            if FMOD.enabled:
+                self.voiceLanguage = dataSection.readString('fmod_language', 'default')
             descriptionLink = dataSection.readString('description', '')
             self.description = i18n.makeString(descriptionLink)
             self.invisible = dataSection.readBool('invisible', False)
@@ -374,6 +375,8 @@ class SoundGroups(object):
 
             FMOD.WG_unloadAll()
         g_replayEvents.onMuteSound += self.__onReplayMute
+        from gui.app_loader import g_appLoader
+        g_appLoader.onGUISpaceChanged += self.__onGUISpaceChanged
         return
 
     def __del__(self):
@@ -413,6 +416,9 @@ class SoundGroups(object):
         for categoryName in ('vehicles', 'effects', 'ambient'):
             volume = 0.0 if mute else self.__volumeByCategory[categoryName]
             self.setVolume(categoryName, volume, False)
+
+    def __onGUISpaceChanged(self, spaceID):
+        pass
 
     def setMasterVolume(self, volume):
         self.__masterVolume = volume
@@ -532,12 +538,9 @@ class SoundGroups(object):
         else:
             return event
 
-    def getSound3D(self, model, event):
-        return model.getSound(self.checkAndReplace(event))
-
-    def playSoundModel(self, model, event):
+    def getSound3D(self, node, event):
         if FMOD.enabled:
-            return model.playSound(self.checkAndReplace(event))
+            return FMOD.getSound3D(self.checkAndReplace(event), node)
 
     def playSound3D(self, node, event):
         if FMOD.enabled:
@@ -545,10 +548,6 @@ class SoundGroups(object):
             if s is not None:
                 s.play()
         return
-
-    def playSound3D(self, node, event):
-        if FMOD.enabled:
-            return FMOD.getSound3D(self.checkAndReplace(event), node)
 
     def getSound2D(self, event):
         if FMOD.enabled:
@@ -559,6 +558,16 @@ class SoundGroups(object):
             return FMOD.playSound(self.checkAndReplace(event))
 
     def playSoundPos(self, event, pos):
+        if FMOD.enabled:
+            raise Exception('Tried to use WWISE function from FMOD release')
+
+    def WWgetSound(self, eventName, objectName, matrix, local = (0.0, 0.0, 0.0)):
+        pass
+
+    def WWgetSoundCallback(self, eventName, objectName, matrix, callback):
+        pass
+
+    def WWgetSoundPos(self, eventName, objectName, position):
         pass
 
     def loadRemapping(self, arenaDescr):
@@ -603,6 +612,11 @@ class SoundGroups(object):
                 self.__activeTrack.stop()
             self.__activeTrack = self.playSound2D(event)
         return
+
+    def __getWWISECategoryName(self, categoryName):
+        if categoryName == 'gui':
+            return 'voice_gui'
+        return categoryName
 
 
 def reloadSoundBanks():

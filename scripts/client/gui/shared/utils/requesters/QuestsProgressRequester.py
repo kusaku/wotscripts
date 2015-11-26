@@ -6,19 +6,45 @@ from adisp import async
 from gui.shared.utils.requesters.abstract import AbstractSyncDataRequester
 _Token = namedtuple('_Token', ('expireTime', 'count'))
 
-class QuestsProgressRequester(AbstractSyncDataRequester):
+class _QuestsProgressRequester(AbstractSyncDataRequester):
+
+    @async
+    def _requestCache(self, callback = None):
+        BigWorld.player().questProgress.getCache(lambda resID, value: self._response(resID, value, callback))
+
+
+class QuestsProgressRequester(_QuestsProgressRequester):
+
+    def getQuestProgress(self, qID):
+        return self.__getQuestsData().get(qID, {}).get('progress')
+
+    def getTokenCount(self, tokenID):
+        return self.__getToken(tokenID).count
+
+    def getTokenExpiryTime(self, tokenID):
+        return self.__getToken(tokenID).expireTime
+
+    def __getQuestsData(self):
+        return self.getCacheValue('quests', {})
+
+    def __getTokensData(self):
+        return self.getCacheValue('tokens', {})
+
+    def __getToken(self, tokenID):
+        return _Token(*self.__getTokensData().get(tokenID, (0, 0)))
+
+
+class _PotapovQuestsProgressRequester(_QuestsProgressRequester):
     PotapovQuestProgress = namedtuple('PotapovQuestProgress', ['state',
      'selected',
      'rewards',
      'unlocked'])
 
-    def __init__(self):
-        super(QuestsProgressRequester, self).__init__()
+    def __init__(self, questsType):
+        super(_PotapovQuestsProgressRequester, self).__init__()
         self.__pqStorage = None
+        self._questsType = questsType
         return
-
-    def getQuestProgress(self, qID):
-        return self.__getQuestsData().get(qID, {}).get('progress')
 
     def getPotapovQuestProgress(self, pqType, potapovQuestID):
         potapovQuestsProgress = self.__getPotapovQuestsData()
@@ -37,28 +63,21 @@ class QuestsProgressRequester(AbstractSyncDataRequester):
     def getTankmanLastIDs(self, nationID):
         return self.__getPotapovQuestsData()['lastIDs'].get(nationID, (-1, -1, -1))
 
-    def getTokenCount(self, tokenID):
-        return self.__getToken(tokenID).count
-
-    def getTokenExpiryTime(self, tokenID):
-        return self.__getToken(tokenID).expireTime
-
-    @async
-    def _requestCache(self, callback = None):
-        BigWorld.player().questProgress.getCache(lambda resID, value: self._response(resID, value, callback))
-
     def _response(self, resID, value, callback):
         self.__pqStorage = potapov_quests.PQStorage(value['potapovQuests']['compDescr'])
-        super(QuestsProgressRequester, self)._response(resID, value, callback)
-
-    def __getQuestsData(self):
-        return self.getCacheValue('quests', {})
-
-    def __getTokensData(self):
-        return self.getCacheValue('tokens', {})
-
-    def __getToken(self, tokenID):
-        return _Token(*self.__getTokensData().get(tokenID, (0, 0)))
+        super(_QuestsProgressRequester, self)._response(resID, value, callback)
 
     def __getPotapovQuestsData(self):
         return self.getCacheValue('potapovQuests', {})
+
+
+class RandomQuestsProgressRequester(_PotapovQuestsProgressRequester):
+
+    def __init__(self):
+        super(RandomQuestsProgressRequester, self).__init__('random')
+
+
+class FalloutQuestsProgressRequester(_PotapovQuestsProgressRequester):
+
+    def __init__(self):
+        super(FalloutQuestsProgressRequester, self).__init__('fallout')

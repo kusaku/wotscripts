@@ -1,6 +1,4 @@
 # Embedded file name: scripts/client/gui/awards/special_achievement_awards.py
-import BigWorld
-from gui.Scaleform.genConsts.TEXT_MANAGER_STYLES import TEXT_MANAGER_STYLES
 from gui.goodies.Booster import _BOOSTER_DESCRIPTION_LOCALE
 from gui.shared import event_dispatcher
 from gui.shared.formatters import text_styles
@@ -73,6 +71,21 @@ class BattleAward(AwardAbstract):
 
     def getDescription(self):
         return text_styles.main(i18n.makeString('#menu:awardWindow/specialAchievement/battle/description%d' % self.messageNumber, battlesCount=self.battlesCount))
+
+
+class PvEBattleAward(BattleAward):
+
+    def getWindowTitle(self):
+        return i18n.makeString('#menu:awardWindow/title/info')
+
+    def getDescription(self):
+        return text_styles.main(i18n.makeString('#menu:awardWindow/specialAchievement/pveBattle/description', battlesCount=self.battlesCount))
+
+    def handleOkButton(self):
+        event_dispatcher.runTutorialChain('PvE_Chain')
+
+    def handleCloseButton(self):
+        event_dispatcher.runTutorialChain('PvE_Chain')
 
 
 class PremiumDiscountAward(AwardAbstract):

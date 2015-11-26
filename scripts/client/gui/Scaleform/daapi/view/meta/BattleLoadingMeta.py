@@ -31,22 +31,22 @@ class BattleLoadingMeta(View):
         if self._isDAAPIInited():
             return self.flashObject.as_setPlayerData(playerVehicleID, prebattleID)
 
-    def as_setVehiclesDataS(self, isEnemy, vehiclesInfo):
+    def as_setVehiclesDataS(self, data):
         if self._isDAAPIInited():
-            return self.flashObject.as_setVehiclesData(isEnemy, vehiclesInfo)
+            return self.flashObject.as_setVehiclesData(data)
 
-    def as_addVehicleInfoS(self, isEnemy, vehicleInfo, vehiclesIDs):
+    def as_addVehicleInfoS(self, data):
         if self._isDAAPIInited():
-            return self.flashObject.as_addVehicleInfo(isEnemy, vehicleInfo, vehiclesIDs)
+            return self.flashObject.as_addVehicleInfo(data)
 
-    def as_updateVehicleInfoS(self, isEnemy, vehicleInfo, vehiclesIDs):
+    def as_updateVehicleInfoS(self, data):
         if self._isDAAPIInited():
-            return self.flashObject.as_updateVehicleInfo(isEnemy, vehicleInfo, vehiclesIDs)
+            return self.flashObject.as_updateVehicleInfo(data)
 
-    def as_setVehicleStatusS(self, isEnemy, vehicleID, status, vehiclesIDs):
+    def as_setVehicleStatusS(self, data):
         if self._isDAAPIInited():
-            return self.flashObject.as_setVehicleStatus(isEnemy, vehicleID, status, vehiclesIDs)
+            return self.flashObject.as_setVehicleStatus(data)
 
-    def as_setPlayerStatusS(self, isEnemy, vehicleID, status):
+    def as_setPlayerStatusS(self, data):
         if self._isDAAPIInited():
-            return self.flashObject.as_setPlayerStatus(isEnemy, vehicleID, status)
+            return self.flashObject.as_setPlayerStatus(data)

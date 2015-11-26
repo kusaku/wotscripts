@@ -45,7 +45,7 @@ class _FalloutStatsForm(_StatsForm):
 
     def populate(self):
         super(_FalloutStatsForm, self).populate()
-        self._ui.movie.preinitializeStatsHintView('FalloutStatisticHint.swf', INGAME_GUI.TABSTATSHINT)
+        self._ui.movie.falloutItems.as_preinitializeStatsHintView('FalloutStatisticHint.swf', INGAME_GUI.TABSTATSHINT)
 
     def destroy(self):
         self._colorCache = None
@@ -121,11 +121,13 @@ class _MultiteamFalloutStatsForm(_FalloutStatsForm):
 
     def getFormattedStrings(self, vInfoVO, vStatsVO, viStatsVO, ctx, fullPlayerName):
         pName, frags, vName, (scoreString, damageString, deathsString, _) = super(_MultiteamFalloutStatsForm, self).getFormattedStrings(vInfoVO, vStatsVO, viStatsVO, ctx, fullPlayerName)
-        regularFormat = self._getHTMLString('textColorFalloutRegular', self._ui.colorManager)
+        padding = makeHtmlString('html_templates:battle', 'multiteamPadding', {})
+        format = self._findPlayerHTMLFormat(vInfoVO, ctx, self._ui.colorManager)
+        formatWithPadding = format + padding
         flagsCaptured = viStatsVO.flagActions[FLAG_ACTION.CAPTURED]
-        flagsString = regularFormat % ' '
+        flagsString = formatWithPadding % ' '
         if flagsCaptured:
-            flagsString = regularFormat % BigWorld.wg_getNiceNumberFormat(flagsCaptured)
+            flagsString = formatWithPadding % BigWorld.wg_getNiceNumberFormat(flagsCaptured)
         return (pName,
          frags,
          vName,

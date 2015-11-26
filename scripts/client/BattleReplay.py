@@ -107,7 +107,6 @@ class BattleReplay():
         self.__replayCtrl.clientVersion = BigWorld.wg_getProductVersion()
         self.__timeWarpCleanupCb = None
         self.__enableTimeWarp = False
-        self.__disableSidePanelContextMenuCb = None
         self.__isChatPlaybackEnabled = True
         self.__warpTime = -1.0
         self.__skipMessage = False
@@ -238,9 +237,6 @@ class BattleReplay():
             isOffline = self.__replayCtrl.isOfflinePlaybackMode
             self.__replayCtrl.stop(delete)
             self.__fileName = None
-            if self.__disableSidePanelContextMenuCb is not None:
-                BigWorld.cancelCallback(self.__disableSidePanelContextMenuCb)
-                self.__disableSidePanelContextMenuCb = None
             if wasPlaying:
                 if not isOffline:
                     connectionManager.onDisconnected += self.__showLoginPage
@@ -557,7 +553,6 @@ class BattleReplay():
                 self.__showInfoMessage('replayControlsHelp1')
                 self.__showInfoMessage('replayControlsHelp2')
                 self.__showInfoMessage('replayControlsHelp3')
-                self.__disableSidePanelContextMenu()
                 if self.replayTimeout > 0:
                     LOG_DEBUG('replayTimeout set for %.2f' % float(self.replayTimeout))
                     BigWorld.callback(float(self.replayTimeout), BigWorld.quit)
@@ -773,7 +768,7 @@ class BattleReplay():
             personals = modifiedResults.get('personal', None)
             if personals is not None:
                 for personal in personals.itervalues():
-                    for field in ('damageEventList', 'xpReplay', 'creditsReplay', 'tmenXPReplay', 'fortResourceReplay', 'goldReplay', 'freeXPReplay'):
+                    for field in ('damageEventList', 'xpReplay', 'creditsReplay', 'tmenXPReplay', 'fortResourceReplay', 'goldReplay', 'freeXPReplay', 'avatarDamageEventList'):
                         personal[field] = None
 
                     details = personal.pop('details', None)
@@ -858,16 +853,6 @@ class BattleReplay():
 
     def __enableInGameEffects(self, enable):
         AreaDestructibles.g_destructiblesManager.forceNoAnimation = not enable
-
-    def __disableSidePanelContextMenu(self):
-        self.__disableSidePanelContextMenuCb = None
-        app = g_appLoader.getDefBattleApp()
-        if app and hasattr(app.movie, 'leftPanel'):
-            app.movie.leftPanel.onMouseDown = None
-            app.movie.rightPanel.onMouseDown = None
-        else:
-            self.__disableSidePanelContextMenuCb = BigWorld.callback(0.1, self.__disableSidePanelContextMenu)
-        return
 
     def getSetting(self, key, default = None):
         if self.__settings.has_key(key):

@@ -10,12 +10,6 @@ class IGUIPermissions(object):
         return True
 
 
-class IPreQueuePermissions(IGUIPermissions):
-
-    def canSendInvite(self):
-        return False
-
-
 class IPrbPermissions(IGUIPermissions):
 
     def canSendInvite(self):

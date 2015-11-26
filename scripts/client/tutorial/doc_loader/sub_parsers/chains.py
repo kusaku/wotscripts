@@ -10,7 +10,7 @@ _AVAILABLE_DIRECTIONS = ('L', 'T', 'R', 'B')
 _ArrowProps = namedtuple('_ArrowProps', ('direction', 'loop'))
 _Padding = namedtuple('_Padding', ('left', 'top', 'right', 'bottom'))
 
-def _readHintSection(xmlCtx, section, flags):
+def readHintSection(xmlCtx, section, flags):
     hintID = sub_parsers.parseID(xmlCtx, section, 'Specify a hint ID')
     if 'item-id' in section.keys():
         itemID = sub_parsers.parseID(xmlCtx, section['item-id'], 'Specify a item ID')
@@ -53,12 +53,12 @@ def _readVehicleRequiredLevelTriggerSection(xmlCtx, section, _, triggerID):
     return sub_parsers.readValidateVarTriggerSection(xmlCtx, section, triggerID, triggers.CurrentVehicleRequiredLevelTrigger, validateUpdateOnly='validate-update-only' in section.keys())
 
 
-def _readTankmanPriceDiscountTriggerSection(xmlCtx, section, _, triggerID):
+def readTankmanPriceDiscountTriggerSection(xmlCtx, section, _, triggerID):
     return sub_parsers.readValidateVarTriggerSection(xmlCtx, section, triggerID, triggers.TankmanPriceDiscountTrigger, validateUpdateOnly='validate-update-only' in section.keys())
 
 
-def _readPremiumVehiclesTriggerSection(xmlCtx, section, _, triggerID):
-    return triggers.CurrentPremiumVehicleTrigger(triggerID)
+def _readRentedVehiclesTriggerSection(xmlCtx, section, _, triggerID):
+    return triggers.RentedVehicleTrigger(triggerID)
 
 
 def _readMaintenanceStateTrigger(xmlCtx, section, _, triggerID):
@@ -73,12 +73,16 @@ def _readLockedStateTrigger(xmlCtx, section, _, triggerID):
     return triggers.CurrentVehicleLockedTrigger(triggerID)
 
 
+def readIsInSandBoxPreQueueTriggerSection(xmlCtx, section, chapter, triggerID):
+    return triggers.IsInSandBoxPreQueueTrigger(triggerID)
+
+
 def readQueueTrigger(xmlCtx, section, _, triggerID):
     return triggers.QueueTrigger(triggerID)
 
 
 def init():
-    sub_parsers.setEntitiesParsers({'hint': _readHintSection})
+    sub_parsers.setEntitiesParsers({'hint': readHintSection})
     sub_parsers.setEffectsParsers({'switch-to-random': _readSwitchToRandomSection})
     sub_parsers.setTriggersParsers({'simpleDialog': _readSimpleDialogTriggerSection,
      'unlocked': lobby.readItemUnlockedTriggerSection,
@@ -92,9 +96,10 @@ def init():
      'bonus': lobby.readBonusTriggerSection,
      'buyNextLevelVehicle': _readBuyNextLevelVehicleTriggerSection,
      'vehicleRequiredLevel': _readVehicleRequiredLevelTriggerSection,
-     'tankmanDiscount': _readTankmanPriceDiscountTriggerSection,
-     'premiumVehicles': _readPremiumVehiclesTriggerSection,
+     'tankmanDiscount': readTankmanPriceDiscountTriggerSection,
+     'rentedVehicles': _readRentedVehiclesTriggerSection,
      'maintenanceState': _readMaintenanceStateTrigger,
      'optionalDevicesState': _readOptionalDevicesStateTrigger,
-     'lockedState': _readLockedStateTrigger})
+     'lockedState': _readLockedStateTrigger,
+     'isInSandbox': readIsInSandBoxPreQueueTriggerSection})
     sub_parsers.setWindowsParsers({'awardWindow': sub_parsers.readQuestAwardWindowSection})

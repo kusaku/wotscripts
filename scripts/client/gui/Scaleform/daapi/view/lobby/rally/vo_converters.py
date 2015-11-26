@@ -3,7 +3,6 @@ import BigWorld
 from constants import VEHICLE_CLASS_INDICES, VEHICLE_CLASSES, FALLOUT_BATTLE_TYPE
 from gui.LobbyContext import g_lobbyContext
 from gui import makeHtmlString
-from gui.shared.formatters import text_styles
 from gui.Scaleform.daapi.view.lobby.cyberSport import PLAYER_GUI_STATUS, SLOT_LABEL
 from gui.Scaleform.genConsts.FORTIFICATION_ALIASES import FORTIFICATION_ALIASES as FORT_ALIAS
 from gui.Scaleform.locale.MESSENGER import MESSENGER
@@ -11,8 +10,6 @@ from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.Scaleform.locale.CYBERSPORT import CYBERSPORT
 from gui.Scaleform.locale.FORTIFICATIONS import FORTIFICATIONS
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
-from gui.Scaleform.locale.MENU import MENU
-from gui.game_control import getFalloutCtrl
 from gui.prb_control import settings
 from gui.prb_control.items.sortie_items import getDivisionNameByType, getDivisionLevel
 from gui.prb_control.settings import UNIT_RESTRICTION
@@ -86,24 +83,12 @@ def makeStaticSlotLabel(unitState, slotState, isCreator = False, vehCount = 0, c
     return slotLabel
 
 
-def makeVehicleVO(vehicle, levelsRange = None, vehicleTypes = None, isCurrentPlayer = True):
+def makeVehicleBasicVO(vehicle, levelsRange = None, vehicleTypes = None):
     if vehicle is None:
         return
     else:
-        vState, vStateLvl = vehicle.getState(isCurrentPlayer)
-        if vState == Vehicle.VEHICLE_STATE.UNDAMAGED or vState == Vehicle.VEHICLE_STATE.IN_PREBATTLE or vState in Vehicle.GROUP_STATES:
-            vStateStr = ''
-            isReadyToFight = True
-        else:
-            isReadyToFight = vehicle.isReadyToFight
-            if vState == Vehicle.VEHICLE_STATE.IN_PREMIUM_IGR_ONLY:
-                vStateStr = makeHtmlString('html_templates:lobby', 'inPremiumIgrOnly')
-            else:
-                vStateStr = i18n.makeString('#menu:tankCarousel/vehicleStates/%s' % vState)
         enabled, tooltip = True, None
-        if not isReadyToFight:
-            enabled, tooltip = False, makeTooltip('#tooltips:vehicleStatus/%s/header' % vState, '#tooltips:vehicleStatus/body')
-        elif levelsRange is not None and vehicle.level not in levelsRange:
+        if levelsRange is not None and vehicle.level not in levelsRange:
             enabled, tooltip = False, TOOLTIPS.VEHICLESELECTOR_OVERFLOWLEVEL
         elif vehicleTypes is not None and vehicle.type not in vehicleTypes:
             enabled, tooltip = False, TOOLTIPS.VEHICLESELECTOR_INCOMPATIBLETYPE
@@ -116,11 +101,28 @@ def makeVehicleVO(vehicle, levelsRange = None, vehicleTypes = None, isCurrentPla
          'type': vehicle.type,
          'typeIndex': VEHICLE_TABLE_TYPES_ORDER_INDICES[vehicle.type],
          'smallIconPath': '../maps/icons/vehicle/small/{0}.png'.format(vehicle.name.replace(':', '-')),
-         'isReadyToFight': isReadyToFight,
+         'isReadyToFight': True,
          'enabled': enabled,
          'tooltip': tooltip,
-         'state': vStateStr,
+         'state': '',
          'isFalloutVehicle': vehicle.isFalloutSelected}
+
+
+def makeVehicleVO(vehicle, levelsRange = None, vehicleTypes = None, isCurrentPlayer = True):
+    vehicleVO = makeVehicleBasicVO(vehicle, levelsRange, vehicleTypes)
+    if vehicleVO is None:
+        return
+    else:
+        vState, vStateLvl = vehicle.getState(isCurrentPlayer)
+        if not (vState == Vehicle.VEHICLE_STATE.UNDAMAGED or vState == Vehicle.VEHICLE_STATE.IN_PREBATTLE or vState in Vehicle.GROUP_STATES):
+            vehicleVO['isReadyToFight'] = vehicle.isReadyToFight
+            if vState == Vehicle.VEHICLE_STATE.IN_PREMIUM_IGR_ONLY:
+                vehicleVO['state'] = makeHtmlString('html_templates:lobby', 'inPremiumIgrOnly')
+            else:
+                vehicleVO['state'] = i18n.makeString('#menu:tankCarousel/vehicleStates/%s' % vState)
+        if not vehicleVO['isReadyToFight']:
+            vehicleVO['enabled'], vehicleVO['tooltip'] = False, makeTooltip('#tooltips:vehicleStatus/%s/header' % vState, '#tooltips:vehicleStatus/body')
+        return vehicleVO
 
 
 def makeUserVO(user, colorGetter, isPlayerSpeaking = False):
@@ -591,6 +593,7 @@ def makeBuildingIndicatorsVOByDescr(buildingDescr):
 
 
 def makeBuildingIndicatorsVO(buildingLevel, progress, hpVal, hpTotalVal, defResVal, maxDefResVal):
+    defResCompensationValue = 0
     FORMAT_PATTERN = '###'
     if progress == FORT_ALIAS.STATE_FOUNDATION_DEF or progress == FORT_ALIAS.STATE_FOUNDATION:
         hpValueFormatter = text_styles.alert(FORMAT_PATTERN)
@@ -598,7 +601,7 @@ def makeBuildingIndicatorsVO(buildingLevel, progress, hpVal, hpTotalVal, defResV
         hpValueFormatter = text_styles.defRes(FORMAT_PATTERN)
     hpTotalFormatted = str(BigWorld.wg_getIntegralFormat(hpTotalVal)) + ' '
     formattedHpTotal = ''.join((text_styles.standard(hpTotalFormatted), icons.nut()))
-    defResValueFormatter = text_styles.defRes(FORMAT_PATTERN)
+    defResValueFormatter = text_styles.alert(FORMAT_PATTERN) if defResVal > maxDefResVal else text_styles.defRes(FORMAT_PATTERN)
     maxDefDerFormatted = str(BigWorld.wg_getIntegralFormat(maxDefResVal)) + ' '
     formattedDefResTotal = ''.join((text_styles.standard(maxDefDerFormatted), icons.nut()))
     hpProgressLabels = {'currentValue': str(BigWorld.wg_getIntegralFormat(hpVal)),
@@ -614,6 +617,7 @@ def makeBuildingIndicatorsVO(buildingLevel, progress, hpVal, hpTotalVal, defResV
      'hpCurrentValue': hpVal,
      'hpTotalValue': hpTotalVal,
      'defResCurrentValue': defResVal,
+     'defResCompensationValue': defResCompensationValue,
      'defResTotalValue': maxDefResVal,
      'hpProgressLabels': hpProgressLabels,
      'defResProgressLabels': storeProgressLabels}

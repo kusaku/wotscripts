@@ -3,7 +3,7 @@ import weakref
 import itertools
 import types
 import BigWorld
-from debug_utils import LOG_ERROR
+from debug_utils import LOG_ERROR, LOG_WARNING
 ScalarTypes = (types.IntType,
  types.LongType,
  types.FloatType,

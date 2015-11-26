@@ -128,6 +128,7 @@ class REQ_CRITERIA(object):
         DISABLED_IN_PREM_IGR = RequestCriteria(PredicateCondition(lambda item: item.isDisabledInPremIGR))
         IS_PREMIUM_IGR = RequestCriteria(PredicateCondition(lambda item: item.isPremiumIGR))
         ELITE = RequestCriteria(PredicateCondition(lambda item: item.isElite))
+        FULLY_ELITE = RequestCriteria(PredicateCondition(lambda item: item.isFullyElite))
         EVENT = RequestCriteria(PredicateCondition(lambda item: item.isEvent))
         EVENT_BATTLE = RequestCriteria(PredicateCondition(lambda item: item.isOnlyForEventBattles))
 
@@ -405,7 +406,7 @@ class ItemsRequester(object):
         container = self.__itemsCache[GUI_ITEM_TYPE.VEHICLE_DOSSIER]
         dossier = container.get((int(databaseID), vehTypeCompDescr))
         if dossier is None:
-            LOG_WARNING("Trying to get empty user vehicle' dossier", vehTypeCompDescr, databaseID)
+            LOG_WARNING('Vehicle dossier for this user is empty', vehTypeCompDescr, databaseID)
             return
         else:
             return VehicleDossier(dossier, vehTypeCompDescr, playerDBID=databaseID)

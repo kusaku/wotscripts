@@ -19,7 +19,7 @@ except ImportError:
 
 _Event = events.TutorialEvent
 _TRIGGER_TYPES = TUTORIAL_TRIGGER_TYPES
-_CUSTOM_COMPONENTS = ('TankCarousel', 'PremiumButton', 'FreeXpButton', 'ResearchRootNode')
+_CUSTOM_COMPONENTS = ('TankCarousel', 'PremiumButton', 'FreeXpButton', 'ResearchRootNode', 'BattleSelectorBar')
 
 class TutorialManager(TutorialManagerMeta):
 

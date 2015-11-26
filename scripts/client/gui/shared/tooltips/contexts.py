@@ -413,6 +413,12 @@ class FortificationContext(ToolTipContext):
         super(FortificationContext, self).__init__(TOOLTIP_COMPONENT.FORTIFICATIONS, fieldsToExclude)
 
 
+class ClanProfileFortBuildingContext(ToolTipContext):
+
+    def __init__(self, fieldsToExclude = None):
+        super(ClanProfileFortBuildingContext, self).__init__(TOOLTIP_COMPONENT.CLAN_PROFILE, fieldsToExclude)
+
+
 class CustomizationContext(ToolTipContext):
 
     def __init__(self, fieldsToExclude = None):
@@ -459,3 +465,13 @@ class HangarTutorialContext(ToolTipContext):
 
 class FortSortieLimitContext(FortificationContext):
     pass
+
+
+class FortPopoverDefResProgressContext(FortificationContext):
+    pass
+
+
+class TechCustomizationContext(ToolTipContext):
+
+    def __init__(self, fieldsToExclude = None):
+        super(TechCustomizationContext, self).__init__(TOOLTIP_COMPONENT.TECH_CUSTOMIZATION, fieldsToExclude)

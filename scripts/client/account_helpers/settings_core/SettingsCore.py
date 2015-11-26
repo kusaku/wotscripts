@@ -171,11 +171,8 @@ class _SettingsCore(object):
          (TUTORIAL.PERSONAL_CASE, options.TutorialSetting(TUTORIAL.PERSONAL_CASE, storage=TUTORIAL_SETTINGS_STORAGE)),
          (TUTORIAL.RESEARCH, options.TutorialSetting(TUTORIAL.RESEARCH, storage=TUTORIAL_SETTINGS_STORAGE)),
          (TUTORIAL.RESEARCH_TREE, options.TutorialSetting(TUTORIAL.RESEARCH_TREE, storage=TUTORIAL_SETTINGS_STORAGE)),
-         (TUTORIAL.MEDKIT_INSTALLED, options.TutorialSetting(TUTORIAL.MEDKIT_INSTALLED, storage=TUTORIAL_SETTINGS_STORAGE)),
          (TUTORIAL.MEDKIT_USED, options.TutorialSetting(TUTORIAL.MEDKIT_USED, storage=TUTORIAL_SETTINGS_STORAGE)),
-         (TUTORIAL.REPAIRKIT_INSTALLED, options.TutorialSetting(TUTORIAL.REPAIRKIT_INSTALLED, storage=TUTORIAL_SETTINGS_STORAGE)),
          (TUTORIAL.REPAIRKIT_USED, options.TutorialSetting(TUTORIAL.REPAIRKIT_USED, storage=TUTORIAL_SETTINGS_STORAGE)),
-         (TUTORIAL.FIRE_EXTINGUISHER_INSTALLED, options.TutorialSetting(TUTORIAL.FIRE_EXTINGUISHER_INSTALLED, storage=TUTORIAL_SETTINGS_STORAGE)),
          (TUTORIAL.FIRE_EXTINGUISHER_USED, options.TutorialSetting(TUTORIAL.FIRE_EXTINGUISHER_USED, storage=TUTORIAL_SETTINGS_STORAGE)),
          (TUTORIAL.WAS_QUESTS_TUTORIAL_STARTED, options.TutorialSetting(TUTORIAL.WAS_QUESTS_TUTORIAL_STARTED, storage=TUTORIAL_SETTINGS_STORAGE))))
         self.__options.init()
@@ -242,7 +239,7 @@ class _SettingsCore(object):
         self.__options.revert()
 
     def isSettingChanged(self, name, value):
-        return self.getSetting(name) != value
+        return not self.__options.getSetting(name).isEqual(value)
 
     def applyStorages(self, restartApproved):
         confirmators = []

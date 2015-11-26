@@ -1,9 +1,9 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/meta/QuestsSeasonsViewMeta.py
-from gui.Scaleform.framework.entities.BaseDAAPIComponent import BaseDAAPIComponent
+from gui.Scaleform.daapi.view.lobby.server_events.QuestsContentTabs import QuestsContentTabs
 
-class QuestsSeasonsViewMeta(BaseDAAPIComponent):
+class QuestsSeasonsViewMeta(QuestsContentTabs):
 
-    def onShowAwardsClick(self, seasonID):
+    def onShowAwardsClick(self):
         self._printOverrideError('onShowAwardsClick')
 
     def onTileClick(self, tileID):
@@ -11,6 +11,10 @@ class QuestsSeasonsViewMeta(BaseDAAPIComponent):
 
     def onSlotClick(self, slotID):
         self._printOverrideError('onSlotClick')
+
+    def as_setDataS(self, data):
+        if self._isDAAPIInited():
+            return self.flashObject.as_setData(data)
 
     def as_setSeasonsDataS(self, data):
         if self._isDAAPIInited():

@@ -30,3 +30,6 @@ class MINICLIENT(object):
     INVITATION_NOTE_FORT_BATTLE = '#miniclient:invitation/note/FORT_BATTLE'
     INVITATION_NOTE_CLUBS = '#miniclient:invitation/note/CLUBS'
     TUTORIAL_VIDEO_TITLE = '#miniclient:tutorial/video/title'
+    ACCOUNTPOPOVER_WARNING = '#miniclient:accountPopover/warning'
+    PROFILE_WARNING = '#miniclient:profile/warning'
+    COMMUNICATIONCENTER_WARNING = '#miniclient:communicationCenter/warning'

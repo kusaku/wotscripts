@@ -628,10 +628,6 @@ class SettingsInterface(UIInterface):
         SoundGroups.g_instance.setVolume('masterVivox', float(settings['masterVivoxVolume']) / 100)
         SoundGroups.g_instance.setVolume('micVivox', float(settings['micVivoxVolume']) / 100)
         SoundGroups.g_instance.setVolume('masterFadeVivox', float(settings['masterFadeVivoxVolume']) / 100)
-        from BattleReplay import g_replayCtrl
-        if g_replayCtrl is not None and g_replayCtrl.isPlaying:
-            if g_replayCtrl.playbackSpeed == 0 or g_replayCtrl.playbackSpeed > 4.0:
-                SoundGroups.g_instance.enableReplaySounds(False)
         g_settingsCore.applySetting('showDateMessage', settings['datetimeIdx'] & 1)
         g_settingsCore.applySetting('showTimeMessage', settings['datetimeIdx'] & 2)
         g_settingsCore.applySetting('enableOlFilter', settings['enableOlFilter'])
@@ -678,6 +674,7 @@ class SettingsInterface(UIInterface):
         if restartClient:
             BigWorld.savePreferences()
             if restartApproved:
+                from BattleReplay import g_replayCtrl
                 if g_replayCtrl.isPlaying and g_replayCtrl.playbackSpeed == 0:
                     g_replayCtrl.setPlaybackSpeedIdx(5)
                 BigWorld.callback(0.3, self.__restartGame)

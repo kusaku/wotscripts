@@ -14,6 +14,10 @@ def showBattleAward(battlesCount, messageNumber):
     showAwardWindow(specialAwards.BattleAward(battlesCount, messageNumber))
 
 
+def showPveBattleAward(battlesCount, messageNumber):
+    showAwardWindow(specialAwards.PvEBattleAward(battlesCount, messageNumber))
+
+
 def showPremiumDiscountAward(researchLvl, premiumPacket, discount):
     showPremiumCongratulationWindow(specialAwards.PremiumDiscountAward(researchLvl, premiumPacket, discount))
 

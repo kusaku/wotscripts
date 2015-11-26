@@ -26,6 +26,8 @@ class _LobbyContext(object):
         self.__credentials = None
         self.__battlesCount = None
         self.__guiCtx.clear()
+        if self.__serverSettings:
+            self.__serverSettings.clear()
         return
 
     def onAccountBecomePlayer(self):
@@ -42,6 +44,10 @@ class _LobbyContext(object):
 
     def getBattlesCount(self):
         return self.__battlesCount
+
+    def update(self, diff):
+        if self.__serverSettings and 'serverSettings' in diff:
+            self.__serverSettings.update(diff['serverSettings'])
 
     def updateBattlesCount(self, battlesCount):
         self.__battlesCount = battlesCount

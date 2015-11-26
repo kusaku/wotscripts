@@ -150,6 +150,14 @@ class MarkersManager(Flash, IDynSquadEntityClient):
         self.close()
         return
 
+    def _createVehicleMarker(self, isAlly, mProv):
+        markerLinkage = 'VehicleMarkerAlly' if isAlly else 'VehicleMarkerEnemy'
+        if arena_info.hasFlags():
+            markerID = self.__ownUI.addFalloutMarker(mProv, markerLinkage)
+        else:
+            markerID = self.__ownUI.addMarker(mProv, markerLinkage)
+        return markerID
+
     def addVehicleMarker(self, vProxy, vInfo, guiProps):
         vTypeDescr = vProxy.typeDescriptor
         maxHealth = vTypeDescr.maxHealth
@@ -159,7 +167,7 @@ class MarkersManager(Flash, IDynSquadEntityClient):
         if GUI_SETTINGS.voiceChat:
             speaking = VoiceChatInterface.g_instance.isPlayerSpeaking(vInfo.player.accountDBID)
         hunting = VehicleActions.isHunting(vInfo.events)
-        markerID = self.__ownUI.addMarker(mProv, 'VehicleMarkerAlly' if isAlly else 'VehicleMarkerEnemy')
+        markerID = self._createVehicleMarker(isAlly, mProv)
         self.__markers[vInfo.vehicleID] = _VehicleMarker(markerID, vProxy, self.__ownUIProxy)
         battleCtx = g_sessionProvider.getCtx()
         fullName, pName, clanAbbrev, regionCode, vehShortName = battleCtx.getFullPlayerNameWithParts(vProxy.id)
@@ -417,6 +425,7 @@ class _FlagsMarkerPlugin(IPlugin):
         g_ctfManager.onFlagCapturedByVehicle += self.__onCapturedByVehicle
         g_ctfManager.onFlagDroppedToGround += self.__onDroppedToGround
         g_ctfManager.onFlagAbsorbed += self.__onAbsorbed
+        g_ctfManager.onFlagRemoved += self.__onRemoved
 
     def fini(self):
         g_ctfManager.onFlagSpawning -= self.__onFlagSpawning
@@ -424,6 +433,7 @@ class _FlagsMarkerPlugin(IPlugin):
         g_ctfManager.onFlagCapturedByVehicle -= self.__onCapturedByVehicle
         g_ctfManager.onFlagDroppedToGround -= self.__onDroppedToGround
         g_ctfManager.onFlagAbsorbed -= self.__onAbsorbed
+        g_ctfManager.onFlagRemoved -= self.__onRemoved
         super(_FlagsMarkerPlugin, self).fini()
 
     def start(self):
@@ -542,6 +552,14 @@ class _FlagsMarkerPlugin(IPlugin):
         if vehicleID == BigWorld.player().playerVehicleID:
             self.__delCaptureMarkers()
 
+    def __onRemoved(self, flagID, flagTeam, vehicleID):
+        self.__delFlagMarker(flagID)
+        if vehicleID is not None:
+            self._parentObj.updateFlagbearerState(vehicleID, False)
+            if vehicleID == BigWorld.player().playerVehicleID:
+                self.__delCaptureMarkers()
+        return
+
     def __getFlagMarkerType(self, flagID, flagTeam = 0):
         player = BigWorld.player()
         currentTeam = player.team
@@ -633,6 +651,11 @@ class _RepairsMarkerPlugin(IPlugin):
                  isActive)
                 if not isActive:
                     self.__initTimer(int(math.ceil(timeLeft)), repairPointID)
+            elif action == constants.REPAIR_POINT_ACTION.BECOME_DISABLED:
+                handle, callbackID, _, _ = self.__markers.pop(repairPointID)
+                self._parentObj.destroyStaticMarker(handle)
+                if callbackID is not None:
+                    BigWorld.cancelCallback(callbackID)
             return
 
 

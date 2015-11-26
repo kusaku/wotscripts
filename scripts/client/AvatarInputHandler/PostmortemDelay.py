@@ -90,13 +90,16 @@ class PostmortemDelay:
 
     def __moveCameraTo(self, vehicleID, sourceVehicleID = None):
         vehicle = BigWorld.entity(vehicleID)
+        targetMatrix = BigWorld.player().getOwnVehicleMatrix()
+        if vehicleID != BigWorld.player().playerVehicleID:
+            targetMatrix = vehicle.matrix
         if vehicle is None:
             if vehicleID == BigWorld.player().playerVehicleID:
-                self.__setCameraSettings(targetMP=BigWorld.player().getOwnVehicleMatrix(), pivotSettings=self.__savedPivotSettings, cameraDistance=self.__savedCameraDistance, yawPitch=self.__savedYawPitch)
+                self.__setCameraSettings(targetMP=targetMatrix, pivotSettings=self.__savedPivotSettings, cameraDistance=self.__savedCameraDistance, yawPitch=self.__savedYawPitch)
                 return True
             return False
         else:
-            self.__setCameraSettings(targetMP=vehicle.matrix, pivotSettings=self.__savedPivotSettings, cameraDistance=self.__savedCameraDistance, yawPitch=self.__savedYawPitch)
+            self.__setCameraSettings(targetMP=targetMatrix, pivotSettings=self.__savedPivotSettings, cameraDistance=self.__savedCameraDistance, yawPitch=self.__savedYawPitch)
             if sourceVehicleID is not None:
                 sourceVehicle = BigWorld.entity(sourceVehicleID)
                 if sourceVehicle is not None:

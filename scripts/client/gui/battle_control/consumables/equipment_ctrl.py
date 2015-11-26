@@ -2,6 +2,8 @@
 from collections import namedtuple
 from functools import partial
 import Event
+import FMOD
+import SoundGroups
 from constants import VEHICLE_SETTING, EQUIPMENT_STAGES
 from debug_utils import LOG_ERROR
 from gui.battle_control import avatar_getter, vehicle_getter
@@ -291,7 +293,7 @@ def _getSupportedTag(descriptor):
 
 
 class EquipmentsController(object):
-    __slots__ = ('__eManager', '__equipments', 'onEquipmentAdded', 'onEquipmentUpdated', 'onEquipmentMarkerShown')
+    __slots__ = ('__eManager', '__equipments', '__readySndName', 'onEquipmentAdded', 'onEquipmentUpdated', 'onEquipmentMarkerShown')
 
     def __init__(self):
         super(EquipmentsController, self).__init__()
@@ -300,6 +302,9 @@ class EquipmentsController(object):
         self.onEquipmentUpdated = Event.Event(self.__eManager)
         self.onEquipmentMarkerShown = Event.Event(self.__eManager)
         self.__equipments = {}
+        self.__readySndName = 'combat_reserve'
+        if FMOD.enabled:
+            self.__readySndName = '/ingame_voice/ingame_voice_flt/combat_reserve'
 
     def __repr__(self):
         return 'EquipmentsController({0!r:s})'.format(self.__equipments)
@@ -348,6 +353,8 @@ class EquipmentsController(object):
                 item = self.__equipments[intCD]
                 item.update(quantity, stage, timeRemaining)
                 self.onEquipmentUpdated(intCD, item)
+                if item.getPrevStage() in (EQUIPMENT_STAGES.DEPLOYING, EQUIPMENT_STAGES.UNAVAILABLE, EQUIPMENT_STAGES.COOLDOWN) and item.getStage() == EQUIPMENT_STAGES.READY:
+                    SoundGroups.g_instance.playSound2D(self.__readySndName)
             else:
                 descriptor = vehicles.getDictDescr(intCD)
                 item = self.createItem(descriptor, quantity, stage, timeRemaining)

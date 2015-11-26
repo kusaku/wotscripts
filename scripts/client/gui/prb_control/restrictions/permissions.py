@@ -3,7 +3,7 @@ from UnitBase import UNIT_ROLE, UNIT_FLAGS
 import account_helpers
 from constants import PREBATTLE_ROLE, PREBATTLE_TEAM_STATE
 from constants import PREBATTLE_ACCOUNT_STATE
-from gui import prb_control
+from gui.prb_control import prb_getters
 from gui.prb_control.items.prb_items import TeamStateInfo
 from gui.prb_control.items.unit_items import UnitFlags
 from gui.prb_control.restrictions.interfaces import IPrbPermissions, IUnitPermissions
@@ -111,11 +111,11 @@ class CompanyPrbPermissions(DefaultPrbPermissions):
         return roles == PREBATTLE_ROLE.COMPANY_CREATOR
 
     def _canAddPlayers(self):
-        clientPrb = prb_control.getClientPrebattle()
+        clientPrb = prb_getters.getClientPrebattle()
         result = False
         if clientPrb is not None:
-            settings = prb_control.getPrebattleSettings(prebattle=clientPrb)
-            rosters = prb_control.getPrebattleRosters(prebattle=clientPrb)
+            settings = prb_getters.getPrebattleSettings(prebattle=clientPrb)
+            rosters = prb_getters.getPrebattleRosters(prebattle=clientPrb)
             result, _ = TotalMaxCount().check(rosters, 1, settings.getTeamLimits(1))
         return result
 
@@ -137,21 +137,21 @@ class BattleSessionPrbPermissions(DefaultPrbPermissions):
         if not result:
             return False
         else:
-            clientPrb = prb_control.getClientPrebattle()
+            clientPrb = prb_getters.getClientPrebattle()
             result = False
             if clientPrb is not None:
-                settings = prb_control.getPrebattleSettings(prebattle=clientPrb)
-                rosters = prb_control.getPrebattleRosters(prebattle=clientPrb)
-                prbType = prb_control.getPrebattleType(clientPrb, settings)
+                settings = prb_getters.getPrebattleSettings(prebattle=clientPrb)
+                rosters = prb_getters.getPrebattleRosters(prebattle=clientPrb)
+                prbType = prb_getters.getPrebattleType(clientPrb, settings)
                 result, _ = TeamNoPlayersInBattle(prbType).check(rosters, team, settings.getTeamLimits(team))
             return result
 
     def _canAddPlayers(self):
-        clientPrb = prb_control.getClientPrebattle()
+        clientPrb = prb_getters.getClientPrebattle()
         result = False
         if clientPrb is not None:
-            settings = prb_control.getPrebattleSettings(prebattle=clientPrb)
-            rosters = prb_control.getPrebattleRosters(prebattle=clientPrb)
+            settings = prb_getters.getPrebattleSettings(prebattle=clientPrb)
+            rosters = prb_getters.getPrebattleRosters(prebattle=clientPrb)
             result, _ = MaxCount().check(rosters, 1, settings.getTeamLimits(1))
         return result
 

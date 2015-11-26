@@ -77,6 +77,14 @@ def isCurrentVehiclePremium():
         return None
 
 
+def isCurrentVehicleRented():
+    if g_currentVehicle.isPresent():
+        return g_currentVehicle.item.isRented
+    else:
+        return None
+        return None
+
+
 def getCurrentVehicleViewState():
     return g_currentVehicle.getViewState()
 
@@ -91,7 +99,7 @@ def _getTankmanPrice(index, prices):
 
 
 def getTankmanCurrentPrice(index):
-    return _getTankmanPrice(index, g_itemsCache.items.shop.tankmanCost)
+    return _getTankmanPrice(index, g_itemsCache.items.shop.tankmanCostWithGoodyDiscount)
 
 
 def getTankmanDefaultPrice(index):

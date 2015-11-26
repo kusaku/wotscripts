@@ -32,6 +32,7 @@ class CombatSelectedArea(object):
         rootNode.attach(area)
         self.__size = size
         self.__color = color
+        model.addMotor(BigWorld.Servo(Math.Matrix(model.matrix)))
         self.__nextPosition = position
         self.__speed = Math.Vector3(0.0, 0.0, 0.0)
         self.__time = 0.0

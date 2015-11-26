@@ -7,7 +7,7 @@ from PlayerEvents import g_playerEvents
 from tutorial import Tutorial, LOG_DEBUG
 from tutorial import settings as _settings
 from tutorial import cache as _cache
-from tutorial.control.context import GLOBAL_FLAG
+from tutorial.control.context import GLOBAL_FLAG, GlobalStorage
 from tutorial.doc_loader import loadDescriptorData
 from tutorial.logger import LOG_ERROR
 _STOP_REASON = _settings.TUTORIAL_STOP_REASON
@@ -120,12 +120,17 @@ class TutorialLoader(object):
                 state = {}
             reloadIfRun = state.pop('reloadIfRun', False)
             restoreIfRun = state.pop('restoreIfRun', False)
+            isStopForced = state.pop('isStopForced', False)
             if self.__tutorial is not None and not self.__tutorial.isStopped():
                 isCurrent = self.__tutorial.getID() == settings.id
                 if reloadIfRun and isCurrent:
-                    self.__tutorial.invalidateFlags()
-                    return True
-                if restoreIfRun and not isCurrent:
+                    if isStopForced:
+                        self.__doStop()
+                    else:
+                        GlobalStorage.setFlags(state.get('globalFlags', {}))
+                        self.__tutorial.invalidateFlags()
+                        return True
+                elif restoreIfRun and not isCurrent:
                     self.__restoreID = self.__tutorial.getID()
                     self.__doStop()
                 else:

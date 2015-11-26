@@ -43,7 +43,6 @@ class FalloutDeathMode(IControlMode):
         self.__aim.enable()
         player = BigWorld.player()
         self.__curVehicleID = player.playerVehicleID
-        self.__cam.vehicleMProv = player.getOwnVehicleMatrix()
         self.__isEnabled = True
         return
 

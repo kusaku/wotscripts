@@ -1,23 +1,22 @@
 # Embedded file name: scripts/client/gui/server_events/PQController.py
-import weakref
 import operator
 import BigWorld
+from constants import EVENT_TYPE
+from debug_utils import LOG_DEBUG
+from gui.shared.utils.requesters.QuestsProgressRequester import FalloutQuestsProgressRequester, RandomQuestsProgressRequester
 import potapov_quests
-from Event import Event, EventManager
 from items import tankmen
 from gui.server_events import event_items
 
-class PQController(object):
+class _PotapovQuestsController(object):
 
-    def __init__(self, eventsCache):
+    def __init__(self, pqType):
+        self.questsProgress = None
         self.__clearCaches()
-        self.__eventsCache = weakref.proxy(eventsCache)
-        self.__em = EventManager()
         self.__hasQuestsForSelect = False
         self.__hasQuestsForReward = False
-        self.onSelectedQuestsChanged = Event(self.__em)
-        self.onSlotsCountChanged = Event(self.__em)
-        self.onProgressUpdated = Event(self.__em)
+        self._pqType = pqType
+        return
 
     def init(self):
         for _, potapovQuestID in potapov_quests.g_cache:
@@ -29,47 +28,10 @@ class PQController(object):
             quest.setSeasonID(season.getID())
 
     def fini(self):
-        self.__em.clear()
         self.__clearCaches()
 
-    def update(self, diff = None):
-        if diff is not None:
-            potapovQuestsDiff = diff.get('potapovQuests', {})
-            if 'selected' in potapovQuestsDiff:
-                self.onSelectedQuestsChanged(potapovQuestsDiff['selected'])
-            if 'slots' in potapovQuestsDiff:
-                self.onSlotsCountChanged(potapovQuestsDiff['slots'])
-            isNeedToUpdateProgress = len(potapovQuestsDiff)
-        else:
-            isNeedToUpdateProgress = True
-        if isNeedToUpdateProgress:
-            self.__hasQuestsForSelect = False
-            self.__hasQuestsForReward = False
-            freeSlotsCount = self.__eventsCache.questsProgress.getPotapovQuestsFreeSlots()
-            for qID, quest in self.__quests.iteritems():
-                quest.updateProgress(self.__eventsCache)
-
-            selectedQuests = self.__eventsCache.questsProgress.getSelectedPotapovQuestsIDs()
-            selectedChains = set([ self.__quests[questID].getChainID() for questID in selectedQuests ])
-            for qID, quest in self.__quests.iteritems():
-                if not self.__hasQuestsForSelect and freeSlotsCount and quest.canBeSelected() and quest.getChainID() not in selectedChains:
-                    self.__hasQuestsForSelect = True
-                if not self.__hasQuestsForReward and quest.needToGetReward():
-                    self.__hasQuestsForReward = True
-                if self.__hasQuestsForSelect and self.__hasQuestsForReward:
-                    break
-
-            for tile in self.__tiles.itervalues():
-                tile.updateProgress(self.__eventsCache)
-
-            for season in self.__seasons.itervalues():
-                season.updateProgress(self.__eventsCache)
-
-            self.onProgressUpdated()
-        return
-
     def getNextTankwomanIDs(self, nationID, isPremium, fnGroup, lnGroup, iGroupID):
-        lastFirstNameID, lastLastNameID, lastIconID = self.__eventsCache.questsProgress.getTankmanLastIDs(nationID)
+        lastFirstNameID, lastLastNameID, lastIconID = self.questsProgress.getTankmanLastIDs(nationID)
         return map(operator.itemgetter(1), tankmen.getNextUniqueIDs(BigWorld.player().databaseID, lastFirstNameID, lastLastNameID, lastIconID, nationID, isPremium, fnGroup, lnGroup, iGroupID))
 
     def getQuests(self):
@@ -83,7 +45,7 @@ class PQController(object):
 
     def getSelectedQuests(self):
         result = {}
-        for qID in self.__eventsCache.questsProgress.getSelectedPotapovQuestsIDs():
+        for qID in self.questsProgress.getSelectedPotapovQuestsIDs():
             result[qID] = self.__quests[qID]
 
         return result
@@ -101,6 +63,15 @@ class PQController(object):
     def hasQuestsForReward(self):
         return self.__hasQuestsForReward
 
+    def _getQuestsCache(self):
+        raise NotImplemented
+
+    def _getSeasonsCache(self):
+        raise NotImplemented
+
+    def _getTilesCache(self):
+        raise NotImplemented
+
     def __clearCaches(self):
         self.__seasons = {}
         self.__tiles = {}
@@ -108,22 +79,98 @@ class PQController(object):
 
     def __makeSeason(self, seasonID):
         if seasonID not in self.__seasons:
-            season = self.__seasons[seasonID] = event_items.PQSeason(seasonID, potapov_quests.g_seasonCache.getSeasonInfo(seasonID))
+            season = self.__seasons[seasonID] = event_items.PQSeason(seasonID, self._getSeasonsCache().getSeasonInfo(seasonID))
         else:
             season = self.__seasons[seasonID]
         return season
 
     def __makeTile(self, tileID):
         if tileID not in self.__tiles:
-            tile = self.__tiles[tileID] = event_items.PQTile(tileID, potapov_quests.g_tileCache.getTileInfo(tileID))
+            tile = self.__tiles[tileID] = event_items.PQTile(tileID, self._getTilesCache().getTileInfo(tileID))
         else:
             tile = self.__tiles[tileID]
         return tile
 
     def __makeQuest(self, pqID, seasonID = None):
         if pqID not in self.__quests:
-            pqType = potapov_quests.g_cache.questByPotapovQuestID(pqID)
+            pqType = self._getQuestsCache().questByPotapovQuestID(pqID)
             quest = self.__quests[pqID] = event_items.PotapovQuest(pqID, pqType, seasonID=seasonID)
         else:
             quest = self.__quests[pqID]
         return quest
+
+    def _update(self, eventsCache, diff = None):
+        if diff is not None:
+            potapovQuestsDiff = diff.get('potapovQuests', {})
+            if 'selected' in potapovQuestsDiff:
+                eventsCache.onSelectedQuestsChanged(potapovQuestsDiff['selected'], self._pqType)
+            if 'slots' in potapovQuestsDiff:
+                eventsCache.onSlotsCountChanged(potapovQuestsDiff['slots'], self._pqType)
+            isNeedToUpdateProgress = len(potapovQuestsDiff)
+        else:
+            isNeedToUpdateProgress = True
+        if isNeedToUpdateProgress:
+            self.__hasQuestsForSelect = False
+            self.__hasQuestsForReward = False
+            freeSlotsCount = self.questsProgress.getPotapovQuestsFreeSlots()
+            for qID, quest in self.__quests.iteritems():
+                quest.updateProgress(self.questsProgress)
+
+            selectedQuests = self.questsProgress.getSelectedPotapovQuestsIDs()
+            selectedChains = set([ self.__quests[questID].getChainID() for questID in selectedQuests ])
+            for qID, quest in self.__quests.iteritems():
+                if not self.__hasQuestsForSelect and freeSlotsCount and quest.canBeSelected() and quest.getChainID() not in selectedChains:
+                    self.__hasQuestsForSelect = True
+                if not self.__hasQuestsForReward and quest.needToGetReward():
+                    self.__hasQuestsForReward = True
+                if self.__hasQuestsForSelect and self.__hasQuestsForReward:
+                    break
+
+            for tile in self.__tiles.itervalues():
+                tile.updateProgress(eventsCache)
+
+            for season in self.__seasons.itervalues():
+                season.updateProgress()
+
+            eventsCache.onProgressUpdated(self._pqType)
+        return
+
+
+class RandomPQController(_PotapovQuestsController):
+
+    def __init__(self):
+        pqType = EVENT_TYPE.TYPE_TO_NAME[EVENT_TYPE.RANDOM_QUEST]
+        super(RandomPQController, self).__init__(pqType)
+        self.questsProgress = RandomQuestsProgressRequester()
+
+    def update(self, eventsCache, diff = None):
+        self._update(eventsCache, diff)
+
+    def _getQuestsCache(self):
+        return potapov_quests.g_cache
+
+    def _getTilesCache(self):
+        return potapov_quests.g_tileCache
+
+    def _getSeasonsCache(self):
+        return potapov_quests.g_seasonCache
+
+
+class FalloutPQController(_PotapovQuestsController):
+
+    def __init__(self):
+        pqType = EVENT_TYPE.TYPE_TO_NAME[EVENT_TYPE.FALLOUT_QUEST]
+        super(FalloutPQController, self).__init__(pqType)
+        self.questsProgress = FalloutQuestsProgressRequester()
+
+    def update(self, eventsCache, diff = None):
+        self._update(eventsCache, diff)
+
+    def _getQuestsCache(self):
+        return potapov_quests.g_cache
+
+    def _getTilesCache(self):
+        return potapov_quests.g_tileCache
+
+    def _getSeasonsCache(self):
+        return potapov_quests.g_seasonCache

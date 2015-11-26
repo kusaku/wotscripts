@@ -99,10 +99,11 @@ def readQuestConditions(section):
 def init():
     sub_parsers.setEffectsParsers({'save-setting': readSaveTutorialSettingSection,
      'save-account-setting': readSaveAccountSettingSection})
-    sub_parsers.setEntitiesParsers({'hint': chains._readHintSection,
+    sub_parsers.setEntitiesParsers({'hint': chains.readHintSection,
      'tutorial-setting': readTutorialSettingSection})
     sub_parsers.setTriggersParsers({'bonus': lobby.readBonusTriggerSection,
      'premiumDiscount': lobby.readPremiumDiscountsUseTriggerSection,
+     'tankmanAcademyDiscount': chains.readTankmanPriceDiscountTriggerSection,
      'allTutorialBonuses': _readAllTurorialBonusesTriggerSection,
      'randomBattlesCount': _readRandomBattlesCountTriggerSection,
      'researchModule': _readResearchModuleTriggerSection,
@@ -117,5 +118,6 @@ def init():
      'installItems': _readItemsInstallTriggerSection,
      'invalidateFlags': _readInvalidateFlagsTriggerSection,
      'timer': _readTimerTriggerSection,
+     'isInSandbox': chains.readIsInSandBoxPreQueueTriggerSection,
      'queue': chains.readQueueTrigger})
     sub_parsers.setWindowsParsers({'awardWindow': sub_parsers.readQuestAwardWindowSection})

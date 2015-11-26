@@ -1,26 +1,29 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/server_events/events_helpers.py
 import time
 import operator
-from collections import defaultdict
 import types
 import BigWorld
 import constants
-from debug_utils import LOG_ERROR
+from constants import EVENT_TYPE
 from gui import GUI_SETTINGS
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
+from gui.server_events.EventsCache import g_eventsCache
 from helpers import i18n, int2roman, time_utils
+from collections import namedtuple
 from shared_utils import CONST_CONTAINER
 from dossiers2.custom.records import RECORD_DB_IDS
 from dossiers2.ui.achievements import ACHIEVEMENT_BLOCK
 from gui import makeHtmlString
-from gui.shared import g_itemsCache, utils
+from gui.shared import g_itemsCache
 from gui.shared.formatters import text_styles
-from gui.server_events import formatters, conditions, settings as quest_settings
+from gui.shared.gui_items.processors import quests as quests_proc
+from gui.server_events import formatters, conditions, settings as quest_settings, caches
 from gui.server_events.modifiers import ACTION_MODIFIER_TYPE
 from gui.Scaleform.locale.QUESTS import QUESTS
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.Scaleform.genConsts.QUESTS_ALIASES import QUESTS_ALIASES
 from quest_xml_source import MAX_BONUS_LIMIT
+from debug_utils import *
 FINISH_TIME_LEFT_TO_SHOW = time_utils.ONE_DAY
 START_TIME_LIMIT = 5 * time_utils.ONE_DAY
 RENDER_BACKS = {1: RES_ICONS.MAPS_ICONS_QUESTS_EVENTBACKGROUNDS_QUESTS_BACK_EXP,
@@ -283,7 +286,6 @@ class _QuestInfo(_EventInfo):
          [])
         for b in bonuses:
             if b.isShowInGUI():
-                flist = []
                 if b.getName() == 'dossier':
                     for record in b.getRecords():
                         if record[0] != ACHIEVEMENT_BLOCK.RARE:
@@ -300,16 +302,11 @@ class _QuestInfo(_EventInfo):
                     if flist:
                         simpleBonusesList.extend(flist)
 
-        label = ', '.join(simpleBonusesList)
-        fullLabel = None
-        if len(simpleBonusesList) > self.SIMPLE_BONUSES_MAX_ITEMS:
-            label = ', '.join(simpleBonusesList[:self.SIMPLE_BONUSES_MAX_ITEMS]) + '..'
-            fullLabel = ', '.join(simpleBonusesList)
+        label, fullLabel = self._joinUpToMax(simpleBonusesList)
         result.append(formatters.packTextBlock(label, fullLabel=fullLabel))
-        vehiclesLbl = ', '.join(vehiclesList)
-        if len(vehiclesList) > self.SIMPLE_BONUSES_MAX_ITEMS:
-            vehiclesLbl = ', '.join(vehiclesList[:self.SIMPLE_BONUSES_MAX_ITEMS]) + '..'
-        result.append(formatters.packVehiclesBonusBlock(vehiclesLbl, str(self.event.getID())))
+        if len(vehiclesList) > 0:
+            vehiclesLbl, _ = self._joinUpToMax(vehiclesList)
+            result.append(formatters.packVehiclesBonusBlock(vehiclesLbl, str(self.event.getID())))
         if len(customizationsList):
             result.append(formatters.packCustomizations(customizationsList))
         parents = [ qID for _, qIDs in self.event.getParents().iteritems() for qID in qIDs ]
@@ -318,8 +315,7 @@ class _QuestInfo(_EventInfo):
 
         if len(result):
             return formatters.todict(result)
-        else:
-            return []
+        return []
 
     def _getBonusCount(self, pCur = None):
         if not self.event.isCompleted(progress=pCur):
@@ -497,6 +493,16 @@ class _QuestInfo(_EventInfo):
             return makeHtmlString('html_templates:lobby/quests', 'comeToEndInMinutes', {'minutes': getMinutesRoundByTime(timeLeft)})
         return super(_QuestInfo, self)._getTimerMsg()
 
+    @classmethod
+    def _joinUpToMax(cls, array, separator = ', '):
+        if len(array) > cls.SIMPLE_BONUSES_MAX_ITEMS:
+            label = separator.join(array[:cls.SIMPLE_BONUSES_MAX_ITEMS]) + '..'
+            fullLabel = separator.join(array)
+        else:
+            label = separator.join(array)
+            fullLabel = None
+        return (label, fullLabel)
+
 
 class _ActionInfo(_EventInfo):
 
@@ -620,3 +626,54 @@ def getTutorialEventsDescriptor():
             return None
 
     return getQuestsDescriptor()
+
+
+class _PotapovDependenciesResolver(object):
+    _DEPENDENCIES_LIST = namedtuple('HandlersList', ['cache',
+     'progress',
+     'selectProcessor',
+     'refuseProcessor',
+     'rewardsProcessor'])
+    _RANDOM_DEPENDENCIES = _DEPENDENCIES_LIST(g_eventsCache.random, g_eventsCache.randomQuestsProgress, quests_proc.RandomQuestSelect, quests_proc.RandomQuestRefuse, quests_proc.PotapovQuestsGetRegularReward)
+    _FALLOUT_DEPENDENCIES = _DEPENDENCIES_LIST(g_eventsCache.fallout, g_eventsCache.falloutQuestsProgress, quests_proc.FalloutQuestSelect, quests_proc.FalloutQuestRefuse, quests_proc.PotapovQuestsGetRegularReward)
+
+    @classmethod
+    def chooseList(cls, questsType = None):
+        if questsType is None:
+            questsType = caches.getNavInfo().selectedPQType
+        if questsType == QUESTS_ALIASES.SEASON_VIEW_TAB_RANDOM:
+            depList = cls._RANDOM_DEPENDENCIES
+        else:
+            depList = cls._FALLOUT_DEPENDENCIES
+        return depList
+
+
+def getPotapovQuestsCache(questsType = None):
+    return _PotapovDependenciesResolver.chooseList(questsType).cache
+
+
+def getPotapovQuestsProgress(questsType = None):
+    return _PotapovDependenciesResolver.chooseList(questsType).progress
+
+
+def getPotapovQuestsSelectProcessor(questsType = None):
+    return _PotapovDependenciesResolver.chooseList(questsType).selectProcessor
+
+
+def getPotapovQuestsRefuseProcessor(questsType = None):
+    return _PotapovDependenciesResolver.chooseList(questsType).refuseProcessor
+
+
+def getPotapovQuestsRewardProcessor(questsType = None):
+    return _PotapovDependenciesResolver.chooseList(questsType).rewardsProcessor
+
+
+def getSortedTableData(tableData):
+    return formatters.packVehiclesList(*caches.sortVehTable(tableData.tableID, tableData.buttonID, tableData.sortingDirection, int(tableData.nation), int(tableData.vehType), int(tableData.level), tableData.cbSelected, tableData.isAction))
+
+
+_tabToEventMap = {QUESTS_ALIASES.SEASON_VIEW_TAB_RANDOM: EVENT_TYPE.TYPE_TO_NAME[EVENT_TYPE.RANDOM_QUEST],
+ QUESTS_ALIASES.SEASON_VIEW_TAB_FALLOUT: EVENT_TYPE.TYPE_TO_NAME[EVENT_TYPE.FALLOUT_QUEST]}
+
+def getEventTypeByTabAlias(tabAlias):
+    return _tabToEventMap[tabAlias]

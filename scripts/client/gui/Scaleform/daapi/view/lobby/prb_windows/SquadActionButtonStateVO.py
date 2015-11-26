@@ -30,16 +30,22 @@ class SquadActionButtonStateVO(ActionButtonStateVO):
         return ('', {})
 
     def _getFalloutVehLevelStr(self):
-        config = g_eventsCache.getFalloutConfig(self._extra.eventType)
-        if len(config.allowedLevels) > 1:
-            return ('#cyberSport:window/unit/message/falloutMin', {'level': toRomanRangeString(list(config.allowedLevels), 1)})
+        if self._extra is None:
+            return
         else:
+            config = g_eventsCache.getFalloutConfig(self._extra.eventType)
+            if len(config.allowedLevels) > 1:
+                return ('#cyberSport:window/unit/message/falloutMin', {'level': toRomanRangeString(list(config.allowedLevels), 1)})
             return ('#cyberSport:window/unit/message/falloutLevel', {'level': int2roman(config.vehicleLevelRequired)})
+            return
 
     def _getFalloutVehMinStr(self):
-        config = g_eventsCache.getFalloutConfig(self._extra.eventType)
-        return ('#cyberSport:window/unit/message/falloutMin', {'min': str(config.minVehiclesPerPlayer),
-          'level': toRomanRangeString(list(config.allowedLevels), 1)})
+        if self._extra is None:
+            return
+        else:
+            config = g_eventsCache.getFalloutConfig(self._extra.eventType)
+            return ('#cyberSport:window/unit/message/falloutMin', {'min': str(config.minVehiclesPerPlayer),
+              'level': toRomanRangeString(list(config.allowedLevels), 1)})
 
     def _getFalloutVehBrokenStr(self):
         return ('#cyberSport:window/unit/message/falloutGroupNotReady', {})

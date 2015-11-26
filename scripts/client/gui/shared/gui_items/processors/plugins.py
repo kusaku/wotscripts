@@ -514,32 +514,47 @@ class PotapovQuestValidator(SyncValidator):
         return makeSuccess()
 
 
-class PotapovQuestsLockedByVehicle(SyncValidator):
+class _PotapovQuestsLockedByVehicle(SyncValidator):
 
     def __init__(self, quests):
-        super(PotapovQuestsLockedByVehicle, self).__init__()
+        super(_PotapovQuestsLockedByVehicle, self).__init__()
         self.quests = quests
 
     def _validate(self):
         for quest in self.quests:
-            if len(self.__findLockedVehicles(quest)):
+            if len(self._findLockedVehicles(quest)):
                 return makeError('LOCKED_BY_VEHICLE_QUEST')
 
         return makeSuccess()
 
     @classmethod
-    def __findLockedVehicles(cls, potapovQuest):
-        return g_itemsCache.items.getVehicles(REQ_CRITERIA.VEHICLE.CLASSES(potapovQuest.getVehicleClasses()) | REQ_CRITERIA.VEHICLE.LEVELS(range(potapovQuest.getVehMinLevel(), MAX_VEHICLE_LEVEL + 1)) | REQ_CRITERIA.VEHICLE.LOCKED).values()
+    def _findLockedVehicles(cls, personalQuest):
+        return NotImplemented
+
+
+class RandomQuestsLockedByVehicle(_PotapovQuestsLockedByVehicle):
+
+    @classmethod
+    def _findLockedVehicles(cls, randomQuest):
+        return g_itemsCache.items.getVehicles(REQ_CRITERIA.VEHICLE.CLASSES(randomQuest.getVehicleClasses()) | REQ_CRITERIA.VEHICLE.LEVELS(range(randomQuest.getVehMinLevel(), MAX_VEHICLE_LEVEL + 1)) | REQ_CRITERIA.VEHICLE.LOCKED).values()
+
+
+class FalloutQuestsLockedByVehicle(_PotapovQuestsLockedByVehicle):
+
+    @classmethod
+    def _findLockedVehicles(cls, falloutQuest):
+        return g_itemsCache.items.getVehicles(REQ_CRITERIA.VEHICLE.FALLOUT.AVAILABLE | REQ_CRITERIA.VEHICLE.LOCKED).values()
 
 
 class PotapovQuestSlotsValidator(SyncValidator):
 
-    def __init__(self, isEnabled = True, removedCount = 0):
+    def __init__(self, questsProgress, isEnabled = True, removedCount = 0):
         super(PotapovQuestSlotsValidator, self).__init__(isEnabled)
         self.__removedCount = removedCount
+        self._questsProgress = questsProgress
 
     def _validate(self):
-        if not g_eventsCache.questsProgress.getPotapovQuestsFreeSlots(self.__removedCount):
+        if not self._questsProgress.getPotapovQuestsFreeSlots(self.__removedCount):
             return makeError('NOT_ENOUGH_SLOTS')
         return makeSuccess()
 

@@ -1,12 +1,13 @@
 # Embedded file name: scripts/client/tutorial/control/chains/triggers.py
 from CurrentVehicle import g_currentVehicle
+from constants import QUEUE_TYPE
 from gui.ClientUpdateManager import g_clientUpdateManager
 from gui.prb_control.prb_helpers import GlobalListener
 from tutorial.control import game_vars, g_tutorialWeaver
 from tutorial.logger import LOG_DEBUG
 from tutorial.control.chains import aspects
 from tutorial.control.triggers import Trigger, TriggerWithSubscription
-__all__ = ('SimpleDialogTrigger', 'BuyNextLevelVehicleTrigger', 'CurrentVehicleRequiredLevelTrigger', 'CurrentPremiumVehicleTrigger', 'CurrentVehicleMaintenanceStateTrigger', 'CurrentVehicleLockedTrigger', 'TankmanPriceDiscountTrigger', 'QueueTrigger')
+__all__ = ('SimpleDialogTrigger', 'BuyNextLevelVehicleTrigger', 'CurrentVehicleRequiredLevelTrigger', 'RentedVehicleTrigger', 'CurrentVehicleMaintenanceStateTrigger', 'CurrentVehicleLockedTrigger', 'TankmanPriceDiscountTrigger', 'QueueTrigger')
 
 class SimpleDialogTrigger(Trigger):
 
@@ -61,18 +62,18 @@ class CurrentVehicleRequiredLevelTrigger(TriggerWithSubscription):
         self.toggle(isOn=self.isOn())
 
 
-class CurrentPremiumVehicleTrigger(Trigger):
+class RentedVehicleTrigger(Trigger):
 
     def run(self):
         g_currentVehicle.onChanged += self.__onCurrentVehicleChanged
-        super(CurrentPremiumVehicleTrigger, self).run()
+        super(RentedVehicleTrigger, self).run()
 
     def clear(self):
         g_currentVehicle.onChanged -= self.__onCurrentVehicleChanged
-        super(CurrentPremiumVehicleTrigger, self).clear()
+        super(RentedVehicleTrigger, self).clear()
 
     def isOn(self):
-        return game_vars.isCurrentVehiclePremium()
+        return game_vars.isCurrentVehicleRented()
 
     def __onCurrentVehicleChanged(self):
         self.toggle(isOn=self.isOn())
@@ -82,10 +83,13 @@ class _CurrentVehicleViewStateTrigger(Trigger, GlobalListener):
 
     def run(self):
         self.startGlobalListening()
+        self.isRunning = True
         super(_CurrentVehicleViewStateTrigger, self).run()
 
     def clear(self):
-        self.stopGlobalListening()
+        if self.isRunning:
+            self.stopGlobalListening()
+        self.isRunning = False
         super(_CurrentVehicleViewStateTrigger, self).clear()
 
     def onPlayerStateChanged(self, functional, roster, accountInfo):
@@ -143,13 +147,45 @@ class TankmanPriceDiscountTrigger(TriggerWithSubscription):
 
     def isOn(self, *args):
         index = self.getVar()
-        return game_vars.getTankmanCurrentPrice(index) != game_vars.getTankmanDefaultPrice(index)
+        currentGoldPrice = game_vars.getTankmanCurrentPrice(index)
+        defaultGoldPrice = game_vars.getTankmanDefaultPrice(index)
+        return currentGoldPrice != defaultGoldPrice and currentGoldPrice[0] == 0
 
     def _subscribe(self):
-        g_clientUpdateManager.addCallbacks({'shop': self.__onShopUpdated})
+        g_clientUpdateManager.addCallbacks({'shop': self.__onDiscountsChange,
+         'goodies': self.__onDiscountsChange})
 
     def _unsubscribe(self):
         g_clientUpdateManager.removeObjectCallbacks(self)
 
-    def __onShopUpdated(self, _):
+    def __onDiscountsChange(self, _):
         self.toggle(isOn=self.isOn())
+
+
+class IsInSandBoxPreQueueTrigger(Trigger, GlobalListener):
+
+    def run(self):
+        self.isRunning = True
+        if not self.isSubscribed:
+            self.isSubscribed = True
+            self.startGlobalListening()
+        self.toggle(isOn=self.isOn())
+
+    def isOn(self):
+        state = self.prbDispatcher.getFunctionalState()
+        return state.isInPreQueue(queueType=QUEUE_TYPE.SANDBOX)
+
+    def onPreQueueSettingsChanged(self, _):
+        self.toggle(isOn=self.isOn())
+
+    def onPreQueueFunctionalInited(self):
+        self.toggle(isOn=self.isOn())
+
+    def onPreQueueFunctionalFinished(self):
+        self.toggle(isOn=self.isOn())
+
+    def clear(self):
+        if self.isSubscribed:
+            self.stopGlobalListening()
+        self.isSubscribed = False
+        self.isRunning = False

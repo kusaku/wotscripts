@@ -1,4 +1,5 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/server_events/EventsWindow.py
+import BigWorld
 from account_helpers.settings_core.SettingsCore import g_settingsCore
 from account_helpers.settings_core.settings_constants import TUTORIAL
 import constants
@@ -28,10 +29,10 @@ class EventsWindow(QuestsWindowMeta):
 
     def onTabSelected(self, tabID):
         if tabID == _QA.TAB_PERSONAL_QUESTS:
-            if quest_settings.isNeedToShowPQIntro(g_eventsCache.potapov):
+            if quest_settings.isNeedToShowPQIntro(g_eventsCache.fallout):
                 return self._showWelcomeView()
-            if self._navInfo.potapov.tileID is not None:
-                self._showTileChainsView(self._navInfo.potapov.tileID, self._navInfo.potapov.questID)
+            if self._navInfo.selectedPQ.tileID is not None:
+                self.showTileChainsView(self._navInfo.selectedPQ.tileID, self._navInfo.selectedPQ.questID)
             else:
                 self._showSeasonsView()
         elif tabID == _QA.TAB_COMMON_QUESTS:
@@ -43,6 +44,11 @@ class EventsWindow(QuestsWindowMeta):
         else:
             LOG_WARNING('Unknown personal quests tab id', tabID)
         return
+
+    def showTileChainsView(self, tileID, questID = None):
+        self._navInfo.selectPotapovQuest(tileID, questID)
+        quest_settings.markPQTileAsVisited(tileID)
+        return self._loadView(_QA.TILE_CHAINS_VIEW_LINKAGE, _QA.TILE_CHAINS_VIEW_ALIAS)
 
     def _populate(self):
         super(EventsWindow, self)._populate()
@@ -56,7 +62,7 @@ class EventsWindow(QuestsWindowMeta):
         tabs.append(self.__packTabDataItem(QUESTS.QUESTS_TABS_CURRENT, _QA.TAB_COMMON_QUESTS))
         if g_eventsCache.getQuests(lambda x: x.getType() == constants.EVENT_TYPE.CLUBS_QUEST):
             tabs.append(self.__packTabDataItem(QUESTS.QUESTS_TABS_LADDER, _QA.TAB_LADDER_QUESTS))
-        if g_settingsCore.serverSettings.getTutorialSetting(TUTORIAL.WAS_QUESTS_TUTORIAL_STARTED):
+        if self.__isTutorialTabEnabled():
             tabs.append(self.__packTabDataItem(QUESTS.QUESTS_TABS_BEGINNER, _QA.TAB_BEGINNER_QUESTS))
         self.as_initS({'tabs': tabs})
 
@@ -75,14 +81,17 @@ class EventsWindow(QuestsWindowMeta):
         if eventType is not None and eventID is not None:
             if eventType == constants.EVENT_TYPE.POTAPOV_QUEST:
                 pQuest = g_eventsCache.potapov.getQuests()[int(eventID)]
-                self._navInfo.selectPotapovQuest(pQuest.getTileID(), pQuest.getID())
+                self._navInfo.selectRandomQuest(pQuest.getTileID(), pQuest.getID())
+            elif eventType == constants.EVENT_TYPE.FALLOUT_QUEST:
+                pQuest = g_eventsCache.fallout.getQuests()[int(eventID)]
+                self._navInfo.selectFalloutQuest(pQuest.getTileID(), pQuest.getID())
             elif eventType == constants.EVENT_TYPE.TUTORIAL:
                 self._navInfo.selectTutorialQuest(eventID)
             else:
                 self._navInfo.selectCommonQuest(eventID)
             return True
         else:
-            if g_settingsCore.serverSettings.getTutorialSetting(TUTORIAL.WAS_QUESTS_TUTORIAL_STARTED):
+            if self.__isTutorialTabEnabled():
                 tutorialQuestsDescriptor = events_helpers.getTutorialEventsDescriptor()
                 if tutorialQuestsDescriptor is not None:
                     completed = g_itemsCache.items.stats.tutorialsCompleted
@@ -104,11 +113,6 @@ class EventsWindow(QuestsWindowMeta):
         self._navInfo.selectTab(_QA.TAB_PERSONAL_QUESTS, doResetNavInfo)
         return self._loadView(_QA.SEASONS_VIEW_LINKAGE, _QA.SEASONS_VIEW_ALIAS)
 
-    def _showTileChainsView(self, tileID, questID = None):
-        self._navInfo.selectPotapovQuest(tileID, questID)
-        quest_settings.markPQTileAsVisited(tileID)
-        return self._loadView(_QA.TILE_CHAINS_VIEW_LINKAGE, _QA.TILE_CHAINS_VIEW_ALIAS)
-
     def _showCommonQuestsView(self, questID = None):
         self._navInfo.selectCommonQuest(questID)
         return self._loadView(_QA.COMMON_QUESTS_VIEW_LINKAGE, _QA.COMMON_QUESTS_VIEW_ALIAS)
@@ -124,3 +128,12 @@ class EventsWindow(QuestsWindowMeta):
     def _loadView(self, linkage, alias):
         self.as_showWaitingS('', {})
         self.as_loadViewS(linkage, alias)
+
+    def __isTutorialTabEnabled(self):
+        isTutorialEnabled = constants.IS_TUTORIAL_ENABLED
+        player = BigWorld.player()
+        if player is not None:
+            serverSettings = getattr(player, 'serverSettings', {})
+            if 'isTutorialEnabled' in serverSettings:
+                isTutorialEnabled = serverSettings['isTutorialEnabled']
+        return g_settingsCore.serverSettings.getTutorialSetting(TUTORIAL.WAS_QUESTS_TUTORIAL_STARTED) and isTutorialEnabled

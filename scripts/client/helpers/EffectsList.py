@@ -515,7 +515,7 @@ class _SoundEffectDesc(_EffectDesc):
         _EffectDesc.__init__(self, dataSection)
         self._soundName = None
         self._soundNames = None
-        self._fakeModel = None
+        self._impactNames = None
         self._node = None
         if dataSection.has_key('soundPC') and dataSection.has_key('soundNPC'):
             self._soundNames = (dataSection.readString('soundPC'), dataSection.readString('soundNPC'))
@@ -541,17 +541,10 @@ class _SoundEffectDesc(_EffectDesc):
             model = part
         if len(self._pos) > 0:
             self._node = _findTargetNode(model, self._pos)
+        if self._node is None:
+            self._node = model.root
         sound = None
-        try:
-            if self._node is not None:
-                self._fakeModel = helpers.newFakeModel()
-                self._node.attach(self._fakeModel)
-                sound = SoundGroups.g_instance.getSound3D(self._fakeModel, soundName)
-            else:
-                sound = SoundGroups.g_instance.getSound3D(model, soundName)
-        except Exception:
-            LOG_CURRENT_EXCEPTION()
-
+        sound = SoundGroups.g_instance.getSound3D(self._node, soundName)
         if sound is not None:
             startParams = args.get('soundParams', ())
             for soundStartParam in startParams:
@@ -563,10 +556,7 @@ class _SoundEffectDesc(_EffectDesc):
         return
 
     def delete(self, elem, reason):
-        if self._node is not None:
-            self._node.detach(self._fakeModel)
-            self._node = None
-        self._fakeModel = None
+        self._node = None
         if reason == 2:
             if self.endKey:
                 elem['sound'].stop()
@@ -1057,9 +1047,10 @@ class FalloutDestroyEffect:
             if not effects:
                 return
             vehicle.show(False)
-            fakeModel = helpers.newFakeModel()
-            BigWorld.addModel(fakeModel)
-            fakeModel.position = vehicle.model.position
-            effectsPlayer = EffectsListPlayer(effects[0][1], effects[0][0])
-            effectsPlayer.play(fakeModel, SpecialKeyPointNames.START, partial(BigWorld.delModel, fakeModel))
+            if vehicle.model is not None:
+                fakeModel = helpers.newFakeModel()
+                BigWorld.addModel(fakeModel)
+                fakeModel.position = vehicle.model.position
+                effectsPlayer = EffectsListPlayer(effects[0][1], effects[0][0])
+                effectsPlayer.play(fakeModel, SpecialKeyPointNames.START, partial(BigWorld.delModel, fakeModel))
             return

@@ -1,4 +1,6 @@
 # Embedded file name: scripts/client/gui/battle_control/dyn_squad_functional.py
+from account_helpers.settings_core import g_settingsCore
+from account_helpers.settings_core.settings_constants import SOUND
 from constants import ARENA_GUI_TYPE, IS_CHINA
 from debug_utils import LOG_DEBUG
 from gui.Scaleform.locale.MESSENGER import MESSENGER
@@ -179,18 +181,22 @@ class DynSquadMessagesController(DynSquadArenaController):
         self.__sendMessage(makeString(MESSENGER.CLIENT_DYNSQUAD_INVITESENT, receiver=invite.receiver))
 
     def _squadCreatedImOwner(self, squadNum):
+        param = {'squadNum': squadNum}
         if IS_CHINA:
             key = MESSENGER.CLIENT_DYNSQUAD_CREATED_OWNER_WITHOUTVOIP
         else:
-            key = MESSENGER.CLIENT_DYNSQUAD_CREATED_OWNER
-        self.__sendMessage(key, squadNum=squadNum)
+            key = '#messenger:client/dynSquad/created/owner/disableVOIP' if g_settingsCore.getSetting(SOUND.VOIP_ENABLE) else '#messenger:client/dynSquad/created/owner/enableVOIP'
+            param['hotkey'] = 'ALT+Q'
+        self.__sendMessage(key, **param)
 
     def _squadCreatedImRecruit(self, squadNum):
+        param = {'squadNum': squadNum}
         if IS_CHINA:
             key = MESSENGER.CLIENT_DYNSQUAD_CREATED_RECRUIT_WITHOUTVOIP
         else:
-            key = MESSENGER.CLIENT_DYNSQUAD_CREATED_RECRUIT
-        self.__sendMessage(key, squadNum=squadNum)
+            key = '#messenger:client/dynSquad/created/recruit/disableVOIP' if g_settingsCore.getSetting(SOUND.VOIP_ENABLE) else '#messenger:client/dynSquad/created/owner/enableVOIP'
+            param['hotkey'] = 'ALT+Q'
+        self.__sendMessage(key, **param)
 
     def _squadCreatedByAllies(self, squadNum):
         self.__sendMessage(MESSENGER.CLIENT_DYNSQUAD_CREATED_ALLIES, squadNum=squadNum, squadType=DYN_SQUAD_TYPE.ALLY)
@@ -199,11 +205,13 @@ class DynSquadMessagesController(DynSquadArenaController):
         self.__sendMessage(MESSENGER.CLIENT_DYNSQUAD_CREATED_ENEMIES, squadNum=squadNum, squadType=DYN_SQUAD_TYPE.ENEMY)
 
     def _iAmJoinedSquad(self, squadNum):
+        param = {'squadNum': squadNum}
         if IS_CHINA:
             key = MESSENGER.CLIENT_DYNSQUAD_INVITEACCEPTED_MYSELF_WITHOUTVOIP
         else:
-            key = MESSENGER.CLIENT_DYNSQUAD_INVITEACCEPTED_MYSELF
-        self.__sendMessage(key, squadNum=squadNum)
+            key = '#messenger:client/dynSquad/inviteAccepted/myself/disableVOIP' if g_settingsCore.getSetting(SOUND.VOIP_ENABLE) else '#messenger:client/dynSquad/inviteAccepted/myself/enableVOIP'
+            param['hotkey'] = 'ALT+Q'
+        self.__sendMessage(key, **param)
 
     def _someoneJoinedAlliedSquad(self, squadNum, receiver):
         self.__sendMessage(MESSENGER.CLIENT_DYNSQUAD_INVITEACCEPTED_USER, squadNum=squadNum, receiver=receiver, squadType=DYN_SQUAD_TYPE.ALLY)
@@ -232,22 +240,23 @@ class _DynSquadSoundsController(DynSquadArenaController):
         return
 
     def _squadCreatedImOwner(self, squadNum):
-        self.__playSound()
+        self.__playSound(SoundEffectsId.DYN_SQUAD_PLATOON_CREATED)
 
     def _squadCreatedImRecruit(self, squadNum):
-        self.__playSound()
+        self.__playSound(SoundEffectsId.DYN_SQUAD_PLATOON_CREATED)
 
     def _inviteReceived(self, invite):
-        self.__playSound()
+        self.__playSound(SoundEffectsId.DYN_SQUAD_ASSISTANCE_BEEN_REQUESTED)
 
     def _iAmJoinedSquad(self, squadNum):
-        self.__playSound()
+        self.__playSound(SoundEffectsId.DYN_SQUAD_PLATOON_JOINED)
 
     def _someoneJoinedMySquad(self, squadNum, receiver):
-        self.__playSound()
+        self.__playSound(SoundEffectsId.DYN_SQUAD_PLAYER_JOINED_PLATOON)
 
-    def __playSound(self):
+    def __playSound(self, sound):
         self.__soundManager.playSound('effects.%s' % SoundEffectsId.DYN_SQUAD_STARTING_DYNAMIC_PLATOON)
+        self.__soundManager.playSound('effects.%s' % sound)
 
 
 class DynSquadFunctional(object):

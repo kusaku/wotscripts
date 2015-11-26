@@ -1,0 +1,211 @@
+# Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/clans/profile/data_receivers.py
+from ConnectionManager import connectionManager
+from adisp import process, async
+from constants import FORT_BUILDING_TYPE, DOSSIER_TYPE
+from debug_utils import LOG_ERROR
+from gui.Scaleform.locale.CLANS import CLANS
+from gui.clans.settings import DATA_UNAVAILABLE_PLACEHOLDER
+from helpers.i18n import makeString as _ms
+from predefined_hosts import g_preDefinedHosts
+from FortifiedRegionBase import NOT_ACTIVATED
+from gui.shared.fortifications import formatters as fort_fmts, isStartingScriptDone, isFortificationBattlesEnabled
+from gui.shared.fortifications.events_dispatcher import loadFortView
+from gui.shared.fortifications.FortBuilding import FortBuilding
+from gui.shared.gui_items.dossier import _Dossier
+from gui.shared.gui_items.dossier.stats import FortRegionSortiesStats, FortRegionBattlesStats
+from gui.Scaleform.daapi.view.lobby.clans.profile.clan_statistics_vos import FortSortiesStatisticsVO, FortBattlesStatisticsVO
+from gui.Scaleform.daapi.view.lobby.fortifications import FortClanStatisticsData
+from gui.Scaleform.daapi.view.lobby.fortifications.fort_utils.FortTransportationViewHelper import FortTransportationViewHelper
+from gui.Scaleform.daapi.view.lobby.fortifications.fort_utils.FortViewHelper import FortViewHelper
+from gui.Scaleform.genConsts.FORTIFICATION_ALIASES import FORTIFICATION_ALIASES
+from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
+
+def _getFortBuildingsVO(sortiesStats, battlesStats, buildingList, texts):
+    return {'sortiesStats': sortiesStats,
+     'battlesStats': battlesStats,
+     'fortSortiesSchema': {'canAddBuilding': False,
+                           'buildingData': buildingList,
+                           'texts': texts}}
+
+
+def _getNoFortBuildingsVO():
+    return {}
+
+
+def _getFortSortiesSchemaTexts(activatedDefModeParams, peripheryID, buildingsCount, dirsCount):
+    if activatedDefModeParams:
+        dayOff, defHour, vacation = activatedDefModeParams
+        if dayOff == NOT_ACTIVATED:
+            dayOffString = _ms(TOOLTIPS.FORTIFICATION_TOOLTIPENEMYCLANINFO_NODAYOFF)
+        else:
+            dayOffString = fort_fmts.getDayOffString(dayOff)
+        defHourStart, _ = defHour
+        if defHourStart is not None:
+            defHour = fort_fmts.getDefencePeriodString(defHourStart)
+        else:
+            defHour = ''
+        vacStart, vacEnd = vacation
+        if vacStart is not None:
+            vacationString = fort_fmts.getVacationPeriodString(vacStart, vacEnd)
+        else:
+            vacationString = _ms(TOOLTIPS.FORTIFICATION_TOOLTIPENEMYCLANINFO_NOVACATION)
+    else:
+        defHour = CLANS.SECTION_FORT_DEFENCE_NOTACTIVATED
+        vacationString = dayOffString = None
+    periphery = g_preDefinedHosts.periphery(peripheryID)
+    if periphery is not None:
+        serverName = periphery.name
+    else:
+        serverName = connectionManager.serverUserName
+    return {'totalBuildingsCount': str(buildingsCount),
+     'totalDirectionsCount': str(dirsCount),
+     'defenceHour': defHour,
+     'server': serverName,
+     'vacation': vacationString,
+     'dayOff': dayOffString}
+
+
+class _UserDossierAdapter(_Dossier):
+
+    def __init__(self, info):
+        dossier = {'fortSorties': {'battlesCount': info.getSortieBattlesCount(),
+                         'wins': info.getSortieWinsCount(),
+                         'losses': info.getSortieLossesCount(),
+                         'middleBattlesCount': info.getSortieMiddleBattlesCount(),
+                         'championBattlesCount': info.getSortieChampionBattlesCount(),
+                         'absoluteBattlesCount': info.getSortieAbsoluteBattlesCount(),
+                         'fortResourceInMiddle': info.getSortieMiddleResourcesCount(),
+                         'fortResourceInChampion': info.getSortieChampionResourcesCount(),
+                         'fortResourceInAbsolute': info.getSortieAbsoluteResourcesCount()},
+         'fortBattles': {'battlesCount': info.getDefenceBattlesCount(),
+                         'wins': info.getDefenceCombatsCount(),
+                         'resourceCaptureCount': info.getDefenceCapturedResourcesCount(),
+                         'resourceLossCount': info.getDefenceLostResourcesCount(),
+                         'enemyBaseCaptureCount': info.getDefenceEnemyBaseCapturesPointsCount(),
+                         'captureEnemyBuildingTotalCount': info.getDefenceCapturedEnemyBuildingsCount(),
+                         'lossOwnBuildingTotalCount': info.getDefenceLostOwnBuildingsCount(),
+                         'attackCount': info.getAttacksCount(),
+                         'successAttackCount': info.getSuccessAttacksCount(),
+                         'defenceCount': info.getDefencesCount(),
+                         'successDefenceCount': info.getSuccessDefencesCount()}}
+        super(_UserDossierAdapter, self).__init__(dossier, DOSSIER_TYPE.ACCOUNT)
+
+
+class _BaseDataReceiver(object):
+
+    @async
+    def requestFort(self, clanDossier, callback):
+        raise NotImplementedError
+
+    @async
+    def hasFort(self, clanDossier, callback):
+        raise NotImplementedError
+
+    def createFort(self):
+        raise NotImplementedError
+
+
+class ClanDataReceiver(_BaseDataReceiver, FortViewHelper):
+
+    @async
+    @process
+    def requestFort(self, clanDossier, callback):
+        sInfo = yield clanDossier.requestStrongholdInfo()
+        if sInfo.hasFort():
+            sStats = yield clanDossier.requestStrongholdStatistics()
+            ratings = yield clanDossier.requestClanRatings()
+            buildings = self._makeBuildingsList(sInfo, sStats)
+            dossierDescriptor = _UserDossierAdapter(sInfo)
+            defModeParams = None
+            if sInfo.isDefenceModeActivated():
+                defModeParams = (sStats.getOffDay(), sStats.getDefHour(), sStats.getVacationInfo())
+            data = _getFortBuildingsVO(FortSortiesStatisticsVO(FortRegionSortiesStats(dossierDescriptor), ratings.getFsBattlesCount28d()), FortBattlesStatisticsVO(FortRegionBattlesStats(dossierDescriptor)), buildings, _getFortSortiesSchemaTexts(defModeParams, sStats.getPeripheryID(), len(buildings), sStats.getDirectionsCount()))
+        else:
+            data = _getNoFortBuildingsVO()
+        callback(data)
+        return
+
+    @async
+    @process
+    def hasFort(self, clanDossier, callback):
+        sInfo = yield clanDossier.requestStrongholdInfo()
+        callback(sInfo.hasFort())
+
+    def createFort(self):
+        LOG_ERROR('Cannot create fort from another player clan card')
+
+    def _makeBuildingsList(self, sInfo, sStats):
+        result = []
+        for building in sInfo.getBuildings():
+            typeID = building.type
+            level = building.level
+            uid = self.UI_BUILDINGS_BIND[typeID]
+            stats = sStats.getBuildingStats(typeID)
+            descr = FortBuilding(typeID=typeID)
+            result.append({'uid': uid,
+             'defResVal': stats.storage,
+             'maxDefResValue': descr.levelRef.storage,
+             'hpVal': stats.hp,
+             'maxHpValue': descr.levelRef.hp,
+             'buildingLevel': level,
+             'animationType': FORTIFICATION_ALIASES.WITHOUT_ANIMATION,
+             'iconSource': self.getMapIconSource(uid, level, stats.hp, descr.levelRef.hp, False, False),
+             'isAvailable': True,
+             'direction': building.direction,
+             'position': building.position,
+             'progress': self._getProgress(typeID, level),
+             'toolTipData': [uid, self.getCommonBuildTooltipData(descr)],
+             'directionType': self._getUpgradeLevelByBuildingLevel(FORTIFICATION_ALIASES.FORT_BASE_BUILDING, level, isDefenceOn=False)})
+
+        return result
+
+
+class OwnClanDataReceiver(_BaseDataReceiver, FortTransportationViewHelper):
+
+    @async
+    def hasFort(self, clanDossier, callback):
+        callback(isStartingScriptDone())
+
+    @async
+    @process
+    def requestFort(self, clanDossier, callback):
+        fortData = yield FortClanStatisticsData.getDataObject()
+        ratings = yield clanDossier.requestClanRatings()
+        if fortData is not None:
+            fort = fortData.fortCtrl.getFort()
+            dossier = fort.getFortDossier()
+            mapObjects, buildingsCount = self._makeBuildingsList(fort)
+            defModeParams = None
+            if fort.isDefenceHourEnabled():
+                defModeParams = (fort.getLocalOffDay(), fort.getDefencePeriod(), fort.getVacationDate())
+            data = _getFortBuildingsVO(FortSortiesStatisticsVO(dossier.getSortiesStats(), ratings.getFsBattlesCount28d()), FortBattlesStatisticsVO(dossier.getBattlesStats()), mapObjects, _getFortSortiesSchemaTexts(defModeParams, fort.peripheryID, buildingsCount, len(fort.getOpenedDirections())))
+            fortData.stopFortListening()
+        else:
+            data = _getNoFortBuildingsVO()
+        callback(data)
+        return
+
+    def createFort(self):
+        loadFortView()
+
+    def isOnNextTransportingStep(self):
+        return False
+
+    def _makeBuildingsList(self, fort):
+        """
+        :param fort: data about fort
+        :return: (mObjects, buildingsCount) - (map objects info, real count of buildings without building sites)
+        """
+        mObjects = []
+        mObjects.append(self._makeBuilding(fort.getBuilding(FORT_BUILDING_TYPE.MILITARY_BASE), 0, 0))
+        buildingsCount = 1
+        for dir, buildings in fort.getBuildingsByDirections().iteritems():
+            for pos, bDescr in enumerate(buildings):
+                mObjects.append(self._makeBuilding(bDescr, dir, pos))
+                if bDescr and self._getProgress(bDescr.typeID, bDescr.level) == FORTIFICATION_ALIASES.STATE_BUILDING:
+                    buildingsCount += 1
+
+        return (mObjects, buildingsCount)
+
+    def _makeBuilding(self, buildDescr, dir, pos):
+        return self._makeBuildingData(buildDescr, dir, pos, False, FORTIFICATION_ALIASES.WITHOUT_ANIMATION)

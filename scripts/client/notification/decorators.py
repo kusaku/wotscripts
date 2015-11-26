@@ -1,4 +1,5 @@
 # Embedded file name: scripts/client/notification/decorators.py
+import time
 import BigWorld
 from debug_utils import LOG_ERROR
 from gui.prb_control.formatters.invites import getPrbInviteHtmlFormatter
@@ -22,14 +23,16 @@ def _makeShowTime():
 
 
 _ICONS_FIELDS = ('icon', 'defaultIcon', 'bgIcon')
+_CLUB_INVITE_VISIBILITY_INTERVAL = 1200
 
 class _NotificationDecorator(object):
-    __slots__ = ('_entityID', '_settings', '_vo', '_isOrderChanged')
+    __slots__ = ('_entityID', '_entity', '_settings', '_vo', '_isOrderChanged')
 
     def __init__(self, entityID, entity = None, settings = None):
         super(_NotificationDecorator, self).__init__()
         self._isOrderChanged = False
         self._entityID = entityID
+        self._entity = entity
         self._make(entity, settings)
 
     def __repr__(self):
@@ -43,12 +46,16 @@ class _NotificationDecorator(object):
 
     def clear(self):
         self._entityID = 0
+        self._entity = None
         self._vo.clear()
         self._settings = None
         return
 
     def getID(self):
         return self._entityID
+
+    def getEntity(self):
+        return self._entity
 
     def getSavedData(self):
         return None
@@ -88,7 +95,10 @@ class _NotificationDecorator(object):
         return self._isOrderChanged
 
     def update(self, entity):
-        pass
+        self._entity = entity
+
+    def getVisibilityTime(self):
+        return None
 
     def getListVO(self):
         return self._vo
@@ -142,6 +152,7 @@ class MessageDecorator(_NotificationDecorator):
         return NOTIFICATION_TYPE.MESSAGE
 
     def update(self, formatted):
+        super(MessageDecorator, self).update(formatted)
         self._make(formatted)
 
     def getOrder(self):
@@ -187,6 +198,7 @@ class PrbInviteDecorator(_NotificationDecorator):
         return NOTIFICATION_TYPE.INVITE
 
     def update(self, entity):
+        super(PrbInviteDecorator, self).update(entity)
         self._make(entity)
 
     def getOrder(self):
@@ -249,6 +261,7 @@ class FriendshipRequestDecorator(_NotificationDecorator):
         return (self.showAt(), self._receivedAt)
 
     def update(self, user):
+        super(FriendshipRequestDecorator, self).update(user)
         self._make(user=user, settings=NotificationGuiSettings(False, NotificationPriorityLevel.LOW, showAt=self.showAt()))
 
     def _make(self, user = None, settings = None):
@@ -299,6 +312,7 @@ class WGNCPopUpDecorator(_NotificationDecorator):
         return self._itemName
 
     def update(self, item):
+        super(WGNCPopUpDecorator, self).update(item)
         self._make(item)
 
     def _make(self, item = None, settings = None):
@@ -362,6 +376,13 @@ class ClubInviteDecorator(_NotificationDecorator):
         self._createdAt = 0
         super(ClubInviteDecorator, self).clear()
 
+    def getVisibilityTime(self):
+        tm = None
+        invite = self.getEntity()
+        if not invite.isActive() and invite.getUpdatingTime() is not None:
+            tm = time_utils.makeLocalServerTime(invite.getUpdatingTime() + _CLUB_INVITE_VISIBILITY_INTERVAL)
+        return tm
+
     def getSavedData(self):
         return self.getID()
 
@@ -369,6 +390,7 @@ class ClubInviteDecorator(_NotificationDecorator):
         return NOTIFICATION_TYPE.CLUB_INVITE
 
     def update(self, entity):
+        super(ClubInviteDecorator, self).update(entity)
         self._make(entity)
 
     def getOrder(self):
@@ -430,6 +452,7 @@ class ClubAppsDecorator(_NotificationDecorator):
         return NOTIFICATION_TYPE.CLUB_APPS
 
     def update(self, entity):
+        super(ClubAppsDecorator, self).update(entity)
         self._make(entity)
 
     def getOrder(self):

@@ -5,7 +5,7 @@ import Math
 from Math import Vector3, Matrix
 import BigWorld
 from AvatarInputHandler import mathUtils, AimingSystems
-from AvatarInputHandler.CallbackDelayer import CallbackDelayer, TimeDeltaMeter
+from helpers.CallbackDelayer import CallbackDelayer, TimeDeltaMeter
 from AvatarInputHandler.aims import createAim
 import GUI
 import Keys

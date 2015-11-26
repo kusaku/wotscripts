@@ -1,10 +1,7 @@
 # Embedded file name: scripts/client/tutorial/gui/Scaleform/quests/pop_ups.py
-from gui.Scaleform.daapi.view.lobby.AwardWindow import AwardWindow, packRibbonInfo
-from gui.Scaleform.locale.MENU import MENU
+from gui.Scaleform.daapi.view.lobby.AwardWindow import AwardWindow
 from gui.server_events.awards import FormattedAward
 from gui.server_events.bonuses import getTutorialBonusObj
-from gui.shared.ItemsCache import g_itemsCache
-from gui.shared.formatters import text_styles
 from helpers import i18n
 from tutorial.control import TutorialProxyHolder
 from tutorial.data.events import ClickEvent
@@ -53,7 +50,6 @@ class _TutorialQuestAward(FormattedAward):
         return
 
     def getButtonStates(self):
-        complete = g_itemsCache.items.stats.tutorialsCompleted
         return (False, True, self.__content['showQuestsBtn'])
 
     def getWindowTitle(self):
@@ -71,30 +67,10 @@ class _TutorialQuestAward(FormattedAward):
     def getBodyButtonText(self):
         return i18n.makeString('#tutorial:tutorialQuest/awardWindow/nextQuest')
 
-    def getRibbonInfo(self):
-        awards, strAwards = self.__getAwards()
-        if strAwards or awards:
-            return packRibbonInfo(awardForCompleteText=i18n.makeString(MENU.AWARDWINDOW_QUESTS_TASKCOMPLETE_AWARDFORCOMLETE), awardBonusStrText=strAwards, awards=awards)
-        else:
-            return None
-
-    def __getAwards(self):
-        awards = []
-        strAwards = ''
-        result = []
+    def _getBonuses(self):
         bonuses = self.__content.get('bonuses', {})
+        result = []
         for n, v in bonuses.iteritems():
-            b = getTutorialBonusObj(n, v)
-            if b is not None:
-                formatter = self._formatters.get(b.getName(), None)
-                if callable(formatter):
-                    for bonus in formatter(b):
-                        awards.append({'value': bonus.value,
-                         'itemSource': bonus.icon})
+            result.append(getTutorialBonusObj(n, v))
 
-                else:
-                    result.append(text_styles.warning(b.format()))
-
-        if len(result):
-            strAwards = ', '.join(result)
-        return (awards, strAwards)
+        return result

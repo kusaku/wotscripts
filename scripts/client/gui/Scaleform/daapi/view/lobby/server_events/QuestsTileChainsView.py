@@ -3,19 +3,22 @@ import weakref
 import operator
 from collections import namedtuple
 from adisp import async
+from gui.Scaleform.daapi.view.lobby.server_events.events_helpers import getEventTypeByTabAlias
+from gui.server_events.EventsCache import g_eventsCache
 from helpers import int2roman
 from helpers.i18n import makeString as _ms
 from debug_utils import LOG_WARNING, LOG_CURRENT_EXCEPTION
 from CurrentVehicle import g_currentVehicle
 from gui import SystemMessages, makeHtmlString
-from gui.server_events import g_eventsCache, formatters, caches, events_dispatcher as quests_events
+from gui.server_events import formatters, caches, events_dispatcher as quests_events
 from gui.shared import g_itemsCache, event_dispatcher as shared_events
 from gui.shared.utils import decorators
 from gui.shared.gui_items import Vehicle
-from gui.shared.gui_items.processors import quests as quests_proc
 from gui.Scaleform.locale.QUESTS import QUESTS
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
+from gui.Scaleform.genConsts.QUESTS_ALIASES import QUESTS_ALIASES
+from gui.Scaleform.genConsts.TOOLTIPS_CONSTANTS import TOOLTIPS_CONSTANTS
 from gui.Scaleform.genConsts.QUEST_TASK_FILTERS_TYPES import QUEST_TASK_FILTERS_TYPES
 from gui.Scaleform.daapi.view.meta.QuestsTileChainsViewMeta import QuestsTileChainsViewMeta
 from gui.Scaleform.daapi.view.lobby.server_events import events_helpers
@@ -69,11 +72,93 @@ class QuestsTileChainsView(QuestsTileChainsViewMeta):
         super(QuestsTileChainsView, self).__init__()
         self._navInfo = caches.getNavInfo()
         self.__proxy = None
-        self.__tile = g_eventsCache.potapov.getTiles()[self._navInfo.potapov.tileID]
+        self.__tile = events_helpers.getPotapovQuestsCache().getTiles()[self._navInfo.selectedPQ.tileID]
         return
 
     def getTileData(self, vehType, questState):
         self.__updateTileData(vehType, questState)
+
+    def getChainProgress(self):
+        self._navInfo.selectPotapovQuest(self.__tile.getID(), -1)
+        self.as_updateChainProgressS(self.__makeChainsProgressData())
+
+    def getTaskDetails(self, questID):
+        self.as_updateTaskDetailsS(self.__makeQuestDetailsInfo(questID))
+
+    def gotoBack(self):
+        try:
+            self.__proxy._showSeasonsView(doResetNavInfo=True)
+        except:
+            LOG_WARNING('Error while getting event window for showing seasons view')
+            LOG_CURRENT_EXCEPTION()
+
+    @decorators.process('updating')
+    def selectTask(self, questID):
+        quest = events_helpers.getPotapovQuestsCache().getQuests()[questID]
+        if quest.needToGetReward():
+            result = yield self.__getAward(quest)
+        else:
+            result = yield events_helpers.getPotapovQuestsSelectProcessor()(quest, events_helpers.getPotapovQuestsCache()).request()
+        if result and len(result.userMsg):
+            SystemMessages.pushMessage(result.userMsg, type=result.sysMsgType)
+
+    @decorators.process('updating')
+    def refuseTask(self, questID):
+        result = yield events_helpers.getPotapovQuestsRefuseProcessor()(events_helpers.getPotapovQuestsCache().getQuests()[questID], events_helpers.getPotapovQuestsCache()).request()
+        if len(result.userMsg):
+            SystemMessages.pushMessage(result.userMsg, type=result.sysMsgType)
+
+    def showAwardVehicleInfo(self, vehTypeCompDescr):
+        shared_events.showVehicleInfo(int(vehTypeCompDescr))
+
+    def showAwardVehicleInHangar(self, vehTypeCompDescr):
+        try:
+            vehicle = g_itemsCache.items.getItemByCD(int(vehTypeCompDescr))
+            g_currentVehicle.selectVehicle(vehicle.invID)
+            shared_events.showHangar()
+            self.__proxy.destroy()
+        except:
+            LOG_WARNING('Error while getting event window to slose it')
+            LOG_CURRENT_EXCEPTION()
+
+    def _populate(self):
+        super(QuestsTileChainsView, self)._populate()
+        g_eventsCache.onProgressUpdated += self._onProgressUpdated
+        vehTypeFilter, qStateFilter = self.__getCurrentFilters()
+        self.as_setHeaderDataS({'noTasksText': _ms(QUESTS.TILECHAINSVIEW_NOTASKSLABEL_TEXT),
+         'header': {'tileID': self.__tile.getID(),
+                    'titleText': text_styles.promoSubTitle(_ms(QUESTS.TILECHAINSVIEW_TITLE, name=self.__tile.getUserName() + ' ' + icons.info())),
+                    'backBtnText': _ms(QUESTS.TILECHAINSVIEW_BUTTONBACK_TEXT),
+                    'backBtnTooltip': TOOLTIPS.PRIVATEQUESTS_BACKBUTTON,
+                    'backgroundImagePath': self._HEADER_ICON_PATH % self.__tile.getIconID(),
+                    'tasksProgressLabel': text_styles.main(QUESTS.TILECHAINSVIEW_TASKSPROGRESS_TEXT),
+                    'tasksProgressLinkage': QUESTS_ALIASES.QUEST_TASKS_PROGRESS_RANDOM,
+                    'tooltipType': TOOLTIPS_CONSTANTS.PRIVATE_QUESTS_TILE},
+         'filters': {'filtersLabel': _ms(QUESTS.TILECHAINSVIEW_FILTERSLABEL_TEXT),
+                     'showVehicleTypeFilterData': True,
+                     'vehicleTypeFilterData': formatters._packVehicleTypesFilter(_QuestsFilter.VEH_TYPE_DEFAULT),
+                     'taskTypeFilterData': self.__packQuestStatesFilter(),
+                     'defVehicleType': vehTypeFilter,
+                     'defTaskType': qStateFilter}})
+        self._populateTileData()
+
+    def _dispose(self):
+        g_eventsCache.onProgressUpdated -= self._onProgressUpdated
+        self.__proxy = None
+        super(QuestsTileChainsView, self)._dispose()
+        return
+
+    def _onProgressUpdated(self, pqType):
+        if getEventTypeByTabAlias(self._navInfo.selectedPQType) == pqType:
+            self._populateTileData()
+
+    def _populateTileData(self):
+        itemID = self._navInfo.selectedPQ.questID or -1
+        vehType, questState = self.__getCurrentFilters()
+        self.__updateTileData(vehType, questState, itemID)
+
+    def _setMainView(self, eventsWindow):
+        self.__proxy = weakref.proxy(eventsWindow)
 
     def __updateTileData(self, vehType, questState, selectItemID = -1):
         questsByChains = {}
@@ -113,86 +198,6 @@ class QuestsTileChainsView(QuestsTileChainsViewMeta):
             self.as_updateChainProgressS(self.__makeChainsProgressData())
         self.as_setSelectedTaskS(selectItemID)
 
-    def getChainProgress(self):
-        self._navInfo.selectPotapovQuest(self.__tile.getID(), -1)
-        self.as_updateChainProgressS(self.__makeChainsProgressData())
-
-    def getTaskDetails(self, questID):
-        self.as_updateTaskDetailsS(self.__makeQuestDetailsInfo(questID))
-
-    def gotoBack(self):
-        try:
-            self.__proxy._showSeasonsView(doResetNavInfo=True)
-        except:
-            LOG_WARNING('Error while getting event window for showing seasons view')
-            LOG_CURRENT_EXCEPTION()
-
-    @decorators.process('updating')
-    def selectTask(self, questID):
-        quest = g_eventsCache.potapov.getQuests()[questID]
-        if quest.needToGetReward():
-            result = yield self.__getAward(quest)
-        else:
-            result = yield quests_proc.PotapovQuestSelect(quest).request()
-        if result and len(result.userMsg):
-            SystemMessages.pushMessage(result.userMsg, type=result.sysMsgType)
-
-    @decorators.process('updating')
-    def refuseTask(self, questID):
-        result = yield quests_proc.PotapovQuestRefuse(g_eventsCache.potapov.getQuests()[questID]).request()
-        if len(result.userMsg):
-            SystemMessages.pushMessage(result.userMsg, type=result.sysMsgType)
-
-    def showAwardVehicleInfo(self, vehTypeCompDescr):
-        shared_events.showVehicleInfo(int(vehTypeCompDescr))
-
-    def showAwardVehicleInHangar(self, vehTypeCompDescr):
-        try:
-            vehicle = g_itemsCache.items.getItemByCD(int(vehTypeCompDescr))
-            g_currentVehicle.selectVehicle(vehicle.invID)
-            shared_events.showHangar()
-            self.__proxy.destroy()
-        except:
-            LOG_WARNING('Error while getting event window to slose it')
-            LOG_CURRENT_EXCEPTION()
-
-    def _populate(self):
-        super(QuestsTileChainsView, self)._populate()
-        g_eventsCache.potapov.onProgressUpdated += self._onProgressUpdated
-        vehTypeFilter, qStateFilter = self.__getCurrentFilters()
-        self.as_setHeaderDataS({'noTasksText': _ms(QUESTS.TILECHAINSVIEW_NOTASKSLABEL_TEXT),
-         'header': {'tileID': self.__tile.getID(),
-                    'titleText': text_styles.promoSubTitle(_ms(QUESTS.TILECHAINSVIEW_TITLE, name=self.__tile.getUserName() + ' ' + icons.info())),
-                    'backBtnText': _ms(QUESTS.TILECHAINSVIEW_BUTTONBACK_TEXT),
-                    'backBtnTooltip': TOOLTIPS.PRIVATEQUESTS_BACKBUTTON,
-                    'backgroundImagePath': self._HEADER_ICON_PATH % self.__tile.getIconID()},
-         'filters': {'filtersLabel': _ms(QUESTS.TILECHAINSVIEW_FILTERSLABEL_TEXT),
-                     'vehicleTypeFilterData': formatters._packVehicleTypesFilter(_QuestsFilter.VEH_TYPE_DEFAULT),
-                     'taskTypeFilterData': self.__packQuestStatesFilter(),
-                     'defVehicleType': vehTypeFilter,
-                     'defTaskType': qStateFilter}})
-        self._populateTileData()
-
-    def _dispose(self):
-        g_eventsCache.potapov.onProgressUpdated -= self._onProgressUpdated
-        self.__proxy = None
-        super(QuestsTileChainsView, self)._dispose()
-        return
-
-    def _onProgressUpdated(self):
-        self._populateTileData()
-
-    def _populateTileData(self):
-        if self._navInfo.potapov.questID:
-            itemID = self._navInfo.potapov.questID
-        else:
-            itemID = -1
-        vehType, questState = self.__getCurrentFilters()
-        self.__updateTileData(vehType, questState, itemID)
-
-    def _setMainView(self, eventsWindow):
-        self.__proxy = weakref.proxy(eventsWindow)
-
     @async
     @decorators.process('updating')
     def __getAward(self, quest, callback):
@@ -206,15 +211,12 @@ class QuestsTileChainsView(QuestsTileChainsViewMeta):
                 break
 
         else:
-            result = yield quests_proc.PotapovQuestsGetRegularReward(quest).request()
+            result = yield events_helpers.getPotapovQuestsRewardProcessor(quest).request()
         callback(result)
         return
 
     def __getCurrentFilters(self):
-        if self._navInfo.potapov.filters is not None:
-            return self._navInfo.potapov.filters
-        else:
-            return (-1, QUEST_TASK_FILTERS_TYPES.ALL)
+        return self._navInfo.selectedPQ.filters or (-1, QUEST_TASK_FILTERS_TYPES.ALL)
 
     def __makeChainsProgressData(self):
         return {'progressItems': self.__makeChainsProgressItems()}
@@ -228,13 +230,14 @@ class QuestsTileChainsView(QuestsTileChainsViewMeta):
                 completedCountStr = text_styles.main(str(completedCount))
             else:
                 completedCountStr = str(completedCount)
+            value = text_styles.standard(_ms(QUESTS.QUESTSCHAINPROGRESSVIEW_CHAINPROGRESSCOUNT, count=completedCountStr, total=str(totalCount)))
             result.append((self.__tile.getChainVehicleClass(chainID), {'chainID': chainID,
-              'value': text_styles.standard(_ms(QUESTS.QUESTSCHAINPROGRESSVIEW_CHAINPROGRESSCOUNT, count=completedCountStr, total=str(totalCount)))}))
+              'value': value}))
 
         return map(lambda (_, data): data, sorted(result, key=operator.itemgetter(0), cmp=Vehicle.compareByVehTypeName))
 
     def __makeQuestDetailsInfo(self, questID):
-        quest = g_eventsCache.potapov.getQuests()[questID]
+        quest = events_helpers.getPotapovQuestsCache().getQuests()[questID]
         questInfoData = events_helpers.getEventInfoData(quest)
         self._navInfo.selectPotapovQuest(self.__tile.getID(), questID)
         vehMinLevel, vehClasses = quest.getVehMinLevel(), quest.getVehicleClasses()
@@ -264,7 +267,7 @@ class QuestsTileChainsView(QuestsTileChainsViewMeta):
             btnInfo = _makeSelectBtn(QUESTS.QUESTTASKDETAILSVIEW_BTNLABEL_REPEAT, TOOLTIPS.PRIVATEQUESTS_ACTIONPANNEL_REPEAT, text_styles.success(icons.checkmark() + _ms(QUESTS.QUESTTASKDETAILSVIEW_TASKDESCRIPTION_DONE)))
         else:
             btnInfo = _makeSelectBtn(QUESTS.QUESTTASKDETAILSVIEW_BTNLABEL_BEGIN, TOOLTIPS.PRIVATEQUESTS_ACTIONPANNEL_PERFORM, _ms(QUESTS.QUESTTASKDETAILSVIEW_TASKDESCRIPTION_AVAILABLE))
-        mainAwards, addAwards = questInfoData._getBonuses(g_eventsCache.potapov.getQuests().values())
+        mainAwards, addAwards = questInfoData._getBonuses(events_helpers.getPotapovQuestsCache().getQuests().values())
         result = {'taskID': questID,
          'headerText': text_styles.highTitle(quest.getUserName()),
          'conditionsText': condition,

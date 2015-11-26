@@ -60,3 +60,5 @@ from ReadyForBattleSPGAchievement import ReadyForBattleSPGAchievement
 from ReadyForBattleATSPGAchievement import ReadyForBattleATSPGAchievement
 from ReadyForBattleALLAchievement import ReadyForBattleALLAchievement
 from FalloutAchievement import FalloutAchievement
+from StormLordAchievement import StormLordAchievement
+from WinnerLaurelsAchievement import WinnerLaurelsAchievement

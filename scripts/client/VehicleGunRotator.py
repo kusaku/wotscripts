@@ -3,7 +3,7 @@ import BigWorld, Math
 import weakref
 import math
 from AvatarInputHandler import AimingSystems, mathUtils
-from AvatarInputHandler.CallbackDelayer import CallbackDelayer
+from helpers.CallbackDelayer import CallbackDelayer
 from constants import SERVER_TICK_LENGTH, SHELL_TRAJECTORY_EPSILON_CLIENT, AIMING_MODE
 import ProjectileMover
 from projectile_trajectory import getShotAngles
@@ -86,14 +86,14 @@ class VehicleGunRotator(object):
             return
 
     def stop(self):
+        if self.__timerID is not None:
+            BigWorld.cancelCallback(self.__timerID)
+            self.__timerID = None
         if not self.__isStarted:
             return
         else:
             from account_helpers.settings_core.SettingsCore import g_settingsCore
             g_settingsCore.onSettingsChanged -= self.applySettings
-            if self.__timerID is not None:
-                BigWorld.cancelCallback(self.__timerID)
-                self.__timerID = None
             if self.__avatar.inputHandler is None:
                 return
             if self.__clientMode and self.__showServerMarker:
@@ -440,7 +440,7 @@ class VehicleGunRotator(object):
             speedLimit = descr.gun['rotationSpeed'] * timeDiff
         else:
             if math.fabs(curAngle - shotAngle) < VehicleGunRotator.__ANGLE_EPS:
-                if angleLimits is None:
+                if angleLimits is not None:
                     return mathUtils.clamp(angleLimits[0], angleLimits[1], shotAngle)
                 else:
                     return shotAngle

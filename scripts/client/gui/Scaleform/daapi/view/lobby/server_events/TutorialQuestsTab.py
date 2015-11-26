@@ -1,17 +1,19 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/server_events/TutorialQuestsTab.py
 from gui.ClientUpdateManager import g_clientUpdateManager
-from gui.Scaleform.daapi.view.lobby.server_events.QuestsTab import QuestsTab
+from gui.Scaleform.daapi.view.lobby.server_events.QuestsCurrentTab import QuestsCurrentTab
 from gui.Scaleform.daapi.view.lobby.server_events import events_helpers
 from gui.Scaleform.genConsts.QUESTS_ALIASES import QUESTS_ALIASES
+from gui.Scaleform.locale.QUESTS import QUESTS
 from gui.Scaleform.locale.SYSTEM_MESSAGES import SYSTEM_MESSAGES
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
+from gui.server_events import g_eventsCache, formatters
 from gui.server_events.formatters import PROGRESS_BAR_TYPE
 from gui.shared.ItemsCache import g_itemsCache
 from gui import SystemMessages
 NO_PROGRESS_COUNT = -1
 _EVENT_STATUS = events_helpers.EVENT_STATUS
 
-class TutorialQuestsTab(QuestsTab):
+class TutorialQuestsTab(QuestsCurrentTab):
 
     def __init__(self):
         super(TutorialQuestsTab, self).__init__()

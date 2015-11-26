@@ -2,10 +2,11 @@
 from gui.Scaleform.daapi.view.meta.TutorialHangarQuestDetailsMeta import TutorialHangarQuestDetailsMeta
 from gui.server_events.bonuses import getTutorialBonusObj
 from gui.server_events import formatters
+from gui.shared import event_dispatcher
 from gui.shared.formatters import text_styles
 from gui.Scaleform.locale.QUESTS import QUESTS
 from gui.Scaleform.daapi.view.lobby.header import battle_selector_items
-from gui.shared.events import TutorialEvent, OpenLinkEvent
+from gui.shared.events import OpenLinkEvent
 from gui.prb_control.settings import PREBATTLE_ACTION_NAME
 from helpers import i18n
 
@@ -32,7 +33,7 @@ class TutorialHangarQuestDetails(TutorialHangarQuestDetailsMeta):
 
     def showTip(self, id, type):
         if type == CONDITION_TYPE.CHAIN:
-            self.fireEvent(TutorialEvent(TutorialEvent.START_TRAINING, settingsID='TRIGGERS_CHAINS', initialChapter=id, restoreIfRun=True))
+            event_dispatcher.runTutorialChain(id)
         elif type == CONDITION_TYPE.TUTORIAL:
             battle_selector_items.getItems().select(PREBATTLE_ACTION_NAME.BATTLE_TUTORIAL)
         elif not (type == CONDITION_TYPE.VIDEO and id in (OpenLinkEvent.REPAIRKITHELP_HELP, OpenLinkEvent.MEDKIT_HELP, OpenLinkEvent.FIRE_EXTINGUISHERHELP_HELP)):
