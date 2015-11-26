@@ -1,6 +1,7 @@
 # Embedded file name: scripts/client/notification/decorators.py
 import BigWorld
-from debug_utils import LOG_ERROR
+from debug_utils import LOG_ERROR, LOG_DEBUG
+from gui.Scaleform.locale.INVITES import INVITES
 from gui.clans.clan_controller import g_clanCtrl
 from gui.clans.formatters import ClanSingleNotificationHtmlTextFormatter, ClanMultiNotificationsHtmlTextFormatter, ClanAppActionHtmlTextFormatter
 from gui.clans.settings import CLAN_APPLICATION_STATES, CLAN_INVITE_STATES
@@ -588,7 +589,7 @@ class ClanSingleAppDecorator(_ClanSingleDecorator):
 
     def _getText(self, formatter, entity):
         stateStr = '#invites:clans/state/app/%s' % self._state
-        return formatter.getText((self.__userName, stateStr))
+        return formatter.getText((self.__userName, stateStr, False))
 
 
 class ClanSingleInviteDecorator(_ClanSingleDecorator):
@@ -615,7 +616,7 @@ class ClanSingleInviteDecorator(_ClanSingleDecorator):
         return ClanSingleNotificationHtmlTextFormatter('inviteTitle', 'inviteComment', 'showClanProfileAction')
 
     def _getButtonsStates(self, entity):
-        if self._state in (CLAN_INVITE_STATES.ACCEPTED, CLAN_INVITE_STATES.DECLINED) or g_clanCtrl.getAccountProfile().isInClan() or not g_clanCtrl.isEnabled():
+        if self._state in (CLAN_INVITE_STATES.ACCEPTED, CLAN_INVITE_STATES.DECLINED) or g_clanCtrl.getAccountProfile().isInClan() or not g_clanCtrl.isEnabled() or self.__isInClanEnterCooldown():
             submit = cancel = NOTIFICATION_BUTTON_STATE.HIDDEN
         elif not g_clanCtrl.isAvailable():
             submit = cancel = NOTIFICATION_BUTTON_STATE.VISIBLE
@@ -625,8 +626,17 @@ class ClanSingleInviteDecorator(_ClanSingleDecorator):
          'cancel': cancel}
 
     def _getText(self, formatter, entity):
-        stateStr = '#invites:clans/state/invite/%s' % self._state
-        return formatter.getText((_getClanName((entity.getClanName(), entity.getClanTag())), stateStr))
+        if self.__isInClanEnterCooldown():
+            isWarning = True
+            stateStr = INVITES.CLANS_STATE_INVITE_ERROR_INCLANENTERCOOLDOWN
+        else:
+            isWarning = False
+            stateStr = '#invites:clans/state/invite/%s' % self._state
+        return formatter.getText((_getClanName((entity.getClanName(), entity.getClanTag())), stateStr, isWarning))
+
+    def __isInClanEnterCooldown(self):
+        profile = g_clanCtrl.getAccountProfile()
+        return not profile.isInClan() and profile.isInClanEnterCooldown()
 
 
 class _ClanMultiDecorator(_ClanDecorator):

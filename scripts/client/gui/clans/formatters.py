@@ -2,6 +2,7 @@
 import BigWorld
 from client_request_lib.exceptions import ResponseCodes
 from gui import makeHtmlString
+from gui.shared.formatters.text_styles import standard as standard_text_style, alert as alert_text_style
 from helpers.i18n import doesTextExist, makeString
 from gui.clans.settings import CLAN_REQUESTED_DATA_TYPE as REQUEST_TYPE
 from gui.clans.settings import CLAN_MEMBERS
@@ -170,19 +171,22 @@ class ClanSingleNotificationHtmlTextFormatter(_BaseClanAppHtmlTextFormatter):
         return makeHtmlString('html_templates:lobby/clans', self._commentKey) % {'eventType': self.__commentAction}
 
     def getText(self, data):
-        userName, state = data
+        userName, state, isWarning = data
         text = super(ClanSingleNotificationHtmlTextFormatter, self).getText(userName)
-        stateTxt = self._getStateText(state)
+        stateTxt = self._getStateText(state, isWarning)
         if stateTxt:
             text += stateTxt
         return text
 
-    def _getStateText(self, state):
+    def _getStateText(self, state, isWarning):
         if not doesTextExist(state):
             return ''
         stateStr = makeString(state)
         if stateStr:
-            stateStr = makeHtmlString('html_templates:lobby/clans', 'inviteState', {'state': stateStr})
+            if isWarning:
+                stateStr = '<br/><br/>%s' % alert_text_style(stateStr)
+            else:
+                stateStr = '<br/><br/>%s' % standard_text_style(stateStr)
         return stateStr
 
 

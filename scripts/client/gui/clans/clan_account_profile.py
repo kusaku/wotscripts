@@ -254,7 +254,7 @@ class ClanAccountProfile(object):
 
                 self._cache[_CACHE_KEYS.INVITES] = cached
             elif code == ResponseCodes.ACCOUNT_IN_COOLDOWN:
-                pass
+                self.resyncWebClanInfo()
             elif code == ResponseCodes.TOO_MANY_APPLICATIONS:
                 self._isInvitesLimitReached.set(True)
         if self.isInClan():

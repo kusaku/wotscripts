@@ -3,6 +3,7 @@ from collections import defaultdict
 import BigWorld
 from client_request_lib.exceptions import ResponseCodes
 from PlayerEvents import g_playerEvents
+from debug_utils import LOG_DEBUG
 from gui.clans import contexts
 from gui.clans.clan_account_profile import MyClanAccountProfile
 from gui.clans.settings import CLAN_INVITE_STATES, CLAN_REQUESTED_DATA_TYPE
@@ -437,7 +438,6 @@ class _ClanController(ClansListeners):
         self.__state.fini()
         self.__state = None
         self.__userCache = None
-        self.__cleanDossiers()
         return
 
     def start(self):
@@ -464,6 +464,7 @@ class _ClanController(ClansListeners):
             self.__profile.fini()
             self.__profile = None
         self.__state.logout()
+        self.__cleanDossiers()
         return
 
     def invalidate(self):

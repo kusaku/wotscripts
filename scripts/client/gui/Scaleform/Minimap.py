@@ -535,7 +535,7 @@ class Minimap(IDynSquadEntityClient):
                     ownPos = Math.Matrix(BigWorld.camera().invViewMatrix).translation
                     entryPos = Math.Matrix(entries[vehicleID]['matrix']).translation
                     if AOI.ENABLE_MANUAL_RULES:
-                        inAoI = (ownPos.x - entryPos.x) ** 2 + (ownPos.y - entryPos.y) ** 2 + (ownPos.z - entryPos.z) ** 2 < self.__AOI_ESTIMATE ** 2
+                        inAoI = (ownPos.x - entryPos.x) ** 2 + (ownPos.z - entryPos.z) ** 2 < self.__AOI_ESTIMATE ** 2
                     else:
                         inAoI = bool(abs(ownPos.x - entryPos.x) < self.__AOI_ESTIMATE and abs(ownPos.z - entryPos.z) < self.__AOI_ESTIMATE)
                     guiProps = g_sessionProvider.getCtx().getPlayerGuiProps(vehicleID, vInfo.team)

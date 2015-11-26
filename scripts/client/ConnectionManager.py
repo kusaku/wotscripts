@@ -10,6 +10,7 @@ from debug_utils import LOG_DEBUG, LOG_NOTE
 from predefined_hosts import g_preDefinedHosts, AUTO_LOGIN_QUERY_URL
 from helpers import getClientLanguage
 from account_shared import isValidClientVersion
+from account_helpers import pwd_token
 _MIN_RECONNECTION_TIMEOUT = 5
 _RECONNECTION_TIMEOUT_INCREMENT = 5
 _MAX_RECONNECTION_TIMEOUT = 20
@@ -137,6 +138,10 @@ class ConnectionManager(object):
             params['is_igr'] = '1'
         username_ = json.dumps(params, encoding='utf-8')
         LOG_NOTE('User authentication method: {0}'.format(params['auth_method']))
+        if 'token2' in params and params['token2']:
+            password = ''
+        else:
+            password = pwd_token.generate(password)
         self.__connectionData.username = username_
         self.__connectionData.password = password
         self.__connectionData.inactivityTimeout = constants.CLIENT_INACTIVITY_TIMEOUT

@@ -4,6 +4,7 @@ import weakref
 import operator
 from account_helpers.settings_core.SettingsCore import g_settingsCore
 from debug_utils import LOG_DEBUG
+from gui.clans.clan_account_profile import SYNC_KEYS
 from gui.clans.clan_helpers import ClanListener
 from gui.clubs.settings import CLIENT_CLUB_STATE
 from gui.clubs.club_helpers import ClubListener
@@ -560,6 +561,13 @@ class _ClanAppsListener(_ClanNotificationsCommonListener, UsersInfoHelper):
 class _ClanPersonalInvitesListener(_ClanNotificationsCommonListener):
     _INVITES_ENTITY_ID = 1
 
+    def onAccountWebVitalInfoChanged(self, fieldName, value):
+        super(_ClanPersonalInvitesListener, self).onAccountWebVitalInfoChanged(fieldName, value)
+        if SYNC_KEYS.CLAN_INFO == fieldName:
+            profile = self.clansCtrl.getAccountProfile()
+            if not profile.isInClan():
+                self.__updateNotificationsByTypes((NOTIFICATION_TYPE.CLAN_INVITE,))
+
     def onAccountClanProfileChanged(self, profile):
         """
         Perform necessarily checking in case of user entrance into clan or leaving from clan
@@ -604,8 +612,11 @@ class _ClanPersonalInvitesListener(_ClanNotificationsCommonListener):
         return self._model().getNotification(NOTIFICATION_TYPE.CLAN_INVITES, self.clansCtrl.getAccountProfile().getDbID())
 
     def _updateAllNotifications(self):
+        self.__updateNotificationsByTypes((NOTIFICATION_TYPE.CLAN_INVITE, NOTIFICATION_TYPE.CLAN_INVITES))
+
+    def __updateNotificationsByTypes(self, notifTypes):
         model = self._model()
-        for notDecorator in model.collection.getListIterator((NOTIFICATION_TYPE.CLAN_INVITE, NOTIFICATION_TYPE.CLAN_INVITES)):
+        for notDecorator in model.collection.getListIterator(notifTypes):
             model.updateNotification(notDecorator.getType(), notDecorator.getID(), notDecorator.getEntity(), False)
 
     def _removeAllNotifications(self):

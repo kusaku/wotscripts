@@ -41,6 +41,7 @@ class INVITES(object):
     CLUB_APPLICATIONS_BUTTONS_DETAILS = '#invites:club/applications/buttons/details'
     CLAN_APPLICATIONS_TITLE = '#invites:clan/applications/title'
     CLAN_APPLICATIONS_COMMENT = '#invites:clan/applications/comment'
+    CLAN_APPLICATIONS_COMMENT_MINIMAP = '#invites:clan/applications/comment/minimap'
     CLAN_APPLICATIONS_BUTTONS_DETAILS = '#invites:clan/applications/buttons/details'
     CLAN_PERSONAL_INVITES_TITLE = '#invites:clan/personal/invites/title'
     CLAN_PERSONAL_INVITES_BUTTONS_DETAILS = '#invites:clan/personal/invites/buttons/details'
@@ -107,6 +108,13 @@ class INVITES(object):
     CLANS_STATE_INVITE_ACTIVE = '#invites:clans/state/invite/active'
     CLANS_STATE_INVITE_ACCEPTED = '#invites:clans/state/invite/accepted'
     CLANS_STATE_INVITE_DECLINED = '#invites:clans/state/invite/declined'
+    CLANS_STATE_INVITE_ERROR_INCLANENTERCOOLDOWN = '#invites:clans/state/invite/error/inClanEnterCooldown'
+    INVITES_STATE_ENUM = (INVITES_STATE_PENDING,
+     INVITES_STATE_ACCEPTED,
+     INVITES_STATE_DECLINED,
+     INVITES_STATE_REVOKED,
+     INVITES_STATE_EXPIRED,
+     INVITES_STATE_ERROR)
     INVITES_PREBATTLE_ALREADYJOINED_ENUM = (INVITES_PREBATTLE_ALREADYJOINED_SQUAD,
      INVITES_PREBATTLE_ALREADYJOINED_COMPANY,
      INVITES_PREBATTLE_ALREADYJOINED_TRAINING,
@@ -114,18 +122,6 @@ class INVITES(object):
      INVITES_PREBATTLE_ALREADYJOINED_TOURNAMENT,
      INVITES_PREBATTLE_ALREADYJOINED_UNIT,
      INVITES_PREBATTLE_ALREADYJOINED_SORTIE)
-    INVITES_NOTE_CHANGE_AND_LEAVE_ENUM = (INVITES_NOTE_CHANGE_AND_LEAVE_COMPANY,
-     INVITES_NOTE_CHANGE_AND_LEAVE_SQUAD,
-     INVITES_NOTE_CHANGE_AND_LEAVE_TRAINING,
-     INVITES_NOTE_CHANGE_AND_LEAVE_UNIT,
-     INVITES_NOTE_CHANGE_AND_LEAVE_CLAN,
-     INVITES_NOTE_CHANGE_AND_LEAVE_TOURNAMENT,
-     INVITES_NOTE_CHANGE_AND_LEAVE_SORTIE,
-     INVITES_NOTE_CHANGE_AND_LEAVE_FORT_BATTLE,
-     INVITES_NOTE_CHANGE_AND_LEAVE_CLUBS,
-     INVITES_NOTE_CHANGE_AND_LEAVE_RANDOMS,
-     INVITES_NOTE_CHANGE_AND_LEAVE_EVENT_BATTLES,
-     INVITES_NOTE_CHANGE_AND_LEAVE_SANDBOX)
     INVITES_PREBATTLE_ACCEPTNOTALLOWED_ENUM = (INVITES_PREBATTLE_ACCEPTNOTALLOWED_UNDEFINEDPERIPHERY, INVITES_PREBATTLE_ACCEPTNOTALLOWED_OTHERPERIPHERY)
     INVITES_TEXT_ENUM = (INVITES_TEXT_CREATORNAME,
      INVITES_TEXT_SQUAD,
@@ -142,6 +138,18 @@ class INVITES(object):
      INVITES_TEXT_FORT_DEFENCE,
      INVITES_TEXT_FORT_DIRECTION,
      INVITES_TEXT_CLUB)
+    INVITES_NOTE_CHANGE_AND_LEAVE_ENUM = (INVITES_NOTE_CHANGE_AND_LEAVE_COMPANY,
+     INVITES_NOTE_CHANGE_AND_LEAVE_SQUAD,
+     INVITES_NOTE_CHANGE_AND_LEAVE_TRAINING,
+     INVITES_NOTE_CHANGE_AND_LEAVE_UNIT,
+     INVITES_NOTE_CHANGE_AND_LEAVE_CLAN,
+     INVITES_NOTE_CHANGE_AND_LEAVE_TOURNAMENT,
+     INVITES_NOTE_CHANGE_AND_LEAVE_SORTIE,
+     INVITES_NOTE_CHANGE_AND_LEAVE_FORT_BATTLE,
+     INVITES_NOTE_CHANGE_AND_LEAVE_CLUBS,
+     INVITES_NOTE_CHANGE_AND_LEAVE_RANDOMS,
+     INVITES_NOTE_CHANGE_AND_LEAVE_EVENT_BATTLES,
+     INVITES_NOTE_CHANGE_AND_LEAVE_SANDBOX)
     INVITES_NOTE_LEAVE_ENUM = (INVITES_NOTE_LEAVE_COMPANY,
      INVITES_NOTE_LEAVE_SQUAD,
      INVITES_NOTE_LEAVE_TRAINING,
@@ -154,26 +162,20 @@ class INVITES(object):
      INVITES_NOTE_LEAVE_RANDOMS,
      INVITES_NOTE_LEAVE_EVENT_BATTLES,
      INVITES_NOTE_LEAVE_SANDBOX)
-    INVITES_STATE_ENUM = (INVITES_STATE_PENDING,
-     INVITES_STATE_ACCEPTED,
-     INVITES_STATE_DECLINED,
-     INVITES_STATE_REVOKED,
-     INVITES_STATE_EXPIRED,
-     INVITES_STATE_ERROR)
 
     @staticmethod
-    def invites_prebattle_alreadyjoined(key):
-        outcome = '#invites:invites/prebattle/alreadyJoined/%s' % key
-        if outcome not in INVITES.INVITES_PREBATTLE_ALREADYJOINED_ENUM:
+    def invites_state(key):
+        outcome = '#invites:invites/state/%s' % key
+        if outcome not in INVITES.INVITES_STATE_ENUM:
             LOG_WARNING('locale key "' + outcome + '" was not found')
             return None
         else:
             return outcome
 
     @staticmethod
-    def invites_note_change_and_leave(key):
-        outcome = '#invites:invites/note/change_and_leave/%s' % key
-        if outcome not in INVITES.INVITES_NOTE_CHANGE_AND_LEAVE_ENUM:
+    def invites_prebattle_alreadyjoined(key):
+        outcome = '#invites:invites/prebattle/alreadyJoined/%s' % key
+        if outcome not in INVITES.INVITES_PREBATTLE_ALREADYJOINED_ENUM:
             LOG_WARNING('locale key "' + outcome + '" was not found')
             return None
         else:
@@ -198,18 +200,18 @@ class INVITES(object):
             return outcome
 
     @staticmethod
-    def invites_note_leave(key):
-        outcome = '#invites:invites/note/leave/%s' % key
-        if outcome not in INVITES.INVITES_NOTE_LEAVE_ENUM:
+    def invites_note_change_and_leave(key):
+        outcome = '#invites:invites/note/change_and_leave/%s' % key
+        if outcome not in INVITES.INVITES_NOTE_CHANGE_AND_LEAVE_ENUM:
             LOG_WARNING('locale key "' + outcome + '" was not found')
             return None
         else:
             return outcome
 
     @staticmethod
-    def invites_state(key):
-        outcome = '#invites:invites/state/%s' % key
-        if outcome not in INVITES.INVITES_STATE_ENUM:
+    def invites_note_leave(key):
+        outcome = '#invites:invites/note/leave/%s' % key
+        if outcome not in INVITES.INVITES_NOTE_LEAVE_ENUM:
             LOG_WARNING('locale key "' + outcome + '" was not found')
             return None
         else:
