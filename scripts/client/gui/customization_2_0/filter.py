@@ -147,8 +147,8 @@ class Filter(object):
 
     def __hasPurchaseType(self, item):
         if self.__purchaseType == PURCHASE_TYPE.PURCHASE:
-            return item.getIgrType() == IGR_TYPE.NONE
+            return item.getIgrType() == IGR_TYPE.NONE and item.isInShop
         if self.__purchaseType == PURCHASE_TYPE.QUEST:
-            return False
+            return item.isInQuests
         if self.__purchaseType == PURCHASE_TYPE.IGR:
-            return item.getIgrType() == IGR_TYPE.PREMIUM
+            return item.getIgrType() == IGR_TYPE.PREMIUM and item.isInShop

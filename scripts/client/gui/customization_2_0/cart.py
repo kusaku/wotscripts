@@ -124,6 +124,8 @@ class Cart(object):
             else:
                 self.__totalPriceGold += newSlotItem['price']
             cItem = self.__aData.available[cType][newSlotItem['itemID']]
+            if cItem.isInQuests and not cItem.isInShop:
+                return
             self.__purchaseData.append({'type': cType,
              'idx': slotIdx,
              'object': cItem,

@@ -2,6 +2,7 @@
 import BigWorld
 from collections import namedtuple
 from datetime import datetime
+from gui.Scaleform.daapi.view.lobby.profile.ProfileUtils import ProfileUtils
 from helpers import time_utils
 from messenger.ext import passCensor
 from shared_utils import makeTupleByDict
@@ -9,7 +10,6 @@ from predefined_hosts import g_preDefinedHosts
 from debug_utils import LOG_WARNING
 from gui.clans import formatters as clans_fmts
 from gui.clans.settings import MAX_CLAN_MEMBERS_COUNT, CLAN_INVITE_STATES_SORT_RULES, CLAN_INVITE_STATES
-from gui.shared.utils import avg
 from debug_utils import LOG_ERROR
 from helpers.time_utils import getTimeDeltaTilNow, ONE_DAY
 
@@ -370,7 +370,7 @@ class ClanGlobalMapStatsData(_ClanGlobalMapStatsData, FieldsCheckerMixin):
 
     @fmtUnavailableValue(fields=('battles_won', 'battles_played'))
     def getWinsEfficiency(self):
-        return avg(self.battles_won, self.battles_played)
+        return ProfileUtils.getEfficiencyPercent(self.battles_won, self.battles_played, clans_fmts.DUMMY_UNAVAILABLE_DATA)
 
     @fmtUnavailableValue(fields=('battles_lost',))
     def getLoosesCount(self):
@@ -398,7 +398,7 @@ class ClanGlobalMapStatsData(_ClanGlobalMapStatsData, FieldsCheckerMixin):
 
     @fmtUnavailableValue(fields=('battles_won_on_6_level', 'battles_played_on_6_level'))
     def getWins6LevelEfficiency(self):
-        return avg(self.battles_won_on_6_level, self.battles_played_on_6_level)
+        return ProfileUtils.getEfficiencyPercent(self.battles_won_on_6_level, self.battles_played_on_6_level, clans_fmts.DUMMY_UNAVAILABLE_DATA)
 
     @fmtUnavailableValue(fields=('battles_played_on_8_level',))
     def getBattles8LevelCount(self):
@@ -410,7 +410,7 @@ class ClanGlobalMapStatsData(_ClanGlobalMapStatsData, FieldsCheckerMixin):
 
     @fmtUnavailableValue(fields=('battles_won_on_8_level', 'battles_played_on_8_level'))
     def getWins8LevelEfficiency(self):
-        return avg(self.battles_won_on_8_level, self.battles_played_on_8_level)
+        return ProfileUtils.getEfficiencyPercent(self.battles_won_on_8_level, self.battles_played_on_8_level, clans_fmts.DUMMY_UNAVAILABLE_DATA)
 
     @fmtUnavailableValue(fields=('battles_played_on_10_level',))
     def getBattles10LevelCount(self):
@@ -422,7 +422,7 @@ class ClanGlobalMapStatsData(_ClanGlobalMapStatsData, FieldsCheckerMixin):
 
     @fmtUnavailableValue(fields=('battles_won_on_10_level', 'battles_played_on_10_level'))
     def getWins10LevelEfficiency(self):
-        return avg(self.battles_won_on_10_level, self.battles_played_on_10_level)
+        return ProfileUtils.getEfficiencyPercent(self.battles_won_on_10_level, self.battles_played_on_10_level, clans_fmts.DUMMY_UNAVAILABLE_DATA)
 
 
 Building = namedtuple('Building', 'type direction level position')

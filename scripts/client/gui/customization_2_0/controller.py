@@ -28,13 +28,11 @@ class Controller(object):
         return
 
     def updateTank3DModel(self, isReset = False):
-        if isReset:
-            newViewData = self.__aData.initialViewModel
-        else:
-            newViewData = self.__aData.viewModel[1:3]
+        viewModel = self.__aData.initialViewModel if isReset else self.__aData.viewModel
+        camouflageIDToSet, newViewData = viewModel[0], viewModel[1:3]
         if g_hangarSpace.space is not None:
             hangarSpace = g_hangarSpace.space
-            hangarSpace.updateVehicleCamouflage(camouflageID=self.__aData.installed[CUSTOMIZATION_TYPE.CAMOUFLAGE][0].getID())
+            hangarSpace.updateVehicleCamouflage(camouflageID=camouflageIDToSet)
             hangarSpace.updateVehicleSticker(newViewData)
             if self.__hangarCameraLocation is not None and isReset:
                 hangarSpace.setCameraLocation(**self.__hangarCameraLocation)
@@ -46,6 +44,10 @@ class Controller(object):
     @property
     def carousel(self):
         return self.__carousel
+
+    @property
+    def associatedQuests(self):
+        return self.__aData.associatedQuests
 
 
 g_customizationController = Controller()

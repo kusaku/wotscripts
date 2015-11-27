@@ -85,10 +85,10 @@ class Slots(object):
     def getData(self):
         return self.__data
 
-    def select(self, cType, slotIdx):
+    def select(self, cType, slotIdx, installedFirst):
         self.__currentType = cType
         self.__currentIdx = slotIdx
-        self.selected(cType, slotIdx)
+        self.selected(cType, slotIdx, installedFirst)
         g_hangarSpace.space.updateVehicleSticker(self.__aData.viewModel[1:3])
         if cType != CUSTOMIZATION_TYPE.CAMOUFLAGE:
             slotItem = self.__data['data'][cType]['data'][slotIdx]
@@ -96,30 +96,34 @@ class Slots(object):
         else:
             g_hangarSpace.space.locateCameraToPreview()
 
-    def updateSlot(self, item, cType = None, slotIdx = None, duration = 0):
-        slotIdx = self.__currentIdx if slotIdx is None else slotIdx
-        cType = self.__currentType if cType is None else cType
-        if item['id'] < 0:
-            if cType == CUSTOMIZATION_TYPE.CAMOUFLAGE:
-                img = _EMPTY_SLOTS_MAP[cType][slotIdx]
-            else:
-                img = _EMPTY_SLOTS_MAP[cType]
-            price = 0
-            bonus = ''
-            isInDossier = False
+    def clearSlot(self, cType, slotIdx):
+        initialSlotItem = self.__initialData['data'][cType]['data'][slotIdx]
+        if initialSlotItem['itemID'] < 0:
+            self.dropAppliedItem(cType, slotIdx)
         else:
-            img = item['object'].getTexturePath()
-            price = item['object'].getPrice(duration)
-            isInDossier = item['object'].isInDossier
-            bonus = self.__getSlotBonusString(item['object'].qualifier, isInDossier)
+            self.cart.buyItem(cType, initialSlotItem['spot'], self.calculateVehicleIndex(slotIdx, cType), initialSlotItem['itemID'], 0, price=-1)
+
+    def dropAppliedItem(self, cType, slotIdx):
         typedData = self.__data['data'][cType]['data']
         if len(typedData) == 2:
             thisItemSlotIdx = slotIdx
             anotherSlotIdx = 1 - slotIdx
-            if item['id'] < 0:
-                if typedData[thisItemSlotIdx]['itemID'] == typedData[anotherSlotIdx]['itemID']:
-                    typedData[anotherSlotIdx]['price'] = self.getSlotItem(cType=cType, slotIdx=anotherSlotIdx).getPrice(typedData[anotherSlotIdx]['duration'])
-            elif item['id'] == typedData[anotherSlotIdx]['itemID']:
+            if typedData[thisItemSlotIdx]['itemID'] == typedData[anotherSlotIdx]['itemID']:
+                typedData[anotherSlotIdx]['price'] = self.getSlotItem(cType=cType, slotIdx=anotherSlotIdx).getPrice(typedData[anotherSlotIdx]['duration'])
+        initialSlotItem = self.__initialData['data'][cType]['data'][slotIdx]
+        self.__setSlotAndUpdateView(cType, slotIdx, copy.deepcopy(initialSlotItem))
+
+    def applyItem(self, item, duration = 0):
+        cType = self.__currentType
+        slotIdx = self.__currentIdx
+        img = item['object'].getTexturePath()
+        price = item['object'].getPrice(duration)
+        isInDossier = item['object'].isInDossier
+        bonus = self.__getSlotBonusString(item['object'].qualifier, isInDossier)
+        typedData = self.__data['data'][cType]['data']
+        if len(typedData) == 2:
+            anotherSlotIdx = 1 - slotIdx
+            if item['id'] == typedData[anotherSlotIdx]['itemID']:
                 if duration == 0:
                     typedData[anotherSlotIdx]['price'] = 0
                 elif typedData[anotherSlotIdx]['duration'] == 0:
@@ -128,6 +132,7 @@ class Slots(object):
                 itemInAnotherSlot = self.getSlotItem(cType=cType, slotIdx=anotherSlotIdx)
                 if itemInAnotherSlot is not None:
                     typedData[anotherSlotIdx]['price'] = itemInAnotherSlot.getPrice(typedData[anotherSlotIdx]['duration'])
+        initialSlotItem = self.__initialData['data'][cType]['data'][slotIdx]
         currentSlotItem = self.__data['data'][cType]['data'][slotIdx]
         newSlotItem = {'itemID': item['id'],
          'img': img,
@@ -138,15 +143,14 @@ class Slots(object):
          'price': price,
          'isInDossier': isInDossier,
          'slotTooltip': makeTooltip(_ms(TOOLTIPS.CUSTOMIZATION_SLOT_HEADER, groupName=_ms(_SLOT_TOOLTIP_MAPPING[self.__currentType])), TOOLTIPS.CUSTOMIZATION_SLOT_BODY),
-         'removeBtnTooltip': makeTooltip(TOOLTIPS.CUSTOMIZATION_SLOTREMOVE_HEADER, TOOLTIPS.CUSTOMIZATION_SLOTREMOVE_BODY)}
-        self.__updateViewModel(cType, slotIdx, newSlotItem)
-        initialSlotItem = self.__initialData['data'][cType]['data'][slotIdx]
-        if newSlotItem['itemID'] < 0 or initialSlotItem['itemID'] == newSlotItem['itemID']:
+         'removeBtnTooltip': makeTooltip(TOOLTIPS.CUSTOMIZATION_SLOTREMOVE_HEADER, TOOLTIPS.CUSTOMIZATION_SLOTREMOVE_BODY),
+         'revertBtnVisible': initialSlotItem['itemID'] >= 0,
+         'revertBtnTooltip': makeTooltip(TOOLTIPS.CUSTOMIZATION_SLOTREVERT_HEADER, TOOLTIPS.CUSTOMIZATION_SLOTREVERT_BODY)}
+        if initialSlotItem['itemID'] == newSlotItem['itemID']:
             if currentSlotItem['isInDossier']:
                 self.cart.buyItem(cType, newSlotItem['spot'], self.calculateVehicleIndex(slotIdx, cType), currentSlotItem['itemID'], 0, price=-1)
             else:
-                initialSlotItem = copy.deepcopy(initialSlotItem)
-                self.__setSlotAndUpdateView(cType, slotIdx, initialSlotItem)
+                self.__setSlotAndUpdateView(cType, slotIdx, copy.deepcopy(initialSlotItem))
         elif newSlotItem['isInDossier']:
             numberOfDays = item['object'].numberOfDays
             if numberOfDays is not None:
@@ -177,6 +181,7 @@ class Slots(object):
         self.updated({'type': cType,
          'idx': slotIdx,
          'data': itemToSet})
+        self.__updateViewModel(cType, slotIdx, itemToSet)
 
     def __updateViewModel(self, cType, slotIdx, newSlotItem):
         if cType != CUSTOMIZATION_TYPE.CAMOUFLAGE:
@@ -216,6 +221,8 @@ class Slots(object):
             slotData = {'itemID': itemID,
              'slotTooltip': makeTooltip(_ms(TOOLTIPS.CUSTOMIZATION_SLOT_HEADER, groupName=_ms(_SLOT_TOOLTIP_MAPPING[cType])), TOOLTIPS.CUSTOMIZATION_SLOT_BODY),
              'removeBtnTooltip': makeTooltip(TOOLTIPS.CUSTOMIZATION_SLOTREMOVE_HEADER, TOOLTIPS.CUSTOMIZATION_SLOTREMOVE_BODY),
+             'revertBtnVisible': False,
+             'revertBtnTooltip': makeTooltip(TOOLTIPS.CUSTOMIZATION_SLOTREVERT_HEADER, TOOLTIPS.CUSTOMIZATION_SLOTREVERT_BODY),
              'spot': installedItem.getSpot(),
              'isInDossier': itemID >= 0}
             if itemID < 0:
