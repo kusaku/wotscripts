@@ -490,7 +490,7 @@ class Vehicle(FittingItem, HasStrCD):
                 return groupState
             if not self.isAmmoFull:
                 return Vehicle.VEHICLE_STATE.AMMO_NOT_FULL
-            if self.isFalloutOnly():
+            if self.isFalloutOnly() and not self.__isFalloutEnabled():
                 return Vehicle.VEHICLE_STATE.FALLOUT_ONLY
         return state
 
@@ -519,7 +519,7 @@ class Vehicle(FittingItem, HasStrCD):
         return getFalloutCtrl().isSelected()
 
     def isFalloutOnly(self):
-        return self.isOnlyForEventBattles and not self.__isFalloutEnabled()
+        return self.isOnlyForEventBattles
 
     def isGroupReady(self):
         from gui.game_control import getFalloutCtrl
@@ -703,7 +703,7 @@ class Vehicle(FittingItem, HasStrCD):
     def isReadyToPrebattle(self, checkForRent = True):
         if checkForRent and self.rentalIsOver:
             return False
-        if self.isFalloutOnly():
+        if self.isFalloutOnly() and not self.__isFalloutEnabled():
             return False
         if not self.isGroupReady()[0]:
             return False
@@ -716,7 +716,7 @@ class Vehicle(FittingItem, HasStrCD):
     def isReadyToFight(self):
         if self.rentalIsOver:
             return False
-        if self.isFalloutOnly():
+        if self.isFalloutOnly() and not self.__isFalloutEnabled():
             return False
         if not self.isGroupReady()[0]:
             return False

@@ -273,7 +273,7 @@ class _PrebattleDispatcher(object):
                 elif g_currentVehicle.isBroken():
                     canDo = False
                     restriction = PREBATTLE_RESTRICTION.VEHICLE_BROKEN
-                elif g_currentVehicle.isFalloutOnly():
+                elif g_currentVehicle.isFalloutOnly() and not game_control.getFalloutCtrl().isSelected():
                     canDo = False
                     restriction = PREBATTLE_RESTRICTION.VEHICLE_FALLOUT_ONLY
                 elif g_currentVehicle.isDisabledInRoaming():

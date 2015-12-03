@@ -156,6 +156,8 @@ class TankCarousel(TankCarouselMeta, GlobalListener):
             filterCriteria |= REQ_CRITERIA.VEHICLE.FAVORITE
         if self.__vehiclesFilter['gameModeFilter'] and self.__multiselectionMode:
             filterCriteria |= REQ_CRITERIA.VEHICLE.FALLOUT.AVAILABLE
+        if not getFalloutCtrl().isSelected():
+            filterCriteria |= ~REQ_CRITERIA.VEHICLE.ONLY_FOR_FALLOUT
         items = g_itemsCache.items
         filteredVehs = items.getVehicles(filterCriteria)
 
