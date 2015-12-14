@@ -85,14 +85,16 @@ class Slots(object):
     def getData(self):
         return self.__data
 
-    def select(self, cType, slotIdx, installedFirst):
+    def select(self, cType, slotIdx):
         self.__currentType = cType
         self.__currentIdx = slotIdx
-        self.selected(cType, slotIdx, installedFirst)
-        g_hangarSpace.space.updateVehicleSticker(self.__aData.viewModel[1:3])
+        self.selected(cType, slotIdx)
+        slotItem = self.__data['data'][cType]['data'][slotIdx]
+        if cType == CUSTOMIZATION_TYPE.CAMOUFLAGE:
+            self.__aData.viewModel[0] = slotItem['itemID']
+        self.__applyViewModel()
         if cType != CUSTOMIZATION_TYPE.CAMOUFLAGE:
-            slotItem = self.__data['data'][cType]['data'][slotIdx]
-            g_hangarSpace.space.locateCameraOnEmblem(slotItem['spot'] == 0, SLOT_TYPE[cType], self.calculateVehicleIndex(slotIdx, cType), 0.2)
+            g_hangarSpace.space.locateCameraOnEmblem(slotItem['spot'] == 0, SLOT_TYPE[cType], self.__getAdjustedIndex(slotIdx, cType), 0.2)
         else:
             g_hangarSpace.space.locateCameraToPreview()
 
@@ -101,7 +103,7 @@ class Slots(object):
         if initialSlotItem['itemID'] < 0:
             self.dropAppliedItem(cType, slotIdx)
         else:
-            self.cart.buyItem(cType, initialSlotItem['spot'], self.calculateVehicleIndex(slotIdx, cType), initialSlotItem['itemID'], 0, price=-1)
+            self.cart.buyItem(cType, initialSlotItem['spot'], self.__getAdjustedIndex(slotIdx, cType), initialSlotItem['itemID'], 0, price=-1)
 
     def dropAppliedItem(self, cType, slotIdx):
         typedData = self.__data['data'][cType]['data']
@@ -134,9 +136,15 @@ class Slots(object):
                     typedData[anotherSlotIdx]['price'] = itemInAnotherSlot.getPrice(typedData[anotherSlotIdx]['duration'])
         initialSlotItem = self.__initialData['data'][cType]['data'][slotIdx]
         currentSlotItem = self.__data['data'][cType]['data'][slotIdx]
+        if item['isInQuests']:
+            purchaseTypeIcon = RES_ICONS.MAPS_ICONS_LIBRARY_QUEST_ICON
+        elif duration == 0:
+            purchaseTypeIcon = RES_ICONS.MAPS_ICONS_LIBRARY_GOLDICON_2
+        else:
+            purchaseTypeIcon = RES_ICONS.MAPS_ICONS_LIBRARY_CREDITSICON_2
         newSlotItem = {'itemID': item['id'],
          'img': img,
-         'purchaseTypeIcon': RES_ICONS.MAPS_ICONS_LIBRARY_GOLDICON_2 if duration == 0 else RES_ICONS.MAPS_ICONS_LIBRARY_CREDITSICON_2,
+         'purchaseTypeIcon': purchaseTypeIcon,
          'bonus': bonus,
          'duration': duration,
          'spot': currentSlotItem['spot'],
@@ -148,7 +156,7 @@ class Slots(object):
          'revertBtnTooltip': makeTooltip(TOOLTIPS.CUSTOMIZATION_SLOTREVERT_HEADER, TOOLTIPS.CUSTOMIZATION_SLOTREVERT_BODY)}
         if initialSlotItem['itemID'] == newSlotItem['itemID']:
             if currentSlotItem['isInDossier']:
-                self.cart.buyItem(cType, newSlotItem['spot'], self.calculateVehicleIndex(slotIdx, cType), currentSlotItem['itemID'], 0, price=-1)
+                self.cart.buyItem(cType, newSlotItem['spot'], self.__getAdjustedIndex(slotIdx, cType), currentSlotItem['itemID'], 0, price=-1)
             else:
                 self.__setSlotAndUpdateView(cType, slotIdx, copy.deepcopy(initialSlotItem))
         elif newSlotItem['isInDossier']:
@@ -159,12 +167,12 @@ class Slots(object):
             else:
                 itemDuration = 0
                 price = 0
-            self.cart.buyItem(cType, newSlotItem['spot'], self.calculateVehicleIndex(slotIdx, cType), newSlotItem['itemID'], itemDuration, price=price)
+            self.cart.buyItem(cType, newSlotItem['spot'], self.__getAdjustedIndex(slotIdx, cType), newSlotItem['itemID'], itemDuration, price=price)
         else:
             self.__setSlotAndUpdateView(cType, slotIdx, newSlotItem)
         return
 
-    def calculateVehicleIndex(self, initialIndex, cType):
+    def __getAdjustedIndex(self, initialIndex, cType):
         if initialIndex == 1:
             slotItem = self.__data['data'][cType]['data'][initialIndex]
             adjacentSlotItem = self.__data['data'][cType]['data'][0]
@@ -181,16 +189,20 @@ class Slots(object):
         self.updated({'type': cType,
          'idx': slotIdx,
          'data': itemToSet})
-        self.__updateViewModel(cType, slotIdx, itemToSet)
-
-    def __updateViewModel(self, cType, slotIdx, newSlotItem):
-        if cType != CUSTOMIZATION_TYPE.CAMOUFLAGE:
-            viewModelItem = [None if newSlotItem['itemID'] < 0 else newSlotItem['itemID'], time.time(), 0]
+        if cType == CUSTOMIZATION_TYPE.CAMOUFLAGE:
+            if slotIdx == self.__currentIdx:
+                self.__aData.viewModel[0] = itemToSet['itemID']
+        else:
+            viewModelItem = [None if itemToSet['itemID'] < 0 else itemToSet['itemID'], time.time(), 0]
             if cType == CUSTOMIZATION_TYPE.INSCRIPTION:
                 viewModelItem.append(0)
-            self.__aData.viewModel[cType][newSlotItem['spot'] + self.calculateVehicleIndex(slotIdx, cType)] = viewModelItem
-            g_hangarSpace.space.updateVehicleSticker(self.__aData.viewModel[1:3])
+            self.__aData.viewModel[cType][itemToSet['spot'] + self.__getAdjustedIndex(slotIdx, cType)] = viewModelItem
+        self.__applyViewModel()
         return
+
+    def __applyViewModel(self):
+        g_hangarSpace.space.updateVehicleCamouflage(camouflageID=self.__aData.viewModel[0])
+        g_hangarSpace.space.updateVehicleSticker(self.__aData.viewModel[1:3])
 
     def __updateSlotsData(self, resetSlots):
         newSlotsData = {'data': [{'header': self.__setSlotsHeader(CUSTOMIZATION_TYPE.CAMOUFLAGE),

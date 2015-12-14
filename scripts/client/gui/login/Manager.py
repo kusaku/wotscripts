@@ -8,6 +8,7 @@ from ConnectionManager import connectionManager, CONNECTION_METHOD
 from Preferences import Preferences
 from Servers import Servers, DevelopmentServers
 from helpers.i18n import makeString as _ms
+from predefined_hosts import AUTO_LOGIN_QUERY_ENABLED
 
 class Manager(object):
 
@@ -74,7 +75,7 @@ class Manager(object):
         if self._preferences['remember_user']:
             self._preferences['name'] = name
             self._preferences['token2'] = token2
-            if not constants.IS_DEVELOPMENT and 'server_name' in self._preferences:
+            if 'server_name' in self._preferences and AUTO_LOGIN_QUERY_ENABLED:
                 del self._preferences['server_name']
         else:
             email = self._preferences['login']
@@ -83,7 +84,7 @@ class Manager(object):
             self._preferences.clear()
             if not constants.IS_SINGAPORE and not GUI_SETTINGS.igrCredentialsReset:
                 self._preferences['login'] = email
-            if constants.IS_DEVELOPMENT:
+            if not AUTO_LOGIN_QUERY_ENABLED:
                 self._preferences['server_name'] = serverName
             self._preferences['session'] = session
         self._preferences.writeLoginInfo()

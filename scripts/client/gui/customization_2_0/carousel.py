@@ -1,13 +1,10 @@
 # Embedded file name: scripts/client/gui/customization_2_0/carousel.py
-import copy
-import time
 from collections import defaultdict
 from itertools import chain
 from Event import Event
-from gui.shared.utils.HangarSpace import g_hangarSpace
 from data_aggregator import CUSTOMIZATION_TYPE
 from slots import Slots
-from filter import Filter, FILTER_TYPE
+from filter import Filter, FILTER_TYPE, PURCHASE_TYPE
 from shared import CAMOUFLAGE_GROUP_MAPPING
 _RENDERER_WIDTH = {CUSTOMIZATION_TYPE.EMBLEM: 100,
  CUSTOMIZATION_TYPE.INSCRIPTION: 176,
@@ -21,7 +18,6 @@ class Carousel(object):
         self.__currentSlotIdx = 0
         self.__currentDuration = 0
         self.__carouselItems = []
-        self.__showInstalledFirst = False
         self.filter = Filter(self.__aData.availableGroupNames)
         self.filter.changed += self.__updateCarouselData
         self.slots = Slots(self.__aData)
@@ -54,39 +50,22 @@ class Carousel(object):
     def applyItem(self, carouselItemIdx):
         carouselItem = self.__carouselItems[carouselItemIdx]
         self.slots.applyItem(carouselItem, duration=self.__currentDuration)
-        if self.__currentType == CUSTOMIZATION_TYPE.CAMOUFLAGE:
-            g_hangarSpace.space.updateVehicleCamouflage(camouflageID=carouselItem['id'])
-            self.__aData.viewModel[0] = carouselItem['id']
-        else:
-            self.__updateItemOnTank3DModel(carouselItem['id'])
 
     def changeDuration(self, duration):
         self.__currentDuration = duration
         self.__updateCarouselData()
 
-    def __updateItemOnTank3DModel(self, previewItemID):
-        cType = self.__currentType
-        slotIdx = self.__currentSlotIdx
-        slotItem = self.slots.getData()['data'][cType]['data'][slotIdx]
-        changedPreviewModel = copy.deepcopy(self.__aData.viewModel[1:3])
-        rawInstalledItem = [previewItemID, time.time(), 0]
-        if cType == CUSTOMIZATION_TYPE.INSCRIPTION:
-            rawInstalledItem.append(0)
-        changedPreviewModel[cType - 1][slotItem['spot'] + self.slots.calculateVehicleIndex(slotIdx, cType)] = rawInstalledItem
-        g_hangarSpace.space.updateVehicleSticker(changedPreviewModel)
-
-    def __onSlotSelected(self, newType, newSlotIdx, showInstalledFirst):
+    def __onSlotSelected(self, newType, newSlotIdx):
         self.__currentType = newType
         self.__currentSlotIdx = newSlotIdx
-        self.__showInstalledFirst = showInstalledFirst
-        self.filter.setTypeAndIdx(newType, newSlotIdx, self.slots.getSelectedSlotItemID(), self.slots.getInstalledItem(self.__currentSlotIdx, self.__currentType).getID())
+        self.filter.setTypeAndIdx(newType, newSlotIdx)
         if newType == CUSTOMIZATION_TYPE.CAMOUFLAGE:
             self.filter.set(FILTER_TYPE.GROUP, CAMOUFLAGE_GROUP_MAPPING[newSlotIdx])
         self.filter.apply()
 
     def __onSlotUpdated(self, newSlotData):
         if self.__currentType == newSlotData['type'] and self.__currentSlotIdx == newSlotData['idx']:
-            self.filter.setTypeAndIdx(newSlotData['type'], newSlotData['idx'], newSlotData['data']['itemID'], self.slots.getInstalledItem(self.__currentSlotIdx, self.__currentType).getID())
+            self.filter.setTypeAndIdx(newSlotData['type'], newSlotData['idx'])
             self.__updateCarouselData()
 
     def __updateCarouselData(self):
@@ -114,18 +93,19 @@ class Carousel(object):
             if self.filter.check(item):
                 appliedToCurrentSlot = itemID == self.slots.getSelectedSlotItemID()
                 installedInSlot = itemID == installedItemID
+                isInQuests = item.isInQuests and not item.isInDossier and self.filter.purchaseType == PURCHASE_TYPE.QUEST
                 carouselItem = {'id': itemID,
                  'object': item,
                  'appliedToCurrentSlot': appliedToCurrentSlot,
                  'price': item.getPrice(self.__currentDuration),
                  'priceIsGold': item.priceIsGold(self.__currentDuration),
                  'isInDossier': item.isInDossier,
-                 'isInQuests': item.isInQuests,
+                 'isInQuests': isInQuests,
                  'duration': self.__currentDuration,
                  'installedInSlot': installedInSlot}
                 if appliedToCurrentSlot:
                     currentSlotItem = carouselItem
-                if installedInSlot and self.__showInstalledFirst:
+                if installedInSlot:
                     appliedItems[item.getGroup()].append(carouselItem)
                 elif item.isInDossier:
                     purchasedItems[item.getGroup()].append(carouselItem)
@@ -134,7 +114,6 @@ class Carousel(object):
                 else:
                     otherItems[item.getGroup()].append(carouselItem)
 
-        self.__showInstalledFirst = False
         for groupedItems in allItems:
             self.__carouselItems += chain(*groupedItems.values())
 

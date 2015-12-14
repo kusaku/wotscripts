@@ -16,7 +16,7 @@ from prebattle_shared import isTeamValid, isVehicleValid
 class VehicleIsValid(IVehicleLimit):
 
     def check(self, teamLimits):
-        if g_currentVehicle.isFalloutOnly():
+        if g_currentVehicle.isFalloutOnly() and not getFalloutCtrl().isSelected():
             return (False, PREBATTLE_RESTRICTION.VEHICLE_FALLOUT_ONLY)
         if not g_currentVehicle.isReadyToFight():
             return (False, PREBATTLE_RESTRICTION.VEHICLE_NOT_READY)
@@ -341,7 +341,7 @@ class _UnitActionValidator(object):
                 return (False, UNIT_RESTRICTION.VEHICLE_RENT_IS_OVER)
             if vehicle.isInBattle:
                 return (False, UNIT_RESTRICTION.VEHICLE_IS_IN_BATTLE)
-            if vehicle.isFalloutOnly():
+            if vehicle.isFalloutOnly() and not getFalloutCtrl().isSelected():
                 return (False, UNIT_RESTRICTION.VEHICLE_WRONG_MODE)
             return (False, UNIT_RESTRICTION.VEHICLE_NOT_VALID)
         return (True, UNIT_RESTRICTION.UNDEFINED)

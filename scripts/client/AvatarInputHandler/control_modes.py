@@ -521,6 +521,7 @@ class ArcadeControlMode(_GunControlMode):
         self.disable()
         self.__mouseVehicleRotator.destroy()
         self.__mouseVehicleRotator = None
+        self._cam.writeUserPreferences()
         super(ArcadeControlMode, self).destroy()
         return
 
@@ -680,6 +681,7 @@ class StrategicControlMode(_GunControlMode):
     def destroy(self):
         self.disable()
         self.__delTrajectoryDrawer()
+        self._cam.writeUserPreferences()
         super(StrategicControlMode, self).destroy()
 
     def enable(self, **args):
@@ -839,6 +841,7 @@ class SniperControlMode(_GunControlMode):
         self.disable(True)
         self.__binoculars.enabled = False
         self.__binoculars.resetTextures()
+        self._cam.writeUserPreferences()
         super(SniperControlMode, self).destroy()
 
     def enable(self, **args):

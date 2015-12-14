@@ -947,7 +947,8 @@ _ClanInviteData = namedtuple('_ClanInviteData', ['account_id',
  'id',
  'sender_id',
  'status',
- 'updated_at'])
+ 'updated_at',
+ 'status_changer_id'])
 _ClanInviteData.__new__.__defaults__ = (0,
  0,
  '',
@@ -956,8 +957,7 @@ _ClanInviteData.__new__.__defaults__ = (0,
  0,
  '',
  _defDateTime,
- '',
- '')
+ 0)
 
 class ClanInviteData(_ClanInviteData, FieldsCheckerMixin):
 
@@ -972,6 +972,14 @@ class ClanInviteData(_ClanInviteData, FieldsCheckerMixin):
     @fmtUnavailableValue(fields=('sender_id',))
     def getSenderDbID(self):
         return self.sender_id
+
+    @fmtUnavailableValue(fields=('status_changer_id',))
+    def getChangerDbID(self):
+        return self.status_changer_id
+
+    @fmtUnavailableValue(fields=('status_changer_id',))
+    def getChangedBy(self):
+        return self.status_changer_id
 
     @fmtUnavailableValue(fields=('clan_id',))
     def getClanDbID(self):
@@ -1054,13 +1062,14 @@ class ClanADInviteData(_ClanADInviteData, FieldsCheckerMixin):
 
 class ClanInviteWrapper(object):
 
-    def __init__(self, invite, account, accountName, sender, senderName):
+    def __init__(self, invite, account, accountName, sender, senderName, changerName):
         super(ClanInviteWrapper, self).__init__()
         self.__invite = invite or ClanInviteData()
         self.__account = account or AccountClanRatingsData()
         self.__sender = sender or AccountClanRatingsData()
         self.__accountName = accountName
         self.__senderName = senderName
+        self.__changerName = changerName
 
     @property
     def status(self):
@@ -1120,6 +1129,10 @@ class ClanInviteWrapper(object):
     def getClanDbID(self):
         return self.__invite.getClanDbID()
 
+    @fmtDelegat(path='invite.getClanDbID')
+    def getClanDbID(self):
+        return self.__invite.getClanDbID()
+
     @fmtDelegat(path='invite.getCreatedAt')
     def getCreatedAt(self):
         return self.__invite.getCreatedAt()
@@ -1128,11 +1141,21 @@ class ClanInviteWrapper(object):
     def getUpdatedAt(self):
         return self.__invite.getUpdatedAt()
 
+    @fmtDelegat(path='invite.getAccountDbID')
     def getAccountDbID(self):
         return self.__invite.getAccountDbID()
 
+    @fmtDelegat(path='invite.getSenderDbID')
     def getSenderDbID(self):
         return self.__invite.getSenderDbID()
+
+    @fmtDelegat(path='invite.getChangedBy')
+    def getChangedBy(self):
+        return self.__invite.getChangedBy()
+
+    @fmtDelegat(path='invite.getChangerDbID')
+    def getChangerDbID(self):
+        return self.__invite.getChangerDbID()
 
     @formatter(formatter=_formatString)
     def getAccountName(self):
@@ -1141,6 +1164,10 @@ class ClanInviteWrapper(object):
     @formatter(formatter=_formatString)
     def getSenderName(self):
         return self.__senderName
+
+    @formatter(formatter=_formatString)
+    def getChangerName(self):
+        return self.__changerName
 
     @fmtDelegat(path='account.getGlobalRating')
     def getPersonalRating(self):
@@ -1174,6 +1201,9 @@ class ClanInviteWrapper(object):
 
     def setSenderName(self, name):
         self.__senderName = name
+
+    def setChangerName(self, name):
+        self.__changerName = name
 
     def setUserName(self, name):
         self.__accountName = name
@@ -1242,6 +1272,14 @@ class ClanPersonalInviteWrapper(object):
 
     def getDbID(self):
         return self.__invite.getDbID()
+
+    @fmtDelegat(path='invite.getChangerDbID')
+    def getChangerDbID(self):
+        return self.__invite.getChangerDbID()
+
+    @fmtDelegat(path='invite.getChangedBy')
+    def getChangedBy(self):
+        return self.__invite.getChangedBy()
 
     @fmtDelegat(path='invite.getStatus')
     def getStatus(self):

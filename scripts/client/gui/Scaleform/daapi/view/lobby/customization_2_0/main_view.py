@@ -52,7 +52,7 @@ class MainView(CustomizationMainViewMeta):
         g_customizationController.init()
 
     def showGroup(self, cType, slotIdx):
-        g_customizationController.carousel.slots.select(cType, slotIdx, True)
+        g_customizationController.carousel.slots.select(cType, slotIdx)
         if self.__carouselHidden:
             self.as_setBottomPanelHeaderS(g_customizationController.carousel.slots.getCurrentTypeLabel())
             self.as_showSelectorItemS(cType)
@@ -96,9 +96,6 @@ class MainView(CustomizationMainViewMeta):
         if isContinue:
             g_customizationController.carousel.applyItem(idx)
         return
-
-    def selectCustomizationElement(self, idx):
-        g_customizationController.carousel.previewItem(idx)
 
     def setDurationType(self, durationIdx):
         g_customizationController.carousel.changeDuration(_DURATION_MAPPING[durationIdx])
@@ -236,6 +233,8 @@ class MainView(CustomizationMainViewMeta):
                     label = text_styles.main(CUSTOMIZATION.CAROUSEL_ITEMLABEL_PURCHASED)
                 else:
                     label = icons.premiumIgrSmall()
+            elif item['isInQuests']:
+                label = icons.quest()
             else:
                 if item['priceIsGold']:
                     priceFormatter = text_styles.gold
@@ -250,7 +249,7 @@ class MainView(CustomizationMainViewMeta):
              'bonusPower': text_styles.stats('+{0}%{1}'.format(item['object'].qualifier.getValue(), '*' if item['object'].qualifier.getDescription() is not None else '')),
              'label': label,
              'selected': item['appliedToCurrentSlot'],
-             'goToTaskBtnVisible': item['isInQuests'] and not item['isInDossier'],
+             'goToTaskBtnVisible': item['isInQuests'],
              'goToTaskBtnText': _ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_ITEMCAROUSEL_RENDERER_GOTOTASK)}
             cType = g_customizationController.carousel.currentType
             if isSale(cType, item['duration']) and not item['isInDossier'] and not item['installedInSlot']:

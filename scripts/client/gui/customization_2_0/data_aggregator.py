@@ -4,7 +4,6 @@ from collections import namedtuple
 from Event import Event
 from gui import GUI_SETTINGS, g_tankActiveCamouflage
 from gui.game_control import getIGRCtrl
-from helpers.i18n import makeString as _ms
 from gui.server_events import g_eventsCache as _g_eventsCache
 from gui.shared import g_itemsCache as _g_itemsCache
 from gui.shared.ItemsCache import CACHE_SYNC_REASON, g_itemsCache
@@ -120,7 +119,7 @@ class DataAggregator(object):
             self.__rawItems = [_g_vehiclesCache.customization(self.__cNationID)['camouflages'], _g_vehiclesCache.playerEmblems()[1], _g_vehiclesCache.customization(self.__cNationID)['inscriptions']]
             self.__itemGroups = (_g_vehiclesCache.customization(self.__cNationID)['camouflageGroups'], _g_vehiclesCache.playerEmblems()[0], _g_vehiclesCache.customization(self.__cNationID)['inscriptionGroups'])
             inQuests = self.__getQuestItems()
-            self.__availableGroupNames = []
+            self.__availableGroupNames = [set([]), set([]), set([])]
             self.__displayedItems = [{}, {}, {}]
             self.__availableItems = [{}, {}, {}]
             self.__igrReplacedItems = [{}, {}, {}]
@@ -130,9 +129,9 @@ class DataAggregator(object):
             installedRawItems = self.__setInstalledRawItems(curVehDescr)
             self.__installed = self.__setInstalledCustomization(curVehDescr.hull['emblemSlots'], curVehDescr.turret['emblemSlots'], installedRawItems)
             for cType in CUSTOMIZATION_TYPE.ALL:
-                self.__fillAvailableItems(cType, inDossier, inQuests)
-                self.__fillDisplayedItems(cType, inventoryItems)
-                self.__fillDisplayedGroups(cType, inDossier, inQuests, inventoryItems)
+                self.__fillAvailableItems(cType, inDossier, inQuests, inventoryItems)
+                self.__fillDisplayedItems(cType)
+                self.__fillDisplayedGroups(cType)
 
             if updateReason == VEHICLE_CHANGED_EVENT:
                 needReset = True
@@ -234,7 +233,7 @@ class DataAggregator(object):
 
         return inventoryItems
 
-    def __fillAvailableItems(self, cType, inDossier, inQuests):
+    def __fillAvailableItems(self, cType, inDossier, inQuests, inventoryItems):
         containerToFill = self.__availableItems[cType]
         groups = self.__itemGroups[cType]
         class_ = _ITEM_CLASS[cType]
@@ -248,90 +247,71 @@ class DataAggregator(object):
                 group = groups[availableRawItem[0]]
                 if len(group) == 5:
                     allowedNations = None
-                    allowedVehicles = group[3]
+                    allowedVehicles = list(group[3])
                     notAllowedVehicles = group[4]
                 else:
                     allowedNations = group[3]
-                    allowedVehicles = group[4]
+                    allowedVehicles = list(group[4])
                     notAllowedVehicles = group[5]
             else:
                 groupName = availableRawItem['groupName']
                 qualifier = CamouflageQualifier(groupName[3:] if groupName.startswith('IGR') else groupName)
                 allowedNations = None
-                allowedVehicles = availableRawItem['allow']
+                allowedVehicles = list(availableRawItem['allow'])
                 notAllowedVehicles = availableRawItem['deny']
             replacedByIGRItem = itemID in self.__igrReplacedItems[cType]
             isNotMigrated = itemID in self.__notMigratedItems[cType]
-            containerToFill[itemID] = class_(itemID, availableRawItem, qualifier, itemID in inDossier[cType] or replacedByIGRItem or isNotMigrated, itemID in inQuests[cType], allowedVehicles, notAllowedVehicles, allowedNations, replacedByIGRItem)
-            if itemID in self.__igrReplacedItems[cType]:
-                containerToFill[itemID].numberOfDays = self.__igrReplacedItems[cType][itemID]
+            numberOfDays = None
+            numberOfItems = None
+            isInDossier = itemID in inDossier[cType] or replacedByIGRItem or isNotMigrated
+            if cType == CUSTOMIZATION_TYPE.CAMOUFLAGE:
+                groupName = itemID
+            else:
+                groupName = availableRawItem[0]
+            isInShop = self.__groupIsInShop(groupName, cType)
+            if itemID in inventoryItems[cType]:
+                isInDossier = True
+                allowedVehicles += inventoryItems[cType][itemID][4]
+                if inventoryItems[cType][itemID][6][0]:
+                    numberOfItems = inventoryItems[cType][itemID][6][1]
+                else:
+                    numberOfDays = inventoryItems[cType][itemID][6][1]
+            elif itemID in self.__igrReplacedItems[cType]:
+                numberOfDays = self.__igrReplacedItems[cType][itemID]
+            containerToFill[itemID] = class_(itemID, availableRawItem, qualifier, isInDossier, itemID in inQuests[cType], isInShop, allowedVehicles, notAllowedVehicles, allowedNations, replacedByIGRItem, numberOfItems, numberOfDays)
 
         return
 
-    def __fillDisplayedItems(self, cType, inventoryItems):
+    def __fillDisplayedItems(self, cType):
         containerToFill = self.__displayedItems[cType]
         for itemID, availableItem in self.__availableItems[cType].iteritems():
-            if availableItem.isInDossier:
-                containerToFill[itemID] = availableItem
-            if availableItem.isInQuests:
-                containerToFill[itemID] = availableItem
-            if itemID in inventoryItems[cType]:
-                availableItem.setAllowedVehicles(inventoryItems[cType][itemID][4])
-                availableItem.markIsInDossier()
-                if inventoryItems[cType][itemID][6][0]:
-                    availableItem.numberOfItems = inventoryItems[cType][itemID][6][1]
-                else:
-                    availableItem.numberOfDays = inventoryItems[cType][itemID][6][1]
             if availableItem.isAllowedForCurrentVehicle:
-                if cType == CUSTOMIZATION_TYPE.CAMOUFLAGE:
-                    groupName = itemID
-                else:
-                    groupName = availableItem.getGroup()
-                if itemID in inventoryItems[cType]:
-                    availableItem.markIsInShop()
+                if availableItem.isInDossier:
                     containerToFill[itemID] = availableItem
-                elif self.__groupIsInShop(groupName, cType):
-                    availableItem.markIsInShop()
+                elif availableItem.isInQuests:
+                    containerToFill[itemID] = availableItem
+                elif availableItem.isInShop:
                     containerToFill[itemID] = availableItem
 
     def __groupIsInShop(self, groupName, cType):
         return [lambda group: group not in g_itemsCache.items.shop.getCamouflagesHiddens(self.__cNationID), lambda group: group not in g_itemsCache.items.shop.getEmblemsGroupHiddens() and (group != 'group5' or self.__displayIgrItems), lambda group: group not in g_itemsCache.items.shop.getInscriptionsGroupHiddens(self.__cNationID) and (group != 'IGR' or self.__displayIgrItems)][cType](groupName)
 
-    def __fillDisplayedGroups(self, cType, inDossier, inQuests, inventoryItems):
-        groups = []
-        uniqueGroups = []
-        for key, value in self.__itemGroups[cType].iteritems():
+    def __fillDisplayedGroups(self, cType):
+        groups = self.__availableGroupNames[cType]
+        for itemID, item in self.__displayedItems[cType].iteritems():
+            groupName = item.getGroup()
             if cType == CUSTOMIZATION_TYPE.CAMOUFLAGE:
-                itemIDsInGroup = value['ids']
-                groupUserName = value['userString']
-                groupIsInShop = not key.startswith('IGR') or self.__displayIgrItems
+                userFriendlyNameKey = 'userString'
             else:
-                itemIDsInGroup = value[0]
-                groupUserName = _ms(value[1])
-                groupIsInShop = self.__groupIsInShop(key, cType)
-            if groupIsInShop and key not in uniqueGroups and self.__groupIsDisplayed(key, cType):
-                uniqueGroups.append(key)
-                groups.append((key, groupUserName))
-            for itemID in list(inDossier[cType]) + inventoryItems[cType].keys() + inQuests[cType].keys():
-                if itemID in itemIDsInGroup and key not in uniqueGroups:
-                    uniqueGroups.append(key)
-                    groups.append((key, groupUserName))
-
-        self.__availableGroupNames.append(groups)
-
-    def __groupIsDisplayed(self, groupName, cType):
-        for key, value in self.__displayedItems[cType].iteritems():
-            if value.getGroup() == groupName:
-                return True
-
-        return False
+                userFriendlyNameKey = 1
+            groups.add((groupName, self.__itemGroups[cType][groupName][userFriendlyNameKey]))
 
     def __getQuestItems(self):
         questItems = ({}, {}, {})
         for name, event in _g_eventsCache.getEvents().items():
             for bonus in event.getBonuses('customizations'):
                 for item in bonus.getList():
-                    if item['nationId'] == self.__cNationID:
+                    if item['nationId'] == self.__cNationID or item['type'] == CUSTOMIZATION_TYPE.EMBLEM:
                         questData = _QuestData(id=event.getID(), isCompleted=event.isCompleted())
                         questItems[item['type']][item['id']] = questData
 

@@ -18,6 +18,7 @@ class Controller(object):
         self.__carousel = Carousel(self.__aData)
         self.__hangarCameraLocation = g_hangarSpace.space.getCameraLocation()
         g_hangarSpace.space.locateCameraToPreview()
+        g_hangarSpace.onSpaceCreate += self.__onHangarSpaceCreate
 
     def fini(self):
         self.__carousel.fini()
@@ -25,6 +26,7 @@ class Controller(object):
         self.__aData = None
         self.__carousel = None
         self.__header = None
+        g_hangarSpace.onSpaceCreate -= self.__onHangarSpaceCreate
         return
 
     def updateTank3DModel(self, isReset = False):
@@ -48,6 +50,11 @@ class Controller(object):
     @property
     def associatedQuests(self):
         return self.__aData.associatedQuests
+
+    def __onHangarSpaceCreate(self):
+        if g_hangarSpace.space is not None:
+            self.__hangarCameraLocation = g_hangarSpace.space.getCameraLocation()
+        return
 
 
 g_customizationController = Controller()
