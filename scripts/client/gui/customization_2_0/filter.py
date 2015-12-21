@@ -143,8 +143,8 @@ class Filter(object):
 
     def __hasPurchaseType(self, item):
         if self.__purchaseType == PURCHASE_TYPE.PURCHASE:
-            return item.getIgrType() == IGR_TYPE.NONE
+            return item.getIgrType() == IGR_TYPE.NONE and (item.isInDossier or item.isInShop)
         if self.__purchaseType == PURCHASE_TYPE.QUEST:
             return item.isInQuests and not item.isInDossier
         if self.__purchaseType == PURCHASE_TYPE.IGR:
-            return item.getIgrType() == IGR_TYPE.PREMIUM
+            return item.getIgrType() == IGR_TYPE.PREMIUM and (item.isInDossier or item.isInShop)

@@ -1187,6 +1187,10 @@ class PostMortemControlMode(IControlMode):
 
     def __onVehicleLeaveWorld(self, vehicle):
         if vehicle.id == self.__curVehicleID:
+            vehicleID = BigWorld.player().playerVehicleID
+            vehicle = BigWorld.entities.get(vehicleID)
+            if vehicle is not None and 'observer' in vehicle.typeDescriptor.type.tags:
+                return
             self.__switchToVehicle(None)
         return
 

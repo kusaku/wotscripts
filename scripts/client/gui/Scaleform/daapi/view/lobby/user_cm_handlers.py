@@ -1,4 +1,5 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/user_cm_handlers.py
+import BigWorld
 from adisp import process
 import constants
 from debug_utils import LOG_DEBUG
