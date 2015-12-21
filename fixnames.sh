@@ -9,8 +9,9 @@
 # extensions also are changed to .py
 
 
-rm -rf ./scripts_in/*.pyc
-find ./scripts_in/ -name '*.py*' | while IFS=$'\n' read -r FILE; do
+find ./scripts~/ -name '*.pyc' -delete
+
+find ./scripts~/ -name '*.pyc_dis*' | while IFS=$'\n' read -r FILE; do
 
     # read original filename
     NEWFILE=$(head -n 1 $FILE | sed -e 's/# Embedded file name: /.\//g')
