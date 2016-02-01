@@ -61,6 +61,7 @@ class VEHICLE_TAGS(CONST_CONTAINER):
     DISABLED_IN_ROAMING = 'disabledInRoaming'
     EVENT = 'event_battles'
     EXCLUDED_FROM_SANDBOX = 'excluded_from_sandbox'
+    TELECOM = 'telecom'
 
 
 class Vehicle(FittingItem, HasStrCD):
@@ -93,6 +94,7 @@ class Vehicle(FittingItem, HasStrCD):
         FALLOUT_BROKEN = 'fallout_broken'
         UNSUITABLE_TO_QUEUE = 'unsuitableToQueue'
         CUSTOM = (NOT_SUITABLE, UNSUITABLE_TO_QUEUE)
+        DEAL_IS_OVER = 'dealIsOver'
 
     CAN_SELL_STATES = [VEHICLE_STATE.UNDAMAGED,
      VEHICLE_STATE.CREW_NOT_FULL,
@@ -372,7 +374,7 @@ class Vehicle(FittingItem, HasStrCD):
 
     @property
     def rentLeftTime(self):
-        return float(time_utils.getTimeDeltaFromNow(time_utils.makeLocalServerTime(self.rentExpiryTime)))
+        return self.rentInfo.getTimeLeft()
 
     @property
     def maxRentDuration(self):
@@ -396,11 +398,15 @@ class Vehicle(FittingItem, HasStrCD):
 
     @property
     def rentLeftBattles(self):
-        return self.rentInfo.battlesLeft
+        return self.rentInfo.getBattlesLeft()
+
+    @property
+    def rentExpiryState(self):
+        return self.rentInfo.getExpiryState()
 
     @property
     def rentLimitIsReached(self):
-        return self.rentLeftTime <= 0 and self.rentLeftBattles <= 0
+        return self.rentLeftTime <= 0 and self.rentLeftBattles <= 0 and self.rentExpiryState
 
     @property
     def descriptor(self):
@@ -456,6 +462,8 @@ class Vehicle(FittingItem, HasStrCD):
             ms = Vehicle.VEHICLE_STATE.RENTAL_IS_ORVER
             if self.isPremiumIGR:
                 ms = Vehicle.VEHICLE_STATE.IGR_RENTAL_IS_ORVER
+            elif self.isTelecom:
+                ms = Vehicle.VEHICLE_STATE.DEAL_IS_OVER
         elif self.isDisabledInPremIGR:
             ms = Vehicle.VEHICLE_STATE.IN_PREMIUM_IGR_ONLY
         elif self.isInPrebattle:
@@ -550,7 +558,8 @@ class Vehicle(FittingItem, HasStrCD):
          Vehicle.VEHICLE_STATE.RENTAL_IS_ORVER,
          Vehicle.VEHICLE_STATE.IGR_RENTAL_IS_ORVER,
          Vehicle.VEHICLE_STATE.AMMO_NOT_FULL_EVENTS,
-         Vehicle.VEHICLE_STATE.NOT_SUITABLE):
+         Vehicle.VEHICLE_STATE.NOT_SUITABLE,
+         Vehicle.VEHICLE_STATE.DEAL_IS_OVER):
             return Vehicle.VEHICLE_STATE_LEVEL.CRITICAL
         if state in (Vehicle.VEHICLE_STATE.UNDAMAGED,):
             return Vehicle.VEHICLE_STATE_LEVEL.INFO
@@ -691,6 +700,14 @@ class Vehicle(FittingItem, HasStrCD):
     @property
     def isOnlyForEventBattles(self):
         return _checkForTags(self.tags, VEHICLE_TAGS.EVENT)
+
+    @property
+    def isTelecom(self):
+        return _checkForTags(self.tags, VEHICLE_TAGS.TELECOM)
+
+    @property
+    def isTelecomDealOver(self):
+        return self.isTelecom and self.rentExpiryState
 
     def hasLockMode(self):
         isBS = prb_getters.isBattleSession()

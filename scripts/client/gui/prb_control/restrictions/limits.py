@@ -331,8 +331,7 @@ class _UnitActionValidator(object):
         if vInfo.isEmpty():
             return (False, UNIT_RESTRICTION.VEHICLE_NOT_SELECTED)
         vehicle = vInfo.getVehicle()
-        isReadyToBattle = vehicle.isReadyToPrebattle(checkForRent=not flags.isInPreArena())
-        if vehicle and not isReadyToBattle:
+        if vehicle and not vehicle.isReadyToPrebattle(checkForRent=not flags.isInPreArena()):
             if vehicle.isBroken:
                 return (False, UNIT_RESTRICTION.VEHICLE_BROKEN)
             if not vehicle.isCrewFull:

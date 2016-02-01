@@ -1275,7 +1275,10 @@ SYS_MESSAGE_TYPE = Enumeration('systemMessageType', ['serverReboot',
  'rentCompensation',
  'potapovQuestBonus',
  'premiumPersonalDiscount',
- 'goodieRemoved'])
+ 'goodieRemoved',
+ 'telecomOrderCreated',
+ 'telecomOrderUpdated',
+ 'telecomOrderDeleted'])
 SYS_MESSAGE_IMPORTANCE = Enumeration('systemMessageImportance', ['normal', 'high'])
 SM_REQUEST_PERSONAL_MESSAGES_FLAG = 1
 SM_REQUEST_SYSTEM_MESSAGES_FLAG = 2

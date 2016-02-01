@@ -28,3 +28,7 @@ def showBoosterAward(booster):
 
 def showFalloutAward(lvls, isRequiredVehicle = False):
     showAwardWindow(specialAwards.FalloutAwardWindow(lvls, isRequiredVehicle))
+
+
+def showTelecomAward(vehicleDesrs, hasCrew, hasBrotherhood):
+    showAwardWindow(specialAwards.TelecomAward(vehicleDesrs, hasCrew, hasBrotherhood))

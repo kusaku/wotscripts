@@ -3,20 +3,19 @@ import random
 from collections import namedtuple
 import BigWorld
 import constants
-from constants import EVENT_TYPE
-from gui.Scaleform.genConsts.BOOSTER_CONSTANTS import BOOSTER_CONSTANTS
-from gui.shared.utils.functions import makeTooltip
 import potapov_quests
+from gui.shared.utils.functions import makeTooltip
 from helpers import i18n
-from potapov_quests import PQ_BRANCH
 from shared_utils import findFirst
 from debug_utils import LOG_ERROR, LOG_CURRENT_EXCEPTION
 from gui.server_events import g_eventsCache
-from gui.Scaleform.locale.MENU import MENU
-from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.Scaleform.daapi.view.lobby.AwardWindow import AwardAbstract, packRibbonInfo
-from gui.shared.formatters import text_styles
+from gui.Scaleform.genConsts.BOOSTER_CONSTANTS import BOOSTER_CONSTANTS
+from gui.Scaleform.genConsts.TOOLTIPS_CONSTANTS import TOOLTIPS_CONSTANTS
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
+from gui.Scaleform.locale.RES_ICONS import RES_ICONS
+from gui.Scaleform.locale.MENU import MENU
+from gui.shared.formatters import text_styles
 _BG_IMG_BY_VEH_TYPE = {'lightTank': RES_ICONS.MAPS_ICONS_QUESTS_LTAWARDBACK,
  'mediumTank': RES_ICONS.MAPS_ICONS_QUESTS_MTAWARDBACK,
  'heavyTank': RES_ICONS.MAPS_ICONS_QUESTS_HTAWARDBACK,
@@ -281,7 +280,7 @@ class RegularAward(FormattedAward):
         return i18n.makeString(MENU.AWARDWINDOW_TITLE_TASKCOMPLETE)
 
     def getBackgroundImage(self):
-        if self.__potapovQuest.getQuestBranch() == PQ_BRANCH.FALLOUT:
+        if self.__potapovQuest.getQuestBranch() == potapov_quests.PQ_BRANCH.FALLOUT:
             return _BG_IMG_FALLOUT[self.__potapovQuest.getMajorTag()]
         else:
             vehType = findFirst(None, self.__potapovQuest.getVehicleClasses())
