@@ -514,11 +514,11 @@ class PotapovQuestValidator(SyncValidator):
         return makeSuccess()
 
 
-class _PotapovQuestsLockedByVehicle(SyncValidator):
+class PotapovQuestsLockedByVehicle(SyncValidator):
 
-    def __init__(self, quests):
-        super(_PotapovQuestsLockedByVehicle, self).__init__()
-        self._messageKeyPrefix = ''
+    def __init__(self, quests, messageKeyPrefix = ''):
+        super(PotapovQuestsLockedByVehicle, self).__init__()
+        self._messageKeyPrefix = messageKeyPrefix
         self._lockedChains = g_eventsCache.getLockedQuestTypes()
         self.quests = quests
 
@@ -528,24 +528,6 @@ class _PotapovQuestsLockedByVehicle(SyncValidator):
                 return makeError(self._messageKeyPrefix + 'LOCKED_BY_VEHICLE_QUEST')
 
         return makeSuccess()
-
-
-class RandomQuestsLockedByVehicle(_PotapovQuestsLockedByVehicle):
-
-    @classmethod
-    def _findLockedVehicles(cls, randomQuest):
-        return g_itemsCache.items.getVehicles(REQ_CRITERIA.VEHICLE.CLASSES(randomQuest.getVehicleClasses()) | REQ_CRITERIA.VEHICLE.LEVELS(range(randomQuest.getVehMinLevel(), MAX_VEHICLE_LEVEL + 1)) | REQ_CRITERIA.VEHICLE.LOCKED | ~REQ_CRITERIA.VEHICLE.LOCKED_BY_FALLOUT).values()
-
-
-class FalloutQuestsLockedByVehicle(_PotapovQuestsLockedByVehicle):
-
-    def __init__(self, quests):
-        super(FalloutQuestsLockedByVehicle, self).__init__(quests)
-        self._messageKeyPrefix = 'fallout/'
-
-    @classmethod
-    def _findLockedVehicles(cls, _):
-        return g_itemsCache.items.getVehicles(REQ_CRITERIA.VEHICLE.FALLOUT.AVAILABLE | REQ_CRITERIA.VEHICLE.LOCKED_BY_FALLOUT).values()
 
 
 class PotapovQuestSlotsValidator(SyncValidator):

@@ -42,7 +42,7 @@ def getSalePriceString(isGold, price):
 
 
 def forEachSlotIn(newSlotsData, oldSlotsData, functionToRun):
-    for cType in (CUSTOMIZATION_TYPE.CAMOUFLAGE, CUSTOMIZATION_TYPE.EMBLEM, CUSTOMIZATION_TYPE.INSCRIPTION):
+    for cType in CUSTOMIZATION_TYPE.ALL:
         for slotIdx in range(0, len(newSlotsData['data'][cType]['data'])):
             newSlotItem = newSlotsData['data'][cType]['data'][slotIdx]
             oldSlotItem = oldSlotsData['data'][cType]['data'][slotIdx]

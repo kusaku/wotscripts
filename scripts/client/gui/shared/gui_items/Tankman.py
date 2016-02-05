@@ -130,6 +130,10 @@ class Tankman(GUIItem, HasStrCD):
         return self.descriptor.roleLevel
 
     @property
+    def isFemale(self):
+        return self.descriptor.isFemale
+
+    @property
     def icon(self):
         return getIconName(self.nationID, self.descriptor.iconID)
 
@@ -273,7 +277,7 @@ class TankmanSkill(GUIItem):
         if tankman is not None:
             tdescr = tankman.descriptor
             skills = tdescr.skills
-            self.isFemale = tdescr.isFemale
+            self.isFemale = tankman.isFemale
             self.level = tdescr.lastSkillLevel if skills.index(self.name) == len(skills) - 1 else tankmen.MAX_SKILL_LEVEL
             self.roleType = self.__getSkillRoleType(skillName)
             self.isActive = self.__getSkillActivity(tankman)

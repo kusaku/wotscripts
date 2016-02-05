@@ -1,6 +1,6 @@
 # Embedded file name: scripts/client/gui/shared/tooltips/module.py
 import gui
-from debug_utils import LOG_ERROR
+from debug_utils import LOG_ERROR, LOG_DEBUG
 from gui.Scaleform.daapi.view.lobby.techtree.settings import NODE_STATE
 from gui.Scaleform.locale.MENU import MENU
 from gui.shared import g_itemsCache, REQ_CRITERIA
@@ -53,7 +53,7 @@ class ModuleStatusField(ToolTipDataField):
         if not isFit:
             reason = reason.replace(' ', '_')
             tooltipHeader, tooltipText = getComplexStatus('#tooltips:moduleFits/%s' % reason)
-            if reason == 'credit_error' or reason == 'gold_error':
+            if reason in ('gold_error', 'credit_error'):
                 messageLvl = Vehicle.VEHICLE_STATE_LEVEL.CRITICAL
             elif reason == 'not_with_installed_equipment':
                 if vehicle is not None:
@@ -124,6 +124,7 @@ class ModuleStatsField(ToolTipDataField):
         result = []
         module = self._tooltip.item
         configuration = self._tooltip.context.getStatsConfiguration(module)
+        slotIdx = configuration.slotIdx
         vehicle = configuration.vehicle
         sellPrice = configuration.sellPrice
         buyPrice = configuration.buyPrice
@@ -192,7 +193,13 @@ class ModuleStatsField(ToolTipDataField):
                 count = len(module.getInstalledVehicles(inventoryVehicles.itervalues()))
                 if count:
                     result.append(('vehicleCount', count))
-                    if count > self._tooltip.MAX_INSTALLED_LIST_LEN:
+                    isInstalled = False
+                    if vehicle is not None:
+                        isFit, reason = module.mayInstall(vehicle, slotIdx)
+                        if not isFit:
+                            reason = reason.replace(' ', '_')
+                        isInstalled = reason == 'already_installed'
+                    if count > self._tooltip.MAX_INSTALLED_LIST_LEN and (isInstalled or isMoneyEnough):
                         hiddenVehicleCount = count - self._tooltip.MAX_INSTALLED_LIST_LEN
                         result.append(('hiddenVehicleCount', hiddenVehicleCount))
             return result
@@ -342,7 +349,6 @@ class ModuleTooltipData(ToolTipData):
         self.fields = (ToolTipAttrField(self, 'level'),
          ToolTipAttrField(self, 'name', 'userName'),
          ToolTipAttrField(self, 'type', 'itemTypeName'),
-         ToolTipAttrField(self, 'removeable', 'isRemovable'),
          ToolTipAttrField(self, 'descr', 'shortDescription'),
          ToolTipMethodCheckField(self, 'gold', 'gold', 'getSellPriceCurrency'),
          ModuleFitReasonCheckField(self, 'tooHeavy', 'too_heavy'),

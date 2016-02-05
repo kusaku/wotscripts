@@ -1,5 +1,6 @@
 # Embedded file name: scripts/client/tutorial/control/quests/triggers.py
 import BigWorld
+from account_helpers.AccountSettings import AccountSettings
 from gui.shared import g_eventBus, events
 from gui.shared.event_bus import EVENT_BUS_SCOPE
 from tutorial import doc_loader
@@ -224,6 +225,15 @@ class BuyVehicleTrigger(TriggerWithValidateVar):
         self.toggle(isOn=self.isOn())
 
 
+class InventoryVehicleTrigger(BuyVehicleTrigger):
+
+    def isOn(self):
+        vehicleCriteria = self.getVar()
+        minLvl, maxLvl = vehicleCriteria.get('levelsRange', (1, 10))
+        criteria = REQ_CRITERIA.INVENTORY | REQ_CRITERIA.VEHICLE.LEVELS(range(minLvl, maxLvl)) | ~REQ_CRITERIA.VEHICLE.EXPIRED_RENT
+        return bool(len(g_itemsCache.items.getVehicles(criteria)))
+
+
 class VehicleBattleCountTrigger(TriggerWithValidateVar):
 
     def run(self):
@@ -266,6 +276,28 @@ class TutorialIntSettingsTrigger(TriggerWithValidateVar):
     def __onSettingsChanged(self, diff):
         if self.getVar() in diff:
             self.toggle(isOn=bool(diff[self.getVar()]))
+
+
+class TutorialAccountSettingsTrigger(TriggerWithValidateVar):
+
+    def run(self):
+        self.isRunning = True
+        if not self.isSubscribed:
+            self.isSubscribed = True
+            AccountSettings.onSettingsChanging += self.__onSettingsChanged
+        self.toggle(isOn=self.isOn())
+
+    def isOn(self):
+        return AccountSettings.getSettings(self.getVar())
+
+    def clear(self):
+        AccountSettings.onSettingsChanging -= self.__onSettingsChanged
+        self.isSubscribed = False
+        self.isRunning = False
+
+    def __onSettingsChanged(self, key, value):
+        if self.getVar() == key:
+            self.toggle(isOn=self.isOn())
 
 
 class XpExchangeTrigger(Trigger):

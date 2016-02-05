@@ -6,7 +6,7 @@ import cPickle
 from Event import Event
 from functools import wraps
 from wotdecorators import noexcept
-from debug_utils import LOG_RF, LOG_ERROR
+from debug_utils import LOG_DEBUG, LOG_ERROR
 from constants import CHAT_LOG, RESTRICTION_TYPE
 from enumerations import Enumeration, AttributeEnumItem
 __all__ = ['CHAT_ACTIONS', 'CHAT_ACTION_RESPONSES']
@@ -1242,8 +1242,8 @@ SYS_MESSAGE_TYPE = Enumeration('systemMessageType', ['serverReboot',
  'invoiceReceived',
  'giftReceived',
  'autoMaintenance',
- 'tradeOfferReceived',
- 'tradeOfferDeclined',
+ 'reserved_11',
+ 'reserved_12',
  'waresSold',
  'waresBought',
  'premiumBought',
@@ -1276,6 +1276,9 @@ SYS_MESSAGE_TYPE = Enumeration('systemMessageType', ['serverReboot',
  'potapovQuestBonus',
  'premiumPersonalDiscount',
  'goodieRemoved',
+ 'specBattleInvite',
+ 'specBattleRoundEnd',
+ 'specBattleEnd',
  'telecomOrderCreated',
  'telecomOrderUpdated',
  'telecomOrderDeleted'])

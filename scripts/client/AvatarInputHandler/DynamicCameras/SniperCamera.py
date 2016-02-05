@@ -72,8 +72,9 @@ class SniperCamera(ICamera, CallbackDelayer):
         self.disable()
         self.__onChangeControlMode = None
         self.__cam = None
-        self.__aimingSystem.destroy()
-        self.__aimingSystem = None
+        if self.__aimingSystem is not None:
+            self.__aimingSystem.destroy()
+            self.__aimingSystem = None
         self.__aim = None
         CallbackDelayer.destroy(self)
         return

@@ -138,6 +138,7 @@ class Vehicle(FittingItem, HasStrCD):
         self.rentPackages = []
         self.hasRentPackages = False
         self.isDisabledForBuy = False
+        self.isSelected = False
         invData = dict()
         if proxy is not None and proxy.inventory.isSynced() and proxy.stats.isSynced() and proxy.shop.isSynced():
             invDataTmp = proxy.inventory.getItems(GUI_ITEM_TYPE.VEHICLE, inventoryID)
@@ -153,6 +154,7 @@ class Vehicle(FittingItem, HasStrCD):
             self.clanLock = clanDamageLock or clanNewbieLock
             self.isDisabledForBuy = self.intCD in proxy.shop.getNotToBuyVehicles()
             self.hasRentPackages = bool(proxy.shop.getVehicleRentPrices().get(self.intCD, {}))
+            self.isSelected = bool(self.invID in proxy.stats.oldVehInvIDs)
         self.inventoryCount = 1 if len(invData.keys()) else 0
         data = invData.get('rent')
         if data is not None:
@@ -390,7 +392,7 @@ class Vehicle(FittingItem, HasStrCD):
 
     @property
     def rentalIsOver(self):
-        return self.isRented and self.rentLimitIsReached
+        return self.isRented and self.rentLimitIsReached and not self.isSelected
 
     @property
     def rentalIsActive(self):
@@ -731,6 +733,8 @@ class Vehicle(FittingItem, HasStrCD):
 
     @property
     def isReadyToFight(self):
+        if self.__isFalloutEnabled() and not self.isFalloutSelected:
+            return True
         if self.rentalIsOver:
             return False
         if self.isFalloutOnly() and not self.__isFalloutEnabled():

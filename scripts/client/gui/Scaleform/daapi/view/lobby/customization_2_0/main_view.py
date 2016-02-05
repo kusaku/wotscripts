@@ -12,6 +12,7 @@ from gui.Scaleform.locale.MENU import MENU
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.Scaleform.locale.VEHICLE_CUSTOMIZATION import VEHICLE_CUSTOMIZATION
+from gui.customization_2_0.cart import Cart
 from gui.game_control import getIGRCtrl
 from gui.server_events import events_dispatcher
 from gui.shared import events
@@ -49,14 +50,36 @@ class MainView(CustomizationMainViewMeta):
         super(MainView, self).__init__()
         self.__carouselHidden = True
         self.__animationTestIndex = -1
+        self.__isPurchaseProcess = False
         g_customizationController.init()
 
     def showGroup(self, cType, slotIdx):
         g_customizationController.carousel.slots.select(cType, slotIdx)
         if self.__carouselHidden:
-            self.as_setBottomPanelHeaderS(g_customizationController.carousel.slots.getCurrentTypeLabel())
+            self.__setBottomPanelData(g_customizationController.carousel.slots.getCurrentTypeLabel())
             self.as_showSelectorItemS(cType)
             self.__carouselHidden = False
+
+    def __setBottomPanelData(self, label = ''):
+        totalGold = g_customizationController.carousel.slots.cart.totalPriceGold
+        totalCredits = g_customizationController.carousel.slots.cart.totalPriceCredits
+        notEnoughGoldTooltip = notEnoughCreditsTooltip = ''
+        enoughGold = g_itemsCache.items.stats.gold >= totalGold
+        enoughCredits = g_itemsCache.items.stats.credits >= totalCredits
+        if not enoughGold:
+            diff = text_styles.gold(totalGold - g_itemsCache.items.stats.gold)
+            notEnoughGoldTooltip = makeTooltip(_ms(TOOLTIPS.CUSTOMIZATION_NOTENOUGHRESOURCES_HEADER), _ms(TOOLTIPS.CUSTOMIZATION_NOTENOUGHRESOURCES_BODY, count='{0}{1}'.format(diff, icons.gold())))
+        if not enoughCredits:
+            diff = text_styles.credits(totalCredits - g_itemsCache.items.stats.credits)
+            notEnoughCreditsTooltip = makeTooltip(_ms(TOOLTIPS.CUSTOMIZATION_NOTENOUGHRESOURCES_HEADER), _ms(TOOLTIPS.CUSTOMIZATION_NOTENOUGHRESOURCES_BODY, count='{0}{1}'.format(diff, icons.credits())))
+        self.as_setBottomPanelHeaderS({'newHeaderText': label,
+         'buyBtnLabel': _ms(MENU.CUSTOMIZATION_BUTTONS_APPLY, count=len(g_customizationController.carousel.slots.cart.items)),
+         'pricePanel': {'totalPriceCredits': formatPriceCredits(totalCredits),
+                        'totalPriceGold': formatPriceGold(totalGold),
+                        'enoughGold': enoughGold,
+                        'enoughCredits': enoughCredits,
+                        'notEnoughGoldTooltip': notEnoughGoldTooltip,
+                        'notEnoughCreditsTooltip': notEnoughCreditsTooltip}})
 
     @process
     def removeSlot(self, cType, slotIdx):
@@ -72,7 +95,7 @@ class MainView(CustomizationMainViewMeta):
         g_customizationController.carousel.slots.dropAppliedItem(cType, slotIdx)
 
     def backToSelectorGroup(self):
-        self.as_setBottomPanelHeaderS(g_customizationController.carousel.slots.getSummaryString())
+        self.__setBottomPanelData(g_customizationController.carousel.slots.getSummaryString())
         self.as_showSelectorGroupS()
         g_customizationController.updateTank3DModel()
         self.__carouselHidden = True
@@ -117,11 +140,14 @@ class MainView(CustomizationMainViewMeta):
         g_customizationController.updateTank3DModel(isReset=True)
         g_customizationController.carousel.updated -= self.__setCarouselData
         g_customizationController.carousel.slots.updated -= self.as_updateSlotS
-        g_customizationController.carousel.slots.cart.totalPriceUpdated -= self.__setBuyingPanelData
+        g_customizationController.carousel.slots.cart.totalPriceUpdated -= self.__setBottomPanelData
+        g_customizationController.carousel.slots.cart.availableMoneyUpdated -= self.__setBottomPanelData
         g_customizationController.carousel.slots.cart.emptied -= self.as_hideBuyingPanelS
         g_customizationController.carousel.slots.cart.filled -= self.as_showBuyingPanelS
         g_customizationController.carousel.slots.bonusPanel.bonusesUpdated -= self.__setBonusData
         g_currentVehicle.onChanged -= self.__setHeaderInitData
+        g_customizationController.carousel.slots.cart.purchaseProcessed -= self.__onPurchaseProcessed
+        Cart.purchaseProcessStarted -= self.__onPurchaseProcessStarted
         g_customizationController.fini()
         super(MainView, self)._dispose()
 
@@ -130,38 +156,23 @@ class MainView(CustomizationMainViewMeta):
         g_currentVehicle.onChanged += self.__setHeaderInitData
         g_customizationController.carousel.updated += self.__setCarouselData
         g_customizationController.carousel.slots.updated += self.as_updateSlotS
-        g_customizationController.carousel.slots.cart.totalPriceUpdated += self.__setBuyingPanelData
+        g_customizationController.carousel.slots.cart.totalPriceUpdated += self.__setBottomPanelData
+        g_customizationController.carousel.slots.cart.availableMoneyUpdated += self.__setBottomPanelData
         g_customizationController.carousel.slots.cart.emptied += self.as_hideBuyingPanelS
         g_customizationController.carousel.slots.cart.filled += self.as_showBuyingPanelS
         g_customizationController.carousel.slots.bonusPanel.bonusesUpdated += self.__setBonusData
+        g_customizationController.carousel.slots.cart.purchaseProcessed += self.__onPurchaseProcessed
+        Cart.purchaseProcessStarted += self.__onPurchaseProcessStarted
         self.fireEvent(LobbySimpleEvent(LobbySimpleEvent.HIDE_HANGAR, True))
-        self.__setBuyingPanelInitData()
         self.__setHeaderInitData()
         self.__setBonusData(g_customizationController.carousel.slots.bonusPanel.bonusData)
         self.as_setSlotsPanelDataS(g_customizationController.carousel.slots.getData())
         self.__setCarouselInitData()
-        self.as_setBottomPanelHeaderS(g_customizationController.carousel.slots.getSummaryString())
+        self.__setBottomPanelData(g_customizationController.carousel.slots.getSummaryString())
         self.as_setBottomPanelInitDataS({'backBtnLabel': _ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_BOTTOMPANEL_BACKBTN_LABEL),
-         'backBtnDescription': _ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_BOTTOMPANEL_BACKBTN_DESCRIPTION)})
-
-    def __setBuyingPanelData(self):
-        totalGold = g_customizationController.carousel.slots.cart.totalPriceGold
-        totalCredits = g_customizationController.carousel.slots.cart.totalPriceCredits
-        notEnoughGoldTooltip = notEnoughCreditsTooltip = ''
-        enoughGold = g_itemsCache.items.stats.gold >= totalGold
-        enoughCredits = g_itemsCache.items.stats.credits >= totalCredits
-        if not enoughGold:
-            diff = text_styles.gold(totalGold - g_itemsCache.items.stats.gold)
-            notEnoughGoldTooltip = makeTooltip(_ms(TOOLTIPS.CUSTOMIZATION_NOTENOUGHRESOURCES_HEADER), _ms(TOOLTIPS.CUSTOMIZATION_NOTENOUGHRESOURCES_BODY, count='{0}{1}'.format(diff, icons.gold())))
-        if not enoughCredits:
-            diff = text_styles.credits(totalCredits - g_itemsCache.items.stats.credits)
-            notEnoughCreditsTooltip = makeTooltip(_ms(TOOLTIPS.CUSTOMIZATION_NOTENOUGHRESOURCES_HEADER), _ms(TOOLTIPS.CUSTOMIZATION_NOTENOUGHRESOURCES_BODY, count='{0}{1}'.format(diff, icons.credits())))
-        self.as_setBuyingPanelDataS({'totalPriceCredits': formatPriceCredits(totalCredits),
-         'totalPriceGold': formatPriceGold(totalGold),
-         'enoughGold': enoughGold,
-         'enoughCredits': enoughCredits,
-         'notEnoughGoldTooltip': notEnoughGoldTooltip,
-         'notEnoughCreditsTooltip': notEnoughCreditsTooltip})
+         'backBtnDescription': _ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_BOTTOMPANEL_BACKBTN_DESCRIPTION),
+         'pricePanelVO': {'goldIcon': RES_ICONS.MAPS_ICONS_LIBRARY_GOLDICON_1,
+                          'creditsIcon': RES_ICONS.MAPS_ICONS_LIBRARY_CREDITSICON_1}})
 
     def __setHeaderInitData(self):
         isElite = g_currentVehicle.item.isElite
@@ -195,16 +206,6 @@ class MainView(CustomizationMainViewMeta):
                        'bonusRenderersList': crewPanelRenderList},
          'visibilityPanel': {'bonusTitle': text_styles.middleTitle(VEHICLE_CUSTOMIZATION.CUSTOMIZATIONBONUSPANEL_VISIBILITYTITLE),
                              'bonusRenderersList': visibilityPanelRenderList}})
-
-    def __setBuyingPanelInitData(self):
-        self.as_setBuyingPanelInitDataS({'totalPriceLabel': text_styles.highTitle(MENU.CUSTOMIZATION_LABELS_TOTALPRICE),
-         'buyBtnLabel': MENU.CUSTOMIZATION_BUTTONS_APPLY,
-         'buyingListIcon': RES_ICONS.MAPS_ICONS_LIBRARY_ICON_BUTTON_LIST,
-         'goldIcon': RES_ICONS.MAPS_ICONS_LIBRARY_GOLDICON_1,
-         'creditsIcon': RES_ICONS.MAPS_ICONS_LIBRARY_CREDITSICON_1,
-         'purchasesBtnTooltip': makeTooltip(TOOLTIPS.CUSTOMIZATION_PURCHASESPOPOVERBTN_HEADER, TOOLTIPS.CUSTOMIZATION_PURCHASESPOPOVERBTN_BODY),
-         'buyingPanelVO': {'totalPriceCredits': text_styles.creditsTextBig(g_customizationController.carousel.slots.cart.totalPriceCredits),
-                           'totalPriceGold': text_styles.goldTextBig(g_customizationController.carousel.slots.cart.totalPriceGold)}})
 
     def __setCarouselInitData(self):
         self.as_setCarouselInitS({'icoFilter': RES_ICONS.MAPS_ICONS_BUTTONS_FILTER,
@@ -250,9 +251,10 @@ class MainView(CustomizationMainViewMeta):
              'label': label,
              'selected': item['appliedToCurrentSlot'],
              'goToTaskBtnVisible': item['isInQuests'],
-             'goToTaskBtnText': _ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_ITEMCAROUSEL_RENDERER_GOTOTASK)}
+             'goToTaskBtnText': _ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_ITEMCAROUSEL_RENDERER_GOTOTASK),
+             'newElementIndicatorVisible': False}
             cType = g_customizationController.carousel.currentType
-            if isSale(cType, item['duration']) and not item['isInDossier'] and not item['installedInSlot']:
+            if isSale(cType, item['duration']) and not item['isInDossier'] and not item['installedInSlot'] and not item['isInQuests']:
                 isGold = item['priceIsGold']
                 data['salePrice'] = getSalePriceString(isGold, item['price'])
             itemVOs.append(data)
@@ -288,7 +290,7 @@ class MainView(CustomizationMainViewMeta):
 
     def goToTask(self, idx):
         item = g_customizationController.carousel.items[idx]['object']
-        quests = g_customizationController.associatedQuests
+        quests = g_customizationController.dataAggregator.associatedQuests
         cType = g_customizationController.carousel.currentType
         questData = quests[cType][item.getID()]
         events_dispatcher.showEventsWindow(eventID=questData.id, eventType=EVENT_TYPE.BATTLE_QUEST)

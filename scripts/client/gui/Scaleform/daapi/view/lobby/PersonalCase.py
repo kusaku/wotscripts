@@ -255,6 +255,8 @@ class PersonalCaseDataProvider(object):
         if bonuses[4]:
             modifiers.append({'id': 'penalty',
              'val': bonuses[4]})
+        modifiers.append({'id': 'customization',
+         'val': 8})
         callback({'tankman': packTankman(tankman),
          'currentVehicle': packVehicle(currentVehicle) if currentVehicle is not None else None,
          'nativeVehicle': packVehicle(nativeVehicle),

@@ -15,12 +15,12 @@ leave a function, do sometihing else for some time and then return into the
 calling function with a result. So the function that makes asynchronous calls
 should look like this:
 
-        @process
-        def my_handler():
-                response = yield some_async_func()
-                data = parse_response(response)
-                result = yield some_other_async_func(data)
-                store_result(result)
+    @process
+    def my_handler():
+        response = yield some_async_func()
+        data = parse_response(response)
+        result = yield some_other_async_func(data)
+        store_result(result)
 
 Each `yield` is where the function returns and lets the framework around it to
 do its job. And the code after `yield` is what usually goes in a callback.
@@ -48,11 +48,11 @@ asynchronous function (and can make your callback parameter to be named
 "callback"). But when you want to call some library function you can wrap it in
 async in place.
 
-        # call http.fetch(url, callback=callback)
-        result = yield async(http.fetch)
+    # call http.fetch(url, callback=callback)
+    result = yield async(http.fetch)
 
-        # call http.fetch(url, cb=safewrap(callback))
-        result = yield async(http.fetch, cbname='cb', cbwrapper=safewrap)(url)
+    # call http.fetch(url, cb=safewrap(callback))
+    result = yield async(http.fetch, cbname='cb', cbwrapper=safewrap)(url)
 
 Here you can use two optional parameters for async:
 
@@ -66,25 +66,25 @@ Here you can use two optional parameters for async:
 asynchronous calls as it can be done with normal functions. In this case the
 @async decorator shuold be the outer one:
 
-        @async
-        @process
-        def async_calling_other_asyncs(arg, callback):
-                # ....
+    @async
+    @process
+    def async_calling_other_asyncs(arg, callback):
+        # ....
 
 ## Multiple asynchronous calls
 
 The library also allows to call multiple asynchronous functions in parallel and
 get all their result for processing at once:
 
-        @async
-        def async_http_get(url, callback):
-                # get url asynchronously
-                # call callback(response) at the end
+    @async
+    def async_http_get(url, callback):
+        # get url asynchronously
+        # call callback(response) at the end
 
-        @process
-        def get_stat():
-                urls = ['http://.../', 'http://.../', ... ]
-                responses = yield map(async_http_get, urls)
+    @process
+    def get_stat():
+        urls = ['http://.../', 'http://.../', ... ]
+        responses = yield map(async_http_get, urls)
 
 After *all* the asynchronous calls will complete `responses` will be a list of
 responses corresponding to given urls.

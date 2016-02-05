@@ -15,17 +15,19 @@ from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.shared.formatters import text_styles
 from gui.shared.event_dispatcher import showClanInvitesWindow
 from gui.shared.view_helpers import UsersInfoHelper
-from gui.clans.settings import CLIENT_CLAN_RESTRICTIONS as RES, DATA_UNAVAILABLE_PLACEHOLDER
+from gui.clans.settings import CLIENT_CLAN_RESTRICTIONS as RES
 from gui.clans import items
 from gui.clans import formatters as clans_fmts
 from gui.clans.clan_controller import SYNC_KEYS
 from helpers.i18n import makeString as _ms
 from messenger.gui.Scaleform.data.contacts_vo_converter import ContactConverter
+from messenger.m_constants import USER_ACTION_ID
 from messenger.proto.bw.find_criteria import BWClanChannelFindCriteria
 from messenger.proto.events import g_messengerEvents
 from messenger.storage import storage_getter
 OPEN_INVITES_ACTION_ID = 'openInvites'
 OPEN_CLAN_CHANNEL_ACTION_ID = 'openClanChannel'
+_UNAVAILABLE_EFFICIENCY_VALUE = -1
 _CLAN_MEMBERS_SORT_INDEXES = (CLAN_MEMBER_FLAGS.RESERVIST,
  CLAN_MEMBER_FLAGS.RECRUIT,
  CLAN_MEMBER_FLAGS.PRIVATE,
@@ -119,13 +121,6 @@ class ClanProfilePersonnelView(ClanProfilePersonnelViewMeta):
     def channelsStorage(self):
         return None
 
-    def _dispose(self):
-        if self.__membersDP:
-            self.__membersDP.fini()
-            self.__membersDP = None
-        super(ClanProfilePersonnelView, self)._dispose()
-        return
-
     @process
     def setClanDossier(self, clanDossier):
         super(ClanProfilePersonnelView, self).setClanDossier(clanDossier)
@@ -218,9 +213,18 @@ class _ClanMembersDataProvider(SortableDAAPIDataProvider, UsersInfoHelper):
          _SORT_IDS.BATTLES_PERFORMANCE: self.__getMemberBattlesPerformance,
          _SORT_IDS.AWG_XP: self.__getMemberAwgExp,
          _SORT_IDS.DAYS_IN_CLAN: self.__getMemberDaysInClan}
+        usersEvents = g_messengerEvents.users
+        usersEvents.onUserActionReceived += self.__me_onUserActionReceived
         return
 
+    def __me_onUserActionReceived(self, actionID, contact):
+        if actionID == USER_ACTION_ID.FRIEND_REMOVED or actionID == USER_ACTION_ID.FRIEND_ADDED or actionID == USER_ACTION_ID.MUTE_SET or actionID == USER_ACTION_ID.MUTE_UNSET or actionID == USER_ACTION_ID.NOTE_CHANGED or actionID == USER_ACTION_ID.IGNORED_ADDED or actionID == USER_ACTION_ID.IGNORED_REMOVED:
+            self.buildList(self.__accountsList)
+            self.refresh()
+
     def _dispose(self):
+        usersEvents = g_messengerEvents.users
+        usersEvents.onUserActionReceived -= self.__me_onUserActionReceived
         self.__sortMapping.clear()
         super(_ClanMembersDataProvider, self)._dispose()
 
@@ -316,7 +320,7 @@ class _ClanMembersDataProvider(SortableDAAPIDataProvider, UsersInfoHelper):
             userVO = ContactConverter().makeVO(contactEntity)
             userVO['userProps']['clanAbbrev'] = ''
         else:
-            userVO = {}
+            userVO = {'userProps': {'userName': self.__getMemberName(memberData)}}
         return {'dbID': memberDBID,
          'userName': self.__getMemberName(memberData),
          'post': items.formatField(getter=memberData.getRoleString),
@@ -348,10 +352,16 @@ class _ClanMembersDataProvider(SortableDAAPIDataProvider, UsersInfoHelper):
         return memberData.getBattlesCount()
 
     def __getMemberBattlesPerformance(self, memberData):
-        return memberData.getBattlesPerformanceAvg()
+        if memberData.getBattlesCount() > 0:
+            return memberData.getBattlesPerformanceAvg()
+        else:
+            return _UNAVAILABLE_EFFICIENCY_VALUE
 
     def __getMemberAwgExp(self, memberData):
-        return memberData.getBattleXpAvg()
+        if memberData.getBattlesCount() > 0:
+            return memberData.getBattleXpAvg()
+        else:
+            return _UNAVAILABLE_EFFICIENCY_VALUE
 
     def __getMemberDaysInClan(self, memberData):
         return memberData.getDaysInClan()

@@ -1,15 +1,17 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/LobbyMenu.py
 from adisp import process
-from helpers import i18n
+from helpers import i18n, getClientVersion
 from gui import DialogsInterface, game_control
 from gui.app_loader import g_appLoader
 from gui.shared import events, g_eventBus, EVENT_BUS_SCOPE
+from gui.sounds.ambients import LobbyMenuEnv
 from gui.Scaleform.locale.MENU import MENU
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui.Scaleform.daapi.view.dialogs import DIALOG_BUTTON_ID
 from gui.Scaleform.daapi.view.meta.LobbyMenuMeta import LobbyMenuMeta
 
 class LobbyMenu(LobbyMenuMeta):
+    __sound_env__ = LobbyMenuEnv
 
     def versionInfoClick(self):
         game_control.g_instance.promo.showPatchPromo()
@@ -53,6 +55,6 @@ class LobbyMenu(LobbyMenuMeta):
 
     def __getPatchPromoMessage(self):
         if game_control.g_instance.promo.isPatchPromoAvailable():
-            return (i18n.makeString(MENU.PROMO_PATCH_MESSAGE),)
+            return i18n.makeString(MENU.PROMO_PATCH_MESSAGE, version=getClientVersion())
         else:
             return None

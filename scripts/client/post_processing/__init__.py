@@ -1,5 +1,8 @@
 # Embedded file name: scripts/client/post_processing/__init__.py
-import BigWorld, Math, ResMgr, weakref
+import BigWorld
+import Math
+import ResMgr
+import weakref
 import PostProcessing
 import Settings
 from PostProcessing.Effects import *

@@ -72,13 +72,9 @@ class Carousel(object):
         oldItemsCount = len(self.__carouselItems)
         del self.__carouselItems[:]
         appliedItems = defaultdict(list)
-        featuredItems = defaultdict(list)
         purchasedItems = defaultdict(list)
         otherItems = defaultdict(list)
-        allItems = [appliedItems,
-         purchasedItems,
-         featuredItems,
-         otherItems]
+        allItems = [appliedItems, purchasedItems, otherItems]
         currentSlotItem = None
         installedItemID = self.slots.getInstalledItem(self.__currentSlotIdx, self.__currentType).getID()
         if self.__currentType == CUSTOMIZATION_TYPE.CAMOUFLAGE:
@@ -106,13 +102,15 @@ class Carousel(object):
                 if appliedToCurrentSlot:
                     currentSlotItem = carouselItem
                 if installedInSlot:
-                    appliedItems[item.getGroup()].append(carouselItem)
+                    group = appliedItems[item.getGroup()]
                 elif item.isInDossier:
-                    purchasedItems[item.getGroup()].append(carouselItem)
-                elif self.__currentType == CUSTOMIZATION_TYPE.INSCRIPTION and item.isFeatured():
-                    featuredItems[item.getGroup()].append(carouselItem)
+                    group = purchasedItems[item.getGroup()]
                 else:
-                    otherItems[item.getGroup()].append(carouselItem)
+                    group = otherItems[item.getGroup()]
+                if item.isFeatured:
+                    group.insert(0, carouselItem)
+                else:
+                    group.append(carouselItem)
 
         for groupedItems in allItems:
             self.__carouselItems += chain(*groupedItems.values())

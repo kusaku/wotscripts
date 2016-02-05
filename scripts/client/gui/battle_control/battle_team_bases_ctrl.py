@@ -9,10 +9,8 @@ from debug_utils import LOG_CURRENT_EXCEPTION
 from gui.battle_control import arena_info
 from gui.battle_control.arena_info.interfaces import ITeamsBasesController
 from gui.shared.utils.functions import getArenaSubTypeName
-import FMOD
-if FMOD.enabled:
-    _BASE_CAPTURE_SOUND_NAME_ENEMY = '/GUI/notifications_FX/base_capture_2'
-    _BASE_CAPTURE_SOUND_NAME_ALLY = '/GUI/notifications_FX/base_capture_1'
+_BASE_CAPTURE_SOUND_NAME_ENEMY = 'base_capture_2'
+_BASE_CAPTURE_SOUND_NAME_ALLY = 'base_capture_1'
 _AVAILABLE_TEAMS_NUMBERS = range(1, TEAMS_IN_ARENA.MAX_TEAMS + 1)
 _UPDATE_POINTS_DELAY = 1.0
 _ENEMY_OFFSET_DISABLED_BY_GAMEPLAY = ('assault', 'assault2', 'domination')

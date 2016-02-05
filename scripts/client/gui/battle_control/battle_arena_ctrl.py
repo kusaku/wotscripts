@@ -18,7 +18,7 @@ from gui.prb_control.prb_helpers import prbInvitesProperty
 from messenger.storage import storage_getter
 from unit_roster_config import SquadRoster
 from gui.LobbyContext import g_lobbyContext
-from gui.battle_control.arena_info import hasResourcePoints, isRandomBattle
+from gui.battle_control.arena_info import hasResourcePoints, isRandomBattle, hasRespawns
 PLAYERS_PANEL_LENGTH = 24
 
 def _getRoster(user):
@@ -241,7 +241,7 @@ class BattleArenaController(IArenaVehiclesController):
         if not inviteSendingProhibited:
             inviteSendingProhibited = not self._isSquadAllowToInvite(arenaDP)
         invitesReceivingProhibited = arenaDP.getVehicleInfo(playerAccountID).player.forbidInBattleInvitations
-        for index, (vInfoVO, vStatsVO, viStatsVO) in enumerate(arenaDP.getVehiclesIterator(isEnemy)):
+        for index, (vInfoVO, vStatsVO, viStatsVO) in enumerate(arenaDP.getVehiclesIterator(isEnemy, hasRespawns())):
             if index >= PLAYERS_PANEL_LENGTH:
                 LOG_WARNING('Max players in panel are', PLAYERS_PANEL_LENGTH)
                 break
@@ -293,7 +293,7 @@ class BattleArenaController(IArenaVehiclesController):
         isInvitesForbidden = inviteSendingProhibited or himself or playerVO.forbidInBattleInvitations or isIgnored or isActionsDisabled
         isPlayerInSquad = playerAccountID == dbID and vInfoVO.isSquadMan()
         squadNoSound = False
-        if isPlayerInSquad and isRandomBattle() and not IS_CHINA:
+        if isPlayerInSquad and isRandomBattle() and not IS_CHINA and not BattleReplay.isPlaying():
             squadNoSound = not g_settingsCore.getSetting(SOUND.VOIP_ENABLE)
         return {'position': index + 1,
          'label': playerFullName,
@@ -425,7 +425,7 @@ class MultiteamBattleArenaController(BattleArenaController):
         camraVehicleID = self._battleUI.getCameraVehicleID()
         playerNameLength = int(self._battleUI.getPlayerNameLength(isEnemy))
         vehicleNameLength = int(self._battleUI.getVehicleNameLength(isEnemy))
-        for index, (vInfoVO, vStatsVO, viStatsVO) in enumerate(arenaDP.getAllVehiclesIteratorByTeamScore()):
+        for index, (vInfoVO, vStatsVO, viStatsVO) in enumerate(arenaDP.getAllVehiclesIteratorByTeamScore(hasRespawns())):
             team = vInfoVO.team
             isEnemy = arenaDP.isEnemyTeam(team)
             ctx = makeTeamCtx(team, isEnemy, arenaDP, playerNameLength, vehicleNameLength, camraVehicleID)
@@ -439,7 +439,9 @@ class MultiteamBattleArenaController(BattleArenaController):
             fragsList.append(frags)
             vNamesList.append(vName)
             additionalDataList.append(additionalData)
-            valuesHashes.append({'vehicleState': 0 if viStatsVO.stopRespawn else _VEHICLE_STATUS.IS_ALIVE})
+            valuesHashes.append({'vehicleState': 0 if viStatsVO.stopRespawn else _VEHICLE_STATUS.IS_ALIVE,
+             'vehicleType': vInfoVO.vehicleType.getClassName(),
+             'teamColorScheme': 'vm_enemy' if isEnemy else 'vm_ally'})
             teamIdx = teamIds[team]
             if (team, teamIdx) not in teamsList:
                 teamsList.append((team, teamIdx))
@@ -494,8 +496,8 @@ class MultiteamBattleArenaController(BattleArenaController):
         return map(__pack, teamsList)
 
 
-def battleArenaControllerFactory(battleUI, isEventBattle = False, isMutlipleTeams = False):
-    if isEventBattle:
+def battleArenaControllerFactory(battleUI, isFalloutBattle = False, isMutlipleTeams = False):
+    if isFalloutBattle:
         if isMutlipleTeams:
             return MultiteamBattleArenaController(battleUI)
         return FalloutBattleArenaController(battleUI)

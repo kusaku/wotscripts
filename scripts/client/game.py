@@ -25,6 +25,7 @@ from MemoryCriticalController import g_critMemHandler
 import VOIP
 import WebBrowser
 import SoundGroups
+from functools import reduce
 loadingScreenClass = None
 tutorialLoaderInit = lambda : None
 tutorialLoaderFini = lambda : None
@@ -98,6 +99,8 @@ def init(scriptConfig, engineConfig, userPreferences, loadingScreenGUI = None):
         potapov_quests.init()
         import clubs_quests
         clubs_quests.init()
+        import motivation_quests
+        motivation_quests.init()
         BigWorld.worldDrawEnabled(False)
         import LcdKeyboard
         LcdKeyboard.enableLcdKeyboardSpecificKeys(True)
@@ -247,8 +250,7 @@ def fini():
         if constants.IS_CAT_LOADED:
             import Cat
             Cat.fini()
-        if MusicController.g_musicController is not None:
-            MusicController.g_musicController.destroy()
+        MusicController.fini()
         if RSSDownloader.g_downloader is not None:
             RSSDownloader.g_downloader.destroy()
         connectionManager.onConnected -= onConnected
@@ -288,6 +290,8 @@ def fini():
         voipRespHandler = VOIP.getVOIPManager()
         if voipRespHandler is not None:
             VOIP.getVOIPManager().destroy()
+        import SoundGroups
+        SoundGroups.g_instance.destroy()
         Settings.g_instance.save()
         return
 
@@ -328,7 +332,7 @@ def onConnected():
 
 
 def onGeometryMapped(spaceID, path):
-    SoundGroups.g_instance.unloadAll(path)
+    SoundGroups.g_instance.unloadAll()
     LOG_NOTE('[SPACE] Loading space: ' + path)
     SoundGroups.g_instance.preloadSoundGroups(path.split('/')[-1])
 
@@ -460,8 +464,7 @@ _PYTHON_MACROS = {'p': 'BigWorld.player()',
  'quests': 'from gui.server_events import g_eventsCache; quests = g_eventsCache; quests',
  'wc': 'from gui.Scaleform.Waiting import Waiting; Waiting.close()',
  'clan': 'from gui.shared.ClanCache import g_clanCache; clan = g_clanCache',
- 'camera': 'BigWorld.player().inputHandler.ctrl',
- 'letsBattle': 'from gui.shared import g_itemsCache, REQ_CRITERIA; vehs = g_itemsCache.items.getVehicles(REQ_CRITERIA.VEHICLE.EVENT); BigWorld.player().enqueueEventBattles(map(lambda v: v.invID, vehs.itervalues()))'}
+ 'camera': 'BigWorld.player().inputHandler.ctrl'}
 
 def expandMacros(line):
     import re

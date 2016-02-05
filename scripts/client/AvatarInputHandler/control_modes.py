@@ -942,7 +942,7 @@ class SniperControlMode(_GunControlMode):
             return isRotationAroundCenter and not turretHasYawLimits
 
     def enableSwitchAutorotationMode(self):
-        return self.getPreferredAutorotationMode() != False
+        return self.getPreferredAutorotationMode() is not False
 
     def onChangeControlModeByScroll(self, switchToClosestDist = True):
         raise self._isEnabled or AssertionError
@@ -1095,9 +1095,9 @@ class PostMortemControlMode(IControlMode):
     def handleMouseEvent(self, dx, dy, dz):
         if not self.__isEnabled:
             raise AssertionError
+            GUI.mcursor().position = self.__aim.offset()
             return self.__postmortemDelay is not None and True
         else:
-            GUI.mcursor().position = self.__aim.offset()
             self.__cam.update(dx, dy, _clamp(-1, 1, dz))
             return True
 
@@ -1151,6 +1151,7 @@ class PostMortemControlMode(IControlMode):
         else:
             raise not toId or isinstance(toId, int) and toId >= 0 or AssertionError
             self.__doPreBind()
+            self.__aih.onPostmortemVehicleChanged(toId)
             BigWorld.player().positionControl.bindToVehicle(vehicleID=toId)
             return
 
@@ -1160,7 +1161,7 @@ class PostMortemControlMode(IControlMode):
             if prevVehicleAppearance is not None:
                 self.__cam.removeVehicleToCollideWith(prevVehicleAppearance)
             else:
-                LOG_ERROR('Possible memory leak! Cannot find current vehicle with id %s, erasing all collision models instead!' % self.__curVehicleID)
+                LOG_DEBUG('Cannot find current vehicle with id %s, erasing all collision models instead!' % self.__curVehicleID)
                 self.__cam.clearVehicleToCollideWith()
         return
 
@@ -1502,7 +1503,7 @@ class _SuperGunMarker():
         self.__gm2.update(pos, dir, size, relaxTime, collData)
 
     def reset(self):
-        if self.__isStrategic == True:
+        if self.__isStrategic is True:
             self.__gm1.reset()
             self.__gm2.reset()
 
@@ -1568,8 +1569,8 @@ class _SPGFlashGunMarker(Flash):
         self.component.wg_setPointsBaseScale(g_settingsCore.interfaceScale.get())
         g_settingsCore.interfaceScale.onScaleChanged += self.onScaleChanged
         self.active(True)
-        self.__reload = {'start_time': 0,
-         'duration': 0,
+        self.__reload = {'start_time': 0.0,
+         'duration': 0.0,
          'isReloading': False}
         self.onRecreateDevice()
         if self.__applyFilter and constants.IS_DEVELOPMENT and useServerAim():
@@ -1623,8 +1624,8 @@ class _SPGFlashGunMarker(Flash):
         self.__setupMatrixAnimation()
         self.__animMat.keyframes = ((0.0, Math.Matrix(self.__animMat)), (relaxTime, m))
         self.__animMat.time = 0.0
-        self.__oldSize = size
-        self.__spgUpdate(size)
+        self.__oldSize = size[0]
+        self.__spgUpdate(self.__oldSize)
 
     def reset(self):
         self.component.wg_reset()
@@ -1664,6 +1665,36 @@ class _SPGFlashGunMarker(Flash):
         except:
             LOG_CURRENT_EXCEPTION()
 
+    def outsideConstraint(self, idealAngle):
+        pass
+
+
+class SizeFilter(object):
+
+    @property
+    def size(self):
+        return self.__outSize
+
+    def __init__(self):
+        self.__outSize = 0.0
+        self.__inSize = 0.0
+        self.__k = 0.0
+        self.__minLimit = 0.0
+
+    def init(self, startSize, minLimit):
+        self.__outSize = self.__inSize = startSize
+        self.__minLimit = minLimit
+
+    def update(self, inSize, ideal):
+        if inSize >= self.__inSize or self.__minLimit <= ideal:
+            self.__outSize = self.__inSize = inSize
+            self.__k = 0.0
+            return
+        if self.__k == 0.0 and inSize != ideal:
+            self.__k = (inSize - self.__minLimit) / (inSize - ideal)
+        self.__inSize = inSize
+        self.__outSize = self.__minLimit + self.__k * (self.__inSize - ideal)
+
 
 class _FlashGunMarker(Flash):
     _FLASH_CLASS = 'WGCrosshairFlash'
@@ -1689,6 +1720,7 @@ class _FlashGunMarker(Flash):
         self.mode = mode
         self.key = key
         self.__replSwitchTime = 0.0
+        self.__sizeFilter = SizeFilter()
         from account_helpers.settings_core.SettingsCore import g_settingsCore
         self.settingsCore = weakref.proxy(g_settingsCore)
         self.__curSize = 0.0
@@ -1712,11 +1744,12 @@ class _FlashGunMarker(Flash):
         self._curColors = self._colorsByPiercing[type]
         self.settingsCore.onSettingsChanged += self.applySettings
         self.settingsCore.interfaceScale.onScaleChanged += self.onScaleChanged
-        self.component.wg_sizeConstraint = (10, 300)
+        self.component.wg_sizeConstraint = (10.0, 300.0)
         self.component.wg_setStartSize(10.0)
+        self.__sizeFilter.init(10.0, 10.0)
         self.active(True)
-        self.__reload = {'start_time': 0,
-         'duration': 0,
+        self.__reload = {'start_time': 0.0,
+         'duration': 0.0,
          'isReloading': False}
         self.onRecreateDevice()
         self.onScaleChanged()
@@ -1778,9 +1811,9 @@ class _FlashGunMarker(Flash):
     def setReloading(self, duration, startTime = None, isReloading = True, correction = None, switched = False):
         rs = self.__reload
         _isReloading = rs.get('isReloading', False)
-        _startTime = rs.get('startTime', 0)
-        _duration = rs.get('duration', 0)
-        isReloading = duration > 0
+        _startTime = rs.get('startTime', 0.0)
+        _duration = rs.get('duration', 0.0)
+        isReloading = duration > 0.0
         rs['isReloading'] = isReloading
         rs['correction'] = None
         if not switched and _isReloading and duration > 0 and _duration > 0:
@@ -1805,7 +1838,7 @@ class _FlashGunMarker(Flash):
     def setReloadingInPercent(self, percent, isReloading = True):
         self.call('Crosshair.setReloadingAsPercent', [percent, isReloading])
 
-    def update(self, pos, dir, size, relaxTime, collData):
+    def update(self, pos, dir, sizeVector, relaxTime, collData):
         if not self.component.visible:
             return
         else:
@@ -1814,6 +1847,8 @@ class _FlashGunMarker(Flash):
             self.__setupMatrixAnimation()
             self.__animMat.keyframes = ((0.0, Math.Matrix(self.__animMat)), (relaxTime, m))
             self.__animMat.time = 0.0
+            size = sizeVector[0]
+            idealSize = sizeVector[1]
             replayCtrl = BattleReplay.g_replayCtrl
             if replayCtrl.isPlaying and replayCtrl.isClientReady:
                 s = replayCtrl.getArcadeGunMarkerSize()
@@ -1824,7 +1859,11 @@ class _FlashGunMarker(Flash):
                     replayCtrl.setArcadeGunMarkerSize(size)
                 elif self.key == _SuperGunMarker.GUN_MARKER_CLIENT:
                     replayCtrl.setArcadeGunMarkerSize(size)
-            self.__curSize = _calcScale(m, size) * (GUI.screenResolution()[0] * 0.5)
+            aspectRatio = GUI.screenResolution()[0] * 0.5
+            currentSize = _calcScale(m, size) * aspectRatio
+            idealSize = _calcScale(m, idealSize) * aspectRatio
+            self.__sizeFilter.update(currentSize, idealSize)
+            self.__curSize = self.__sizeFilter.size
             if collData is None or collData[0].health <= 0 or collData[0].publicInfo['team'] == BigWorld.player().team:
                 self.call('Crosshair.setMarkerType', ['normal'])
             else:

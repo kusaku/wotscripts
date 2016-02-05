@@ -46,7 +46,7 @@ class BrowserController(Controller):
     @async
     @process
     def load(self, url = None, title = None, showActionBtn = True, showWaiting = True, browserID = None, isAsync = False, browserSize = None, isDefault = True, callback = None, showCloseBtn = False):
-        url = url or GUI_SETTINGS.browser.url
+        url = yield self.__urlMacros.parse(url or GUI_SETTINGS.browser.url)
         suffix = yield self.__urlMacros.parse(GUI_SETTINGS.browser.params)
         concatenator = '&' if '?' in url else '?'
         if suffix not in url:

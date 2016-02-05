@@ -15,14 +15,14 @@ from debug_utils import LOG_ERROR, LOG_WARNING, LOG_CURRENT_EXCEPTION, LOG_DEBUG
 from gui.Scaleform.locale.ITEM_TYPES import ITEM_TYPES
 from gui.Scaleform.locale.SYSTEM_MESSAGES import SYSTEM_MESSAGES
 from shared_utils import BoundMethodWeakref
-from gui.goodies.GoodiesCache import g_goodiesCache
+from gui.goodies import g_goodiesCache
 from gui.shared.formatters import text_styles
 from gui import GUI_SETTINGS
 from gui.LobbyContext import g_lobbyContext
 from gui.clubs.formatters import getLeagueString, getDivisionString
 from gui.clubs.settings import getLeagueByDivision
 from gui.Scaleform.locale.MESSENGER import MESSENGER
-from gui.clans.formatters import getClanAbbrevString
+from gui.clans.formatters import getClanAbbrevString, getClanFullName
 from gui.shared import formatters as shared_fmts, g_itemsCache
 from gui.shared.fortifications import formatters as fort_fmts
 from gui.shared.fortifications.FortBuilding import FortBuilding
@@ -32,8 +32,6 @@ from gui.shared.notifications import NotificationPriorityLevel, NotificationGuiS
 from gui.shared.utils import getPlayerDatabaseID, getPlayerName
 from gui.shared.utils.transport import z_loads
 from gui.shared.gui_items.Vehicle import getUserName
-from messenger.m_constants import MESSENGER_I18N_FILE
-import offers
 from gui.prb_control.formatters import getPrebattleFullDescription
 from helpers import i18n, html, getClientLanguage, getLocalizedData
 from helpers import time_utils
@@ -43,6 +41,8 @@ from dossiers2.custom.records import DB_ID_TO_RECORD
 from dossiers2.ui.achievements import ACHIEVEMENT_BLOCK
 from dossiers2.ui.layouts import IGNORED_BY_BATTLE_RESULTS
 from messenger import g_settings
+from messenger.ext import passCensor
+from messenger.m_constants import MESSENGER_I18N_FILE
 from predefined_hosts import g_preDefinedHosts
 from constants import INVOICE_ASSET, AUTO_MAINTENANCE_TYPE, PREBATTLE_INVITE_STATE, AUTO_MAINTENANCE_RESULT, PREBATTLE_TYPE, FINISH_REASON, KICK_REASON_NAMES, KICK_REASON, NC_MESSAGE_TYPE, NC_MESSAGE_PRIORITY, SYS_MESSAGE_CLAN_EVENT, SYS_MESSAGE_CLAN_EVENT_NAMES, SYS_MESSAGE_FORT_EVENT, SYS_MESSAGE_FORT_EVENT_NAMES, FORT_BUILDING_TYPE, FORT_ORDER_TYPE, FORT_BUILDING_TYPE_NAMES, ARENA_GUI_TYPE
 from messenger.formatters import TimeFormatter, NCContextItemFormatter
@@ -99,6 +99,10 @@ class ServiceChannelFormatter(object):
 
 class WaitItemsSyncFormatter(ServiceChannelFormatter):
 
+    def __init__(self):
+        self.__callback = None
+        return
+
     def isAsync(self):
         return True
 
@@ -107,12 +111,22 @@ class WaitItemsSyncFormatter(ServiceChannelFormatter):
         if g_itemsCache.isSynced():
             callback(g_itemsCache.isSynced())
         else:
+            self.__registerHandler(callback)
 
-            def _onSyncCompleted(*args):
-                g_itemsCache.onSyncCompleted -= _onSyncCompleted
-                callback(g_itemsCache.isSynced())
+    def __registerHandler(self, callback):
+        self.__callback = callback
+        g_itemsCache.onSyncCompleted += self.__onSyncCompleted
 
-            g_itemsCache.onSyncCompleted += _onSyncCompleted
+    def __unregisterHandler(self):
+        self.__callback = None
+        g_itemsCache.onSyncCompleted -= self.__onSyncCompleted
+        return
+
+    def __onSyncCompleted(self, *args):
+        if self.__callback is not None:
+            self.__callback(g_itemsCache.isSynced())
+        self.__unregisterHandler()
+        return
 
 
 class ServerRebootFormatter(ServiceChannelFormatter):
@@ -139,7 +153,7 @@ class ServerRebootCancelledFormatter(ServiceChannelFormatter):
             return None
 
 
-class BattleResultsFormatter(ServiceChannelFormatter):
+class BattleResultsFormatter(WaitItemsSyncFormatter):
     __battleResultKeys = {-1: 'battleDefeatResult',
      0: 'battleDrawGameResult',
      1: 'battleVictoryResult'}
@@ -154,77 +168,84 @@ class BattleResultsFormatter(ServiceChannelFormatter):
     def isNotify(self):
         return True
 
-    def format(self, message, *args):
-        battleResults = message.data
-        arenaTypeID = battleResults.get('arenaTypeID', 0)
-        if arenaTypeID > 0 and arenaTypeID in ArenaType.g_cache:
-            arenaType = ArenaType.g_cache[arenaTypeID]
-        else:
-            arenaType = None
-        arenaCreateTime = battleResults.get('arenaCreateTime', None)
-        if arenaCreateTime and arenaType:
-            ctx = {'arenaName': i18n.makeString(arenaType.name),
-             'vehicleNames': 'N/A',
-             'xp': '0',
-             'credits': '0'}
-            vehicleNames = {}
-            popUpRecords = []
-            marksOfMastery = []
-            vehs = []
-            for vehIntCD, vehBattleResults in battleResults.get('playerVehicles', {}).iteritems():
-                v = g_itemsCache.items.getItemByCD(vehIntCD)
-                vehs.append(v)
-                vehicleNames[vehIntCD] = v.userName
-                popUpRecords.extend(vehBattleResults.get('popUpRecords', []))
-                if 'markOfMastery' in vehBattleResults and vehBattleResults['markOfMastery'] > 0:
-                    marksOfMastery.append(vehBattleResults['markOfMastery'])
-
-            ctx['vehicleNames'] = ', '.join(map(operator.attrgetter('userName'), sorted(vehs)))
-            xp = battleResults.get('xp')
-            if xp:
-                ctx['xp'] = BigWorld.wg_getIntegralFormat(xp)
-            battleResKey = battleResults.get('isWinner', 0)
-            ctx['xpEx'] = self.__makeXpExString(xp, battleResKey, battleResults.get('xpPenalty', 0), battleResults)
-            ctx['gold'] = self.__makeGoldString(battleResults.get('gold', 0))
-            accCredits = battleResults.get('credits') - battleResults.get('creditsToDraw', 0)
-            if accCredits:
-                ctx['credits'] = BigWorld.wg_getIntegralFormat(accCredits)
-            ctx['creditsEx'] = self.__makeCreditsExString(accCredits, battleResults.get('creditsPenalty', 0), battleResults.get('creditsContributionIn', 0), battleResults.get('creditsContributionOut', 0))
-            ctx['fortResource'] = self.__makeFortResourceString(battleResults)
-            guiType = battleResults.get('guiType', 0)
-            ctx['fortResource'] = ''
-            if guiType == ARENA_GUI_TYPE.SORTIE:
-                ctx['fortResource'] = self.__makeFortResourceString(battleResults)
-            ctx['achieves'] = self.__makeAchievementsString(popUpRecords, marksOfMastery)
-            ctx['lock'] = self.__makeVehicleLockString(vehicleNames, battleResults)
-            ctx['quests'] = self.__makeQuestsAchieve(message)
-            team = battleResults.get('team', 0)
-            ctx['fortBuilding'] = ''
-            if guiType == ARENA_GUI_TYPE.FORT_BATTLE:
-                fortBuilding = battleResults.get('fortBuilding')
-                if fortBuilding is not None:
-                    buildTypeID, buildTeam = fortBuilding.get('buildTypeID'), fortBuilding.get('buildTeam')
-                    if buildTypeID:
-                        ctx['fortBuilding'] = g_settings.htmlTemplates.format('battleResultFortBuilding', ctx={'fortBuilding': FortBuilding(typeID=buildTypeID).userName,
-                         'clanAbbrev': ''})
-                    if battleResKey == 0:
-                        battleResKey = 1 if buildTeam == team else -1
-            ctx['club'] = self.__makeClubString(battleResults)
-            if guiType == ARENA_GUI_TYPE.EVENT_BATTLES and arenaType.maxTeamsInArena > constants.TEAMS_IN_ARENA.MIN_TEAMS:
-                templateName = self.__eventBattleResultKeys[battleResKey]
+    @async
+    @process
+    def format(self, message, callback):
+        yield lambda callback: callback(True)
+        isSynced = yield self._waitForSyncItems()
+        if message.data and isSynced:
+            battleResults = message.data
+            arenaTypeID = battleResults.get('arenaTypeID', 0)
+            if arenaTypeID > 0 and arenaTypeID in ArenaType.g_cache:
+                arenaType = ArenaType.g_cache[arenaTypeID]
             else:
-                templateName = self.__battleResultKeys[battleResKey]
-            bgIconSource = None
-            arenaUniqueID = battleResults.get('arenaUniqueID', 0)
-            if guiType == ARENA_GUI_TYPE.FORT_BATTLE:
-                bgIconSource = 'FORT_BATTLE'
-            formatted = g_settings.msgTemplates.format(templateName, ctx=ctx, data={'timestamp': arenaCreateTime,
-             'savedData': arenaUniqueID}, bgIconSource=bgIconSource)
-            settings = self._getGuiSettings(message, templateName)
-            return (formatted, settings)
+                arenaType = None
+            arenaCreateTime = battleResults.get('arenaCreateTime', None)
+            if arenaCreateTime and arenaType:
+                ctx = {'arenaName': i18n.makeString(arenaType.name),
+                 'vehicleNames': 'N/A',
+                 'xp': '0',
+                 'credits': '0'}
+                vehicleNames = {}
+                popUpRecords = []
+                marksOfMastery = []
+                vehs = []
+                for vehIntCD, vehBattleResults in battleResults.get('playerVehicles', {}).iteritems():
+                    v = g_itemsCache.items.getItemByCD(vehIntCD)
+                    vehs.append(v)
+                    vehicleNames[vehIntCD] = v.userName
+                    popUpRecords.extend(vehBattleResults.get('popUpRecords', []))
+                    if 'markOfMastery' in vehBattleResults and vehBattleResults['markOfMastery'] > 0:
+                        marksOfMastery.append(vehBattleResults['markOfMastery'])
+
+                ctx['vehicleNames'] = ', '.join(map(operator.attrgetter('userName'), sorted(vehs)))
+                xp = battleResults.get('xp')
+                if xp:
+                    ctx['xp'] = BigWorld.wg_getIntegralFormat(xp)
+                battleResKey = battleResults.get('isWinner', 0)
+                ctx['xpEx'] = self.__makeXpExString(xp, battleResKey, battleResults.get('xpPenalty', 0), battleResults)
+                ctx['gold'] = self.__makeGoldString(battleResults.get('gold', 0))
+                accCredits = battleResults.get('credits') - battleResults.get('creditsToDraw', 0)
+                if accCredits:
+                    ctx['credits'] = BigWorld.wg_getIntegralFormat(accCredits)
+                ctx['creditsEx'] = self.__makeCreditsExString(accCredits, battleResults.get('creditsPenalty', 0), battleResults.get('creditsContributionIn', 0), battleResults.get('creditsContributionOut', 0))
+                ctx['fortResource'] = self.__makeFortResourceString(battleResults)
+                guiType = battleResults.get('guiType', 0)
+                ctx['fortResource'] = ''
+                if guiType == ARENA_GUI_TYPE.SORTIE:
+                    ctx['fortResource'] = self.__makeFortResourceString(battleResults)
+                ctx['achieves'] = self.__makeAchievementsString(popUpRecords, marksOfMastery)
+                ctx['lock'] = self.__makeVehicleLockString(vehicleNames, battleResults)
+                ctx['quests'] = self.__makeQuestsAchieve(message)
+                team = battleResults.get('team', 0)
+                ctx['fortBuilding'] = ''
+                if guiType == ARENA_GUI_TYPE.FORT_BATTLE:
+                    fortBuilding = battleResults.get('fortBuilding')
+                    if fortBuilding is not None:
+                        buildTypeID, buildTeam = fortBuilding.get('buildTypeID'), fortBuilding.get('buildTeam')
+                        if buildTypeID:
+                            ctx['fortBuilding'] = g_settings.htmlTemplates.format('battleResultFortBuilding', ctx={'fortBuilding': FortBuilding(typeID=buildTypeID).userName,
+                             'clanAbbrev': ''})
+                        if battleResKey == 0:
+                            battleResKey = 1 if buildTeam == team else -1
+                ctx['club'] = self.__makeClubString(battleResults)
+                if guiType == ARENA_GUI_TYPE.FALLOUT_MULTITEAM:
+                    templateName = self.__eventBattleResultKeys[battleResKey]
+                else:
+                    templateName = self.__battleResultKeys[battleResKey]
+                bgIconSource = None
+                arenaUniqueID = battleResults.get('arenaUniqueID', 0)
+                if guiType == ARENA_GUI_TYPE.FORT_BATTLE:
+                    bgIconSource = 'FORT_BATTLE'
+                formatted = g_settings.msgTemplates.format(templateName, ctx=ctx, data={'timestamp': arenaCreateTime,
+                 'savedData': arenaUniqueID}, bgIconSource=bgIconSource)
+                settings = self._getGuiSettings(message, templateName)
+                callback((formatted, settings))
+            else:
+                callback((None, None))
         else:
-            return (None, None)
-            return
+            callback((None, None))
+        return
 
     def __makeFortResourceString(self, battleResult):
         fortResource = battleResult.get('fortResource', None)
@@ -526,10 +547,10 @@ class InvoiceReceivedFormatter(WaitItemsSyncFormatter):
      INVOICE_ASSET.FREE_XP: 'freeXpInvoiceReceived',
      INVOICE_ASSET.DATA: 'dataInvoiceReceived'}
     __i18nPiecesString = i18n.makeString('#{0:s}:serviceChannelMessages/invoiceReceived/pieces'.format(MESSENGER_I18N_FILE))
-    __i18nCrewString = i18n.makeString('#{0:s}:serviceChannelMessages/invoiceReceived/crew'.format(MESSENGER_I18N_FILE))
-    __i18nCrewLvlString = i18n.makeString('#{0:s}:serviceChannelMessages/invoiceReceived/crewLvl'.format(MESSENGER_I18N_FILE))
-    __i18nCrewDroppedString = i18n.makeString('#{0:s}:serviceChannelMessages/invoiceReceived/droppedCrewsToBarracks'.format(MESSENGER_I18N_FILE))
-    __i18nCrewWithdrawnString = i18n.makeString('#{0:s}:serviceChannelMessages/invoiceReceived/vehicleCrewWithdrawn'.format(MESSENGER_I18N_FILE))
+    __i18nCrewString = i18n.makeString('#{0:s}:serviceChannelMessages/invoiceReceived/crewOnVehicle'.format(MESSENGER_I18N_FILE))
+    __i18nCrewWithLvlDroppedString = i18n.makeString('#{0:s}:serviceChannelMessages/invoiceReceived/crewWithLvlDroppedToBarracks'.format(MESSENGER_I18N_FILE))
+    __i18nCrewDroppedString = i18n.makeString('#{0:s}:serviceChannelMessages/invoiceReceived/crewDroppedToBarracks'.format(MESSENGER_I18N_FILE))
+    __i18nCrewWithdrawnString = i18n.makeString('#{0:s}:serviceChannelMessages/invoiceReceived/crewWithdrawn'.format(MESSENGER_I18N_FILE))
 
     def _getMessageTemplateKey(self, assetType):
         return self.__messageTemplateKeys[assetType]
@@ -583,25 +604,21 @@ class InvoiceReceivedFormatter(WaitItemsSyncFormatter):
         if isWithdrawn:
             toBarracks = not vehData.get('dismissCrew', False)
             action = cls.__i18nCrewDroppedString if toBarracks else cls.__i18nCrewWithdrawnString
-            vInfo.append('{0:s} {1:s}'.format(cls.__i18nCrewString, action))
+            vInfo.append(action)
         else:
             if 'rent' in vehData:
-                rentDays = vehData.get('rent', {}).get('expires', {}).get('after', None)
+                rentDays = vehData['rent'].get('expires', {}).get('after', None)
                 if rentDays:
                     rentDays = g_settings.htmlTemplates.format('rentDays', {'value': str(rentDays)})
                     vInfo.append(rentDays)
-            crewLvl = calculateRoleLevel(vehData.get('crewLvl', 50), vehData.get('crewFreeXP', 0))
-            if crewLvl > 50:
-                crewLvl = cls.__i18nCrewLvlString % crewLvl
-                crewLvl = '{0:s} {1:s}'.format(crewLvl, cls.__i18nCrewString)
-                if not vehData.get('dismissCrew', False):
-                    if 'crewFreeXP' in vehData or 'crewLvl' in vehData or 'tankmen' in vehData:
-                        crewLvl = '%s %s' % (crewLvl, cls.__i18nCrewDroppedString)
-                vInfo.append(crewLvl)
-        if len(vInfo):
-            return '; '.join(vInfo)
-        else:
-            return
+            crewLevel = calculateRoleLevel(vehData.get('crewLvl', 50), vehData.get('crewFreeXP', 0))
+            if crewLevel > 50:
+                if not vehData.get('dismissCrew', False) and ('crewFreeXP' in vehData or 'crewLvl' in vehData or 'tankmen' in vehData):
+                    crewWithLevelString = cls.__i18nCrewWithLvlDroppedString % crewLevel
+                else:
+                    crewWithLevelString = cls.__i18nCrewString % crewLevel
+                vInfo.append(crewWithLevelString)
+        return '; '.join(vInfo)
 
     @classmethod
     def __getVehicleName(cls, vehCompDescr):
@@ -937,37 +954,6 @@ class PremiumExpiredFormatter(PremiumActionFormatter):
         return result
 
 
-class WaresSoldFormatter(ServiceChannelFormatter):
-
-    def isNotify(self):
-        return True
-
-    def format(self, message, *args):
-        result = (None, None)
-        if message.data:
-            offer = offers._makeOutOffer(message.data)
-            formatted = g_settings.msgTemplates.format('waresSoldAsGold', ctx={'srcWares': BigWorld.wg_getGoldFormat(offer.srcWares),
-             'dstName': offer.dstName,
-             'fee': offer.fee})
-            result = (formatted, self._getGuiSettings(message, 'waresSoldAsGold'))
-        return result
-
-
-class WaresBoughtFormatter(ServiceChannelFormatter):
-
-    def isNotify(self):
-        return True
-
-    def format(self, message, *args):
-        result = (None, None)
-        if message.data:
-            offer = offers._makeInOffer(message.data)
-            formatted = g_settings.msgTemplates.format('waresBoughtAsGold', ctx={'srcName': offer.srcName,
-             'srcWares': BigWorld.wg_getGoldFormat(offer.srcWares)})
-            result = (formatted, self._getGuiSettings(message, 'waresBoughtAsGold'))
-        return result
-
-
 class PrebattleFormatter(ServiceChannelFormatter):
     __battleTypeByPrebattleType = {PREBATTLE_TYPE.TOURNAMENT: 'tournament',
      PREBATTLE_TYPE.CLAN: 'clan'}
@@ -1095,7 +1081,7 @@ class PrebattleKickFormatter(PrebattleFormatter):
         if prbType > 0 and kickReason > 0:
             ctx = {}
             key = '#system_messages:prebattle/kick/type/unknown'
-            if prbType == PREBATTLE_TYPE.SQUAD:
+            if prbType in (PREBATTLE_TYPE.SQUAD, PREBATTLE_TYPE.FALLOUT):
                 key = '#system_messages:prebattle/kick/type/squad'
             elif prbType == PREBATTLE_TYPE.COMPANY:
                 key = '#system_messages:prebattle/kick/type/team'
@@ -1392,6 +1378,7 @@ class BattleTutorialResultsFormatter(ClientSysMessageFormatter):
 class TokenQuestsFormatter(WaitItemsSyncFormatter):
 
     def __init__(self, asBattleFormatter = False):
+        super(TokenQuestsFormatter, self).__init__()
         self._asBattleFormatter = asBattleFormatter
 
     @async
@@ -1399,15 +1386,15 @@ class TokenQuestsFormatter(WaitItemsSyncFormatter):
     def format(self, message, callback):
         yield lambda callback: callback(True)
         isSynced = yield self._waitForSyncItems()
+        formatted, settings = (None, None)
         if isSynced:
-            formatted, settings = (None, None)
             data = message.data or {}
             completedQuestIDs = data.get('completedQuestIDs', set())
             fmt = self._formatQuestAchieves(message)
             if fmt is not None:
                 settings = self._getGuiSettings(message, self._getTemplateName(completedQuestIDs))
                 formatted = g_settings.msgTemplates.format(self._getTemplateName(completedQuestIDs), {'achieves': fmt})
-            callback((formatted, settings))
+        callback((formatted, settings))
         return
 
     def _getTemplateName(self, completedQuestIDs = set()):
@@ -1583,8 +1570,10 @@ class ClanMessageFormatter(ServiceChannelFormatter):
         if data and 'event' in data:
             event = data['event']
             templateKey = self.__templates.get(event)
+            fullName = getClanFullName(passCensor(data['clanName']), passCensor(data['clanAbbrev']))
             message = i18n.makeString('#messenger:serviceChannelMessages/clan/%s' % SYS_MESSAGE_CLAN_EVENT_NAMES[event])
-            formatted = g_settings.msgTemplates.format(templateKey, ctx={'message': message})
+            formatted = g_settings.msgTemplates.format(templateKey, ctx={'message': message,
+             'fullClanName': fullName})
             settings = self._getGuiSettings(message, templateKey)
             return (formatted, settings)
         else:
@@ -1622,7 +1611,7 @@ class FortMessageFormatter(ServiceChannelFormatter):
          SYS_MESSAGE_FORT_EVENT.SPECIAL_ORDER_EXPIRED: BoundMethodWeakref(self._specialReserveExpiredMessage),
          SYS_MESSAGE_FORT_EVENT.RESOURCE_SET: BoundMethodWeakref(self._resourceSetMessage),
          SYS_MESSAGE_FORT_EVENT.RESERVE_SET: BoundMethodWeakref(self._reserveSetMessage),
-         SYS_MESSAGE_FORT_EVENT.FORT_GOT_8_LEVEL: BoundMethodWeakref(self._simpleMessage)}
+         SYS_MESSAGE_FORT_EVENT.FORT_GOT_8_LEVEL: BoundMethodWeakref(self._fortGotLvlMessage)}
 
     def format(self, message, *args):
         LOG_DEBUG('Message has received from fort', message)
@@ -1686,6 +1675,13 @@ class FortMessageFormatter(ServiceChannelFormatter):
             from gui.shared.fortifications.fort_helpers import setRosterIntroWindowSetting
             setRosterIntroWindowSetting(MUST_SHOW_DEFENCE_START)
         return self._buildMessage(data['event'], {'defenceHour': fort_fmts.getDefencePeriodString(time_utils.getTimeTodayForUTC(data['defenceHour']))})
+
+    def _fortGotLvlMessage(self, data):
+        if data.get('event') == SYS_MESSAGE_FORT_EVENT.FORT_GOT_8_LEVEL:
+            from gui.shared.fortifications.settings import MUST_SHOW_FORT_UPGRADE
+            from gui.shared.fortifications.fort_helpers import setRosterIntroWindowSetting
+            setRosterIntroWindowSetting(MUST_SHOW_FORT_UPGRADE)
+        return self._simpleMessage(data)
 
     def _offDayActivatedMessage(self, data):
         offDay = data['offDay']
