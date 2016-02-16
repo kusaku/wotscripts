@@ -56,11 +56,15 @@ class MainView(CustomizationMainViewMeta):
     def showGroup(self, cType, slotIdx):
         g_customizationController.carousel.slots.select(cType, slotIdx)
         if self.__carouselHidden:
-            self.__setBottomPanelData(g_customizationController.carousel.slots.getCurrentTypeLabel())
-            self.as_showSelectorItemS(cType)
             self.__carouselHidden = False
+            self.__setBottomPanelData()
+            self.as_showSelectorItemS(cType)
 
-    def __setBottomPanelData(self, label = ''):
+    def __setBottomPanelData(self):
+        if self.__carouselHidden:
+            label = g_customizationController.carousel.slots.getSummaryString()
+        else:
+            label = g_customizationController.carousel.slots.getCurrentTypeLabel()
         totalGold = g_customizationController.carousel.slots.cart.totalPriceGold
         totalCredits = g_customizationController.carousel.slots.cart.totalPriceCredits
         notEnoughGoldTooltip = notEnoughCreditsTooltip = ''
@@ -95,10 +99,10 @@ class MainView(CustomizationMainViewMeta):
         g_customizationController.carousel.slots.dropAppliedItem(cType, slotIdx)
 
     def backToSelectorGroup(self):
-        self.__setBottomPanelData(g_customizationController.carousel.slots.getSummaryString())
+        self.__carouselHidden = True
+        self.__setBottomPanelData()
         self.as_showSelectorGroupS()
         g_customizationController.updateTank3DModel()
-        self.__carouselHidden = True
 
     @process
     def installCustomizationElement(self, idx):
@@ -168,7 +172,7 @@ class MainView(CustomizationMainViewMeta):
         self.__setBonusData(g_customizationController.carousel.slots.bonusPanel.bonusData)
         self.as_setSlotsPanelDataS(g_customizationController.carousel.slots.getData())
         self.__setCarouselInitData()
-        self.__setBottomPanelData(g_customizationController.carousel.slots.getSummaryString())
+        self.__setBottomPanelData()
         self.as_setBottomPanelInitDataS({'backBtnLabel': _ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_BOTTOMPANEL_BACKBTN_LABEL),
          'backBtnDescription': _ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_BOTTOMPANEL_BACKBTN_DESCRIPTION),
          'pricePanelVO': {'goldIcon': RES_ICONS.MAPS_ICONS_LIBRARY_GOLDICON_1,

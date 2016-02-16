@@ -305,6 +305,8 @@ class Vehicle(BigWorld.Entity):
             pass
 
     def showRammingEffect(self, energy, point):
+        if not self.isStarted:
+            return
         if energy < 600:
             self.showCollisionEffect(point, 'rammingCollisionLight')
         else:
@@ -396,7 +398,7 @@ class Vehicle(BigWorld.Entity):
         if not not self.isStarted:
             raise AssertionError
             avatar = BigWorld.player()
-            self.appearance.preStart(self.typeDescriptor)
+            self.appearance.preStart(self.typeDescriptor, self.physicsMode == VEHICLE_PHYSICS_MODE.DETAILED)
             self.appearance.start(self, self.__prereqs)
             self.assembler.constructAppearance(self.__prereqs)
             del self.assembler

@@ -211,7 +211,7 @@ DEFAULT_VALUES = {KEY_FILTERS: {STORE_TAB: 0,
                 'minimapDrawRange': True,
                 'nationalVoices': False,
                 'enableVoIP': True,
-                'replayEnabled': 2,
+                'replayEnabled': 1,
                 'players_panel': {'state': 'medium',
                                   'showLevels': True,
                                   'showTypes': True},
@@ -256,7 +256,7 @@ def _unpack(value):
 
 class AccountSettings(object):
     onSettingsChanging = Event.Event()
-    version = 20
+    version = 21
     __cache = {'login': None,
      'section': None}
     __isFirstRun = True
@@ -495,6 +495,15 @@ class AccountSettings(object):
                     accSettings.write('battleLoadingInfo', base64.b64encode(pickle.dumps(0)))
                     AccountSettings.__readSection(section, KEY_FILTERS).deleteSection('joinCommandPressed')
 
+            if currVersion < 21:
+                import SoundGroups
+                SoundGroups.g_instance.setMasterVolume(1.0)
+                SoundGroups.g_instance.setVolume('music', 1.0)
+                SoundGroups.g_instance.setVolume('vehicles', 1.0)
+                SoundGroups.g_instance.setVolume('effects', 1.0)
+                SoundGroups.g_instance.setVolume('gui', 1.0)
+                SoundGroups.g_instance.setVolume('ambient', 1.0)
+                SoundGroups.g_instance.savePreferences()
             ads.writeInt('version', AccountSettings.version)
         return
 

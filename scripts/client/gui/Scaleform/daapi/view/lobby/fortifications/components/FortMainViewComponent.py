@@ -40,6 +40,7 @@ from gui.shared.fortifications.settings import FORT_BATTLE_DIVISIONS
 from gui.shared.fortifications.fort_helpers import getRosterIntroWindowSetting
 from gui.shared.fortifications.fort_helpers import setRosterIntroWindowSetting
 from gui.shared.fortifications.settings import MUST_SHOW_FORT_UPGRADE, MUST_SHOW_DEFENCE_START
+from gui.shared.utils.functions import makeTooltip
 from helpers import i18n, time_utils, setHangarVisibility
 
 def _checkBattleConsumesIntro(fort):
@@ -155,8 +156,8 @@ class FortMainViewComponent(FortMainViewMeta, FortViewHelper, ClanListener):
         self.startClanListening()
         self.updateData()
         setHangarVisibility(isVisible=False)
-        self.as_setTutorialArrowVisibilityS(FORTIFICATION_ALIASES.TUTORIAL_ARROW_DEFENCE, False)
-        self.as_setTutorialArrowVisibilityS(FORTIFICATION_ALIASES.TUTORIAL_ARROW_INTELLIGENCE, False)
+        self.__defenceHourArrowVisible = self.__setTutorialArrowToDefenseHourSettingsVisibility()
+        self.__intelligenceArrowVisible = self.__setTutorialArrowToIntelligenceVisibility()
         self._tryShowFortRosterIntroWindow()
 
     def _dispose(self):
@@ -314,15 +315,11 @@ class FortMainViewComponent(FortMainViewMeta, FortViewHelper, ClanListener):
         levelTxt = fort_formatters.getTextLevel(level)
         defResQuantity = fort.getTotalDefRes()
         defResPrefix = text_styles.main(i18n.makeString(FORTIFICATIONS.FORTMAINVIEW_COMMON_TOTALDEPOTQUANTITYTEXT))
-        disabledTransporting = False
-        if self.__currentMode in (FORTIFICATION_ALIASES.MODE_TRANSPORTING_FIRST_STEP, FORTIFICATION_ALIASES.MODE_TRANSPORTING_NEXT_STEP, FORTIFICATION_ALIASES.MODE_TRANSPORTING_NOT_AVAILABLE):
-            if not self.fortCtrl.getFort().isTransportationAvailable():
-                disabledTransporting = True
         return {'clanName': g_clanCache.clanTag,
          'levelTitle': i18n.makeString(FORTIFICATIONS.FORTMAINVIEW_HEADER_LEVELSLBL, buildLevel=levelTxt),
          'defResText': defResPrefix + fort_formatters.getDefRes(defResQuantity, True),
-         'disabledTransporting': disabledTransporting,
          'clanProfileBtnLbl': CLANS.FORT_HEADER_CLANPROFILEBTNLBL,
+         'clanListBtnTooltip': makeTooltip(i18n.makeString(TOOLTIPS.FORTIFICATION_HEADER_CLANLIST_HEADER, clanName=g_clanCache.clanTag), i18n.makeString(TOOLTIPS.FORTIFICATION_HEADER_CLANLIST_BODY)),
          'orderSelectorVO': {'isSelected': AccountSettings.getFilter(ORDERS_FILTER)['isSelected'],
                              'icon': RES_ICONS.MAPS_ICONS_LIBRARY_FORTIFICATION_AIM}}
 
@@ -358,7 +355,8 @@ class FortMainViewComponent(FortMainViewMeta, FortViewHelper, ClanListener):
                 self.__commanderHelpShown = True
             if mode == FORTIFICATION_ALIASES.MODE_COMMON_TUTORIAL:
                 self.fireEvent(events.LoadViewEvent(FORTIFICATION_ALIASES.FORT_CREATION_CONGRATULATIONS_WINDOW_ALIAS), scope=EVENT_BUS_SCOPE.LOBBY)
-                self.__makeSystemMessages()
+                if self.__currentMode == FORTIFICATION_ALIASES.MODE_DIRECTIONS_TUTORIAL:
+                    self.__makeSystemMessages()
             isInTransportingMode = mode in (FORTIFICATION_ALIASES.MODE_TRANSPORTING_FIRST_STEP,
              FORTIFICATION_ALIASES.MODE_TRANSPORTING_NEXT_STEP,
              FORTIFICATION_ALIASES.MODE_TRANSPORTING_NOT_AVAILABLE,

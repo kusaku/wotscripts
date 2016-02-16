@@ -16,7 +16,6 @@ from gui.shared.event_bus import EVENT_BUS_SCOPE
 from gui.sounds.ambients import LobbySubViewEnv
 from helpers.i18n import makeString
 from PlayerEvents import g_playerEvents
-from gui.prb_control.dispatcher import g_prbLoader
 from gui.Scaleform.daapi import LobbySubView
 from gui.Scaleform.daapi.view.meta.BattleQueueMeta import BattleQueueMeta
 from shared_utils import findFirst
@@ -169,9 +168,8 @@ class BattleQueue(BattleQueueMeta, LobbySubView):
         return
 
     def exitClick(self):
-        dispatcher = g_prbLoader.getDispatcher()
-        if dispatcher is not None:
-            dispatcher.exitFromQueue()
+        if self.prbDispatcher is not None:
+            self.prbDispatcher.exitFromQueue()
         return
 
     def onStartBattle(self):
@@ -192,9 +190,8 @@ class BattleQueue(BattleQueueMeta, LobbySubView):
         super(BattleQueue, self)._dispose()
 
     def __updateClientState(self):
-        dispatcher = g_prbLoader.getDispatcher()
-        if dispatcher is not None:
-            permissions = dispatcher.getUnitFunctional().getPermissions()
+        if self.prbDispatcher is not None:
+            permissions = self.prbDispatcher.getUnitFunctional().getPermissions()
             if permissions and not permissions.canExitFromQueue():
                 self.as_showExitS(False)
         guiType = prb_getters.getArenaGUIType(queueType=self.__provider.getQueueType())
@@ -219,7 +216,7 @@ class BattleQueue(BattleQueueMeta, LobbySubView):
     def __updateQueueInfo(self):
         if prb_getters.isCompany():
             qType = constants.QUEUE_TYPE.COMPANIES
-        elif self.prbDispatcher.getFunctionalState().isInUnit():
+        elif self.prbDispatcher is not None and self.prbDispatcher.getFunctionalState().isInUnit():
             rosterType = self.prbDispatcher.getFunctionalState().rosterType
             qType, _ = findFirst(lambda (k, v): v == rosterType, FALLOUT_QUEUE_TYPE_TO_ROSTER.iteritems(), (constants.QUEUE_TYPE.RANDOMS, None))
         else:

@@ -692,28 +692,6 @@ def reloadSoundBanks():
     MusicController.g_musicController.restart()
 
 
-def loadPluginDB():
-    ENVIRONMENT_EFFECTS_CONFIG_FILE = 'scripts/audioplugins.xml'
-    section = ResMgr.openSection(ENVIRONMENT_EFFECTS_CONFIG_FILE)
-    pluginDB = []
-    for propertyName, propertySection in section.items():
-        DBplugin = []
-        DBplugin.append(propertySection.readString('name'))
-        DBplugin.append(propertySection.readString('category'))
-        for propertyName2, propertySection2 in propertySection['parameters'].items():
-            DBparam = []
-            DBparam.append(propertySection2.readInt('index'))
-            DBparam.append(propertySection2.readFloat('value'))
-            DBplugin.append(DBparam)
-
-        DBparam = None
-        pluginDB.append(DBplugin)
-
-    DBitem = None
-    pluginDB = None
-    return
-
-
 def loadLightSoundsDB():
     ENVIRONMENT_EFFECTS_CONFIG_FILE = 'scripts/environment_effects.xml'
     section = ResMgr.openSection(ENVIRONMENT_EFFECTS_CONFIG_FILE)

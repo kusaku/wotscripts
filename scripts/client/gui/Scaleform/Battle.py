@@ -432,8 +432,9 @@ class Battle(BattleWindow):
         removeListener(events.GameEvent.HELP, self.toggleHelpWindow, scope=_SCOPE)
         removeListener(events.GameEvent.GUI_VISIBILITY, self.showAll, scope=_SCOPE)
         ctrl = g_sessionProvider.getVehicleStateCtrl()
-        ctrl.onVehicleStateUpdated -= self.__onVehicleStateUpdated
-        ctrl.onPostMortemSwitched -= self.__onPostMortemSwitched
+        if ctrl is not None:
+            ctrl.onVehicleStateUpdated -= self.__onVehicleStateUpdated
+            ctrl.onPostMortemSwitched -= self.__onPostMortemSwitched
         player = BigWorld.player()
         if player and player.inputHandler:
             player.inputHandler.onPostmortemVehicleChanged -= self.onPostmortemVehicleChanged

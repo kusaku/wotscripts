@@ -305,7 +305,7 @@ class VehicleGunRotator(object):
                 vehicle = BigWorld.entity(avatar.playerVehicleID)
                 if vehicle is not None and vehicle is avatar.vehicle:
                     if _ENABLE_RELATIVE_SHOT_POINT:
-                        shotPoint = shotPoint - Math.Matrix(avatar.getOwnVehicleMatrix()).translation
+                        shotPoint = shotPoint - Math.Matrix(avatar.getOwnVehicleStabilisedMatrix()).translation
                         vehicle.cell.trackRelativePointWithGun(shotPoint)
                     else:
                         vehicle.cell.trackWorldPointWithGun(shotPoint)
@@ -324,7 +324,7 @@ class VehicleGunRotator(object):
             turretYawLimits = descr.gun['turretYawLimits']
             maxTurretRotationSpeed = self.__maxTurretRotationSpeed
             prevTurretYaw = self.__turretYaw
-            shotTurretYaw, shotGunPitch = getShotAngles(descr, avatar.getOwnVehicleMatrix(), (prevTurretYaw, self.__gunPitch), shotPoint)
+            shotTurretYaw, shotGunPitch = getShotAngles(descr, avatar.getOwnVehicleStabilisedMatrix(), (prevTurretYaw, self.__gunPitch), shotPoint)
             self.__turretYaw = turretYaw = self.__getNextTurretYaw(prevTurretYaw, shotTurretYaw, maxTurretRotationSpeed * timeDiff, turretYawLimits)
             if maxTurretRotationSpeed != 0:
                 self.estimatedTurretRotationTime = abs(turretYaw - shotTurretYaw) / maxTurretRotationSpeed
@@ -472,7 +472,7 @@ class VehicleGunRotator(object):
         turretWorldMatrix = Math.Matrix()
         turretWorldMatrix.setRotateY(turretYaw)
         turretWorldMatrix.translation = turretOffs
-        turretWorldMatrix.postMultiply(Math.Matrix(self.__avatar.getOwnVehicleMatrix()))
+        turretWorldMatrix.postMultiply(Math.Matrix(self.__avatar.getOwnVehicleStabilisedMatrix()))
         position = turretWorldMatrix.applyPoint(gunOffs)
         gunWorldMatrix = Math.Matrix()
         gunWorldMatrix.setRotateX(gunPitch)
@@ -679,7 +679,7 @@ class _PlayerTurretRotationSoundEffect(CallbackDelayer):
             desiredShotPoint = player.inputHandler.getDesiredShotPoint()
         if desiredShotPoint is None:
             desiredShotPoint = gunRotator.markerInfo[0]
-        cameraTurretYaw, _ = AimingSystems.getTurretYawGunPitch(vehicleTypeDescriptor, player.getOwnVehicleMatrix(), desiredShotPoint, True)
+        cameraTurretYaw, _ = AimingSystems.getTurretYawGunPitch(vehicleTypeDescriptor, player.getOwnVehicleStabilisedMatrix(), desiredShotPoint, True)
         angleDiff = abs(turretYaw - cameraTurretYaw)
         if angleDiff > math.pi:
             angleDiff = 2 * math.pi - angleDiff
@@ -844,7 +844,7 @@ class _PlayerTurretRotationSoundEffectWWISE(CallbackDelayer):
                 desiredShotPoint = player.inputHandler.getDesiredShotPoint()
             if desiredShotPoint is None:
                 desiredShotPoint = gunRotator.markerInfo[0]
-            cameraTurretYaw, _ = AimingSystems.getTurretYawGunPitch(vehicleTypeDescriptor, player.getOwnVehicleMatrix(), desiredShotPoint, True)
+            cameraTurretYaw, _ = AimingSystems.getTurretYawGunPitch(vehicleTypeDescriptor, player.getOwnVehicleStabilisedMatrix(), desiredShotPoint, True)
             angleDiff = abs(turretYaw - cameraTurretYaw)
             if angleDiff > math.pi:
                 angleDiff = 2 * math.pi - angleDiff

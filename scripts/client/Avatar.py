@@ -708,9 +708,6 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                 syncStabilisedYPR(y, p, r)
         return
 
-    def set_isOwnVehicleContactingWorld(self, prev):
-        pass
-
     def targetBlur(self, prevEntity):
         if prevEntity not in self.__vehicles:
             return

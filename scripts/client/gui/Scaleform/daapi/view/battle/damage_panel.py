@@ -187,22 +187,20 @@ class DamagePanel(DamagePanelMeta, IArenaVehiclesController):
         """
         self.as_updateRepairingDeviceS(*value)
 
-    def _updateCrewDeactivated(self, deathZoneID):
-        if self.__isHasGasAttack:
-            if deathZoneID == ATTACK_REASON_INDICES['gas_attack']:
-                self.__ui.movie.falloutItems.as_setPostmortemGasAtackInfo({'imgPath': RES_ICONS.MAPS_ICONS_BATTLE_ICON_BATTLE_DEAD,
-                 'infoStr': FALLOUT.GASATTACK_DAMAGEPANEL_TANKDESTROYED,
-                 'respawnInfo': FALLOUT.GASATTACK_POSTMORTEM_RESPAWNINFO})
-            else:
-                self.__ui.movie.falloutItems.as_setPostmortemGasAtackInfo({'infoStr': FALLOUT.GASATTACK_DAMAGEPANEL_TANKDESTROYED,
-                 'respawnInfo': FALLOUT.GASATTACK_POSTMORTEM_RESPAWNINFO})
+    def _updateCrewDeactivated(self, deathReasonID):
         self.as_setCrewDeactivatedS()
 
-    def _updateDestroyed(self, value = None):
-        if self.__isHasGasAttack:
-            self.__ui.movie.falloutItems.as_setPostmortemGasAtackInfo({'infoStr': FALLOUT.GASATTACK_POSTMORTEM_VEHICLEDESTROYED,
-             'respawnInfo': FALLOUT.GASATTACK_POSTMORTEM_RESPAWNINFO})
+    def _updateDestroyed(self, deathReasonID = None):
+        if self.__isHasGasAttack and deathReasonID is not None:
+            if deathReasonID == ATTACK_REASON_INDICES['gas_attack']:
+                self.__ui.movie.falloutItems.as_setPostmortemGasAtackInfo({'imgPath': RES_ICONS.MAPS_ICONS_BATTLE_ICON_BATTLE_DEAD,
+                 'infoStr': FALLOUT.GASATTACK_POSTMORTEM_VEHICLEDESTROYED,
+                 'respawnInfo': FALLOUT.GASATTACK_POSTMORTEM_RESPAWNINFO})
+            else:
+                self.__ui.movie.falloutItems.as_setPostmortemGasAtackInfo({'infoStr': FALLOUT.GASATTACK_POSTMORTEM_VEHICLEDESTROYED,
+                 'respawnInfo': FALLOUT.GASATTACK_POSTMORTEM_RESPAWNINFO})
         self.as_setVehicleDestroyedS()
+        return
 
     def _updateVehicleMovementState(self, runAnimation):
         if runAnimation:

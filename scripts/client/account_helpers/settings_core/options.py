@@ -1941,6 +1941,7 @@ class AltVoicesSetting(StorageDumpSetting):
         self._handlers = {self.SOUND_MODE_TYPE.UNKNOWN: lambda *args: False,
          self.SOUND_MODE_TYPE.REGULAR: self.__applyRegularMode,
          self.SOUND_MODE_TYPE.NATIONAL: self.__applyNationalMode}
+        self.__previewNations = []
         return
 
     @sf_lobby
@@ -1958,13 +1959,24 @@ class AltVoicesSetting(StorageDumpSetting):
             sndPath = sndMgr.sounds.getEffectSound(next(self.ALT_VOICES_PREVIEW))
             if SoundGroups.g_instance.soundModes.currentNationalPreset[1]:
                 g = functions.rnd_choice(*nations.AVAILABLE_NAMES)
-                SoundGroups.g_instance.soundModes.setCurrentNation(next(g))
+                self.__previewNations = [next(g), next(g), next(g)]
+                self.__previewSound = SoundGroups.g_instance.getSound2D(sndPath)
+                if self.__previewSound is not None:
+                    self.__previewSound.setCallback(self.playPreview)
+                    self.playPreview(self.__previewSound)
+                return True
             self.__previewSound = SoundGroups.g_instance.getSound2D(sndPath)
             if self.__previewSound is not None:
                 self.__previewSound.play()
             return True
         else:
             return False
+
+    def playPreview(self, sound):
+        if len(self.__previewNations) and self.__previewSound == sound:
+            nation = self.__previewNations.pop()
+            SoundGroups.g_instance.soundModes.setCurrentNation(nation)
+            sound.play()
 
     def isOptionEnabled(self):
         return len(self.__getSoundModesList()) > 1

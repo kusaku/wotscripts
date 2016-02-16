@@ -307,6 +307,7 @@ class _ParametersCache(object):
                  'piercingPower': eqpDescr.piercingPower,
                  'caliber': shellParams['caliber'],
                  'shotsNumberRange': eqpDescr.shotsNumber,
+                 'explosionRadius': shellDescr['explosionRadius'],
                  'areaRadius': eqpDescr.areaRadius,
                  'artDelayRange': eqpDescr.delay})
             elif eqDescrType is artefacts.Bomber:

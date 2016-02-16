@@ -237,6 +237,11 @@ class _RepairKitItem(_ExpandedItem):
 
 class _OrderItem(_TriggerItem):
 
+    def deactivate(self):
+        if self._descriptor is not None:
+            super(_OrderItem, self).deactivate()
+        return
+
     def update(self, quantity, stage, timeRemaining):
         from AvatarInputHandler import MapCaseMode
         if stage == EQUIPMENT_STAGES.PREPARING and self._stage != stage:
@@ -444,6 +449,11 @@ class _ReplayItem(_EquipmentItem):
 
 
 class _ReplayOrderItem(_ReplayItem):
+
+    def deactivate(self):
+        if self._descriptor is not None:
+            super(_ReplayOrderItem, self).deactivate()
+        return
 
     def update(self, quantity, stage, timeRemaining):
         from AvatarInputHandler import MapCaseMode

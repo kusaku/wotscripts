@@ -1,6 +1,6 @@
 # Embedded file name: scripts/client/gui/customization_2_0/controller.py
 from carousel import Carousel
-from data_aggregator import DataAggregator, CUSTOMIZATION_TYPE
+from data_aggregator import DataAggregator
 from gui.shared.utils.HangarSpace import g_hangarSpace
 
 class Controller(object):

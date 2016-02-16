@@ -1,9 +1,10 @@
 # Embedded file name: scripts/client/gui/customization_2_0/slots.py
 import copy
 import time
+from CurrentVehicle import g_currentVehicle
 from Event import Event
 from helpers.i18n import makeString as _ms
-from gui import makeHtmlString
+from gui import makeHtmlString, g_tankActiveCamouflage
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.Scaleform.locale.VEHICLE_CUSTOMIZATION import VEHICLE_CUSTOMIZATION
@@ -140,6 +141,8 @@ class Slots(object):
             else:
                 self.__setSlotAndUpdateView(cType, slotIdx, copy.deepcopy(initialSlotItem))
         elif newSlotItem['isInDossier']:
+            if cType == CUSTOMIZATION_TYPE.CAMOUFLAGE:
+                g_tankActiveCamouflage[g_currentVehicle.item.intCD] = slotIdx
             numberOfDays = item['object'].numberOfDays
             if numberOfDays is not None:
                 itemDuration = numberOfDays if numberOfDays == 30 else 7

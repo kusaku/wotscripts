@@ -32,7 +32,7 @@ class QuestsPersonalWelcomeView(QuestsPersonalWelcomeViewMeta):
         super(QuestsPersonalWelcomeView, self)._populate()
         falloutEnabled = g_lobbyContext.getServerSettings().isFalloutQuestEnabled()
         if falloutEnabled:
-            announcementIcon = ARENA_GUI_TYPE_LABEL.LABELS[ARENA_GUI_TYPE.EVENT_BATTLES]
+            announcementIcon = ARENA_GUI_TYPE_LABEL.LABELS[ARENA_GUI_TYPE.FALLOUT_CLASSIC]
             announcementText = text_styles.promoSubTitle(QUESTS.QUESTSPERSONALWELCOMEVIEW_ANNOUNCEMENTTEXT)
             background = RES_ICONS.MAPS_ICONS_QUESTS_PROMOSCREEN_FALLOUT
         else:

@@ -360,18 +360,20 @@ class _UnitFunctional(ListenersCollection, interfaces.IUnitFunctional):
         return super(_UnitFunctional, self).getVehiclesInfo(dbID, unitIdx)
 
     def invalidateSelectedVehicles(self, vehInvCDs):
-        newVehInvIDs = []
+        newVehicleIDs = []
         hasInvalidation = False
         for vInfo in self.getVehiclesInfo():
             if vInfo is not None:
                 if vInfo.vehTypeCD and vInfo.vehTypeCD not in vehInvCDs:
-                    newVehInvIDs.append(INV_ID_CLEAR_VEHICLE)
+                    newVehicleIDs.append(INV_ID_CLEAR_VEHICLE)
                     hasInvalidation = True
                 else:
-                    newVehInvIDs.append(vInfo.vehInvID)
+                    newVehicleIDs.append(vInfo.vehInvID)
 
         if hasInvalidation:
-            return unit_ctx.SetVehiclesCtx(newVehInvIDs, waitingID='prebattle/change_settings')
+            if self._prbType != PREBATTLE_TYPE.FALLOUT:
+                return unit_ctx.SetVehicleUnitCtx(waitingID='prebattle/change_settings')
+            return unit_ctx.SetVehiclesCtx(newVehicleIDs, waitingID='prebattle/change_settings')
         else:
             return
 
@@ -542,6 +544,12 @@ class _UnitFunctional(ListenersCollection, interfaces.IUnitFunctional):
                 callback(False)
             result = True
         return result
+
+    def getClubsPaginator(self):
+        return None
+
+    def getClubsFinder(self):
+        return None
 
 
 class IntroFunctional(_UnitFunctional):
@@ -727,6 +735,7 @@ class UnitFunctional(_UnitFunctional):
         self._requestsProcessor.init()
         initResult = self._actionHandler.executeInit(ctx)
         self._vehiclesWatcher = unit_ext.InventoryVehiclesWatcher(self)
+        self._vehiclesWatcher.validate()
         self._vehiclesWatcher.init()
         self._addClientUnitListeners()
         idle = flags.isInIdle()
@@ -1614,8 +1623,8 @@ class UnitFunctional(_UnitFunctional):
 
     def _clearVehicle(self, ctx, callback = None):
         vInfos = self.getVehiclesInfo()
-        if findFirst(lambda vInfo: vInfo.vehInvID, vInfos) is not None:
-            LOG_DEBUG('Player already selected vehicle', ctx)
+        if findFirst(lambda vInfo: vInfo.vehInvID, vInfos) is None:
+            LOG_DEBUG('There is not vehicle in slot', ctx)
             if callback:
                 callback(True)
             return

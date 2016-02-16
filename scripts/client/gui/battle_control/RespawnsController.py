@@ -110,18 +110,21 @@ class RespawnsController(IArenaRespawnController):
         return
 
     def __show(self):
-        if not self.__isUIInited:
-            self.__isUIInited = True
-            isLimited = self.__respawnInfo.respawnType == RESPAWN_TYPES.LIMITED
-            self.__ui.start(self.__vehicles, isLimited)
-        self.__ui.show(self.__respawnInfo.vehicleID, self.__vehicles, self.__cooldowns)
-        self.__battle.radialMenu.forcedHide()
-        self.__battle.minimap.useRespawnSize()
-        if self.__gasAttackMgr is not None and self.__gasAttackMgr.state in (GasAttackState.ATTACK, GasAttackState.PREPARE):
-            self.__ui.showGasAttackInfo(self.__vehicles, self.__cooldowns)
+        if self.__ui is None:
+            return
         else:
-            self.__startTimer()
-        return
+            if not self.__isUIInited:
+                self.__isUIInited = True
+                isLimited = self.__respawnInfo.respawnType == RESPAWN_TYPES.LIMITED
+                self.__ui.start(self.__vehicles, isLimited)
+            self.__ui.show(self.__respawnInfo.vehicleID, self.__vehicles, self.__cooldowns)
+            self.__battle.radialMenu.forcedHide()
+            self.__battle.minimap.useRespawnSize()
+            if self.__gasAttackMgr is not None and self.__gasAttackMgr.state in (GasAttackState.ATTACK, GasAttackState.PREPARE):
+                self.__ui.showGasAttackInfo(self.__vehicles, self.__cooldowns)
+            else:
+                self.__startTimer()
+            return
 
     def __startTimer(self):
         self.__timerCallback = None

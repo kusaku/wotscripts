@@ -9,6 +9,7 @@ from CustomEffect import EffectSettings
 from vehicle_systems.assembly_utility import Component
 _ENABLE_VALUE_TRACKER = False
 _ENABLE_VALUE_TRACKER_ENGINE = False
+_ENABLE_PIXIE_TRACKER = False
 
 def _calcScrollDelta(scroll, vehicleSpeed):
     scrollDelta = 0.0
@@ -50,7 +51,7 @@ class CustomEffectManager(Component):
     _SCROLL_TICK = 0.05
 
     def __init__(self, vehicle, engineState):
-        if _ENABLE_VALUE_TRACKER or _ENABLE_VALUE_TRACKER_ENGINE:
+        if _ENABLE_VALUE_TRACKER or _ENABLE_VALUE_TRACKER_ENGINE or _ENABLE_PIXIE_TRACKER:
             from helpers.ValueTracker import ValueTracker
             self.__vt = ValueTracker.instance()
         else:
@@ -92,15 +93,20 @@ class CustomEffectManager(Component):
         return self.__variableArgs.get(name, 0.0)
 
     def destroy(self):
-        for effectSelector in self.__selectors:
-            effectSelector.destroy()
+        if self.__scrollUpdateID is None:
+            return
+        else:
+            for effectSelector in self.__selectors:
+                effectSelector.destroy()
 
-        PixieCache.decref()
-        BigWorld.cancelCallback(self.__scrollUpdateID)
-        self.__scrollUpdateID = None
-        self.__engineState.delGearUpCallback()
-        self.__engineState = None
-        return
+            PixieCache.decref()
+            BigWorld.cancelCallback(self.__scrollUpdateID)
+            self.__scrollUpdateID = None
+            self.__engineState.delGearUpCallback()
+            self.__engineState = None
+            if _ENABLE_PIXIE_TRACKER and self.__vehicle.isPlayerVehicle:
+                self.__vt.addValue2('Pixie Count', PixieCache.pixiesCount)
+            return
 
     def enable(self, enable, settingsFlags = EffectSettings.SETTING_DUST):
         for effectSelector in self.__selectors:
@@ -203,6 +209,8 @@ class CustomEffectManager(Component):
             self.__vt.addValue2('RPM', self.__variableArgs['RPM'])
             self.__vt.addValue2('engineLoad', self.__engineState.mode)
             self.__vt.addValue2('physicLoad', self.__engineState.physicLoad)
+        if _ENABLE_PIXIE_TRACKER and self.__vehicle.isPlayerVehicle:
+            self.__vt.addValue2('Pixie Count', PixieCache.pixiesCount)
 
     @staticmethod
     def __getScrollParams(trackScrolldelta, hasContact, matKindsUnderTrack):

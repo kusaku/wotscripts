@@ -917,7 +917,7 @@ class ActionTooltipData(ToolTipBaseData):
                 actionNames = map(lambda x: x[1], actions)
                 if key == 'freeXPToTManXPRate':
                     newPriceCurrency = oldPriceCurrency = 'freeXp'
-        if type == ACTION_TOOLTIPS_TYPE.RENT:
+        elif type == ACTION_TOOLTIPS_TYPE.RENT:
             item = g_itemsCache.items.getItemByCD(int(key))
             actions = g_eventsCache.getRentAction(item, rentPackage)
             if actions:
@@ -1218,9 +1218,10 @@ class LadderRegulations(ToolTipBaseData):
         _ms = i18n.makeString
         forbiddenPeriods = availabilityCtrl.getForbiddenPeriods(serverID)
         if not availabilityCtrl.isServerAvailable(serverID):
-            text = _ms(CYBERSPORT.LADDERREGULATIONS_TOOLTIP_SCHEDULE_BAN, server=text_styles.stats(serverName))
             if isHeader:
                 text = _ms(CYBERSPORT.LADDERREGULATIONS_TOOLTIP_HEADER_BAN, server=text_styles.alert(serverName))
+            else:
+                text = _ms(CYBERSPORT.LADDERREGULATIONS_TOOLTIP_SCHEDULE_BAN, server=text_styles.stats(serverName))
         elif forbiddenPeriods:
             if isHeader:
                 text = text_styles.main(_ms(CYBERSPORT.LADDERREGULATIONS_TOOLTIP_HEADER_LIMITATION, server=text_styles.alert(serverName), time=text_styles.alert(self.getForbiddenHoursText(forbiddenPeriods))))
@@ -1254,5 +1255,6 @@ class LadderRegulations(ToolTipBaseData):
          'info': text_styles.main(CYBERSPORT.LADDERREGULATIONS_TOOLTIP_INFO)}
         if not connectionManager.isStandalone():
             data.update({'rulesName': text_styles.middleTitle(CYBERSPORT.LADDERREGULATIONS_TOOLTIP_SCHEDULE_NAME),
-             'allRules': '\n'.join(allRules)})
+             'allRules': '\n'.join(allRules),
+             'hasRules': len(allRules) != 0})
         return data

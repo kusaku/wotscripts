@@ -115,7 +115,8 @@ class _FalloutQueueFunctional(prequeue.AccountQueueFunctional):
         super(_FalloutQueueFunctional, self).queue(ctx, callback=callback)
 
     def leave(self, ctx, callback = None):
-        self.storage.suspend()
+        if ctx.getFlags() & FUNCTIONAL_FLAG.FALLOUT_BATTLES == 0:
+            self.storage.suspend()
         super(_FalloutQueueFunctional, self).leave(ctx, callback)
 
     def doSelectAction(self, action):
@@ -135,8 +136,8 @@ class _FalloutQueueFunctional(prequeue.AccountQueueFunctional):
         return SelectResult(isProcessed, newEntry)
 
     def canPlayerDoAction(self):
-        canDo = not self.isInQueue()
-        if canDo and self.storage.isEnabled():
+        canDo = not self.isInQueue() and self.storage.isEnabled()
+        if canDo:
             if self.storage.getBattleType() not in QUEUE_TYPE.FALLOUT:
                 return (False, PREBATTLE_RESTRICTION.FALLOUT_NOT_SELECTED)
             if not g_currentVehicle.isPresent():

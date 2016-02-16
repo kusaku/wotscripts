@@ -88,6 +88,7 @@ class SniperAimingSystem(IAimingSystem):
         self.__idealPitch = 0.0
         self.__g_curPitch = 0.0
         self.__g_curYaw = 0.0
+        self.__stailizationLimit = math.radians(60.0)
         self.__vehicleTypeDescriptor = None
         self.__vehicleMProv = None
         self.__vehiclePrevMat = None
@@ -233,12 +234,15 @@ class SniperAimingSystem(IAimingSystem):
     def update(self, deltaTime):
         self.__oscillator.constraints = mathUtils.matrixScale(self.__yprDeviationConstraints, SniperAimingSystem.__CONSTRAINTS_MULTIPLIERS)
         l_curYaw, l_curPitch = self.__worldYawPitchToTurret(self.__g_curYaw, self.__g_curPitch)
-        if SniperAimingSystem.__FILTER_ENABLED:
+        stabilizationOn = math.fabs(self._matrix.roll) < self.__stailizationLimit and SniperAimingSystem.__FILTER_ENABLED
+        if stabilizationOn:
             l_curYaw, l_curNewPitch = self.__clampToLimits(l_curYaw, l_curPitch)
         else:
             l_curNewPitch = l_curPitch
-        if SniperAimingSystem.__FILTER_ENABLED:
-            new__g_curPitch = self.__g_curPitch + (l_curNewPitch - l_curPitch)
+        if stabilizationOn:
+            newLocal = l_curPitch + (l_curNewPitch - l_curPitch)
+            newGunMat = AimingSystems.getPlayerGunMat(l_curYaw, newLocal)
+            new__g_curPitch = newGunMat.pitch
             new__g_curPitch = self.__pitchfilter.update(new__g_curPitch, deltaTime)
             globalDelta = new__g_curPitch - self.__g_curPitch
         else:
@@ -247,12 +251,12 @@ class SniperAimingSystem(IAimingSystem):
         self.__oscillator.deviation = yprDelta
         self.__oscillator.update(deltaTime)
         l_curYaw = self.__idealYaw + self.__oscillator.deviation.x
-        if SniperAimingSystem.__FILTER_ENABLED:
+        if stabilizationOn:
             l_curPitch = l_curPitch + self.__oscillator.deviation.y
         else:
             l_curPitch = self.__idealPitch + self.__oscillator.deviation.y
         l_curYaw, l_newCurPitch = self.__clampToLimits(l_curYaw, l_curPitch)
-        if not SniperAimingSystem.__FILTER_ENABLED:
+        if not stabilizationOn:
             globalDelta = l_newCurPitch - self.__idealPitch
             l_curPitch = l_newCurPitch
         yprDelta = Vector3(l_curYaw - self.__idealYaw, globalDelta, 0.0)

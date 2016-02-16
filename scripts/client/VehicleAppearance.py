@@ -256,7 +256,7 @@ class VehicleAppearance(CallbackDelayer, ComponentSystem):
             self.__chassisShadowForwardDecal = None
             return
 
-    def preStart(self, typeDesc):
+    def preStart(self, typeDesc, newPhysic):
         self.__typeDesc = typeDesc
         self.__isPillbox = 'pillbox' in self.__typeDesc.type.tags
         if self.__isPillbox:
@@ -271,7 +271,7 @@ class VehicleAppearance(CallbackDelayer, ComponentSystem):
 
         self.setupGunMatrixTargets()
         self.__createGunRecoil()
-        self.__fashion = BigWorld.WGVehicleFashion()
+        self.__fashion = BigWorld.WGVehicleFashion(False, 1.0, newPhysic)
 
     def start(self, vehicle, prereqs = None):
         self.__vehicle = vehicle
@@ -501,6 +501,8 @@ class VehicleAppearance(CallbackDelayer, ComponentSystem):
 
     def delCrashedTrack(self, isLeft):
         self.__crashedTracksCtrl.delTrack(isLeft)
+        if not self.__vehicle.isEnteringWorld and self.trackCrashAudition:
+            self.trackCrashAudition.playCrashSound(isLeft, True)
 
     def __fetchModels(self, modelState):
         if self.__loadingProgress != len(self.modelsDesc):
@@ -1388,7 +1390,7 @@ class _CrashedTrackController():
                 self.__loadInfo = [True, isLeft]
                 BigWorld.fetchModel(self.__va().modelsDesc['chassis']['_stateFunc'](self.__vehicle, 'destroyed'), self.__onModelLoaded)
             if self.__fashion is None:
-                self.__fashion = BigWorld.WGVehicleFashion(True, 1.0)
+                self.__fashion = BigWorld.WGVehicleFashion(True, 1.0, False)
                 _setupVehicleFashion(self, self.__fashion, self.__vehicle, True)
             self.__fashion.setCrashEffectCoeff(0.0)
             self.__setupTracksHiding()

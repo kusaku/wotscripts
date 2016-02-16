@@ -263,7 +263,7 @@ class TankCarousel(TankCarouselMeta, GlobalListener):
         if vState == Vehicle.VEHICLE_STATE.IN_PREMIUM_IGR_ONLY:
             icon = icons.premiumIgrSmall()
             statusStr = i18n.makeString('#menu:tankCarousel/vehicleStates/%s' % vState, icon=icon)
-        elif vState in Vehicle.GROUP_STATES and not ignoreGroupState:
+        elif vState not in Vehicle.GROUP_STATES or not ignoreGroupState:
             statusStr = i18n.makeString('#menu:tankCarousel/vehicleStates/%s' % vState)
         return statusStr
 

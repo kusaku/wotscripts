@@ -319,7 +319,7 @@ class CyberSportIntroView(CyberSportIntroMeta, MyClubListener):
         if some peripheries are unavailable. Returns False otherwise.
         """
         availabilityCtrl = self.clubsCtrl.getAvailabilityCtrl()
-        for hostItem in g_preDefinedHosts.hostsWithRoaming():
+        for hostItem in g_preDefinedHosts.hosts():
             if availabilityCtrl.getForbiddenPeriods(hostItem.peripheryID) or not availabilityCtrl.isServerAvailable(hostItem.peripheryID):
                 return True
 

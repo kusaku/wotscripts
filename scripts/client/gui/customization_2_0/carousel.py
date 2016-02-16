@@ -85,8 +85,9 @@ class Carousel(object):
 
         else:
             displayedItems = self.__aData.displayed[self.__currentType]
+        filterExceptions = {FILTER_TYPE.SHOW_IN_DOSSIER: self.__aData.installed[self.__currentType]}
         for itemID, item in displayedItems.iteritems():
-            if self.filter.check(item):
+            if self.filter.check(item, filterExceptions):
                 appliedToCurrentSlot = itemID == self.slots.getSelectedSlotItemID()
                 installedInSlot = itemID == installedItemID
                 isInQuests = item.isInQuests and not item.isInDossier and self.filter.purchaseType == PURCHASE_TYPE.QUEST

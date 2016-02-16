@@ -75,15 +75,12 @@ class _BaseDataStorage(object):
 
 class _UserDataStorage(_BaseDataStorage):
 
-    def __init__(self, proxy):
-        super(_UserDataStorage, self).__init__(proxy)
-
     @prequeue_storage_getter(QUEUE_TYPE.FALLOUT)
     def falloutStorage(self):
         return None
 
     def init(self):
-        self._proxy.onSettingsChanged()
+        super(_UserDataStorage, self).init()
         g_itemsCache.onSyncCompleted += self.__onItemsResync
         g_settingsCore.onSettingsChanged += self.__onSettingsResync
 
@@ -175,7 +172,7 @@ class _SquadDataStorage(_BaseDataStorage, GlobalListener):
         self.startGlobalListening()
         if self.isEnabled():
             g_eventDispatcher.addFalloutToCarousel()
-        self._proxy.onSettingsChanged()
+        super(_SquadDataStorage, self).init()
         return
 
     def fini(self):
@@ -418,7 +415,3 @@ class FalloutController(Controller, GlobalListener):
             self.__dataStorage = _SquadDataStorage(self)
             self.__dataStorage.init()
         return
-
-    def onPreQueueFunctionalFinished(self):
-        self.onSettingsChanged()
-        self.onVehiclesChanged()

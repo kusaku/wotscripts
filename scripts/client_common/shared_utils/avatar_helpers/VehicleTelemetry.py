@@ -2,7 +2,6 @@
 import cPickle
 import zlib
 import math
-import threading
 import os.path
 import datetime
 import ResMgr
@@ -86,7 +85,7 @@ class VehicleTelemetry:
 
     def __openDynamicsLog(self, key, refTime, refDist):
         if self.dynamicsLog:
-            self.closeDynamicsLog()
+            self.__closeDynamicsLog()
         name = VehicleTelemetry.NAME_DELIMITER.join((self.logName, key))
         self.logPath = os.path.join(VehicleTelemetry.DYNAMICS_LOG_DIR, name)
         raise not os.path.exists(self.logPath) or AssertionError
@@ -122,7 +121,7 @@ class VehicleTelemetry:
         self.__closeDynamicsLog()
         self.__completionFlag = True
 
-    LOG_TMPL = ' '.join(('%(t)8.3f %(s)8.3f', '%(Vz)8.3f %(Vx)8.3f', '%(Az)8.3f %(Ax)8.3f', '%(X)8.3f %(Y)8.3f %(Z)8.3f', '%(y)8.3f %(w)8.3f %(q)8.3f', '%(p)8.3f %(r)8.3f', '%(h)4d', '%(ltr)8.3f %(rtr)8.3f', '%(ltp)8.3f %(rtp)8.3f', '%(lte)8.3f %(rte)8.3f', '%(hle)8.3f', '%(dhh)8.3f %(dlt)8.3f %(drt)8.3f', '%(hdm)8.3f %(hrc)8.3f', '%(lthp)8.3f %(rthp)8.3f', '%(Vy)8.3f %(Ay)8.3f', '%(ltslp)8.3f %(rtslp)8.3f', '%(ltbf)8.3f %(rtbf)8.3f', '\n'))
+    LOG_TMPL = ' '.join(('%(t)8.3f %(s)8.3f', '%(Vz)8.3f %(Vx)8.3f', '%(Az)8.3f %(Ax)8.3f', '%(X)8.3f %(Y)8.3f %(Z)8.3f', '%(y)8.3f %(w)8.3f %(q)8.3f', '%(p)8.3f %(r)8.3f', '%(h)4d', '%(ltr)8.3f %(rtr)8.3f', '%(ltp)8.3f %(rtp)8.3f', '%(lte)8.3f %(rte)8.3f', '%(hle)8.3f', '%(dhh)8.3f %(dlt)8.3f %(drt)8.3f', '%(hdm)8.3f %(hrc)8.3f', '%(lthp)8.3f %(rthp)8.3f', '%(Vy)8.3f %(Ay)8.3f', '%(ltslp)8.3f %(rtslp)8.3f', '%(ltbf)8.3f %(rtbf)8.3f', '%(roll)8.3f', '\n'))
 
     def __logDynamics(self, paramNamesMap, snapshots):
         nmap = paramNamesMap
@@ -135,6 +134,7 @@ class VehicleTelemetry:
             acc = sh[nmap['acc']]
             pos = sh[nmap['pos']]
             pitch = -math.degrees(sh[nmap['dir']][1])
+            roll = math.degrees(sh[nmap['dir']][2])
             yaw = math.degrees(sh[nmap['dir']][0])
             wel = math.degrees(sh[nmap['wel']].y)
             wcc = math.degrees(sh[nmap['wac']].y)
@@ -156,6 +156,7 @@ class VehicleTelemetry:
              'w': wel,
              'q': wcc,
              'p': pitch,
+             'roll': roll,
              'r': r,
              'h': int(self.avatar.getVehicleAttached().health),
              'ltr': sh[nmap['lTrackReaction']] if nmap.has_key('lTrackReaction') else 0.0,

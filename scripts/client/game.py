@@ -121,7 +121,6 @@ def init(scriptConfig, engineConfig, userPreferences, loadingScreenGUI = None):
 
         from AvatarInputHandler.cameras import FovExtended
         FovExtended.instance().resetFov()
-        SoundGroups.loadPluginDB()
         BigWorld.pauseDRRAutoscaling(True)
     except Exception:
         LOG_CURRENT_EXCEPTION()

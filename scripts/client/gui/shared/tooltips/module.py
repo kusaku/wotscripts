@@ -31,8 +31,8 @@ class ModuleStatusField(ToolTipDataField):
         reason = ''
         if checkBuying:
             isFit, reason = module.mayPurchase(g_itemsCache.items.stats.money)
+        currentVehicleEqs = None
         if isFit and vehicle is not None and vehicle.isInInventory:
-            currentVehicleEqs = list()
             if vehicle is not None and vehicle.isInInventory:
                 currentVehicleEqs = list(vehicle.eqs)
                 vehicle.eqs = [None, None, None]
@@ -44,7 +44,6 @@ class ModuleStatusField(ToolTipDataField):
                             vehicle.eqs[i] = eq
 
             isFit, reason = module.mayInstall(vehicle, slotIdx)
-            vehicle.eqs = list(currentVehicleEqs)
         inventoryVehicles = g_itemsCache.items.getVehicles(REQ_CRITERIA.INVENTORY).itervalues()
         installedVehicles = map(lambda x: x.shortUserName, module.getInstalledVehicles(inventoryVehicles))[:self._tooltip.MAX_INSTALLED_LIST_LEN]
         messageLvl = Vehicle.VEHICLE_STATE_LEVEL.WARNING
@@ -65,6 +64,8 @@ class ModuleStatusField(ToolTipDataField):
         elif len(installedVehicles):
             tooltipHeader, _ = getComplexStatus('#tooltips:deviceFits/already_installed' if module.itemTypeName == GUI_ITEM_TYPE.OPTIONALDEVICE else '#tooltips:moduleFits/already_installed')
             tooltipText = ', '.join(installedVehicles)
+        if currentVehicleEqs is not None:
+            vehicle.eqs = list(currentVehicleEqs)
         return {'level': messageLvl,
          'header': tooltipHeader,
          'text': tooltipText}
@@ -106,7 +107,7 @@ class ModuleStatusField(ToolTipDataField):
         else:
             if vehicle is not None:
                 if vehicle.isInInventory:
-                    vState = vehicle.getState()
+                    vState, _ = vehicle.getState()
                     if vState == 'battle':
                         header, text = getComplexStatus(statusTemplate % 'vehicleIsInBattle')
                     elif vState == 'locked':

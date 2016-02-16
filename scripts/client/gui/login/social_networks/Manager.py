@@ -38,6 +38,7 @@ class Manager(CredentialsLoginManager):
         serverName = self._getHost(authMethod, serverName)
         self._preferences['session'] = BigWorld.wg_cpsalt(self._preferences['session'])
         self._preferences['remember_user'] = rememberUser
+        self._preferences['login_type'] = socialNetworkName
         self._preferences['server_name'] = serverName
         loginParams = {'login': self._preferences['login'],
          'session': self._preferences['session'],

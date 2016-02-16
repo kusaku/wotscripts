@@ -42,7 +42,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             token = params['token_encrypted']
         else:
             token = params['token']
-        socialNetwork = params.get('authentication_method', '').partition(';')[2]
+        socialNetwork = params.get('authentication_method', '').partition(':')[2]
         return (token, params['account_id'], socialNetwork)
 
     def log_request(self, code = '-', size = '-'):

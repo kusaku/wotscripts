@@ -728,7 +728,7 @@ class _VehicleAppearance():
         self.__setupEmblems(self.__vDesc)
         self.__vehicleStickers.show = False
         if not self.__isVehicleDestroyed:
-            fashion = BigWorld.WGVehicleFashion(False, _CFG['v_scale'])
+            fashion = BigWorld.WGVehicleFashion(False, _CFG['v_scale'], False)
             VehicleAppearance.setupTracksFashion(fashion, self.__vDesc, self.__isVehicleDestroyed)
             chassis.wg_fashion = fashion
             fashion.initialUpdateTracks(1.0, 10.0)

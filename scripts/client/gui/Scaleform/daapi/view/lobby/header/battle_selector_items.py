@@ -346,7 +346,7 @@ def _createItems():
     settings = g_lobbyContext.getServerSettings()
     if settings.isTutorialEnabled():
         _addTutorialBattleType(items, isInRoaming)
-    if g_eventsCache.isEventEnabled():
+    if g_eventsCache.isFalloutEnabled():
         _addFalloutBattleType(items)
     if settings.isSandboxEnabled() and not isInRoaming:
         _addSandboxType(items)

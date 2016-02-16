@@ -18,7 +18,21 @@ from gui.app_loader import g_appLoader
 from gui.app_loader.decorators import sf_lobby
 from gui.app_loader.settings import GUI_GLOBAL_SPACE_ID as _SPACE_ID
 from gui.Scaleform.daapi.view.lobby.fortifications.fort_utils.FortViewHelper import FortViewHelper
+from gui.Scaleform.daapi.view.meta.WindowViewMeta import WindowViewMeta
 from gui.Scaleform.framework import ViewTypes
+
+def _getViewSoundEnv(view):
+    """Check if view has '__sound_env__' attribute and return it.
+    If view is modal window then we need to apply hangar sound filter,
+    so return ModalWindowEnv class as '__sound_env__' attribute.
+    """
+    if hasattr(view, '__sound_env__'):
+        return getattr(view, '__sound_env__')
+    elif isinstance(view, WindowViewMeta) and view.as_isModalS():
+        return ModalWindowEnv
+    else:
+        return None
+
 
 class SoundEvent(Notifiable):
     """
@@ -279,16 +293,18 @@ class LobbySubViewEnv(SoundEnv):
         super(LobbySubViewEnv, self).__init__(filters=(SoundFilters.FILTERED_HANGAR,))
 
 
-class LobbyMenuEnv(SoundEnv):
-
-    def __init__(self):
-        super(LobbyMenuEnv, self).__init__(filters=(SoundFilters.FILTERED_HANGAR,))
-
-
 class ShopEnv(SoundEnv):
 
     def __init__(self):
         super(ShopEnv, self).__init__(ambient=SoundEvent(_MC.AMBIENT_EVENT_SHOP), filters=(SoundFilters.FILTERED_HANGAR,))
+
+
+class ModalWindowEnv(SoundEnv):
+    """Enable Hangar sound filter for modal window
+    """
+
+    def __init__(self):
+        super(ModalWindowEnv, self).__init__(filters=(SoundFilters.FILTERED_HANGAR,))
 
 
 class FortEnv(SoundEnv, FortViewHelper):
@@ -429,7 +445,9 @@ class GuiAmbientsCtrl(object):
             snd_filters.get(fID).stop()
 
         self._filters.clear()
-        _MC.g_musicController.stop()
+        if _MC.g_musicController is not None:
+            _MC.g_musicController.stop()
+        return
 
     @sf_lobby
     def app(self):
@@ -488,13 +506,15 @@ class GuiAmbientsCtrl(object):
 
     def __onViewLoaded(self, view):
         if view is not None and view.settings is not None:
-            if hasattr(view, '__sound_env__'):
+            soundEnvClass = _getViewSoundEnv(view)
+            if soundEnvClass is not None:
                 alias = view.settings.alias
-                soundEnvClass = getattr(view, '__sound_env__')
                 SOUND_DEBUG('Custom sound environ has been detected', alias, soundEnvClass)
                 self._customEnvs[view.settings.type][view.getUniqueName()] = self._buildSoundEnv(soundEnvClass)
                 view.onModuleDispose += self.__onViewDisposed
                 self._restartSounds()
+            else:
+                SOUND_DEBUG('Custom sound environ has not been detected', view)
         return
 
     def __onViewDisposed(self, view):

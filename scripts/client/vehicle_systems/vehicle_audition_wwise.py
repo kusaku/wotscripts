@@ -40,7 +40,7 @@ class TrackCrashAudition(assembly_utility.Component):
     def destroy(self):
         pass
 
-    def playCrashSound(self, isLeft = True):
+    def playCrashSound(self, isLeft = True, restore = False):
         pass
 
 
@@ -376,6 +376,9 @@ class TrackCrashAuditionWWISE(TrackCrashAudition):
         self.__trackCenterMProvs = None
         return
 
-    def playCrashSound(self, isLeft = True):
-        s = SoundGroups.g_instance.getSound3D(self.__trackCenterMProvs[0 if isLeft else 1], 'brakedown_treads')
+    def playCrashSound(self, isLeft = True, restore = False):
+        if restore:
+            s = SoundGroups.g_instance.getSound3D(self.__trackCenterMProvs[0 if isLeft else 1], 'repair_treads')
+        else:
+            s = SoundGroups.g_instance.getSound3D(self.__trackCenterMProvs[0 if isLeft else 1], 'brakedown_treads')
         s.play()

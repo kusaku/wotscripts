@@ -48,6 +48,7 @@ class ClientUnitMgr(object):
             prevUnitIdx = self.unitIdx
             self.id = unitMgrID
             self.unitIdx = unitIdx
+            self.battleID = None
             self._clearUnits()
             if not self.id and prevMgrID:
                 self.onUnitLeft(prevMgrID, prevUnitIdx)
@@ -64,6 +65,7 @@ class ClientUnitMgr(object):
             if unit:
                 unit.unpackOps(packedOps)
                 unit.onUnitUpdated()
+        return
 
     def onUnitError(self, requestID, unitMgrID, errorCode, errorString):
         LOG_DEBUG('onUnitError: unitMgr=%s, errorCode=%s, errorString=%r' % (unitMgrID, errorCode, errorString))

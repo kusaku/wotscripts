@@ -7,6 +7,7 @@ import Pixie
 from items import _xml
 from functools import partial
 from debug_utils import *
+import weakref
 gTemplates = None
 gNodes = None
 gConstantGroup = None
@@ -112,13 +113,13 @@ class PixieNode(object):
                         BigWorld.cancelCallback(self.__ttlCallbacks[effectID])
                         self.__ttlCallbacks[effectID] = BigWorld.callback(effectDesc[PixieNode._PIXIE_TTL], partial(self.__detachTTL, effectID))
                     else:
-                        pixieRef = PixieCache.getPixie(effectDesc[PixieNode._PIXIE_NAME], partial(self.__onLoadedCallback, effectID))
+                        pixieRef = PixieCache.getPixie(effectDesc[PixieNode._PIXIE_NAME], (weakref.ref(self), effectID))
                         if pixieRef is not None:
                             self.__attachTTL(effectID, pixieRef, effectDesc[PixieNode._PIXIE_TTL])
                 else:
                     pixieRef = effectDesc[PixieNode._PIXIE_REF]
                     if pixieRef is None:
-                        pixieRef = PixieCache.getPixie(effectDesc[PixieNode._PIXIE_NAME], partial(self.__onLoadedCallback, effectID))
+                        pixieRef = PixieCache.getPixie(effectDesc[PixieNode._PIXIE_NAME], (weakref.ref(self), effectID))
                     if pixieRef is not None:
                         effectDesc[PixieNode._PIXIE_REF] = pixieRef
                         self.__attach(pixieRef)
@@ -135,7 +136,7 @@ class PixieNode(object):
             else:
                 self.__node.local.translation = Math.Vector3(0.0, 0.0, 0.0)
 
-    def __onLoadedCallback(self, effectID, pixie):
+    def onLoadedCallback(self, pixie, effectID):
         effectDesc = self.__effects[effectID]
         if effectDesc[PixieNode._PIXIE_TTL] > 0.0:
             if self.__ttlCallbacks[effectID] is None:
@@ -154,13 +155,14 @@ class PixieNode(object):
 class PixieCache(object):
     pixieCache = dict()
     refCount = 0
+    pixiesCount = 0
 
     @staticmethod
-    def getPixie(name, onLoadCallback):
+    def getPixie(name, callbackData):
         pixieInfo = PixieCache.pixieCache.get(name, (None, set()))
         if pixieInfo[0] is None:
             cbksSize = len(pixieInfo[1])
-            pixieInfo[1].add(onLoadCallback)
+            pixieInfo[1].add(callbackData)
             if cbksSize == 0:
                 Pixie.createBG(name, partial(PixieCache.onPixieLoaded, name))
                 PixieCache.pixieCache[name] = pixieInfo
@@ -212,7 +214,9 @@ class PixieCache(object):
 
                 else:
                     for callback in callbacks:
-                        callback(pixie.clone())
+                        node = callback[0]()
+                        if node is not None:
+                            node.onLoadedCallback(pixie.clone(), callback[1])
 
                 PixieCache.pixieCache[name] = pixieList
             return

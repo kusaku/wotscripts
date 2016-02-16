@@ -25,7 +25,7 @@ class VehicleInfoTooltipData(BlocksTooltipData):
     def __init__(self, context):
         super(VehicleInfoTooltipData, self).__init__(context, TOOLTIP_TYPE.VEHICLE)
         self.item = None
-        self._setContentMargin(top=0, left=0, bottom=10, right=10)
+        self._setContentMargin(top=0, left=0, bottom=10, right=0)
         self._setMargins(10, 15)
         self._setWidth(400)
         return
@@ -266,7 +266,7 @@ class PriceBlockConstructor(VehicleTooltipBlockConstructor):
         if hasAction:
             actionText = text_styles.main(_ms(TOOLTIPS.VEHICLE_ACTION_PRC, actionPrc=text_styles.stats(str(percent) + '%'), oldPrice=oldPriceText))
             text = text_styles.concatStylesToMultiLine(text, actionText)
-        return formatters.packTextParameterWithIconBlockData(name=text, value=valueFormatted, icon=currencyType, valueWidth=self._valueWidth, padding=formatters.packPadding(left=self.leftPadding, right=self.rightPadding))
+        return formatters.packTextParameterWithIconBlockData(name=text, value=valueFormatted, icon=currencyType, valueWidth=self._valueWidth, padding=formatters.packPadding(left=self.leftPadding, right=20))
 
 
 class CommonStatsBlockConstructor(VehicleTooltipBlockConstructor):

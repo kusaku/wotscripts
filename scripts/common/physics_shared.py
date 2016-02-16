@@ -441,11 +441,11 @@ def configureXPhysics(physics, baseCfg, typeDesc, useSimplifiedGearbox, gravityF
     turretPos = typeDesc.hull['turretPositions'][0]
     topPos = hullPos + turretPos
     topPos.y += turretMax[1] - cfg['clearance'] - cfg['bodyHeight']
-    topPos.y *= 0.8
+    topPos.y = max(0.1, topPos.y * 0.8)
     topPos.y += cfg['bodyHeight'] * 0.5
     cfg['turretTopPos'] = topPos
     turretBoxSizeX = turretMax[0] - turretMin[0]
-    cfg['turretTopWidth'] = turretBoxSizeX * 0.7
+    cfg['turretTopWidth'] = max(sizeX * 0.25, turretBoxSizeX * 0.7)
     cfg['swingStabilisationCenter'] = Math.Vector3((0.0, hullPos[1] + turretPos[1], 0.0))
     cfg['pushHB'] = cfg.get('gimletPushOnSpotFinal', 0.0)
     cfg['smplEngJoinRatio'] = 0.020000000000000004 / cfg['wheelRadius']

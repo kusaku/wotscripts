@@ -993,7 +993,7 @@ class Minimap(IDynSquadEntityClient):
              markMarker,
              vName])
             if g_ctfManager.isFlagBearer(vehicleID):
-                self.__callEntryFlash(vehicleID, 'setVehicleClass', classTag + 'Flag')
+                self.__callEntryFlash(vehicleID, 'setVehicleClass', [classTag + 'Flag'])
             entry['markerType'] = markerType
             entry['entryName'] = entryName
             entry['vClass'] = classTag
@@ -1275,7 +1275,7 @@ class Minimap(IDynSquadEntityClient):
         elif vehicleID in self.__entries:
             entry = self.__entries[vehicleID]
             vClass = entry['vClass']
-            self.__callEntryFlash(vehicleID, 'setVehicleClass', vClass + 'Flag' if isBearer else vClass)
+            self.__callEntryFlash(vehicleID, 'setVehicleClass', [vClass + 'Flag' if isBearer else vClass])
 
     def __addFlagMarker(self, flagID, flagPos, marker, isVisible = True):
         uniqueID = self.__makeFlagUniqueID(flagID, marker)

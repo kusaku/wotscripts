@@ -1133,13 +1133,15 @@ class VehicleType(object):
         self.installableComponents = compactDescrs
         self.unlocksDescrs = self.__convertAndValidateUnlocksDescrs(unlocksDescrs)
         self.autounlockedItems = self.__collectDefaultUnlocks()
-        if IS_CELLAPP or IS_CLIENT:
+        if IS_CELLAPP:
             try:
                 self.xphysics = _readXPhysics(xmlCtx, section, 'physics')
             except:
                 LOG_CURRENT_EXCEPTION()
                 self.xphysics = None
 
+        else:
+            self.xphysics = None
         if IS_CLIENT and section.has_key('repaintParameters'):
             self.repaintParameters = _readRepaintParams(xmlCtx, _xml.getSubsection(xmlCtx, section, 'repaintParameters'))
         section = None
@@ -2247,13 +2249,10 @@ def _readChassis(xmlCtx, section, compactDescr, unlocksDescrs = None, parentItem
         res['effects'] = {'lodDist': _readLodDist(xmlCtx, section, 'effects/lodDist'),
          'dust': _readChassisEffects(xmlCtx, section, 'effects/dust'),
          'mud': _readChassisEffects(xmlCtx, section, 'effects/mud')}
-        res['sound'] = section.readString('sound', '')
-        res['soundPC'] = section.readString('soundPC', '')
-        res['soundNPC'] = section.readString('soundNPC', '')
         res['wwsound'] = section.readString('wwsound', '')
         res['wwsoundPC'] = section.readString('wwsoundPC', '')
         res['wwsoundNPC'] = section.readString('wwsoundNPC', '')
-        if res['sound'] == '' and (res['soundPC'] == '' or res['soundNPC'] == '') and res['wwsound'] == '' and (res['wwsoundPC'] == '' or res['wwsoundNPC'] == ''):
+        if res['wwsound'] == '' and (res['wwsoundPC'] == '' or res['wwsoundNPC'] == ''):
             raise Exception('chassis sound tags are wrong for vehicle ' + res['userString'])
         res['wheels']['groups'] = wheelGroups
         res['wheels']['wheels'] = wheels
@@ -2298,13 +2297,10 @@ def _readEngine(xmlCtx, section, compactDescr, unlocksDescrs = None, parentItem 
     if IS_CLIENT:
         res['rpm_min'] = section.readInt('rpm_min', 1000)
         res['rpm_max'] = section.readInt('rpm_max', 2600)
-        res['sound'] = section.readString('sound', '')
-        res['soundPC'] = section.readString('soundPC', '')
-        res['soundNPC'] = section.readString('soundNPC', '')
         res['wwsound'] = section.readString('wwsound', '')
         res['wwsoundPC'] = section.readString('wwsoundPC', '')
         res['wwsoundNPC'] = section.readString('wwsoundNPC', '')
-        if res['sound'] == '' and (res['soundPC'] == '' or res['soundNPC'] == '') and res['wwsound'] == '' and (res['wwsoundPC'] == '' or res['wwsoundNPC'] == ''):
+        if res['wwsound'] == '' and (res['wwsoundPC'] == '' or res['wwsoundNPC'] == ''):
             _xml.raiseWrongXml(xmlCtx, '', 'chassis sound tags are wrong')
     res.update(_readDeviceHealthParams(xmlCtx, section))
     res['unlocks'] = _readUnlocks(xmlCtx, section, 'unlocks', unlocksDescrs, compactDescr)

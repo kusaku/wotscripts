@@ -42,6 +42,7 @@ class _ItemsParameters(object):
                                                      ('piercingPower', lambda v: self.__formatRange(*v)),
                                                      ('caliber', lambda v: BigWorld.wg_getNiceNumberFormat(v)),
                                                      ('shotsNumberRange', lambda v: BigWorld.wg_getNiceNumberFormat(v)),
+                                                     ('explosionRadius', lambda v: (BigWorld.wg_getNiceNumberFormat(v) if v > 0 else None)),
                                                      ('areaRadius', lambda v: BigWorld.wg_getNiceNumberFormat(v)),
                                                      ('artDelayRange', lambda v: BigWorld.wg_getNiceNumberFormat(v))),
                                artefacts.Bomber: (('bombDamage', lambda v: self.__formatRange(*v)),
