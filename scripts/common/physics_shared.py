@@ -464,6 +464,10 @@ def configureXPhysics(physics, baseCfg, typeDesc, useSimplifiedGearbox, gravityF
     speedLimit = min(cfg['absoluteSpeedLimit'], selfDrivenMaxSpeed * cfg['allowedRPMExcessUnbounded'])
     cfg['allowedRPMExcess'] = max(1.0, speedLimit / selfDrivenMaxSpeed)
     applyRotationAndPowerFactors(cfg)
+    cfg['gearChangeTimeout'] = 1.0
+    cfg['gearIncreaseFactor'] = 0.85
+    cfg['gearDecreaseFactor'] = 0.85
+    cfg['gearVelocities'] = (0.0, 15.0, 15.0, 9.0, 15.0, 24.0, 42.0, 60.0, 0.0, 0.0, 0.0)
     if not physics.configure(cfg):
         LOG_ERROR('configureXPhysics: configure failed')
     comz = 0.0 if IS_CLIENT else physics.hullCOMZ

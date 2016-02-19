@@ -195,7 +195,7 @@ class FortClanBattleRoom(FortClanBattleRoomMeta, UnitListener, FortViewHelper):
             mapName = ''
         infoIcon = icons.info()
         result['headerDescr'] = text_styles.standard(i18n.makeString(FORTIFICATIONS.FORTCLANBATTLEROOM_HEADER_MAPTITLE, mapName=mapName) + ' ' + infoIcon)
-        result['isOrdersBgVisible'] = bool(not unitPermissions.canChangeConsumables() and len(activeConsumes) and not canUseEquipments)
+        result['isOrdersBgVisible'] = bool(not unitPermissions.canChangeConsumables() and len(activeConsumes))
         result['mineClanName'] = g_clanCache.clanTag
         _, enemyClanAbbev, _ = self.__battle.getOpponentClanInfo()
         result['enemyClanName'] = '[%s]' % enemyClanAbbev

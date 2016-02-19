@@ -2362,12 +2362,11 @@ def _xphysicsParse_engine(ctx, sec):
     res = {}
     floatParamsCommon = ('startRPM',)
     res.update(_parseFloatList(ctx, sec, floatParamsCommon))
-    floatParamsDetailed = ('engineInertia', 'idleRPM', 'gearChangeTimeout', 'gearIncreaseFactor', 'gearDecreaseFactor', 'idleChoker')
+    floatParamsDetailed = ('engineInertia', 'idleRPM', 'idleChoker')
     res.update(_parseFloatList(ctx, sec, floatParamsDetailed))
-    floatArrParamsDetailed = (('engineLoses', 2), ('gearVelocities', 11), ('engineTorque', 8))
+    floatArrParamsDetailed = (('engineLoses', 2), ('engineTorque', 8))
     res.update(_parseFloatArrList(ctx, sec, floatArrParamsDetailed))
     res['engineTorque'] = tuple(zip(res['engineTorque'][0::2], res['engineTorque'][1::2]))
-    res['gearVelocities'] = tuple((KMH_TO_MS * v for v in res['gearVelocities']))
     res['powerFactor'] = sec.readFloat('powerFactor', 1.0)
     res['rotationFactor'] = sec.readFloat('rotationFactor', 1.0)
     res['smplEnginePower'] = sec.readFloat('smplEnginePower', 600.0)
@@ -3115,7 +3114,7 @@ def _readHitTester(xmlCtx, section, subsectionName):
             if IS_CELLAPP:
                 hitTester.loadBspModel()
             return hitTester
-        except Exception(x):
+        except Exception as x:
             LOG_CURRENT_EXCEPTION()
             _xml.raiseWrongXml(xmlCtx, subsectionName, str(x))
 
@@ -3239,7 +3238,7 @@ def _readEmblemSlots(xmlCtx, section, subsectionName):
 def __readEffectsTimeLine(xmlCtx, section):
     try:
         effectsTimeLine = EffectsList.effectsFromSection(section)
-    except Exception(x):
+    except Exception as x:
         _xml.raiseWrongXml(xmlCtx, section.name, str(x))
 
     return EffectsList.EffectsTimeLinePrereqs(effectsTimeLine.keyPoints, effectsTimeLine.effectsList, set())
@@ -3291,7 +3290,7 @@ def __readReloadEffect(xmlCtx, section):
     try:
         reloadEffect = ReloadEffect.effectFromSection(section)
         return reloadEffect
-    except Exception(x):
+    except Exception as x:
         _xml.raiseWrongXml(xmlCtx, section.name, str(x))
 
 
@@ -3451,7 +3450,7 @@ def _readShotEffects(xmlCtx, section):
             subsection = _xml.getSubsection(xmlCtx, section, 'projectile/effects')
             try:
                 effects = EffectsList.EffectsList(subsection)
-            except Exception(x):
+            except Exception as x:
                 _xml.raiseWrongXml(xmlCtx, 'projectile/effects', str(x))
 
             res['projectile'] = (model, modelOwnShot, effects)
@@ -3640,7 +3639,7 @@ def _readDeviceTypes(xmlCtx, section, subsectionName, extrasDict):
         for extraName, subsection in _xml.getChildren(xmlCtx, section, kindSectionName):
             try:
                 res[extrasDict[extraName].index] = typeNames.index(subsection.asString)
-            except Exception(x):
+            except Exception as x:
                 _xml.raiseWrongXml((xmlCtx, kindSectionName), extraName, str(x))
 
     return (resDevices, resTankmen)

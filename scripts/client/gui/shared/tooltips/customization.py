@@ -3,7 +3,7 @@ import BigWorld
 import nations
 from constants import IGR_TYPE
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
-from gui.customization_2_0 import g_customizationController, shared
+from gui.customization_2_0 import g_customizationController
 from gui.customization_2_0.data_aggregator import CUSTOMIZATION_TYPE, DURATION, TYPE_NAME
 from gui.game_control import getIGRCtrl
 from gui.shared.ItemsCache import g_itemsCache
@@ -347,7 +347,7 @@ class CustomizationItemTooltip(BlocksTooltipData):
                     wayToBuy = BUY_ITEM_TYPE.WAYS_TO_BUY_TEMP
                 buyItems.append({'value': self._item.getPrice(duration),
                  'type': wayToBuy,
-                 'isSale': shared.isSale(self._itemType, duration),
+                 'isSale': self._item.isSale(duration),
                  'desc': _ms('#vehicle_customization:customization/tooltip/wayToBuy/{0}'.format(buyString), days=duration)})
 
         return (buyItems, False, status)

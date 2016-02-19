@@ -107,7 +107,7 @@ class _FalloutStatsForm(_StatsForm):
             icon = makeHtmlString('html_templates:igr/iconSmall', 'premium' if igrType == IGR_TYPE.PREMIUM else 'basic')
             pName += icon
         pName += padding
-        scoreFormat = self._getHTMLString('textColorGold', self._ui.colorManager) + padding
+        scoreFormat = self._getHTMLString('falloutSelfGold', self._ui.colorManager) + padding
         regularFormat = self._getHTMLString('textColorFalloutRegular', self._ui.colorManager) + padding
         highlightedDeaths = viStatsVO.stopRespawn
         deathsFormatStyle = 'textColorFalloutHighlightedDeaths' if highlightedDeaths else 'textColorFalloutRegularDeaths'
@@ -143,9 +143,9 @@ class _FalloutStatsForm(_StatsForm):
         if ctx.isTeamKiller(item):
             return self._getHTMLString('teamkiller', csManager)
         elif ctx.isPlayerSelected(item):
-            return self._getHTMLString('textColorGold', csManager)
+            return self._getHTMLString('falloutSelfGold', csManager)
         elif ctx.isSquadMan(item):
-            return self._getHTMLString('textColorGold', csManager)
+            return self._getHTMLString('falloutSelfGold', csManager)
         else:
             return self._getHTMLString('textColorFalloutName', csManager)
 
@@ -171,7 +171,7 @@ class _MultiteamFalloutStatsForm(_FalloutStatsForm):
 
     def getTeamScoreFormat(self):
         padding = makeHtmlString('html_templates:battle', 'multiteamPadding', {})
-        return self._getHTMLString('textColorGold', self._ui.colorManager) + padding
+        return self._getHTMLString('falloutSelfGold', self._ui.colorManager) + padding
 
 
 def statsFormFactory(parentUI, isFallout = False, isMutlipleTeams = False):

@@ -23,9 +23,9 @@ from gui.shared.utils.functions import makeTooltip
 from helpers.i18n import makeString as _ms
 from gui.shared.formatters import text_styles, icons
 from gui.customization_2_0.filter import QUALIFIER_TYPE_INDEX, FILTER_TYPE
-from gui.customization_2_0.shared import formatPriceCredits, formatPriceGold, isSale, getSalePriceString
+from gui.customization_2_0.shared import formatPriceCredits, formatPriceGold, getSalePriceString
 from gui.customization_2_0.elements.qualifier import QUALIFIER_TYPE
-from gui.customization_2_0 import g_customizationController, shared
+from gui.customization_2_0 import g_customizationController
 _BONUS_TOOLTIP_BODY = {QUALIFIER_TYPE.ALL: TOOLTIPS.CUSTOMIZATION_BONUSPANEL_BONUS_ENTIRECREW_BODY,
  QUALIFIER_TYPE.RADIOMAN: TOOLTIPS.CUSTOMIZATION_BONUSPANEL_BONUS_RADIOMAN_BODY,
  QUALIFIER_TYPE.COMMANDER: TOOLTIPS.CUSTOMIZATION_BONUSPANEL_BONUS_COMMANDER_BODY,
@@ -258,9 +258,8 @@ class MainView(CustomizationMainViewMeta):
              'goToTaskBtnText': _ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_ITEMCAROUSEL_RENDERER_GOTOTASK),
              'newElementIndicatorVisible': False}
             cType = g_customizationController.carousel.currentType
-            if isSale(cType, item['duration']) and not item['isInDossier'] and not item['installedInSlot'] and not item['isInQuests']:
-                isGold = item['priceIsGold']
-                data['salePrice'] = getSalePriceString(isGold, item['price'])
+            if item['object'].isSale(item['duration']) and not item['isInDossier'] and not item['installedInSlot'] and not item['isInQuests']:
+                data['salePrice'] = getSalePriceString(cType, item['object'], item['duration'])
             itemVOs.append(data)
 
         carouselLength = len(itemVOs)

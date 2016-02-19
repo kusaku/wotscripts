@@ -177,17 +177,9 @@ class MarkersManager(Flash, IDynSquadEntityClient):
         battleCtx = g_sessionProvider.getCtx()
         fullName, pName, clanAbbrev, regionCode, vehShortName = battleCtx.getFullPlayerNameWithParts(vProxy.id)
         vType = vInfo.vehicleType
-        squadIcon = ''
+        teamIdx = -1
         if arena_info.isFalloutMultiTeam() and vInfo.isSquadMan():
             teamIdx = g_sessionProvider.getArenaDP().getMultiTeamsIndexes()[vInfo.team]
-            squadIconTemplate = '%s%d'
-            if guiProps.name() == 'squadman':
-                squadTeam = 'my'
-            elif isAlly:
-                squadTeam = 'ally'
-            else:
-                squadTeam = 'enemy'
-            squadIcon = squadIconTemplate % (squadTeam, teamIdx)
         self.invokeMarker(markerID, 'init', [vType.classTag,
          vType.iconPath,
          vehShortName,
@@ -202,8 +194,8 @@ class MarkersManager(Flash, IDynSquadEntityClient):
          speaking,
          hunting,
          guiProps.base,
-         g_ctfManager.isFlagBearer(vInfo.vehicleID),
-         squadIcon])
+         g_ctfManager.getVehicleCarriedFlagID(vInfo.vehicleID) is not None,
+         teamIdx])
         return markerID
 
     def removeVehicleMarker(self, vehicleID):

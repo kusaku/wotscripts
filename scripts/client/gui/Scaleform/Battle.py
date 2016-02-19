@@ -62,7 +62,7 @@ from gui.Scaleform.Minimap import Minimap
 from gui.Scaleform.CursorDelegator import g_cursorDelegator
 from gui.Scaleform.ingame_help import IngameHelp
 from gui.Scaleform import SCALEFORM_SWF_PATH
-from gui.battle_control.arena_info import getArenaIcon, hasFlags, hasRespawns, hasResourcePoints, isFalloutMultiTeam, hasRepairPoints, isFalloutBattle, hasGasAttack
+from gui.battle_control.arena_info import getArenaIcon, hasFlags, hasRespawns, hasResourcePoints, isFalloutMultiTeam, hasRepairPoints, isFalloutBattle, hasGasAttack, isRandomBattle
 from gui.battle_control import avatar_getter
 
 def _isVehicleEntity(entity):
@@ -573,7 +573,10 @@ class Battle(BattleWindow):
         resStr = 'quitBattle'
         replayCtrl = BattleReplay.g_replayCtrl
         player = BigWorld.player()
-        isVehicleAlive = getattr(player, 'isVehicleAlive', False)
+        if hasRespawns():
+            isVehicleAlive = not g_sessionProvider.getArenaDP().getVehicleInteractiveStats().stopRespawn
+        else:
+            isVehicleAlive = getattr(player, 'isVehicleAlive', False)
         isNotTraining = self.__arena.guiType != constants.ARENA_GUI_TYPE.TRAINING
         if not replayCtrl.isPlaying:
             if constants.IS_KOREA and gui.GUI_SETTINGS.igrEnabled and self.__arena is not None and isNotTraining:
@@ -632,7 +635,7 @@ class Battle(BattleWindow):
         reportBugOpenConfirm(g_sessionProvider.getArenaDP().getVehicleInfo().player.accountDBID)
 
     def __getDynamicSquadsInitParams(self, enableAlly = True, enableEnemy = False, enableButton = True):
-        return [self.__arena.guiType == constants.ARENA_GUI_TYPE.RANDOM and enableAlly, enableEnemy, enableButton]
+        return [isRandomBattle() and enableAlly, enableEnemy, isRandomBattle() and enableButton]
 
     def __populateData(self):
         arena = avatar_getter.getArena()

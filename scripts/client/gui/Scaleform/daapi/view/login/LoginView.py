@@ -303,7 +303,7 @@ class LoginView(LoginPageMeta):
         else:
             if len(userName) < _LOGIN_NAME_MIN_LENGTH:
                 isValid = False
-                errorMessage = _ms(MENU.LOGIN_STATUS_INVALID_LOGIN_LENGTH) % {'count': _LOGIN_NAME_MIN_LENGTH}
+                errorMessage = _ms(MENU.LOGIN_STATUS_INVALID_LOGIN_LENGTH, count=_LOGIN_NAME_MIN_LENGTH)
                 invalidFields = INVALID_FIELDS.LOGIN_INVALID
             elif not isAccountLoginValid(userName):
                 isValid = False
@@ -311,8 +311,7 @@ class LoginView(LoginPageMeta):
                 invalidFields = INVALID_FIELDS.LOGIN_INVALID
             elif not isPasswordValid(password):
                 isValid = False
-                errorMessage = _ms(MENU.LOGIN_STATUS_INVALID_PASSWORD) % {'minLength': _PASSWORD_MIN_LENGTH,
-                 'maxLength': _PASSWORD_MAX_LENGTH}
+                errorMessage = _ms(MENU.LOGIN_STATUS_INVALID_PASSWORD, minLength=_PASSWORD_MIN_LENGTH, maxLength=_PASSWORD_MAX_LENGTH)
                 invalidFields = INVALID_FIELDS.PWD_INVALID
             return _ValidateCredentialsResult(isValid, errorMessage, invalidFields)
 

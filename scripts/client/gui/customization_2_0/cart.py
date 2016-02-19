@@ -121,6 +121,8 @@ class Cart(object):
          duration]
         if cType == CUSTOMIZATION_TYPE.INSCRIPTION:
             arguments.append(1)
+        if cType == CUSTOMIZATION_TYPE.CAMOUFLAGE:
+            g_tankActiveCamouflage[g_currentVehicle.item.intCD] = slotIdx
         if price == -1:
             arguments.append(lambda resultID: self.__onCustomizationDrop(resultID, cItemID, cType))
         else:

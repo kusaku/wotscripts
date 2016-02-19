@@ -496,12 +496,12 @@ class VehicleAppearance(CallbackDelayer, ComponentSystem):
 
     def addCrashedTrack(self, isLeft):
         self.__crashedTracksCtrl.addTrack(isLeft)
-        if not self.__vehicle.isEnteringWorld:
+        if not self.__vehicle.isEnteringWorld and self.trackCrashAudition:
             self.trackCrashAudition.playCrashSound(isLeft)
 
     def delCrashedTrack(self, isLeft):
         self.__crashedTracksCtrl.delTrack(isLeft)
-        if not self.__vehicle.isEnteringWorld and self.trackCrashAudition:
+        if not self.__vehicle.isEnteringWorld and self.trackCrashAudition and self.__vehicle.isPlayerVehicle:
             self.trackCrashAudition.playCrashSound(isLeft, True)
 
     def __fetchModels(self, modelState):

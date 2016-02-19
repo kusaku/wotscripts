@@ -89,6 +89,7 @@ class PanzerAssemblerWWISE(VehicleAssembler):
             self.__createTrackCrashControl(vehicle, appearance)
         if vehicle.isAlive() and not appearance.isPillbox:
             appearance.engineAudition = self.__assembleEngineAudition(vehicle, appearance)
+            appearance.detailedEngineState.onEngineStart += appearance.engineAudition.onEngineStart
         if vehicle.isPlayerVehicle:
             soundEffect = BigWorld.player().gunRotator.soundEffect
             if soundEffect is not None:

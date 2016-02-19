@@ -20,18 +20,10 @@ def findHTMLFormat(item, ctx, csManager):
         return getHTMLString('normal' if isAliveAndIntoArena else 'normal_dead', csManager)
 
 
-def getColorValue(colorScheme, csManager):
-    __colorGroup = g_settingsCore.getSetting('isColorBlind')
-    scheme = csManager.getScheme(colorScheme)
-    makeRGB = csManager._makeRGB
-    if __colorGroup in scheme:
-        color = makeRGB(scheme[__colorGroup])
-    elif csManager.DEFAULT_TAG in scheme:
-        color = makeRGB(scheme[csManager.DEFAULT_TAG])
-    else:
-        LOG_ERROR('Current color scheme not found', scheme, __colorGroup)
-        color = 0
-    return color
+def getColorValue(schemeName, csManager):
+    isColorBlind = g_settingsCore.getSetting('isColorBlind')
+    rgba = csManager.getSubScheme(schemeName, isColorBlind)['rgba']
+    return (int(rgba[0]) << 16) + (int(rgba[1]) << 8) + (int(rgba[2]) << 0)
 
 
 def getHTMLString(colorScheme, csManager):

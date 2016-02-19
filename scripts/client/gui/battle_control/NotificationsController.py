@@ -37,8 +37,9 @@ class NotificationsController(object):
         g_ctfManager.onFlagAbsorbed += self.__onFlagAbsorbed
         g_ctfManager.onFlagDroppedToGround += self.__onFlagDroppedToGround
         g_ctfManager.onFlagRemoved += self.__onFlagRemoved
-        if g_ctfManager.isFlagBearer(self.__playerVehicleID):
+        if g_ctfManager.getVehicleCarriedFlagID(self.__playerVehicleID) is not None:
             self.__ui.showFlagCaptured()
+        return
 
     def stop(self):
         self.__ui = None

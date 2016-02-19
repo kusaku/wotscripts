@@ -4,9 +4,8 @@ import CommandMapping
 import Keys
 from account_helpers.settings_core import g_settingsCore
 from account_helpers.settings_core.settings_constants import SOUND
-from constants import ARENA_GUI_TYPE, IS_CHINA
+from constants import IS_CHINA
 from debug_utils import LOG_DEBUG
-from gui.Scaleform.locale.MESSENGER import MESSENGER
 from gui.battle_control import avatar_getter, arena_info
 from gui.battle_control.arena_info.interfaces import IArenaVehiclesController
 from gui.battle_control.arena_info.settings import INVALIDATE_OP
@@ -56,7 +55,7 @@ class _DynSquadEntityController(IArenaVehiclesController):
         pass
 
     def invalidateVehicleInfo(self, flags, playerVehVO, arenaDP):
-        if arena_info.getArenaGuiType() == ARENA_GUI_TYPE.RANDOM:
+        if arena_info.isRandomBattle():
             if flags & INVALIDATE_OP.PREBATTLE_CHANGED and playerVehVO.squadIndex > 0:
                 vID = playerVehVO.vehicleID
                 squadMansToUpdate = ()

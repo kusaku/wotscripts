@@ -3,7 +3,6 @@ import math
 from AvatarInputHandler.mathUtils import clamp
 import SoundGroups
 from constants import VEHICLE_PHYSICS_MODE
-from helpers.CallbackDelayer import CallbackDelayer
 from helpers.EffectMaterialCalculation import calcEffectMaterialIndex
 from helpers.ValueTracker import ValueTracker
 import material_kinds
@@ -57,7 +56,7 @@ _FRICTION_STRAFE_BOUND = 1.0
 _PERIODIC_TIME = 0.25
 _ENABLE_SOUND_DEBUG = False
 
-class EngineAuditionWWISE(CallbackDelayer, EngineAudition):
+class EngineAuditionWWISE(EngineAudition):
     __vt = property(lambda self: (ValueTracker.instance() if _ENABLE_SOUND_DEBUG else None))
     isUnderwaterLink = LinkDescriptor()
     isInWaterLink = LinkDescriptor()
@@ -71,7 +70,6 @@ class EngineAuditionWWISE(CallbackDelayer, EngineAudition):
     vehicleFilter = TypedProperty(BigWorld.WGVehicleFilter)
 
     def __init__(self, physicsMode, isPlayerVehicle, modelsDesc, typeDesc, vehicleId):
-        CallbackDelayer.__init__(self)
         self.__prevVelocity = 0
         self.__prevTime = 0.0
         self.__prevTerrSwitch = None
@@ -127,16 +125,13 @@ class EngineAuditionWWISE(CallbackDelayer, EngineAudition):
             self.__gunSound = SoundGroups.g_instance.WWgetSoundObject(self.__gunSoundHP, vehicleMProv, node)
             self.__engineSound = SoundGroups.g_instance.WWgetSoundObject(self.__engineSoundHP, vehicleMProv)
             if self.__engineSound is None:
-                print '!!!self.__engineSound is None'
+                LOG_ERROR('!!!self.__engineSound is None')
                 return
             self.__engineSound.setSwitch('SWITCH_ext_physics_state', 'SWITCH_ext_physics_state_off' if self.__physicsMode == VEHICLE_PHYSICS_MODE.STANDARD else 'SWITCH_ext_physics_state_on')
-            if SoundGroups.ENABLE_ENGINE_N_TRACKS:
-                self.__engineSound.play(self.__event)
             nodeMatrix.set(self.__modelsDesc['turret']['model'].matrix)
             node = nodeMatrix.translation - vehicleMatrix.translation
             self.__movementSound = SoundGroups.g_instance.WWgetSound(self.__eventC, self.__movementSoundHP, vehicleMProv, node)
             if self.__movementSound is None:
-                print '!!!self.__movementSound is None'
                 return
             self.__movementSound.setSwitch('SWITCH_ext_physics_state', 'SWITCH_ext_physics_state_off' if self.__physicsMode == VEHICLE_PHYSICS_MODE.STANDARD else 'SWITCH_ext_physics_state_on')
             if SoundGroups.ENABLE_ENGINE_N_TRACKS:
@@ -174,8 +169,12 @@ class EngineAuditionWWISE(CallbackDelayer, EngineAudition):
 
     def destroy(self):
         BigWorld.player().inputHandler.onCameraChanged -= self.__onCameraChanged
-        CallbackDelayer.destroy(self)
         self.stopSounds()
+
+    def onEngineStart(self):
+        if SoundGroups.ENABLE_ENGINE_N_TRACKS:
+            self.__engineSound.play(self.__event)
+            self.__movementSound.play()
 
     def tick(self):
         if not SoundGroups.ENABLE_ENGINE_N_TRACKS:
@@ -222,24 +221,24 @@ class EngineAuditionWWISE(CallbackDelayer, EngineAudition):
                     soundTrack.setRTPC('RTPC_ext_gear_num', clamp(0.0, 4.0, self.detailedEngineState.gearNum))
                 else:
                     gear = self.detailedEngineState.gearNum
-                    self.__movementSound.setRTPC('RTPC_ext_physic_rpm_rel', self.detailedEngineState.rpmPhysicRel)
+                    soundTrack.setRTPC('RTPC_ext_physic_rpm_rel', self.detailedEngineState.rpmPhysicRel)
                     self.__engineSound.setRTPC('RTPC_ext_physic_rpm_rel', self.detailedEngineState.rpmPhysicRel)
-                    self.__movementSound.setRTPC('RTPC_ext_physic_rpm_abs', self.detailedEngineState.rpmPhysicAbs)
+                    soundTrack.setRTPC('RTPC_ext_physic_rpm_abs', self.detailedEngineState.rpmPhysicAbs)
                     self.__engineSound.setRTPC('RTPC_ext_physic_rpm_abs', self.detailedEngineState.rpmPhysicAbs)
-                    self.__movementSound.setRTPC('RTPC_ext_physic_gear', gear)
+                    soundTrack.setRTPC('RTPC_ext_physic_gear', gear)
                     self.__engineSound.setRTPC('RTPC_ext_physic_gear', gear)
-                    self.__movementSound.setRTPC('RTPC_ext_engine_state', 1.0 if gear > 0 and gear < 127 else 0.0)
+                    soundTrack.setRTPC('RTPC_ext_engine_state', 1.0 if gear > 0 and gear < 127 else 0.0)
                     self.__engineSound.setRTPC('RTPC_ext_engine_state', 1.0 if gear > 0 and gear < 127 else 0.0)
                     for i in range(1, 8):
                         if i != gear:
-                            self.__movementSound.setRTPC('RTPC_ext_physic_gear_' + str(i), 0)
+                            soundTrack.setRTPC('RTPC_ext_physic_gear_' + str(i), 0)
                             self.__engineSound.setRTPC('RTPC_ext_physic_gear_' + str(i), 0)
 
                     if self.detailedEngineState.gearUp:
-                        self.__movementSound.setRTPC('RTPC_ext_physic_gear_' + str(gear), 100)
+                        soundTrack.setRTPC('RTPC_ext_physic_gear_' + str(gear), 100)
                         self.__engineSound.setRTPC('RTPC_ext_physic_gear_' + str(gear), 100)
                     else:
-                        self.__movementSound.setRTPC('RTPC_ext_physic_gear_' + str(gear), 0)
+                        soundTrack.setRTPC('RTPC_ext_physic_gear_' + str(gear), 0)
                         self.__engineSound.setRTPC('RTPC_ext_physic_gear_' + str(gear), 0)
             accelerationAbs = 0.0
             if self.__prevVelocity is not None and self.__prevTime is not None:

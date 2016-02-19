@@ -62,6 +62,7 @@ class VEHICLE_TAGS(CONST_CONTAINER):
     EVENT = 'event_battles'
     EXCLUDED_FROM_SANDBOX = 'excluded_from_sandbox'
     TELECOM = 'telecom'
+    FALLOUT = 'fallout'
 
 
 class Vehicle(FittingItem, HasStrCD):
@@ -529,7 +530,7 @@ class Vehicle(FittingItem, HasStrCD):
         return getFalloutCtrl().isSelected()
 
     def isFalloutOnly(self):
-        return self.isOnlyForEventBattles
+        return _checkForTags(self.tags, VEHICLE_TAGS.FALLOUT)
 
     def isGroupReady(self):
         from gui.game_control import getFalloutCtrl

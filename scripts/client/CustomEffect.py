@@ -62,7 +62,7 @@ class PixieNode(object):
 
         return
 
-    def __del__(self):
+    def destroy(self):
         for cbkId in self.__ttlCallbacks:
             if cbkId is not None:
                 BigWorld.cancelCallback(cbkId)
@@ -100,6 +100,7 @@ class PixieNode(object):
         effectDesc[PixieNode._PIXIE_REF] = None
         self.__node.detach(pixieRef)
         enablePixie(pixieRef, False)
+        pixieRef.removeAllSystems()
         if _CACHED_PIXIE_MODEL:
             PixieCache.retPixie(effectDesc[PixieNode._PIXIE_NAME], pixieRef)
         return
@@ -674,6 +675,11 @@ class MainSelectorBase(object):
         return
 
     def destroy(self):
+        if self._effectNodes is not None:
+            for node in self._effectNodes:
+                if node is not None:
+                    node.destroy()
+
         self._effectNodes = None
         return
 

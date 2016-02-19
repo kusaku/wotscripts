@@ -2,9 +2,9 @@
 import copy
 from Event import Event
 from adisp import process
-from debug_utils import LOG_ERROR, LOG_DEBUG_DEV
+from debug_utils import LOG_ERROR
 from gui import DialogsInterface
-from gui.Scaleform.daapi.view.lobby.customization_2_0.shared import getDialogReplaceElement, getDialogReplaceElements
+from gui.Scaleform.daapi.view.lobby.customization_2_0.shared import getDialogReplaceElements
 from gui.Scaleform.daapi.view.meta.CustomizationBuyWindowMeta import CustomizationBuyWindowMeta
 from gui.Scaleform.framework.entities.DAAPIDataProvider import SortableDAAPIDataProvider
 from gui.Scaleform.locale.CUSTOMIZATION import CUSTOMIZATION
@@ -17,7 +17,7 @@ from helpers.i18n import makeString as _ms
 from gui import makeHtmlString
 from gui.customization_2_0 import g_customizationController, data_aggregator
 from gui.customization_2_0.data_aggregator import DURATION
-from gui.customization_2_0.shared import formatPriceCredits, formatPriceGold, isSale, getSalePriceString
+from gui.customization_2_0.shared import formatPriceCredits, formatPriceGold, getSalePriceString
 
 class PurchaseWindow(CustomizationBuyWindowMeta):
 
@@ -287,8 +287,8 @@ class PurchaseDataProvider(SortableDAAPIDataProvider):
          'titleText': _ms(text_styles.middleTitle(title))}
 
     def __getSalePrice(self, item, duration):
-        price = None
-        if isSale(item['type'], duration):
-            isGold = duration == DURATION.PERMANENT
-            price = getSalePriceString(isGold, item['object'].getPrice(duration))
-        return price
+        if item['object'].isSale(duration):
+            return getSalePriceString(item['type'], item['object'], duration)
+        else:
+            return None
+            return None

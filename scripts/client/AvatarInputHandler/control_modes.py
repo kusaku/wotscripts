@@ -1723,12 +1723,15 @@ class _FlashGunMarker(Flash):
         self.__sizeFilter = SizeFilter()
         from account_helpers.settings_core.SettingsCore import g_settingsCore
         self.settingsCore = weakref.proxy(g_settingsCore)
+        from account_helpers.settings_core.SettingsCache import g_settingsCache
+        self.settingsCache = weakref.proxy(g_settingsCache)
+        self.settingsCache.onSyncCompleted += self.onSettingsSynced
         self.__curSize = 0.0
         self.__animMat = None
         self.__applyFilter = applyFilter
         self.__scaleNeedToUpdate = True
-        self.aim = {'arcade': self.settingsCore.getSetting('arcade'),
-         'sniper': self.settingsCore.getSetting('sniper')}
+        self._aim = None
+        self.updateAim()
         return
 
     def prerequisites(self):
@@ -1754,14 +1757,22 @@ class _FlashGunMarker(Flash):
         self.onRecreateDevice()
         self.onScaleChanged()
 
+    def updateAim(self):
+        self._aim = {'arcade': self.settingsCore.getSetting('arcade'),
+         'sniper': self.settingsCore.getSetting('sniper')}
+
+    def onSettingsSynced(self):
+        self.updateAim()
+        self.settingsCache.onSyncCompleted -= self.onSettingsSynced
+
     def applySettings(self, diff):
         if type(diff) is dict:
-            self.aim['arcade'] = diff.get('arcade', self.aim['arcade'])
-            self.aim['sniper'] = diff.get('sniper', self.aim['sniper'])
+            self._aim['arcade'] = diff.get('arcade', self._aim['arcade'])
+            self._aim['sniper'] = diff.get('sniper', self._aim['sniper'])
         if self.mode in diff:
             for mode in ('arcade', 'sniper'):
                 if mode in diff:
-                    settings = self.aim[mode]
+                    settings = self._aim[mode]
                     current = settings['gunTag']
                     currentType = settings['gunTagType']
                     self.__scaleNeedToUpdate = True

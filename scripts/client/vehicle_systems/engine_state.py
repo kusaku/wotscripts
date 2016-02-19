@@ -6,6 +6,7 @@ from VehicleEffects import clamp
 from constants import ARENA_PERIOD, VEHICLE_PHYSICS_MODE
 from vehicle_systems import assembly_utility
 from vehicle_systems.assembly_utility import LinkDescriptor
+from Event import Event
 
 class DetailedEngineState(assembly_utility.Component):
     rpm = property(lambda self: self._rpm)
@@ -38,6 +39,9 @@ class DetailedEngineState(assembly_utility.Component):
         self._gearUpCbk = None
         self.__startEngineCbk = None
         self.__prevArenaPeriod = BigWorld.player().arena.period
+        if self.__prevArenaPeriod == ARENA_PERIOD.BATTLE:
+            self.__startEngineCbk = BigWorld.callback(0.1, self.__startEngineFunc)
+        self.onEngineStart = Event()
         BigWorld.player().arena.onPeriodChange += self.__arenaPeriodChanged
         return
 
@@ -64,6 +68,7 @@ class DetailedEngineState(assembly_utility.Component):
         self.__startEngineCbk = None
         self.__starting = True
         self._mode = DetailedEngineState._IDLE
+        self.onEngineStart()
         return
 
     def setMode(self, mode):

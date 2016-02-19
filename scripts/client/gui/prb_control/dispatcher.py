@@ -33,6 +33,7 @@ from gui.server_events import g_eventsCache
 from gui.shared import actions
 from gui.shared.fortifications import getClientFortMgr
 from gui.shared.utils.listeners_collection import ListenersCollection
+from UnitBase import UNIT_ERROR
 
 class _PrebattleDispatcher(ListenersCollection):
 
@@ -491,7 +492,7 @@ class _PrebattleDispatcher(ListenersCollection):
             unitFunctional.setLastError(errorCode)
             if errorCode in RETURN_INTRO_UNIT_MGR_ERRORS and unitFunctional.canSwitchToIntro():
                 self.__requestCtx.addFlags(FUNCTIONAL_FLAG.SWITCH)
-            else:
+            elif errorCode == UNIT_ERROR.CANT_PICK_LEADER:
                 self.__requestCtx.removeFlags(FUNCTIONAL_FLAG.SWITCH)
         else:
             LOG_ERROR('Unit functional is not found')

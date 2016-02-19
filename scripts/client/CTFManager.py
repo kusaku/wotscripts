@@ -202,12 +202,12 @@ class _CTFManager():
     def getFlagInfo(self, flagID):
         return self.__flags[flagID]
 
-    def isFlagBearer(self, vehicleID):
-        for flag in self.__flags.itervalues():
+    def getVehicleCarriedFlagID(self, vehicleID):
+        for flagID, flag in self.__flags.iteritems():
             if flag['vehicle'] == vehicleID:
-                return True
+                return flagID
 
-        return False
+        return None
 
     def getFlagMinimapPos(self, flagID):
         if flagID not in self.__flags:

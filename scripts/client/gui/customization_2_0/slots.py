@@ -141,8 +141,6 @@ class Slots(object):
             else:
                 self.__setSlotAndUpdateView(cType, slotIdx, copy.deepcopy(initialSlotItem))
         elif newSlotItem['isInDossier']:
-            if cType == CUSTOMIZATION_TYPE.CAMOUFLAGE:
-                g_tankActiveCamouflage[g_currentVehicle.item.intCD] = slotIdx
             numberOfDays = item['object'].numberOfDays
             if numberOfDays is not None:
                 itemDuration = numberOfDays if numberOfDays == 30 else 7

@@ -1551,7 +1551,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
 
             if team == playerTeam:
                 commonDataOutput['totalFortResourceStr'] = makeHtmlString('html_templates:lobby/battle_results', 'teamResourceTotal', {'resourceValue': teamResource})
-                if isInfluencePointsAvailable:
+                if isInfluencePointsAvailable and teamInfluence > 0:
                     commonDataOutput['totalInfluenceStr'] = makeHtmlString('html_templates:lobby/battle_results', 'teamInfluenceTotal', {'resourceValue': teamInfluence})
 
         team1 = []

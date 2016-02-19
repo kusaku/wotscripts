@@ -158,6 +158,7 @@ class VehicleDescrCrew(object):
                         processor(self, idxInCrew, level, levelIncrease, activityFlags[idxInCrew], isFire, skillsConfig[skillName], markers)
 
             except:
+                LOG_ERROR('Failed to compute skill ' + '(vehicleID, arenaUniqueID, skillName, skillData):', self.__getUniqueArenaID(), self.__getVehicleID(), skillName, skillData, stack=True)
                 LOG_CURRENT_EXCEPTION()
 
         self._factorsDirty = False
@@ -361,3 +362,13 @@ class VehicleDescrCrew(object):
      'radioman_inventor': _process_radioman_inventor,
      'radioman_lastEffort': None,
      'radioman_retransmitter': None}
+
+    def __getUniqueArenaID(self):
+        if not hasattr(self, '_vehicle'):
+            return -1
+        return self._vehicle.arenaBase.bp['uniqueID']
+
+    def __getVehicleID(self):
+        if not hasattr(self, '_vehicle'):
+            return -1
+        return self._vehicle.id
