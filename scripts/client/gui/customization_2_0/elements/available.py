@@ -76,10 +76,16 @@ class Item(object):
             return False
         if not self.__allowedVehicles and not self.__notAllowedVehicles:
             return True
-        if self.__allowedVehicles and intCD in self.__allowedVehicles:
-            return True
-        if self.__notAllowedVehicles and intCD not in self.__notAllowedVehicles:
-            return True
+        if self.__allowedVehicles:
+            if intCD in self.__allowedVehicles:
+                return True
+            else:
+                return False
+        if self.__notAllowedVehicles:
+            if intCD not in self.__notAllowedVehicles:
+                return True
+            else:
+                return False
         return False
 
     @property

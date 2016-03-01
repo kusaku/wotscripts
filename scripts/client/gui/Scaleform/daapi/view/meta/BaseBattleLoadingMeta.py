@@ -1,15 +1,15 @@
-# Embedded file name: scripts/client/gui/Scaleform/daapi/view/meta/BattleLoadingMeta.py
+# Embedded file name: scripts/client/gui/Scaleform/daapi/view/meta/BaseBattleLoadingMeta.py
 from gui.Scaleform.framework.entities.View import View
 
-class BattleLoadingMeta(View):
+class BaseBattleLoadingMeta(View):
 
-    def as_setProgressS(self, val):
+    def as_setProgressS(self, value):
         if self._isDAAPIInited():
-            return self.flashObject.as_setProgress(val)
+            return self.flashObject.as_setProgress(value)
 
-    def as_setTipS(self, val):
+    def as_setTipS(self, value):
         if self._isDAAPIInited():
-            return self.flashObject.as_setTip(val)
+            return self.flashObject.as_setTip(value)
 
     def as_setTipTitleS(self, title):
         if self._isDAAPIInited():

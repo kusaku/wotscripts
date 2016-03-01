@@ -123,7 +123,7 @@ class Booster(object):
 
     @property
     def description(self):
-        return _ms(_BOOSTER_DESCRIPTION_LOCALE % self.boosterGuiType, effectValue=self._getFormattedValue()) + _ms(MENU.BOOSTER_DESCRIPTION_EFFECTTIME, effectTime=self.getEffectTimeStr())
+        return _ms(_BOOSTER_DESCRIPTION_LOCALE % self.boosterGuiType, effectValue=self.getFormattedValue(text_styles.neutral)) + _ms(MENU.BOOSTER_DESCRIPTION_EFFECTTIME, effectTime=self.getEffectTimeStr())
 
     def getCooldownAsPercent(self):
         percent = 0
@@ -159,9 +159,9 @@ class Booster(object):
     def _getLocalizedTime(self, seconds, locale):
         return time_utils.getTillTimeString(seconds, locale)
 
-    def _getFormattedValue(self):
+    def getFormattedValue(self, formatter):
         if self.effectValue > 0:
             value = '+%s%%' % self.effectValue
         else:
             value = '%s%%' % self.effectValue
-        return text_styles.neutral(value)
+        return formatter(value)

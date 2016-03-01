@@ -87,7 +87,7 @@ class Vehicle(BigWorld.Entity):
             else:
                 descr = vehicles.VehicleDescr(compactDescr=_stripVehCompDescrIfRoaming(self.publicInfo.compDescr))
             self.typeDescriptor = descr
-            prereqs += descr.prerequisites()
+            prereqs += descr.prerequisites(self.physicsMode == VEHICLE_PHYSICS_MODE.DETAILED)
             for hitTester in descr.getHitTesters():
                 if hitTester.bspModelName is not None and not hitTester.isBspModelLoaded():
                     prereqs.append(hitTester.bspModelName)
@@ -110,7 +110,7 @@ class Vehicle(BigWorld.Entity):
     def onEnterWorld(self, prereqs):
         self.__isEnteringWorld = True
         descr = self.typeDescriptor
-        descr.keepPrereqs(prereqs)
+        descr.keepPrereqs(prereqs, self.physicsMode == VEHICLE_PHYSICS_MODE.DETAILED)
         self.__prereqs = prereqs
         self.__prevDamageStickers = frozenset()
         self.__prevPublicStateModifiers = frozenset()

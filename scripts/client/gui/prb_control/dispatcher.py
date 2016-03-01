@@ -1,12 +1,11 @@
 # Embedded file name: scripts/client/gui/prb_control/dispatcher.py
 import types
-import weakref
 import time
 from functools import partial
 import BigWorld
 from CurrentVehicle import g_currentVehicle
 from adisp import async, process
-from constants import IGR_TYPE, QUEUE_TYPE
+from constants import IGR_TYPE
 from debug_utils import LOG_ERROR, LOG_DEBUG
 from FortifiedRegionBase import FORT_ERROR
 from gui import SystemMessages, DialogsInterface, GUI_SETTINGS, game_control
@@ -181,7 +180,17 @@ class _PrebattleDispatcher(ListenersCollection):
     def unlock(self, unlockCtx, callback = None):
         state = self.getFunctionalState()
         result = True
-        if not state.isIntroMode or not unlockCtx.hasFlags(FUNCTIONAL_FLAG.SWITCH):
+        if not state.isIntroMode:
+            canDoLeave = True
+        elif unlockCtx.hasFlags(FUNCTIONAL_FLAG.SWITCH):
+            if state.ctrlTypeID == unlockCtx.getCtrlType() and state.entityTypeID != unlockCtx.getEntityType():
+                canDoLeave = True
+                unlockCtx.removeFlags(FUNCTIONAL_FLAG.SWITCH)
+            else:
+                canDoLeave = False
+        else:
+            canDoLeave = True
+        if canDoLeave:
             factory = self.__factories.get(state.ctrlTypeID)
             result = False
             if factory:
@@ -492,8 +501,11 @@ class _PrebattleDispatcher(ListenersCollection):
             unitFunctional.setLastError(errorCode)
             if errorCode in RETURN_INTRO_UNIT_MGR_ERRORS and unitFunctional.canSwitchToIntro():
                 self.__requestCtx.addFlags(FUNCTIONAL_FLAG.SWITCH)
-            elif errorCode == UNIT_ERROR.CANT_PICK_LEADER:
+            if errorCode == UNIT_ERROR.CANT_PICK_LEADER:
                 self.__requestCtx.removeFlags(FUNCTIONAL_FLAG.SWITCH)
+            elif errorCode == UNIT_ERROR.REMOVED_PLAYER:
+                if self.__requestCtx.getCtrlType() == _CTRL_TYPE.UNIT and unitFunctional.getEntityType() != self.__requestCtx.getEntityType():
+                    self.__requestCtx.removeFlags(FUNCTIONAL_FLAG.SWITCH)
         else:
             LOG_ERROR('Unit functional is not found')
         if errorCode not in IGNORED_UNIT_MGR_ERRORS:

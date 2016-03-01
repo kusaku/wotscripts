@@ -572,11 +572,14 @@ class Battle(BattleWindow):
     def tryLeaveRequest(self, _):
         resStr = 'quitBattle'
         replayCtrl = BattleReplay.g_replayCtrl
+        canRespawn = False
         player = BigWorld.player()
         if hasRespawns():
             isVehicleAlive = not g_sessionProvider.getArenaDP().getVehicleInteractiveStats().stopRespawn
+            canRespawn = isVehicleAlive
         else:
             isVehicleAlive = getattr(player, 'isVehicleAlive', False)
+        isVehicleOverturned = getattr(player, 'isVehicleOverturned', False)
         isNotTraining = self.__arena.guiType != constants.ARENA_GUI_TYPE.TRAINING
         if not replayCtrl.isPlaying:
             if constants.IS_KOREA and gui.GUI_SETTINGS.igrEnabled and self.__arena is not None and isNotTraining:
@@ -587,7 +590,10 @@ class Battle(BattleWindow):
                         resStr = 'quitBattleIGR'
                 else:
                     LOG_ERROR("Player's vehicle not found", vehicleID)
-            isDeserter = isVehicleAlive and isNotTraining
+            if canRespawn:
+                isDeserter = isVehicleAlive and isNotTraining
+            else:
+                isDeserter = isVehicleAlive and isNotTraining and not isVehicleOverturned
             if isDeserter:
                 resStr += '/deserter'
         else:

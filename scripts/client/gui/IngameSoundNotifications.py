@@ -125,7 +125,6 @@ class IngameSoundNotifications(object):
 
     def __clearQueue(self, category):
         if self.__activeEvents[category] is not None:
-            self.__activeEvents[category]['sound'].stop()
             self.__activeEvents[category] = None
         self.__soundQueues[category] = []
         return

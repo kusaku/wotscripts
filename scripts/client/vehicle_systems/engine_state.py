@@ -39,9 +39,9 @@ class DetailedEngineState(assembly_utility.Component):
         self._gearUpCbk = None
         self.__startEngineCbk = None
         self.__prevArenaPeriod = BigWorld.player().arena.period
-        if self.__prevArenaPeriod == ARENA_PERIOD.BATTLE:
-            self.__startEngineCbk = BigWorld.callback(0.1, self.__startEngineFunc)
         self.onEngineStart = Event()
+        if self.__prevArenaPeriod == ARENA_PERIOD.BATTLE or self.__prevArenaPeriod == ARENA_PERIOD.PREBATTLE:
+            self.__startEngineCbk = BigWorld.callback(0.1, self.__startEngineFunc)
         BigWorld.player().arena.onPeriodChange += self.__arenaPeriodChanged
         return
 
@@ -56,13 +56,17 @@ class DetailedEngineState(assembly_utility.Component):
     def __arenaPeriodChanged(self, *args):
         period = BigWorld.player().arena.period
         if period != self.__prevArenaPeriod and period == ARENA_PERIOD.PREBATTLE:
-            if period == ARENA_PERIOD.PREBATTLE:
-                self._mode = DetailedEngineState._STOPPED
-                self.__prevArenaPeriod = period
-                time = uniform(0.0, (BigWorld.player().arena.periodEndTime - BigWorld.serverTime()) * 0.7)
-                self.__startEngineCbk = BigWorld.callback(time, self.__startEngineFunc)
-            elif period == ARENA_PERIOD.BATTLE:
-                self.__starting = False
+            self._mode = DetailedEngineState._STOPPED
+            self.__prevArenaPeriod = period
+            maxTime = BigWorld.player().arena.periodEndTime - BigWorld.serverTime()
+            maxTime = maxTime * 0.7 if maxTime > 0.0 else 1.0
+            time = uniform(0.0, maxTime)
+            self.__startEngineCbk = BigWorld.callback(time, self.__startEngineFunc)
+        elif period == ARENA_PERIOD.BATTLE:
+            if self.__startEngineCbk is None and self._mode == DetailedEngineState._STOPPED:
+                self.onEngineStart()
+            self.__starting = False
+        return
 
     def __startEngineFunc(self):
         self.__startEngineCbk = None

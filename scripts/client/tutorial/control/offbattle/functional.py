@@ -6,7 +6,7 @@ import ResMgr
 from adisp import process
 from constants import QUEUE_TYPE
 from gui.prb_control.context import pre_queue_ctx, PrebattleAction
-from gui.prb_control.settings import PREBATTLE_ACTION_NAME
+from gui.prb_control.settings import PREBATTLE_ACTION_NAME, FUNCTIONAL_FLAG
 from helpers.i18n import makeString as _ms
 from gui.game_control import getBrowserCtrl
 from gui.prb_control.dispatcher import g_prbLoader
@@ -188,12 +188,12 @@ class FunctionalRefuseTrainingEffect(FunctionalEffect):
         descriptor = getBattleDescriptor()
         if descriptor is not None and descriptor.areAllBonusesReceived(self._bonuses.getCompleted()):
             self._cache.setPlayerXPLevel(PLAYER_XP_LEVEL.NORMAL)
-        self._cache.setAfterBattle(False).write()
         dispatcher = g_prbLoader.getDispatcher()
         if dispatcher is not None:
-            dispatcher.doLeaveAction(pre_queue_ctx.LeavePreQueueCtx())
+            dispatcher.doLeaveAction(pre_queue_ctx.LeavePreQueueCtx(flags=FUNCTIONAL_FLAG.BATTLE_TUTORIAL))
         else:
             LOG_WARNING('Prebattle dispatcher is not defined')
+        self._cache.setAfterBattle(False).write()
         self._tutorial.refuse()
         return
 

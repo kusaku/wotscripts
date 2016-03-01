@@ -2,6 +2,7 @@
 import time
 import types
 import operator
+from Queue import Queue
 import constants
 import account_helpers
 import ArenaType
@@ -100,7 +101,7 @@ class ServiceChannelFormatter(object):
 class WaitItemsSyncFormatter(ServiceChannelFormatter):
 
     def __init__(self):
-        self.__callback = None
+        self.__callbackQueue = None
         return
 
     def isAsync(self):
@@ -109,24 +110,27 @@ class WaitItemsSyncFormatter(ServiceChannelFormatter):
     @async
     def _waitForSyncItems(self, callback):
         if g_itemsCache.isSynced():
-            callback(g_itemsCache.isSynced())
+            callback(True)
         else:
             self.__registerHandler(callback)
 
     def __registerHandler(self, callback):
-        self.__callback = callback
+        if not self.__callbackQueue:
+            self.__callbackQueue = Queue()
+        self.__callbackQueue.put(callback)
         g_itemsCache.onSyncCompleted += self.__onSyncCompleted
 
     def __unregisterHandler(self):
-        self.__callback = None
+        raise self.__callbackQueue.empty() or AssertionError
+        self.__callbackQueue = None
         g_itemsCache.onSyncCompleted -= self.__onSyncCompleted
         return
 
     def __onSyncCompleted(self, *args):
-        if self.__callback is not None:
-            self.__callback(g_itemsCache.isSynced())
+        while not self.__callbackQueue.empty():
+            self.__callbackQueue.get_nowait()(g_itemsCache.isSynced())
+
         self.__unregisterHandler()
-        return
 
 
 class ServerRebootFormatter(ServiceChannelFormatter):
@@ -240,6 +244,7 @@ class BattleResultsFormatter(WaitItemsSyncFormatter):
                 formatted = g_settings.msgTemplates.format(templateName, ctx=ctx, data={'timestamp': arenaCreateTime,
                  'savedData': arenaUniqueID}, bgIconSource=bgIconSource)
                 settings = self._getGuiSettings(message, templateName)
+                settings.showAt = BigWorld.time()
                 callback((formatted, settings))
             else:
                 callback((None, None))

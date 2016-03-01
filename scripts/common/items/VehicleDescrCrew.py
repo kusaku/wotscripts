@@ -158,7 +158,7 @@ class VehicleDescrCrew(object):
                         processor(self, idxInCrew, level, levelIncrease, activityFlags[idxInCrew], isFire, skillsConfig[skillName], markers)
 
             except:
-                LOG_ERROR('Failed to compute skill ' + '(vehicleID, arenaUniqueID, skillName, skillData):', self.__getUniqueArenaID(), self.__getVehicleID(), skillName, skillData, stack=True)
+                LOG_ERROR('Failed to compute skill (arenaUniqueID, vehicleID, skillName, skillData):', self.__getUniqueArenaID(), self.__getVehicleID(), skillName, skillData, stack=True)
                 LOG_CURRENT_EXCEPTION()
 
         self._factorsDirty = False

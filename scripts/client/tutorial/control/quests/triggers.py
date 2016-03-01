@@ -301,24 +301,36 @@ class TutorialAccountSettingsTrigger(TriggerWithValidateVar):
 
 
 class XpExchangeTrigger(Trigger):
+    REQUEST_SENT_FLAG = 'xpExchangeRequestSent'
 
     def __init__(self, triggerID):
         super(XpExchangeTrigger, self).__init__(triggerID)
         self.__pIdx = -1
+        self.__startProcessTriggerId = -1
 
     def run(self):
         if not self.isSubscribed:
+            self.__startProcessTriggerId = g_tutorialWeaver.weave(pointcut=aspects.StartXpExchangePointcut, aspects=[aspects.StartXpExchangeAspect(self)])
             self.__pIdx = g_tutorialWeaver.weave(pointcut=aspects.XpExchangePointcut, aspects=[aspects.XpExchangeAspect(self)])
             self.isSubscribed = True
         self.isRunning = True
         self.toggle(isOn=self.isOn())
 
-    def isOn(self, success = False):
-        return success
+    def isOn(self):
+        return self._tutorial.getFlags().isActiveFlag(self.REQUEST_SENT_FLAG)
+
+    def registerRequest(self):
+        flags = self._tutorial.getFlags()
+        flags.addFlag(self.REQUEST_SENT_FLAG)
+        flags.activateFlag(self.REQUEST_SENT_FLAG)
+        self._cache.update(None, self._tutorial.getFlags().getDict())
+        return
 
     def clear(self):
         g_tutorialWeaver.clear(self.__pIdx)
+        g_tutorialWeaver.clear(self.__startProcessTriggerId)
         self.__pIdx = -1
+        self.__startProcessTriggerId = -1
         self.isSubscribed = False
         self.isRunning = False
 

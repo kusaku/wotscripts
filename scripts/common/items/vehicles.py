@@ -628,14 +628,14 @@ class VehicleDescr(object):
 
         return hitTesters
 
-    def prerequisites(self):
+    def prerequisites(self, newPhysic = False):
         prereqs = set()
         for effGroup in self.type.effects.values():
             for keyPoints, effects, readyPrereqs in effGroup:
                 if not readyPrereqs:
                     prereqs.update(effects.prerequisites())
 
-        if self.chassis['effects'] is not None:
+        if self.chassis['effects'] is not None and not newPhysic:
             if self.chassis['effects']['dust'] is not None:
                 effGroup, readyPrereqs = self.chassis['effects']['dust']
                 if not readyPrereqs:
@@ -673,7 +673,7 @@ class VehicleDescr(object):
                     prereqs.update(effectsDescr['armorHit'][1].prerequisites())
                     prereqs.update(effectsDescr['armorCriticalHit'][1].prerequisites())
 
-        if self.type._prereqs is None:
+        if self.type._prereqs is None and not newPhysic:
             prereqs.update(self.hull['exhaust'].prerequisites())
             for extra in self.extras:
                 prereqs.update(extra.prerequisites())
@@ -686,7 +686,7 @@ class VehicleDescr(object):
 
         return list(prereqs)
 
-    def keepPrereqs(self, prereqs):
+    def keepPrereqs(self, prereqs, newPhysic = False):
         if not prereqs:
             return
         else:
@@ -695,7 +695,7 @@ class VehicleDescr(object):
                     if not readyPrereqs:
                         readyPrereqs.update(_extractNeededPrereqs(prereqs, effects.prerequisites()))
 
-            if self.chassis['effects'] is not None:
+            if self.chassis['effects'] is not None and not newPhysic:
                 if self.chassis['effects']['dust'] is not None:
                     effGroup, readyPrereqs = self.chassis['effects']['dust']
                     if not readyPrereqs:
@@ -733,7 +733,10 @@ class VehicleDescr(object):
                         readyPrereqs.update(_extractNeededPrereqs(prereqs, effectsDescr['armorCriticalHit'][1].prerequisites()))
 
             if self.type._prereqs is None:
-                resourceNames = list(self.hull['exhaust'].prerequisites())
+                if not newPhysic:
+                    resourceNames = list(self.hull['exhaust'].prerequisites())
+                else:
+                    resourceNames = []
                 for extra in self.extras:
                     resourceNames += extra.prerequisites()
 

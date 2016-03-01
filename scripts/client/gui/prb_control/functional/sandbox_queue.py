@@ -103,7 +103,8 @@ class SandboxQueueFunctional(prequeue.AccountQueueFunctional):
         return prb_getters.isInSandboxQueue()
 
     def leave(self, ctx, callback = None):
-        self.storage.suspend()
+        if not ctx.hasFlags(FUNCTIONAL_FLAG.BATTLE_TUTORIAL):
+            self.storage.suspend()
         super(SandboxQueueFunctional, self).leave(ctx, callback)
 
     @vehicleAmmoCheck

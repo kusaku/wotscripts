@@ -366,7 +366,7 @@ class FalloutController(Controller, GlobalListener):
         cfg = self.getConfig()
         if not cfg.hasRequiredVehicles():
             return False
-        if vehicle.intCD not in cfg.allowedVehicles:
+        if not vehicle.isFalloutAvailable:
             return False
         if self.mustSelectRequiredVehicle() and vehicle.level != cfg.vehicleLevelRequired:
             return False

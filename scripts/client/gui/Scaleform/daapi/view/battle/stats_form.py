@@ -23,6 +23,7 @@ class _StatsForm(object):
 
     def getFormattedStrings(self, vInfoVO, vStatsVO, viStatsVO, ctx, fullPlayerName):
         format = self._findPlayerHTMLFormat(vInfoVO, ctx, self._ui.colorManager)
+        formatPanels = self._findPlayerHTMLFormat(vInfoVO, ctx, self._ui.colorManager, True)
         fullPlayerName = self._trimLongName(fullPlayerName, ctx.playerLabelMaxLength)
         vehicleName = self._trimLongName(vInfoVO.vehicleType.shortName, ctx.vehicleLabelMaxLength)
         fragsString = format % ' '
@@ -31,10 +32,11 @@ class _StatsForm(object):
         return (format % fullPlayerName,
          fragsString,
          format % vehicleName,
-         ())
+         (),
+         formatPanels % fullPlayerName)
 
-    def _findPlayerHTMLFormat(self, item, ctx, csManager):
-        return findHTMLFormat(item, ctx, csManager)
+    def _findPlayerHTMLFormat(self, item, ctx, csManager, panels = False):
+        return findHTMLFormat(item, ctx, csManager, panels)
 
     def _trimLongName(self, name, maxLength):
         unicodeStr, _ = unicode_from_utf8(name)
@@ -129,7 +131,8 @@ class _FalloutStatsForm(_StatsForm):
          (scoreString,
           damageString,
           deathsString,
-          specialPointsString))
+          specialPointsString),
+         '')
 
     def _getHTMLString(self, colorScheme, csManager):
         color = getColorValue(colorScheme, csManager)
@@ -139,7 +142,7 @@ class _FalloutStatsForm(_StatsForm):
             return colorStr
         return self._colorCache[color]
 
-    def _findPlayerHTMLFormat(self, item, ctx, csManager):
+    def _findPlayerHTMLFormat(self, item, ctx, csManager, _ = False):
         if ctx.isTeamKiller(item):
             return self._getHTMLString('teamkiller', csManager)
         elif ctx.isPlayerSelected(item):
@@ -153,7 +156,7 @@ class _FalloutStatsForm(_StatsForm):
 class _MultiteamFalloutStatsForm(_FalloutStatsForm):
 
     def getFormattedStrings(self, vInfoVO, vStatsVO, viStatsVO, ctx, fullPlayerName):
-        pName, frags, vName, (scoreString, damageString, deathsString, _) = super(_MultiteamFalloutStatsForm, self).getFormattedStrings(vInfoVO, vStatsVO, viStatsVO, ctx, fullPlayerName)
+        pName, frags, vName, (scoreString, damageString, deathsString, _), _ = super(_MultiteamFalloutStatsForm, self).getFormattedStrings(vInfoVO, vStatsVO, viStatsVO, ctx, fullPlayerName)
         padding = makeHtmlString('html_templates:battle', 'multiteamPadding', {})
         format = self._findPlayerHTMLFormat(vInfoVO, ctx, self._ui.colorManager)
         formatWithPadding = format + padding
@@ -167,7 +170,8 @@ class _MultiteamFalloutStatsForm(_FalloutStatsForm):
          (scoreString,
           damageString,
           deathsString,
-          flagsString))
+          flagsString),
+         '')
 
     def getTeamScoreFormat(self):
         padding = makeHtmlString('html_templates:battle', 'multiteamPadding', {})

@@ -8,16 +8,17 @@ FALLOUT_SCORE_PANEL = '_level0.fragCorrelationBar'
 DAMAGE_PANEL_PATH = '_level0.damagePanel'
 TANK_INDICATOR_PANEL_PATH = '_level0.damagePanel.tankIndicator'
 
-def findHTMLFormat(item, ctx, csManager):
+def findHTMLFormat(item, ctx, csManager, panels):
     if ctx.isPlayerSelected(item):
         return getHTMLString('selected' if item.isReady() else 'selected_dead', csManager)
-    isAliveAndIntoArena = item.isAlive() and item.isReady()
-    if ctx.isSquadMan(item):
-        return getHTMLString('squad' if isAliveAndIntoArena else 'squad_dead', csManager)
-    elif ctx.isTeamKiller(item):
-        return getHTMLString('teamkiller' if isAliveAndIntoArena else 'teamkiller_dead', csManager)
     else:
-        return getHTMLString('normal' if isAliveAndIntoArena else 'normal_dead', csManager)
+        isAliveAndIntoArena = item.isAlive() and item.isReady()
+        if ctx.isSquadMan(item):
+            return getHTMLString('squad' if isAliveAndIntoArena else 'squad_dead', csManager)
+        if ctx.isTeamKiller(item):
+            return getHTMLString('teamkiller' if isAliveAndIntoArena else 'teamkiller_dead', csManager)
+        normalId = 'normal_white' if panels else 'normal'
+        return getHTMLString(normalId if isAliveAndIntoArena else 'normal_dead', csManager)
 
 
 def getColorValue(schemeName, csManager):

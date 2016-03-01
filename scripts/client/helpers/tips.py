@@ -80,7 +80,12 @@ class RandomTipsCriteria(_TipsCriteria):
 class SandboxTipsCriteria(_TipsCriteria):
 
     def find(self):
-        return _FoundTip(i18n.makeString('#tips:howToPlay'), i18n.makeString('#tips:sandbox01'), TIPS_IMAGE_SOURCE % 'sandbox01')
+        sandbox = 'sandbox01'
+        type = arena_info.getArenaType()
+        if type is not None:
+            if type.geometryName == '10_hills':
+                sandbox = 'sandbox02'
+        return _FoundTip(i18n.makeString('#tips:howToPlay'), i18n.makeString('#tips:%s' % sandbox), TIPS_IMAGE_SOURCE % sandbox)
 
 
 def getTipsCriteria(arena):

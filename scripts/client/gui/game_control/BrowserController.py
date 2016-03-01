@@ -82,7 +82,7 @@ class BrowserController(Controller):
                 else:
                     LOG_WARNING('Browser async request url was not loaded!', url)
 
-            self.__browsersCallbacks[browserID] = isAsync and (None, browserCallback)
+            self.__browsersCallbacks[browserID] = isAsync and (None, browserAsyncCallback)
             self.__browsers[browserID].onLoadEnd += browserAsyncCallback
         else:
             self.__browsersCallbacks[browserID] = (browserCallback, None)
@@ -118,12 +118,11 @@ class BrowserController(Controller):
         return
 
     def __clearCallback(self, browserID):
-        if browserID in self.__browsersCallbacks:
-            loadStart, loadEnd = self.__browsersCallbacks.pop(browserID, (None, None))
-            if loadStart is not None:
-                self.__browsers[browserID].onLoadStart -= loadStart
-            if loadEnd is not None:
-                self.__browsers[browserID].onLoadEnd -= loadEnd
+        loadStart, loadEnd = self.__browsersCallbacks.pop(browserID, (None, None))
+        if loadStart is not None:
+            self.__browsers[browserID].onLoadStart -= loadStart
+        if loadEnd is not None:
+            self.__browsers[browserID].onLoadEnd -= loadEnd
         return
 
     def __showBrowser(self, browserID, ctx):

@@ -700,16 +700,15 @@ class ToolTipRefSysAwards(ToolTipBaseData):
         icon = ''
         awardDescrPars = []
         isCompleted = True
-        for quest in quests.itervalues():
-            for bonusName in self.BONUSES_PRIORITY:
+        for bonusName in self.BONUSES_PRIORITY:
+            for quest in quests.itervalues():
                 bonuses = quest.getBonuses(bonusName)
                 if bonuses:
                     awardDescrPars.append(', '.join(map(methodcaller('getDescription'), bonuses)))
                     if not icon:
                         icon = bonuses[0].getTooltipIcon()
-
-            if isCompleted and not quest.isCompleted():
-                isCompleted = False
+                if isCompleted and not quest.isCompleted():
+                    isCompleted = False
 
         awardDescr = ', '.join(awardDescrPars)
         return {'iconSource': icon,

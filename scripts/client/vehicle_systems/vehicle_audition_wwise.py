@@ -134,8 +134,6 @@ class EngineAuditionWWISE(EngineAudition):
             if self.__movementSound is None:
                 return
             self.__movementSound.setSwitch('SWITCH_ext_physics_state', 'SWITCH_ext_physics_state_off' if self.__physicsMode == VEHICLE_PHYSICS_MODE.STANDARD else 'SWITCH_ext_physics_state_on')
-            if SoundGroups.ENABLE_ENGINE_N_TRACKS:
-                self.__movementSound.play()
             self.__engineSound.setRTPC('RTPC_ext_vehicle_weight', self.__typeDesc.physics['weight'] / 1000)
             self.__movementSound.setRTPC('RTPC_ext_vehicle_weight', self.__typeDesc.physics['weight'] / 1000)
             self.__movementSound.setRTPC('RTPC_ext_engine_state', 0.0)

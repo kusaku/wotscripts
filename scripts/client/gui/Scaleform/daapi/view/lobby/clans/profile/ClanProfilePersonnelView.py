@@ -213,9 +213,12 @@ class _ClanMembersDataProvider(SortableDAAPIDataProvider, UsersInfoHelper):
          _SORT_IDS.BATTLES_PERFORMANCE: self.__getMemberBattlesPerformance,
          _SORT_IDS.AWG_XP: self.__getMemberAwgExp,
          _SORT_IDS.DAYS_IN_CLAN: self.__getMemberDaysInClan}
+        return
+
+    def setFlashObject(self, movieClip, autoPopulate = True, setScript = True):
+        super(_ClanMembersDataProvider, self).setFlashObject(movieClip, autoPopulate, setScript)
         usersEvents = g_messengerEvents.users
         usersEvents.onUserActionReceived += self.__me_onUserActionReceived
-        return
 
     def __me_onUserActionReceived(self, actionID, contact):
         if actionID == USER_ACTION_ID.FRIEND_REMOVED or actionID == USER_ACTION_ID.FRIEND_ADDED or actionID == USER_ACTION_ID.MUTE_SET or actionID == USER_ACTION_ID.MUTE_UNSET or actionID == USER_ACTION_ID.NOTE_CHANGED or actionID == USER_ACTION_ID.IGNORED_ADDED or actionID == USER_ACTION_ID.IGNORED_REMOVED:

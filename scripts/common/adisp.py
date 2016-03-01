@@ -95,9 +95,15 @@ Modifications:
 
 Add generator steps callback. Used to notificate about
 step changing or generator stop.
+
+16/02/2016, Brukish
+
+Added stacktrace processing to give more clear error logs.
 ---------------------------------------------------------------------------
 """
 from functools import partial
+from debug_utils import LOG_WRAPPED_CURRENT_EXCEPTION
+CLEAR_TRACE = True
 
 class CallbackDispatcher(object):
 
@@ -133,10 +139,33 @@ class CallbackDispatcher(object):
             self.stepCallback(True)
 
 
+if CLEAR_TRACE:
+
+    class AdispException(Exception):
+        pass
+
+
+    def doCall(func, processor):
+        try:
+            return processor()
+        except AdispException as e:
+            raise e
+        except Exception as e:
+            funcName = func.__name__
+            LOG_WRAPPED_CURRENT_EXCEPTION('adisp', funcName, func.func_code.co_filename, func.func_code.co_firstlineno + 1)
+            raise AdispException('There was an error during %s async call.' % funcName, e)
+
+
+else:
+
+    def doCall(func, processor):
+        return processor()
+
+
 def process(func, stepCallback = lambda stop: None):
 
     def wrapper(*args, **kwargs):
-        CallbackDispatcher(func(*args, **kwargs), stepCallback)
+        doCall(func, partial(CallbackDispatcher, func(*args, **kwargs), stepCallback))
 
     return wrapper
 
@@ -147,7 +176,7 @@ def async(func, cbname = 'callback', cbwrapper = lambda x: x):
 
         def caller(callback):
             kwargs[cbname] = cbwrapper(callback)
-            return func(*args, **kwargs)
+            doCall(func, partial(func, *args, **kwargs))
 
         return caller
 

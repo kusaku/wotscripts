@@ -65,13 +65,14 @@ class MusicController(object):
             self.__eventID = None
             return
 
-        def replace(self, event, eventId, playNew, stopPrev):
-            if stopPrev is True:
-                self.stop()
+        def replace(self, event, eventId, playNew):
+            if self.__event is not None:
+                self.stop(self.__event.name == event.name)
             self.__event = event
             self.__eventID = eventId
             if playNew is True:
                 self.play()
+            return
 
         def play(self):
             if self.__event is not None:
@@ -88,10 +89,14 @@ class MusicController(object):
                         self.__event.play()
             return
 
-        def stop(self):
+        def stop(self, force = False):
             if self.__event is not None:
-                if self.__eventID == MUSIC_EVENT_COMBAT_LOADING:
-                    SoundGroups.g_instance.playSound2D('ue_stop_loadscreen_music')
+                if force:
+                    self.__event.stop()
+                elif self.__eventID == MUSIC_EVENT_COMBAT_LOADING:
+                    WWISE.WW_eventGlobalSync('ue_stop_loadscreen_music')
+                elif self.__eventID >= MUSIC_EVENT_COMBAT_VICTORY and self.__eventID <= MUSIC_EVENT_COMBAT_DRAW:
+                    WWISE.WW_eventGlobalSync('ue_events_hangar_stop_afterBattleMusic')
                 else:
                     self.__event.stop()
             return
@@ -152,7 +157,7 @@ class MusicController(object):
         for musicEvent in self.__musicEvents:
             musicEvent.play()
 
-    def play(self, eventId, params = None, stopPrev = True):
+    def play(self, eventId, params = None):
         if eventId is None:
             return
         else:
@@ -160,7 +165,7 @@ class MusicController(object):
             if newSoundEvent is None:
                 return
             musicEventId = MusicController._MUSIC_EVENT if eventId < AMBIENT_EVENT_NONE else MusicController._AMBIENT_EVENT
-            self.__musicEvents[musicEventId].replace(newSoundEvent, eventId, True, stopPrev)
+            self.__musicEvents[musicEventId].replace(newSoundEvent, eventId, True)
             if params is not None:
                 for paramName, paramValue in params.iteritems():
                     self.setEventParam(eventId, paramName, paramValue)
@@ -224,7 +229,8 @@ class MusicController(object):
         arena = BigWorld.player().arena
         period = arena.period
         if (period == ARENA_PERIOD.PREBATTLE or period == ARENA_PERIOD.BATTLE) and self.__isOnArena:
-            self.play(AMBIENT_EVENT_COMBAT)
+            if not self.isPlaying(AMBIENT_EVENT_COMBAT):
+                self.play(AMBIENT_EVENT_COMBAT)
         if period == ARENA_PERIOD.BATTLE and self.__isOnArena:
             self.play(MUSIC_EVENT_COMBAT)
         elif period == ARENA_PERIOD.AFTERBATTLE:
@@ -322,13 +328,21 @@ class MusicController(object):
                 elif overriddenNames[_CLIENT_OVERRIDDEN]:
                     eventNames[eventId] = overriddenNames[_CLIENT_OVERRIDDEN]
 
-    def isPlaying(self, soundEventID):
+    def _getSoundEventById(self, soundEventID):
         if soundEventID < AMBIENT_EVENT_NONE:
             musicEventId = MusicController._MUSIC_EVENT
         else:
             musicEventId = MusicController._AMBIENT_EVENT
         soundEvent = self.__musicEvents[musicEventId]
+        return soundEvent
+
+    def isPlaying(self, soundEventID):
+        soundEvent = self._getSoundEventById(soundEventID)
         return soundEvent.getEventId() == soundEventID and soundEvent.isPlaying()
+
+    def isCompleted(self, soundEventID):
+        soundEvent = self._getSoundEventById(soundEventID)
+        return soundEvent.getEventId() == soundEventID and not soundEvent.isPlaying()
 
     def __reloadSounds(self):
         self.__loadConfig()
@@ -400,7 +414,9 @@ class MusicController(object):
     def unloadCustomSounds(self):
         self.__eraseOverridden(_CLIENT_OVERRIDDEN)
 
-    def unloadServerSounds(self):
+    def unloadServerSounds(self, isDisconnect = False):
+        if isDisconnect:
+            self.__musicEvents = (self.__musicEvents[0], MusicController.MusicEvent())
         self.__eraseOverridden(_SERVER_OVERRIDDEN)
         self.__loadConfig()
         for musicEvent in self.__musicEvents:

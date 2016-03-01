@@ -134,6 +134,7 @@ class CONTROLS(CONST_CONTAINER):
     MOUSE_VERT_INVERSION = 'mouseVertInvert'
     BACK_DRAFT_INVERSION = 'backDraftInvert'
     KEYBOARD = 'keyboard'
+    KEYBOARD_IMPORTANT_BINDS = 'keyboardImportantBinds'
 
 
 class AIM(CONST_CONTAINER):

@@ -3,6 +3,7 @@ import sys
 import BigWorld
 import excepthook
 import time
+import traceback
 from GarbageCollectionDebug import gcDump, getGarbageGraph
 from functools import wraps
 from collections import defaultdict
@@ -155,33 +156,33 @@ def LOG_CODEPOINT_WARNING(*kargs):
 
 
 @_LogWrapper(LOG_LEVEL.RELEASE)
-def LOG_ERROR(msg, *kargs):
-    _doLog('ERROR', msg, kargs)
+def LOG_ERROR(msg, *kargs, **kwargs):
+    _doLog('ERROR', msg, kargs, kwargs)
 
 
 @_LogWrapper(LOG_LEVEL.DEV)
-def LOG_ERROR_DEV(msg, *kargs):
-    _doLog('ERROR', msg, kargs)
+def LOG_ERROR_DEV(msg, *kargs, **kwargs):
+    _doLog('ERROR', msg, kargs, kwargs)
 
 
 @_LogWrapper(LOG_LEVEL.RELEASE)
-def LOG_WARNING(msg, *kargs):
-    _doLog('WARNING', msg, kargs)
+def LOG_WARNING(msg, *kargs, **kwargs):
+    _doLog('WARNING', msg, kargs, kwargs)
 
 
 @_LogWrapper(LOG_LEVEL.RELEASE)
-def LOG_NOTE(msg, *kargs):
-    _doLog('NOTE', msg, kargs)
+def LOG_NOTE(msg, *kargs, **kwargs):
+    _doLog('NOTE', msg, kargs, kwargs)
 
 
 @_LogWrapper(LOG_LEVEL.SVR_RELEASE)
-def LOG_DEBUG(msg, *kargs):
-    _doLog('DEBUG', msg, kargs)
+def LOG_DEBUG(msg, *kargs, **kwargs):
+    _doLog('DEBUG', msg, kargs, kwargs)
 
 
 @_LogWrapper(LOG_LEVEL.DEV)
-def LOG_DEBUG_DEV(msg, *kargs):
-    _doLog('DEBUG', msg, kargs)
+def LOG_DEBUG_DEV(msg, *kargs, **kwargs):
+    _doLog('DEBUG', msg, kargs, kwargs)
 
 
 @_LogWrapper(LOG_LEVEL.CT)
@@ -212,7 +213,7 @@ def LOG_WRONG_CLIENT(entity, *kargs):
     return
 
 
-def _doLog(category, msg, args = None):
+def _doLog(category, msg, args = None, kwargs = {}):
     header = _makeMsgHeader(sys._getframe(2))
     logFunc = _g_logMapping.get(category, None)
     if not logFunc:
@@ -222,6 +223,8 @@ def _doLog(category, msg, args = None):
     else:
         output = ' '.join(map(str, [header, msg]))
     logFunc(category, output, None)
+    if kwargs.get('stack', False):
+        traceback.print_stack()
     return
 
 

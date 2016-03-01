@@ -264,11 +264,5 @@ class SniperAimingSystem(IAimingSystem):
         currentGunMat = AimingSystems.getPlayerGunMat(l_curYaw, l_curPitch)
         self.__g_curYaw = currentGunMat.yaw
         self.__g_curPitch = currentGunMat.pitch
-        stabilizedRoll = self.__getStabilizedRoll(l_curYaw, l_curPitch)
-        stabRollMatrix = mathUtils.createRTMatrix(Vector3(currentGunMat.yaw, currentGunMat.pitch, stabilizedRoll), currentGunMat.translation)
-        self._matrix.set(stabRollMatrix)
+        self._matrix.set(currentGunMat)
         return 0.0
-
-    def __getStabilizedRoll(self, turretYaw = 0.0, gunPitch = 0.0):
-        turretMat = AimingSystems.getTurretJointMat(self.__vehicleTypeDescriptor, self.__baseMatrix, turretYaw)
-        return AimingSystems.getGunJointMat(self.__vehicleTypeDescriptor, turretMat, gunPitch).roll

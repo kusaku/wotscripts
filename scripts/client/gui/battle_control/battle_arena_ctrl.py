@@ -221,7 +221,8 @@ class BattleArenaController(IArenaVehiclesController):
             fragCorrelation.updateTeam(isEnemy, updatedTeam)
 
     def _updateTeamData(self, isEnemy, team, arenaDP, isFragsUpdate = True):
-        pNamesList, fragsList, vNamesList, additionalDataList = ([],
+        pNamesList, fragsList, vNamesList, additionalDataList, pNamesListPanels = ([],
+         [],
          [],
          [],
          [])
@@ -251,16 +252,17 @@ class BattleArenaController(IArenaVehiclesController):
             if not playerFullName:
                 playerFullName = vInfoVO.player.getPlayerLabel()
             valuesHash = self._makeHash(index, playerFullName, vInfoVO, vStatsVO, viStatsVO, ctx, playerAccountID, inviteSendingProhibited, invitesReceivingProhibited, isEnemy)
-            pName, frags, vName, additionalData = self._battleUI.statsForm.getFormattedStrings(vInfoVO, vStatsVO, viStatsVO, ctx, playerFullName)
+            pName, frags, vName, additionalData, pNamePanels = self._battleUI.statsForm.getFormattedStrings(vInfoVO, vStatsVO, viStatsVO, ctx, playerFullName)
             pNamesList.append(pName)
             fragsList.append(frags)
             vNamesList.append(vName)
             additionalDataList.append(additionalData)
             valuesHashes.append(valuesHash)
+            pNamesListPanels.append(pNamePanels)
 
-        self._battleUI.setTeamValuesData(self._makeTeamValues(isEnemy, ctx, pNamesList, fragsList, vNamesList, additionalDataList, valuesHashes))
+        self._battleUI.setTeamValuesData(self._makeTeamValues(isEnemy, ctx, pNamesList, fragsList, vNamesList, additionalDataList, valuesHashes, pNamesListPanels))
 
-    def _makeTeamValues(self, isEnemy, ctx, pNamesList, fragsList, vNamesList, additionalDatas, valuesHashes):
+    def _makeTeamValues(self, isEnemy, ctx, pNamesList, fragsList, vNamesList, additionalDatas, valuesHashes, pNamesListPanels):
         return {'isEnemy': isEnemy,
          'team': 'team%d' % ctx.team,
          'playerID': ctx.playerVehicleID,
@@ -271,7 +273,8 @@ class BattleArenaController(IArenaVehiclesController):
          'namesStr': ''.join(pNamesList),
          'fragsStr': ''.join(fragsList),
          'vehiclesStr': ''.join(vNamesList),
-         'valuesHashes': valuesHashes}
+         'valuesHashes': valuesHashes,
+         'namesStrPanels': ''.join(pNamesListPanels)}
 
     def _makeHash(self, index, playerFullName, vInfoVO, vStatsVO, viStatsVO, ctx, playerAccountID, inviteSendingProhibited, invitesReceivingProhibited, isEnemy):
         vehicleID = vInfoVO.vehicleID
@@ -376,8 +379,8 @@ class BattleArenaController(IArenaVehiclesController):
 
 class FalloutBattleArenaController(BattleArenaController):
 
-    def _makeTeamValues(self, isEnemy, ctx, pNamesList, fragsList, vNamesList, additionalDatas, valuesHashes):
-        result = super(FalloutBattleArenaController, self)._makeTeamValues(isEnemy, ctx, pNamesList, fragsList, vNamesList, additionalDatas, valuesHashes)
+    def _makeTeamValues(self, isEnemy, ctx, pNamesList, fragsList, vNamesList, additionalDatas, valuesHashes, pNamesListPanels):
+        result = super(FalloutBattleArenaController, self)._makeTeamValues(isEnemy, ctx, pNamesList, fragsList, vNamesList, additionalDatas, valuesHashes, pNamesListPanels)
         specialPointsStr = ''
         damageStr = ''
         deathsStr = ''
@@ -434,7 +437,7 @@ class MultiteamBattleArenaController(BattleArenaController):
             playerFullName = self._battleCtx.getFullPlayerName(vID=vInfoVO.vehicleID, showVehShortName=False)
             if not playerFullName:
                 playerFullName = vInfoVO.player.getPlayerLabel()
-            pName, frags, vName, additionalData = self._battleUI.statsForm.getFormattedStrings(vInfoVO, vStatsVO, viStatsVO, ctx, playerFullName)
+            pName, frags, vName, additionalData, _ = self._battleUI.statsForm.getFormattedStrings(vInfoVO, vStatsVO, viStatsVO, ctx, playerFullName)
             pNamesList.append(pName)
             fragsList.append(frags)
             vNamesList.append(vName)

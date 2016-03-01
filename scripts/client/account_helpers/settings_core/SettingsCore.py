@@ -160,6 +160,7 @@ class _SettingsCore(object):
          (CONTROLS.MOUSE_VERT_INVERSION, options.MouseInversionSetting(CONTROLS.MOUSE_VERT_INVERSION, 'vertInvert', storage=CONTROLS_SETTINGS_STORAGE)),
          (CONTROLS.BACK_DRAFT_INVERSION, options.BackDraftInversionSetting(storage=CONTROLS_SETTINGS_STORAGE)),
          (CONTROLS.KEYBOARD, options.KeyboardSettings(storage=KEYBOARD_SETTINGS_STORAGE)),
+         (CONTROLS.KEYBOARD_IMPORTANT_BINDS, options.ReadOnlySetting(lambda : options.KeyboardSettings.getKeyboardImportantBinds())),
          (AIM.ARCADE, options.AimSetting('arcade', storage=AIM_SETTINGS_STORAGE)),
          (AIM.SNIPER, options.AimSetting('sniper', storage=AIM_SETTINGS_STORAGE)),
          (MARKERS.ENEMY, options.VehicleMarkerSetting(MARKERS.ENEMY, storage=MARKERS_SETTINGS_STORAGE)),

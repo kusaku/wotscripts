@@ -602,7 +602,7 @@ class Vehicle(FittingItem, HasStrCD):
 
     @property
     def isFalloutAvailable(self):
-        return self.intCD in self.__getFalloutAvailableVehIDs()
+        return not self.isOnlyForEventBattles and self.intCD in self.__getFalloutAvailableVehIDs()
 
     @property
     def isDisabledInRoaming(self):

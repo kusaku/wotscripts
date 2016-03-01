@@ -25,7 +25,7 @@ class HQRenderState(object):
 
 
 PLAYING_SOUND_CHECK_PERIOD = 1.0
-IS_ADVANCED_LOGGING = True
+IS_ADVANCED_LOGGING = False
 
 class SoundSystems(CONST_CONTAINER):
     UNKNOWN = 0

@@ -112,7 +112,7 @@ class BoosterAward(AwardAbstract):
         return self._booster.bigIcon
 
     def getHeader(self):
-        return text_styles.highTitle(i18n.makeString(MENU.AWARDWINDOW_BOOSTERAWARD_HEADER, boosterName=i18n.makeString(_BOOSTER_DESCRIPTION_LOCALE % self._booster.boosterGuiType, effectValue=self._booster.effectValue)))
+        return text_styles.highTitle(i18n.makeString(MENU.AWARDWINDOW_BOOSTERAWARD_HEADER, boosterName=i18n.makeString(_BOOSTER_DESCRIPTION_LOCALE % self._booster.boosterGuiType, effectValue=self._booster.getFormattedValue(text_styles.highTitle))))
 
     def getDescription(self):
         localKey = '#menu:awardWindow/boosterAward/description/timeValue/%s'

@@ -3,7 +3,9 @@ import BattleReplay
 import BigWorld
 from account_helpers.settings_core import settings_constants
 from account_helpers.settings_core.SettingsCore import g_settingsCore
+from account_helpers.settings_core.options import BattleLoadingTipSetting
 import constants
+from gui.Scaleform.locale.BATTLE_TUTORIAL import BATTLE_TUTORIAL
 from helpers import tips, i18n
 from gui.Scaleform.locale.FALLOUT import FALLOUT
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
@@ -19,13 +21,13 @@ from gui.shared.formatters import text_styles
 from gui.shared.utils.functions import getBattleSubTypeWinText, getArenaSubTypeName, isBaseExists
 from gui.Scaleform.Waiting import Waiting
 from gui.Scaleform.daapi import LobbySubView
-from gui.Scaleform.daapi.view.meta.BattleLoadingMeta import BattleLoadingMeta
+from gui.Scaleform.daapi.view.meta.BaseBattleLoadingMeta import BaseBattleLoadingMeta
 from gui.Scaleform.daapi.view.fallout_info_panel_helper import getHelpTextAsDicts
 from messenger.storage import storage_getter
 from gui.shared.utils import toUpper
 DEFAULT_BATTLES_COUNT = 100
 
-class BattleLoading(LobbySubView, BattleLoadingMeta, IArenaVehiclesController):
+class BattleLoading(LobbySubView, BaseBattleLoadingMeta, IArenaVehiclesController):
     MAP_BG_SOURCE = 'gui/maps/icons/map/screen/%s.dds'
     SMALL_MAP_SOURCE = '../maps/icons/map/battleLoading/%s.png'
     __background_alpha__ = 0.0
@@ -244,6 +246,9 @@ class BattleLoading(LobbySubView, BattleLoadingMeta, IArenaVehiclesController):
              'battleTypeFrameLabel': battleTypeFrameLabel,
              'allyTeamName': allyTeamName,
              'enemyTeamName': enemyTeamName}
+            arena = arena_info.getClientArena()
+            if arena.guiType == constants.ARENA_GUI_TYPE.TUTORIAL:
+                arenaInfoData['tipText'] = text_styles.main(BATTLE_TUTORIAL.LOADING_HINT_TEXT)
             self.as_setArenaInfoS(arenaInfoData)
 
     def __addPlayerData(self, arenaDP):
@@ -254,9 +259,10 @@ class BattleLoading(LobbySubView, BattleLoadingMeta, IArenaVehiclesController):
         setting = g_settingsCore.options.getSetting(settings_constants.GAME.BATTLE_LOADING_INFO)
         settingID = setting.getSettingID(isInSandbox=arena_info.isInSandboxBattle(arena), isFallout=arena_info.isFalloutBattle())
         return {'settingID': settingID,
-         'tipIcon': tip.icon if tip is not None else None,
+         'tipIcon': tip.icon if settingID == BattleLoadingTipSetting.OPTIONS.VISUAL else None,
          'arenaTypeID': arena_info.getArenaTypeID(),
-         'minimapTeam': arenaDP.getNumberOfTeam()}
+         'minimapTeam': arenaDP.getNumberOfTeam(),
+         'showMinimap': settingID == BattleLoadingTipSetting.OPTIONS.MINIMAP}
 
 
 class FalloutMultiTeamBattleLoading(BattleLoading):

@@ -31,9 +31,9 @@ class SoundsController(object):
 
     def stop(self, isDisconnected = False):
         g_gameCtrl.gameSession.onPremiumNotify -= self.__onPremiumChanged
-        if isDisconnected:
-            _MC.g_musicController.unloadServerSounds()
         self.__guiAmbients.stop(isDisconnected)
+        if isDisconnected:
+            _MC.g_musicController.unloadServerSounds(isDisconnected)
 
     @property
     def system(self):

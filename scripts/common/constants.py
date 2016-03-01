@@ -1128,7 +1128,15 @@ class DROWN_WARNING_LEVEL:
     DANGER = 2
 
 
-OVERTURN_WARNING_LEVEL = DROWN_WARNING_LEVEL
+class OVERTURN_WARNING_LEVEL:
+    SAFE = 0
+    CAUTION = 1
+    DANGER = 2
+
+    @classmethod
+    def isOverturned(cls, warningLevel):
+        return warningLevel in (cls.CAUTION, cls.DANGER)
+
 
 class OVERTURN_CONDITION:
     IGNOR_DELAY = 0.1

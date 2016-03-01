@@ -26,8 +26,6 @@ from ProjectileMover import collideDynamicAndStatic, getCollidableEntities
 from PostmortemDelay import PostmortemDelay
 import VideoCamera
 from DynamicCameras import SniperCamera, StrategicCamera, ArcadeCamera
-from items.vehicles import VEHICLE_CLASS_TAGS
-from gui.shared.gui_items.Vehicle import VEHICLE_BATTLE_TYPES_ORDER_INDICES
 _ARCADE_CAM_PIVOT_POS = Math.Vector3(0, 4, 3)
 
 class IControlMode(object):
@@ -1730,6 +1728,7 @@ class _FlashGunMarker(Flash):
         self.__animMat = None
         self.__applyFilter = applyFilter
         self.__scaleNeedToUpdate = True
+        self.__isVisible = False
         self._aim = None
         self.updateAim()
         return
@@ -1817,7 +1816,9 @@ class _FlashGunMarker(Flash):
         return self.__animMat
 
     def show(self, flag):
-        self.component.visible = flag
+        self.__isVisible = flag
+        if not flag:
+            self.component.visible = flag
 
     def setReloading(self, duration, startTime = None, isReloading = True, correction = None, switched = False):
         rs = self.__reload
@@ -1850,7 +1851,7 @@ class _FlashGunMarker(Flash):
         self.call('Crosshair.setReloadingAsPercent', [percent, isReloading])
 
     def update(self, pos, dir, sizeVector, relaxTime, collData):
-        if not self.component.visible:
+        if not self.__isVisible:
             return
         else:
             m = Math.Matrix()
@@ -1887,6 +1888,8 @@ class _FlashGunMarker(Flash):
             if self.__scaleNeedToUpdate:
                 self.call('Crosshair.setScale', [self.settingsCore.interfaceScale.get()])
                 self.__scaleNeedToUpdate = False
+            if self.__isVisible and not self.component.visible:
+                self.component.visible = True
             return
 
     def onRecreateDevice(self):

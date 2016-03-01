@@ -1810,6 +1810,7 @@ class KeyboardSettings(SettingsContainer):
      ('voicechat', (('pushToTalk', 'CMD_VOICECHAT_MUTE'), ('voicechat_enable', 'CMD_VOICECHAT_ENABLE'))),
      ('logitech_keyboard', (('switch_view', 'CMD_LOGITECH_SWITCH_VIEW'),)),
      ('minimap', (('sizeUp', 'CMD_MINIMAP_SIZE_UP'), ('sizeDown', 'CMD_MINIMAP_SIZE_DOWN'), ('visible', 'CMD_MINIMAP_VISIBLE'))))
+    IMPORTANT_BINDS = ('forward', 'backward', 'left', 'right', 'fire', 'item01', 'item02', 'item03', 'item04', 'item05', 'item06', 'item07', 'item08')
 
     def __init__(self, storage):
         settings = [('keysLayout', ReadOnlySetting(lambda : self._getLayout()))]
@@ -1837,6 +1838,10 @@ class KeyboardSettings(SettingsContainer):
              'values': [ cls.__mapValues(*x) for x in groupValues ]})
 
         return layout
+
+    @classmethod
+    def getKeyboardImportantBinds(cls):
+        return cls.IMPORTANT_BINDS
 
     def apply(self, values, names = None):
         super(KeyboardSettings, self).apply(values, names)

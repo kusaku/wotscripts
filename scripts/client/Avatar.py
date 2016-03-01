@@ -121,6 +121,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
     deviceStates = property(lambda self: self.__deviceStates)
     vehicles = property(lambda self: self.__vehicles)
     consistentMatrices = property(lambda self: self.__consistentMatrices)
+    isVehicleOverturned = property(lambda self: self.__isVehicleOverturned)
 
     def __init__(self):
         LOG_DEBUG('client Avatar.init')
@@ -162,6 +163,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
         self.__vehicles = set()
         self.__consistentMatrices = AvatarPositionControl.ConsistentMatrices()
         self.__ownVehicleMProv = self.__consistentMatrices.ownVehicleMatrix
+        self.__isVehicleOverturned = False
         return
 
     def onBecomePlayer(self):
@@ -956,6 +958,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                     if target is not None and isinstance(target, Vehicle.Vehicle):
                         self.cell.monitorVehicleDamagedDevices(target.id)
             elif code == STATUS.VEHICLE_IS_OVERTURNED:
+                self.__isVehicleOverturned = constants.OVERTURN_WARNING_LEVEL.isOverturned(intArg)
                 self.updateVehicleDestroyTimer(code, floatArg, intArg)
             elif code == STATUS.IN_DEATH_ZONE:
                 self.updateVehicleDeathZoneTimer(floatArg, intArg)

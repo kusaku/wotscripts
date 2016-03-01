@@ -404,6 +404,7 @@ def computeRotationalCohesion(rotSpeedLimit, mass, length, width, enginePower):
 
 
 def configureXPhysics(physics, baseCfg, typeDesc, useSimplifiedGearbox, gravityFactor):
+    global IS_CLIENT
     cfg = copy.copy(g_defaultXPhysicsCfg)
     cfg['fakegearbox'] = typeDesc.type.xphysics['detailed']['fakegearbox']
     if baseCfg:
@@ -489,7 +490,7 @@ def applyRotationAndPowerFactors(cfg):
         LOG_CURRENT_EXCEPTION()
 
 
-def initVehiclePhysics(physics, typeDesc, forcedCfg, saveTransform, IS_EDITOR = False):
+def initVehiclePhysics(physics, typeDesc, forcedCfg, saveTransform):
     physDescr = typeDesc.physics
     useDetailedPhysics = g_vehiclePhysicsMode == VEHICLE_PHYSICS_MODE.DETAILED
     if IS_CELLAPP:
@@ -534,7 +535,7 @@ def initVehiclePhysics(physics, typeDesc, forcedCfg, saveTransform, IS_EDITOR = 
     else:
         hullMass = fullMass - suspMass
     g = G * GRAVITY_FACTOR
-    if useDetailedPhysics and not IS_CLIENT and not IS_EDITOR:
+    if useDetailedPhysics and not IS_CLIENT:
         clearance = cfg['clearance']
     else:
         clearance = (typeDesc.chassis['hullPosition'].y + hullMin.y) * CLEARANCE
@@ -844,10 +845,12 @@ def _decodeTurretDescr(descr):
 
 
 def initVehiclePhysicsFromParams(physics, params):
+    global IS_CLIENT
 
     class _SimpleObject(object):
         pass
 
+    IS_CLIENT = True
     typeDesc = _SimpleObject()
     typeDesc.physics = {}
     typeDesc.physics['weight'] = params['weight']
@@ -869,7 +872,7 @@ def initVehiclePhysicsFromParams(physics, params):
     typeDesc.turret['hitTester'] = _SimpleObject()
     typeDesc.turret['hitTester'].bbox = (params['turretHitTesterMin'], params['turretHitTesterMax'], None)
     typeDesc.turret['gunPosition'] = params['gunPosition']
-    initVehiclePhysics(physics, typeDesc, None, False, True)
+    initVehiclePhysics(physics, typeDesc, None, False)
     physics.visibilityMask = 4294967295L
     return
 

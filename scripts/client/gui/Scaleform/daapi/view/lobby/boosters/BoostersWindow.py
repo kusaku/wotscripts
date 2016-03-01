@@ -4,9 +4,11 @@ from operator import attrgetter
 from account_helpers.AccountSettings import AccountSettings, BOOSTERS_FILTER
 from adisp import process
 import constants
+from constants import EVENT_TYPE
 from goodies.goodie_constants import GOODIE_RESOURCE_TYPE
 from gui.Scaleform.daapi.view.lobby.server_events import events_helpers
 from gui.Scaleform.genConsts.TOOLTIPS_CONSTANTS import TOOLTIPS_CONSTANTS
+from gui.shared.ItemsCache import g_itemsCache
 from helpers.i18n import makeString as _ms
 from gui import SystemMessages
 from gui import DialogsInterface
@@ -27,6 +29,7 @@ from gui.Scaleform.genConsts.BOOSTER_CONSTANTS import BOOSTER_CONSTANTS
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.Scaleform.daapi.view.dialogs import I18nConfirmDialogMeta
 from gui.Scaleform.daapi.view.dialogs import DIALOG_BUTTON_ID
+from potapov_quests import PQ_BRANCH
 from shared_utils import BitmaskHelper
 
 class FILTER_STATE(BitmaskHelper):
@@ -287,7 +290,11 @@ class BoostersWindow(BoostersWindowMeta):
     def __getBoosterQuests(self):
         result = defaultdict(list)
         quests = g_eventsCache.getAllQuests(lambda q: q.isAvailable()[0] and not q.isCompleted(), includePotapovQuests=True)
+        hasTopVehicle = len(g_itemsCache.items.getVehicles(REQ_CRITERIA.INVENTORY | ~REQ_CRITERIA.VEHICLE.EXPIRED_RENT | REQ_CRITERIA.VEHICLE.LEVEL(10)))
         for q in quests.itervalues():
+            if q.getType() == EVENT_TYPE.POTAPOV_QUEST:
+                if q.getPQType().branch == PQ_BRANCH.FALLOUT and not hasTopVehicle:
+                    continue
             bonuses = q.getBonuses('goodies')
             for b in bonuses:
                 boosters = b.getBoosters()

@@ -373,7 +373,8 @@ class SettingsInterface(UIInterface):
                     'options': SettingsInterface.SNIPER_VALUES},
          'markers': {'values': markers,
                      'options': SettingsInterface.MARKER_VALUES,
-                     'types': SettingsInterface.MARKER_TYPES}}
+                     'types': SettingsInterface.MARKER_TYPES},
+         'keyboardImportantBinds': g_settingsCore.getSetting('keyboardImportantBinds')}
         if self.__altVoiceSetting.isOptionEnabled():
             altVoices = []
             for idx, desc in enumerate(self.__altVoiceSetting.getOptions()):

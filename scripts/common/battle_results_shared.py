@@ -3,7 +3,7 @@ import struct
 from itertools import izip
 from items.vehicles import VEHICLE_DEVICE_TYPE_NAMES, VEHICLE_TANKMAN_TYPE_NAMES
 from constants import FLAG_ACTION
-from DictPackers import *
+from DictPackers import Meta, DictPacker, SimpleDictPacker, DeltaPacker, ValueReplayPacker, roundToInt
 VEH_INTERACTION_DETAILS = (('spotted', 'B', 1, 0),
  ('deathReason', 'b', 10, -1),
  ('directHits', 'H', 65535, 0),
@@ -729,7 +729,7 @@ VEH_FULL_RESULTS_UPDATE = Meta(('originalCredits',
  int,
  0,
  None,
- 'skip'), ('premiumVehicleXP',
+ 'sum'), ('premiumVehicleXP',
  int,
  0,
  None,

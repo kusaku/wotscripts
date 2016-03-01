@@ -88,6 +88,9 @@ class SoundEvent(Notifiable):
     def isPlaying(self):
         return _MC.g_musicController.isPlaying(self._soundEventID)
 
+    def isCompleted(self):
+        return _MC.g_musicController.isCompleted(self._soundEventID)
+
     def setParam(self, paramName, value):
         """Setting sound event's playing parameter value
         :param paramName: str, parameter name
@@ -108,7 +111,7 @@ class SoundEvent(Notifiable):
     def _onCheckAmbientNotification(self):
         SOUND_DEBUG('Current ambient playing check: is playing now', self, self.isPlaying())
         if not self.isPlaying():
-            self.onFinished()
+            self.onFinished(self.isCompleted())
 
     def __repr__(self):
         return '%s(id = %d, params = %s)' % (self.__class__.__name__, self._soundEventID, self._params)
@@ -241,7 +244,13 @@ class LoginSpaceEnv(SoundEnv):
 class LobbySpaceEnv(SoundEnv):
 
     def __init__(self):
-        super(LobbySpaceEnv, self).__init__(music=SoundEvent(_MC.MUSIC_EVENT_LOBBY), ambient=SoundEvent(_MC.AMBIENT_EVENT_LOBBY))
+        super(LobbySpaceEnv, self).__init__(music=SoundEvent(_MC.MUSIC_EVENT_LOBBY, checkFinish=True), ambient=SoundEvent(_MC.AMBIENT_EVENT_LOBBY))
+        self._music.onFinished += self._onMusicFinished
+
+    def _onMusicFinished(self, isCompleted = False):
+        if isCompleted:
+            self._music.onFinished -= self._onMusicFinished
+            self._music = EmptySound()
 
 
 class BattleLoadingSpaceEnv(SoundEnv):
@@ -380,7 +389,7 @@ class BattleResultsEnv(SoundEnv):
         self._music.onFinished -= self._onMusicFinished
         self._music = EmptySound()
 
-    def _onMusicFinished(self):
+    def _onMusicFinished(self, isCompleted = False):
         self._clearMusicEvent()
         self._onChanged()
 
@@ -460,7 +469,7 @@ class GuiAmbientsCtrl(object):
 
         result.append(self._spaceEnv)
         music, ambient = EmptySound(), EmptySound()
-        while music.isEmpty() or ambient.isEmpty():
+        while result and (music.isEmpty() or ambient.isEmpty()):
             env = result.pop(0)
             m, a = env.getMusicEvent(), env.getAmbientEvent()
             if music.isEmpty() and not m.isEmpty():
