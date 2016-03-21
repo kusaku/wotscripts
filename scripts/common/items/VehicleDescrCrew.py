@@ -366,7 +366,7 @@ class VehicleDescrCrew(object):
     def __getUniqueArenaID(self):
         if not hasattr(self, '_vehicle'):
             return -1
-        return self._vehicle.arenaBase.bp['uniqueID']
+        return self._vehicle.arenaUniqueID
 
     def __getVehicleID(self):
         if not hasattr(self, '_vehicle'):

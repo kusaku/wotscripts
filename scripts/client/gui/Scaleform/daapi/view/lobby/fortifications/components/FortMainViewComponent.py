@@ -395,7 +395,7 @@ class FortMainViewComponent(FortMainViewMeta, FortViewHelper, ClanListener):
     def __joinToSortie(self):
         dispatcher = g_prbLoader.getDispatcher()
         if dispatcher is not None:
-            flags = FUNCTIONAL_FLAG.SHOW_ENTITIES_BROWSER | FUNCTIONAL_FLAG.SWITCH
+            flags = FUNCTIONAL_FLAG.SHOW_ENTITIES_BROWSER
             yield dispatcher.join(JoinModeCtx(PREBATTLE_TYPE.SORTIE, flags=flags))
         else:
             LOG_ERROR('Prebattle dispatcher is not defined')

@@ -160,15 +160,20 @@ class BattleTeamsBasesController(ITeamsBasesController):
             else:
                 soundID = _BASE_CAPTURE_SOUND_NAME_ALLY
             try:
+                sound = self.__sounds.get(baseTeam, None)
+                if sound is not None:
+                    sound.stop()
                 sound = SoundGroups.g_instance.getSound2D(soundID)
                 sound.play()
                 self.__sounds[baseTeam] = sound
             except Exception:
                 LOG_CURRENT_EXCEPTION()
 
+        return
+
     def __stopCaptureSound(self, team):
         sound = self.__sounds.pop(team, None)
-        if sound:
+        if sound is not None:
             try:
                 sound.stop()
             except Exception:

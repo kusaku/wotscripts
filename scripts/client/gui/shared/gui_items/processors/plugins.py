@@ -640,3 +640,24 @@ class BoosterActivateValidator(SyncValidator):
         if self.booster.inCooldown:
             return makeError('ALREADY_USED')
         return makeSuccess()
+
+
+class TankmanAddSkillValidator(SyncValidator):
+
+    def __init__(self, tankmanDscr, skillName):
+        super(TankmanAddSkillValidator, self).__init__()
+        self.tankmanDscr = tankmanDscr
+        self.skillName = skillName
+
+    def _validate(self):
+        if self.skillName in self.tankmanDscr.skills:
+            return makeError()
+        from items.tankmen import ACTIVE_SKILLS
+        if self.skillName not in ACTIVE_SKILLS:
+            return makeError()
+        from items.tankmen import MAX_SKILL_LEVEL
+        if self.tankmanDscr.roleLevel != MAX_SKILL_LEVEL:
+            return makeError()
+        if self.tankmanDscr.skills and self.tankmanDscr.lastSkillLevel != MAX_SKILL_LEVEL:
+            return makeError()
+        return makeSuccess()
