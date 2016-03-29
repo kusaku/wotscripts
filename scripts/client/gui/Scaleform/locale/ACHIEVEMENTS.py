@@ -477,6 +477,9 @@ class ACHIEVEMENTS(object):
     DEATHTRACK = '#achievements:deathTrack'
     DEATHTRACK_DESCR = '#achievements:deathTrack_descr'
     DEATHTRACK_CONDITION = '#achievements:deathTrack_condition'
+    MOONSPHERE = '#achievements:moonSphere'
+    MOONSPHERE_DESCR = '#achievements:moonSphere_descr'
+    MOONSPHERE_CONDITION = '#achievements:moonSphere_condition'
     OPERATIONWINTER = '#achievements:operationWinter'
     OPERATIONWINTER_DESCR = '#achievements:operationWinter_descr'
     OPERATIONWINTER_CONDITION = '#achievements:operationWinter_condition'
@@ -1067,6 +1070,9 @@ class ACHIEVEMENTS(object):
      DEATHTRACK,
      DEATHTRACK_DESCR,
      DEATHTRACK_CONDITION,
+     MOONSPHERE,
+     MOONSPHERE_DESCR,
+     MOONSPHERE_CONDITION,
      OPERATIONWINTER,
      OPERATIONWINTER_DESCR,
      OPERATIONWINTER_CONDITION,

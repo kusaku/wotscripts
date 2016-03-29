@@ -447,6 +447,7 @@ class MENU(object):
     DESCRIPTIONS_SHELLFULL = '#menu:descriptions/shellFull'
     HEADERBUTTONS_BTNLABEL_INSQUAD = '#menu:headerButtons/btnLabel/inSquad'
     HEADERBUTTONS_BTNLABEL_CREATESQUAD = '#menu:headerButtons/btnLabel/createSquad'
+    HEADERBUTTONS_BTNLABEL_CREATEEVENTSQUAD = '#menu:headerButtons/btnLabel/createEventSquad'
     HEADERBUTTONS_BTNLABEL_PREMIUM = '#menu:headerButtons/btnLabel/premium'
     HEADERBUTTONS_DOLABEL_PREMIUM = '#menu:headerButtons/doLabel/premium'
     HEADERBUTTONS_BTNLABEL_BUY_GOLD = '#menu:headerButtons/btnLabel/buy_gold'
@@ -486,6 +487,8 @@ class MENU(object):
     HEADERBUTTONS_BATTLE_TYPES_HISTORICALBATTLESLEAVE = '#menu:headerButtons/battle/types/historicalBattlesLeave'
     HEADERBUTTONS_BATTLE_TYPES_BATTLETUTORIAL = '#menu:headerButtons/battle/types/battleTutorial'
     HEADERBUTTONS_BATTLE_TYPES_FALLOUT = '#menu:headerButtons/battle/types/fallout'
+    HEADERBUTTONS_BATTLE_TYPES_SIMPLESQUAD = '#menu:headerButtons/battle/types/simpleSquad'
+    HEADERBUTTONS_BATTLE_TYPES_EVENTSQUAD = '#menu:headerButtons/battle/types/eventSquad'
     HEADERBUTTONS_BATTLE_AVAILABLESINCE = '#menu:headerButtons/battle/availableSince'
     HEADERBUTTONS_BATTLE_AVAILABLESINCESOON = '#menu:headerButtons/battle/availableSinceSoon'
     HEADERBUTTONS_BATTLE_AVAILABLEUNTIL = '#menu:headerButtons/battle/availableUntil'
@@ -500,6 +503,7 @@ class MENU(object):
     HEADERBUTTONS_BATTLE_MENU_BATTLE_SESSION = '#menu:headerButtons/battle/menu/battle_session'
     HEADERBUTTONS_BATTLE_MENU_UNIT = '#menu:headerButtons/battle/menu/unit'
     HEADERBUTTONS_BATTLE_MENU_HISTORICAL = '#menu:headerButtons/battle/menu/historical'
+    HEADERBUTTONS_BATTLE_MENU_EVENT = '#menu:headerButtons/battle/menu/event'
     HEADERBUTTONS_HANGAR = '#menu:headerButtons/hangar'
     HEADERBUTTONS_SHOP = '#menu:headerButtons/shop'
     HEADERBUTTONS_BATTLE = '#menu:headerButtons/battle'
@@ -1052,6 +1056,8 @@ class MENU(object):
     HANGAR_AMMUNITIONPANEL_TECHNICALMAITENANCE_BUTTONS_APPLY = '#menu:hangar/ammunitionPanel/technicalMaitenance/buttons/apply'
     HANGAR_AMMUNITIONPANEL_TECHNICALMAITENANCE_BUTTONS_CLOSE = '#menu:hangar/ammunitionPanel/technicalMaitenance/buttons/close'
     HANGAR_AMMUNITIONPANEL_TECHNICALMAITENANCE_BUTTONS_LABELTOTAL = '#menu:hangar/ammunitionPanel/technicalMaitenance/buttons/labelTotal'
+    HANGAR_AMMUNITIONPANEL_TECHNICALMAITENANCE_MOONEVENTTITLE = '#menu:hangar/ammunitionPanel/technicalMaitenance/moonEventTitle'
+    HANGAR_AMMUNITIONPANEL_TECHNICALMAITENANCE_MESSAGETEXT = '#menu:hangar/ammunitionPanel/technicalMaitenance/messageText'
     FITTINGLISTITEMRENDERER_UNLOAD = '#menu:fittingListItemRenderer/unload'
     FITTINGLISTITEMRENDERER_REPLACE = '#menu:fittingListItemRenderer/replace'
     SHELLLISTITEMRENDERER_REPLACE = '#menu:shellListItemRenderer/replace'
@@ -1170,6 +1176,7 @@ class MENU(object):
     CONTEXTMENU_GIVELEADERSHIP = '#menu:contextMenu/giveLeadership'
     CONTEXTMENU_TAKELEADERSHIP = '#menu:contextMenu/takeLeadership'
     CONTEXTMENU_CREATESQUAD = '#menu:contextMenu/createSquad'
+    CONTEXTMENU_CREATEEVENTSQUAD = '#menu:contextMenu/createEventSquad'
     CONTEXTMENU_INVITE = '#menu:contextMenu/invite'
     CONTEXTMENU_APPEAL = '#menu:contextMenu/appeal'
     CONTEXTMENU_OFFEND = '#menu:contextMenu/offend'
@@ -2022,6 +2029,7 @@ class MENU(object):
      CONTEXTMENU_GIVELEADERSHIP,
      CONTEXTMENU_TAKELEADERSHIP,
      CONTEXTMENU_CREATESQUAD,
+     CONTEXTMENU_CREATEEVENTSQUAD,
      CONTEXTMENU_INVITE,
      CONTEXTMENU_APPEAL,
      CONTEXTMENU_OFFEND,

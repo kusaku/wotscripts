@@ -10,9 +10,9 @@ class SquadViewMeta(BaseRallyRoomView):
         if self._isDAAPIInited():
             return self.flashObject.as_updateBattleTypeInfo(tooltip, isVisible)
 
-    def as_updateBattleTypeS(self, battleTypeName, isEventEnabled, isNew):
+    def as_updateBattleTypeS(self, battleTypeName, isEventEnabled, isNew, emptySlotStr):
         if self._isDAAPIInited():
-            return self.flashObject.as_updateBattleType(battleTypeName, isEventEnabled, isNew)
+            return self.flashObject.as_updateBattleType(battleTypeName, isEventEnabled, isNew, emptySlotStr)
 
     def as_isFalloutS(self, isFallout):
         if self._isDAAPIInited():

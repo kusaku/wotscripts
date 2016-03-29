@@ -393,8 +393,27 @@ class ArenaRespawnListener(_Listener):
         self._invokeListenersMethod('updateRespawnRessurectedInfo', respawnInfo)
 
 
+class ArenaFirstOfAprilListener(_Listener):
+
+    def start(self, arena, **kwargs):
+        super(ArenaFirstOfAprilListener, self).start(arena, **kwargs)
+        arena = self._arena()
+        arena.onFirstOfAprilAction += self.__arena_onFirstOfAprilAction
+
+    def stop(self):
+        arena = super(ArenaFirstOfAprilListener, self).stop()
+        if arena is None:
+            return
+        else:
+            arena.onFirstOfAprilAction -= self.__arena_onFirstOfAprilAction
+            return
+
+    def __arena_onFirstOfAprilAction(self, actionID, actionTime):
+        self._invokeListenersMethod('processAction', actionID, actionTime)
+
+
 class ListenersCollection(_Listener):
-    __slots__ = ('__vehicles', '__teamsBases', '__loader', '__contacts', '__period', '__respawn')
+    __slots__ = ('__vehicles', '__teamsBases', '__loader', '__contacts', '__period', '__respawn', '__firstOfApril')
 
     def __init__(self):
         super(ListenersCollection, self).__init__()
@@ -404,6 +423,7 @@ class ListenersCollection(_Listener):
         self.__loader = ArenaSpaceLoadListener()
         self.__period = ArenaPeriodListener()
         self.__respawn = ArenaRespawnListener()
+        self.__firstOfApril = ArenaFirstOfAprilListener()
 
     def addController(self, battleCtx, controller):
         result = False
@@ -424,6 +444,8 @@ class ListenersCollection(_Listener):
             result |= self.__teamsBases.addController(battleCtx, controller)
         if scope & _SCOPE.RESPAWN > 0:
             result |= self.__respawn.addController(battleCtx, controller)
+        if scope & _SCOPE.FIRST_OF_APRIL > 0:
+            result |= self.__firstOfApril.addController(battleCtx, controller)
         return result
 
     def removeController(self, controller):
@@ -433,6 +455,7 @@ class ListenersCollection(_Listener):
         result |= self.__loader.removeController(controller)
         result |= self.__period.removeController(controller)
         result |= self.__respawn.removeController(controller)
+        result |= self.__firstOfApril.removeController(controller)
         return result
 
     def start(self, arena, **kwargs):
@@ -447,6 +470,7 @@ class ListenersCollection(_Listener):
             self.__loader.start(ref, **kwargs)
             self.__period.start(ref, **kwargs)
             self.__respawn.start(ref, **kwargs)
+            self.__firstOfApril.start(ref, **kwargs)
             return
 
     def stop(self):
@@ -456,6 +480,7 @@ class ListenersCollection(_Listener):
         self.__loader.stop()
         self.__period.stop()
         self.__respawn.stop()
+        self.__firstOfApril.stop()
 
     def clear(self):
         self.__vehicles.clear()
@@ -464,3 +489,4 @@ class ListenersCollection(_Listener):
         self.__loader.clear()
         self.__period.clear()
         self.__respawn.clear()
+        self.__firstOfApril.clear()

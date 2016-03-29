@@ -6,3 +6,7 @@ class SquadWindowMeta(BaseRallyMainWindow):
     def as_setComponentIdS(self, componentId):
         if self._isDAAPIInited():
             return self.flashObject.as_setComponentId(componentId)
+
+    def as_updateEventTitleS(self):
+        if self._isDAAPIInited():
+            return self.flashObject.as_updateEventTitle()

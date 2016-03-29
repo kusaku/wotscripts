@@ -135,6 +135,7 @@ class PREBATTLE_ACTION_NAME(object):
     COMPANY = 'companyList'
     SPEC_BATTLE = 'specBattleList'
     SQUAD = 'squad'
+    EVENT_SQUAD = 'eventSquad'
     TOURNAMENT = 'tournament'
     CLAN = 'clan'
     UNIT = 'unit'
@@ -144,6 +145,7 @@ class PREBATTLE_ACTION_NAME(object):
     FALLOUT_CLASSIC = 'falloutClassic'
     FALLOUT_MULTITEAM = 'falloutMultiTeam'
     SANDBOX = 'battleTeaching'
+    EVENT_SQUAD = 'eventSquad'
 
 
 PREBATTLE_ACTION_NAME_TO_QUEUE_TYPE = {PREBATTLE_ACTION_NAME.RANDOM_QUEUE: QUEUE_TYPE.RANDOMS,
