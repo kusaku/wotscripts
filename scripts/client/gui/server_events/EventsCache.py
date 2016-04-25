@@ -260,10 +260,7 @@ class _EventsCache(object):
             return None
 
     def isEventEnabled(self):
-        return len(self.__getEventBattles()) > 0 and len(self.getEventVehicles()) > 0
-
-    def isGasAttackEnabled(self):
-        return len(self.__getGasAttack()) > 0
+        return len(self.__getEventBattles()) > 0
 
     def getEventVehicles(self):
         from gui.shared import g_itemsCache
@@ -339,6 +336,12 @@ class _EventsCache(object):
 
     def getEmblemsAction(self, group):
         return tuple(self.__actionsCache[ACTION_SECTION_TYPE.CUSTOMIZATION][ACTION_MODIFIER_TYPE.DISCOUNT].get(group, tuple()))
+
+    def isBalancedSquadEnabled(self):
+        return bool(self.__getUnitRestrictions().get('enabled', False))
+
+    def getBalancedSquadBounds(self):
+        return (self.__getUnitRestrictions().get('lowerBound', 0), self.__getUnitRestrictions().get('upperBound', 0))
 
     def getQuestsDossierBonuses(self):
         return self.__questsDossierBonuses
@@ -585,17 +588,20 @@ class _EventsCache(object):
     def __getActionsData(self):
         return self.__getEventsData(EVENT_CLIENT_DATA.ACTION)
 
+    def __getIngameEventsData(self):
+        return self.__getEventsData(EVENT_CLIENT_DATA.INGAME_EVENTS)
+
     def __getEventBattles(self):
-        return self.__getEventsData(EVENT_CLIENT_DATA.INGAME_EVENTS).get('eventBattles', {})
+        return self.__getIngameEventsData().get('eventBattles', {})
 
     def __getCompanyBattlesData(self):
-        return self.__getEventsData(EVENT_CLIENT_DATA.INGAME_EVENTS).get('eventCompanies', {})
+        return self.__getIngameEventsData().get('eventCompanies', {})
+
+    def __getUnitRestrictions(self):
+        return self.__getIngameEventsData().get('unitRestrictions', {})
 
     def __getFallout(self):
         return self.__getEventsData(EVENT_CLIENT_DATA.FALLOUT)
-
-    def __getGasAttack(self):
-        return self.__getEventsData(EVENT_CLIENT_DATA.INGAME_EVENTS).get('gasAttack', {})
 
     def __getCommonQuestsIterator(self):
         questsData = self.__getQuestsData()

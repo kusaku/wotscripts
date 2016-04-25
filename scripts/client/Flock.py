@@ -11,7 +11,6 @@ import Settings
 import SoundGroups
 from debug_utils import LOG_CURRENT_EXCEPTION, LOG_ERROR
 from Math import Vector3
-import WWISE
 ENVIRONMENT_EFFECTS_CONFIG_FILE = 'scripts/environment_effects.xml'
 
 class DebugGizmo:
@@ -129,14 +128,15 @@ class FlockLike:
         except Exception:
             LOG_CURRENT_EXCEPTION()
 
-    def _addSound(self, model):
+    def _addSound(self, model, soundName = ''):
         if not model.sources:
             return
         else:
             modelName = model.sources[0]
-            soundName = FlockLike.__SoundNames.get(modelName, None)
-            if soundName is None or soundName == '':
-                return
+            if soundName == '':
+                soundName = FlockLike.__SoundNames.get(modelName, None)
+                if soundName is None or soundName == '':
+                    return
             try:
                 self.__sound = SoundGroups.g_instance.getSound3D(model.root, soundName)
                 if self.__sound is not None:
@@ -150,6 +150,7 @@ class FlockLike:
     def _delSound(self):
         if self.__sound is not None:
             self.__sound.stop()
+            self.__sound.releaseMatrix()
             self.__sound = None
         return
 

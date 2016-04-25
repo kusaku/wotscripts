@@ -2,7 +2,7 @@
 from account_helpers.settings_core.SettingsCache import g_settingsCache
 import constants
 import BigWorld
-from account_helpers.settings_core.settings_constants import GAME, CONTROLS
+from account_helpers.settings_core.settings_constants import GAME, CONTROLS, VERSION
 from adisp import process, async
 from debug_utils import LOG_DEBUG
 
@@ -191,6 +191,23 @@ def _migrateTo19(core, data, initialized):
     data['gameExtData'][GAME.MINIMAP_VIEW_RANGE] = True
 
 
+def _migrateTo20(core, data, initialized):
+    data['gameData'][GAME.STORE_RECEIVER_IN_BATTLE] = True
+
+
+def _migrateTo21(core, data, initialized):
+    aimData = data['aimData']
+    if not initialized:
+        data['aimData'].update({'arcade': core.getSetting('arcade'),
+         'sniper': core.getSetting('sniper')})
+    aimData['arcade']['zoomIndicator'] = 100
+    aimData['sniper']['zoomIndicator'] = 100
+
+
+def _migrateTo22(core, data, initialized):
+    data['gameExtData'][GAME.SIMPLIFIED_TTC] = True
+
+
 _versions = ((1,
   _initializeDefaultSettings,
   True,
@@ -262,6 +279,18 @@ _versions = ((1,
  (19,
   _migrateTo19,
   False,
+  False),
+ (20,
+  _migrateTo20,
+  False,
+  False),
+ (21,
+  _migrateTo21,
+  False,
+  False),
+ (22,
+  _migrateTo22,
+  False,
   False))
 
 @async
@@ -270,13 +299,15 @@ def migrateToVersion(fromVersion, core, data, callback = None):
     yield lambda callback: callback(None)
     initialized = False
     for version, migration, isInitialize, isAsync in _versions:
-        if fromVersion < version and (not isInitialize or not initialized):
-            if isAsync:
-                yield migration(core, data, initialized)
-            else:
-                migration(core, data, initialized)
+        if fromVersion < version:
+            if not isInitialize or not initialized:
+                if isAsync:
+                    yield migration(core, data, initialized)
+                else:
+                    migration(core, data, initialized)
+                if isInitialize:
+                    initialized = True
+            data[VERSION] = version
             LOG_DEBUG('Migrated to version: ', version, data)
-            if isInitialize:
-                initialized = True
 
     callback(data)

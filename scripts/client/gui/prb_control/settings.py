@@ -6,6 +6,7 @@ from shared_utils import CONST_CONTAINER, BitmaskHelper
 VEHICLE_MIN_LEVEL = 1
 VEHICLE_MAX_LEVEL = 10
 VEHICLE_DEF_LEVEL_RANGE = (VEHICLE_MIN_LEVEL, VEHICLE_MAX_LEVEL)
+VEHICLE_LEVELS = range(VEHICLE_MIN_LEVEL, VEHICLE_MAX_LEVEL + 1)
 TEAM_MAX_LIMIT = 150
 INVITE_COMMENT_MAX_LENGTH = 400
 UNIT_COMMENT_MAX_LENGTH = 240
@@ -135,7 +136,6 @@ class PREBATTLE_ACTION_NAME(object):
     COMPANY = 'companyList'
     SPEC_BATTLE = 'specBattleList'
     SQUAD = 'squad'
-    EVENT_SQUAD = 'eventSquad'
     TOURNAMENT = 'tournament'
     CLAN = 'clan'
     UNIT = 'unit'
@@ -145,7 +145,6 @@ class PREBATTLE_ACTION_NAME(object):
     FALLOUT_CLASSIC = 'falloutClassic'
     FALLOUT_MULTITEAM = 'falloutMultiTeam'
     SANDBOX = 'battleTeaching'
-    EVENT_SQUAD = 'eventSquad'
 
 
 PREBATTLE_ACTION_NAME_TO_QUEUE_TYPE = {PREBATTLE_ACTION_NAME.RANDOM_QUEUE: QUEUE_TYPE.RANDOMS,
@@ -218,6 +217,7 @@ class PREBATTLE_RESTRICTION(object):
     LIMIT_AT_SPG = 'limits/classes/AT-SPG'
     HAS_PLAYER_IN_BATTLE = 'player/inBattle'
     TEAM_IS_IN_QUEUE = 'team/inQueue'
+    PREVIEW_VEHICLE_IS_PRESENT = 'previewVehicle/isPresent'
     VEHICLE_NOT_READY = 'vehicle/notReady'
     VEHICLE_NOT_PRESENT = 'vehicle/notPresent'
     VEHICLE_IN_BATTLE = 'vehicle/inBattle'
@@ -304,6 +304,8 @@ class UNIT_RESTRICTION(object):
     FALLOUT_VEHICLE_MIN = 26
     FALLOUT_VEHICLE_MAX = 27
     FALLOUT_VEHICLE_BROKEN = 28
+    FORT_DISABLED = 29
+    VEHICLE_INVALID_LEVEL = 30
 
 
 class PREBATTLE_ROSTER(object):

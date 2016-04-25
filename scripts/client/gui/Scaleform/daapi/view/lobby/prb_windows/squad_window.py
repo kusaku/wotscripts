@@ -1,5 +1,6 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/prb_windows/squad_window.py
 from constants import PREBATTLE_TYPE
+from gui.Scaleform.locale.MENU import MENU
 from gui.prb_control.settings import FUNCTIONAL_FLAG
 from gui.Scaleform.daapi.view.meta.SquadWindowMeta import SquadWindowMeta
 from gui.Scaleform.managers.windows_stored_data import DATA_TYPE, TARGET_ID
@@ -9,10 +10,15 @@ from gui.prb_control.context import unit_ctx
 from gui.prb_control.formatters import messages
 from gui.shared import events, EVENT_BUS_SCOPE
 from gui.prb_control import settings
+from helpers import i18n
 
 @stored_window(DATA_TYPE.UNIQUE_WINDOW, TARGET_ID.CHANNEL_CAROUSEL)
 
 class SquadWindow(SquadWindowMeta):
+
+    def __init__(self, ctx = None):
+        super(SquadWindow, self).__init__()
+        self._isInvitesOpen = ctx.get('isInvitesOpen', False)
 
     def getPrbType(self):
         return PREBATTLE_TYPE.SQUAD
@@ -57,6 +63,8 @@ class SquadWindow(SquadWindowMeta):
 
     def _populate(self):
         self.as_setComponentIdS(self._getSquadViewAlias())
+        title = ''.join((i18n.makeString(MENU.HEADERBUTTONS_BATTLE_TYPES_SQUAD), i18n.makeString(MENU.HEADERBUTTONS_BATTLE_TYPES_SQUAD_RANDOMBATTLE)))
+        self.as_setWindowTitleS(title)
         super(SquadWindow, self)._populate()
         self.addListener(events.HideWindowEvent.HIDE_UNIT_WINDOW, self.__handleSquadWindowHide, scope=EVENT_BUS_SCOPE.LOBBY)
 
@@ -83,16 +91,3 @@ class FalloutSquadWindow(SquadWindow):
 
     def _getSquadViewAlias(self):
         return PREBATTLE_ALIASES.FALLOUT_SQUAD_VIEW_PY
-
-
-class EventSquadWindow(SquadWindow):
-
-    def _populate(self):
-        super(EventSquadWindow, self)._populate()
-        self.as_updateEventTitleS()
-
-    def getPrbType(self):
-        return PREBATTLE_TYPE.EVENT
-
-    def _getSquadViewAlias(self):
-        return PREBATTLE_ALIASES.EVENT_SQUAD_VIEW_PY

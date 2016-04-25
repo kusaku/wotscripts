@@ -12,11 +12,9 @@ from gui.prb_control.settings import FUNCTIONAL_FLAG
 __all__ = ('UnitFactory',)
 _PAN = PREBATTLE_ACTION_NAME
 _SUPPORTED_ENTRY_BY_ACTION = {_PAN.SQUAD: (unit.SquadEntry, None),
- _PAN.EVENT_SQUAD: (unit.EventSquadEntry, None),
  _PAN.UNIT: (unit.UnitIntro, (PREBATTLE_TYPE.UNIT,)),
  _PAN.FORT: (unit.UnitIntro, (PREBATTLE_TYPE.SORTIE,))}
 _SUPPORTED_ENTRY_BY_TYPE = {PREBATTLE_TYPE.SQUAD: unit.SquadEntry,
- PREBATTLE_TYPE.EVENT: unit.EventSquadEntry,
  PREBATTLE_TYPE.FALLOUT: unit.FalloutSquadEntry,
  PREBATTLE_TYPE.UNIT: unit.UnitEntry,
  PREBATTLE_TYPE.SORTIE: unit.UnitEntry,
@@ -70,13 +68,11 @@ class UnitFactory(ControlFactory):
                         flags |= FUNCTIONAL_FLAG.SWITCH
                     if entity.isSquad():
                         flags |= FUNCTIONAL_FLAG.SQUAD
-                    if entity.isEvent():
-                        flags |= FUNCTIONAL_FLAG.EVENT_BATTLES
                     if entity.isFalloutSquad():
                         flags |= FUNCTIONAL_FLAG.FALLOUT_SQUAD
                     ctx.removeFlags(FUNCTIONAL_FLAG.UNIT_BITMASK | FUNCTIONAL_FLAG.ACTIONS_BITMASK)
                     ctx.addFlags(flags)
-                    created = unit.UnitFunctional(entity.getPrebattleType(), unit_items.DynamicRosterSettings(entity), flags=flags)
+                    created = self._createUnitFunctional(entity.getPrebattleType(), unit_items.DynamicRosterSettings(entity), flags=flags)
                 else:
                     LOG_ERROR('Unit is not found in unit manager', unitMrg.unitIdx, unitMrg.units)
                     unitMrg.leave()
@@ -116,3 +112,11 @@ class UnitFactory(ControlFactory):
             else:
                 created = None
             return created
+
+    @staticmethod
+    def _createUnitFunctional(prbType, rosterSettings, flags = FUNCTIONAL_FLAG.UNIT):
+        if prbType == PREBATTLE_TYPE.SQUAD:
+            classz = unit.SquadUnitFunctional
+        else:
+            classz = unit.UnitFunctional
+        return classz(prbType, rosterSettings, flags)

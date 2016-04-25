@@ -30,6 +30,7 @@ class MODULE(object):
 
 class VEHICLE(object):
     INFO = 'vehicleInfoEx'
+    PREVIEW = 'preview'
     STATS = 'showVehicleStatistics'
     UNLOCK = 'unlock'
     SELECT = 'selectVehicle'
@@ -180,7 +181,6 @@ class VehicleContextMenuHandler(SimpleVehicleCMHandler):
         vehicle = g_itemsCache.items.getVehicle(self.getVehInvID())
         vehicleWasInBattle = False
         accDossier = g_itemsCache.items.getAccountDossier(None)
-        isEventVehicle = vehicle.isOnlyForEventBattles
         if accDossier:
             wasInBattleSet = set(accDossier.getTotalStats().getVehicles().keys())
             if vehicle.intCD in wasInBattleSet:
@@ -190,18 +190,16 @@ class VehicleContextMenuHandler(SimpleVehicleCMHandler):
             if vehicle.isRented:
                 if not vehicle.isPremiumIGR:
                     money = g_itemsCache.items.stats.money
-                    canBuyOrRent = isEventVehicle
-                    if not isEventVehicle:
-                        canBuyOrRent, _ = vehicle.mayRentOrBuy(money)
+                    canBuyOrRent, _ = vehicle.mayRentOrBuy(money)
                     options.append(self._makeItem(VEHICLE.BUY, MENU.contextmenu(VEHICLE.BUY), {'enabled': canBuyOrRent}))
                 options.append(self._makeItem(VEHICLE.SELL, MENU.contextmenu(VEHICLE.REMOVE), {'enabled': vehicle.canSell and vehicle.rentalIsOver}))
             else:
-                options.append(self._makeItem(VEHICLE.SELL, MENU.contextmenu(VEHICLE.SELL), {'enabled': vehicle.canSell and not isEventVehicle}))
+                options.append(self._makeItem(VEHICLE.SELL, MENU.contextmenu(VEHICLE.SELL), {'enabled': vehicle.canSell}))
             options.extend([self._makeSeparator(), self._makeItem(VEHICLE.RESEARCH, MENU.contextmenu(VEHICLE.RESEARCH))])
             if vehicle.isFavorite:
                 options.append(self._makeItem(VEHICLE.UNCHECK, MENU.contextmenu(VEHICLE.UNCHECK)))
             else:
-                options.append(self._makeItem(VEHICLE.CHECK, MENU.contextmenu(VEHICLE.CHECK), {'enabled': not isEventVehicle}))
+                options.append(self._makeItem(VEHICLE.CHECK, MENU.contextmenu(VEHICLE.CHECK)))
         return options
 
     @process

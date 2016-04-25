@@ -10,7 +10,6 @@ from gui.prb_control.ctrl_events import g_prbCtrlEvents
 from gui.prb_control.events_dispatcher import g_eventDispatcher
 from gui.prb_control.formatters import messages
 from gui.prb_control.functional import interfaces
-from gui.prb_control.functional.event_vehicle_extension import EventVehicleMeta
 from gui.prb_control.restrictions.permissions import PreQueuePermissions
 from gui.prb_control.settings import FUNCTIONAL_FLAG, CTRL_ENTITY_TYPE
 from gui.prb_control.settings import REQUEST_TYPE
@@ -195,19 +194,16 @@ class PreQueueFunctional(NoPreQueueFunctional):
 
 
 class AccountQueueFunctional(PreQueueFunctional):
-    __metaclass__ = EventVehicleMeta
 
     def __init__(self, queueType, subscriber, flags = FUNCTIONAL_FLAG.UNDEFINED):
         super(AccountQueueFunctional, self).__init__(queueType, subscriber, flags)
         self._requestCtx = PrbCtrlRequestCtx()
 
     def init(self, ctx = None):
-        g_gameCtrl.captcha.onCaptchaInputCanceled += self.__onCaptchaInputCanceled
         return super(AccountQueueFunctional, self).init(ctx)
 
     def fini(self, woEvents = False):
         self._requestCtx.clear()
-        g_gameCtrl.captcha.onCaptchaInputCanceled -= self.__onCaptchaInputCanceled
         super(AccountQueueFunctional, self).fini(woEvents)
 
     def doAction(self, action = None):
@@ -301,6 +297,3 @@ class AccountQueueFunctional(PreQueueFunctional):
         if result:
             g_eventDispatcher.showParentControlNotification()
         return result
-
-    def __onCaptchaInputCanceled(self):
-        self._requestCtx.stopProcessing(False)

@@ -6,7 +6,7 @@ from collections import namedtuple
 from items import vehicles
 from constants import VEHICLE_CLASS_INDICES, PREBATTLE_TYPE, QUEUE_TYPE
 from UnitRoster import BaseUnitRosterSlot, _BAD_CLASS_INDEX, buildNamesDict, reprBitMaskFromDict
-from unit_roster_config import SortieRoster6, SortieRoster8, SortieRoster10, FortRoster8, FortRoster10, ClubRoster, SquadRoster, UnitRoster, SpecRoster, FalloutClassicRoster, FalloutMultiteamRoster, EventRoster
+from unit_roster_config import SortieRoster6, SortieRoster8, SortieRoster10, FortRoster8, FortRoster10, ClubRoster, SquadRoster, UnitRoster, SpecRoster, FalloutClassicRoster, FalloutMultiteamRoster
 from ops_pack import OpsUnpacker, packPascalString, unpackPascalString, initOpsFormatDef
 from unit_helpers.ExtrasHandler import EmptyExtrasHandler, ClanBattleExtrasHandler
 from unit_helpers.ExtrasHandler import ClubExtrasHandler, SortieExtrasHandler
@@ -239,6 +239,7 @@ class UNIT_NOTIFY_CMD:
     FALLOUT_TYPE_CHANGE = 10
     AUTO_ASSEMBLED_MEMBER_ADDED = 11
     APPROVED_VEHICLE_LIST = 12
+    REMOVED_VEHICLE = 13
 
 
 class CLIENT_UNIT_CMD:
@@ -289,7 +290,6 @@ class UNIT_MGR_FLAGS:
     SPEC_BATTLE = 128
     FALLOUT_CLASSIC = 256
     FALLOUT_MULTITEAM = 512
-    EVENT = 1024
 
 
 class ROSTER_TYPE:
@@ -304,8 +304,7 @@ class ROSTER_TYPE:
     FALLOUT_MULTITEAM_ROSTER = UNIT_MGR_FLAGS.SQUAD | UNIT_MGR_FLAGS.FALLOUT_MULTITEAM
     SQUAD_ROSTER = UNIT_MGR_FLAGS.SQUAD
     SPEC_ROSTER = UNIT_MGR_FLAGS.SPEC_BATTLE
-    EVENT_ROSTER = UNIT_MGR_FLAGS.SQUAD | UNIT_MGR_FLAGS.EVENT
-    _MASK = UNIT_MGR_FLAGS.SORTIE | UNIT_MGR_FLAGS.SORTIE_DIVISION_8 | UNIT_MGR_FLAGS.SORTIE_DIVISION_6 | UNIT_MGR_FLAGS.FORT_BATTLE | UNIT_MGR_FLAGS.FORT_BATTLE_DIVISION_8 | CLUB_ROSTER_10 | SQUAD_ROSTER | SPEC_ROSTER | UNIT_MGR_FLAGS.FALLOUT_CLASSIC | UNIT_MGR_FLAGS.FALLOUT_MULTITEAM | UNIT_MGR_FLAGS.EVENT
+    _MASK = UNIT_MGR_FLAGS.SORTIE | UNIT_MGR_FLAGS.SORTIE_DIVISION_8 | UNIT_MGR_FLAGS.SORTIE_DIVISION_6 | UNIT_MGR_FLAGS.FORT_BATTLE | UNIT_MGR_FLAGS.FORT_BATTLE_DIVISION_8 | CLUB_ROSTER_10 | SQUAD_ROSTER | SPEC_ROSTER | UNIT_MGR_FLAGS.FALLOUT_CLASSIC | UNIT_MGR_FLAGS.FALLOUT_MULTITEAM
 
 
 class EXTRAS_HANDLER_TYPE:
@@ -355,8 +354,7 @@ ROSTER_TYPE_TO_CLASS = {ROSTER_TYPE.UNIT_ROSTER: UnitRoster,
  ROSTER_TYPE.SQUAD_ROSTER: SquadRoster,
  ROSTER_TYPE.SPEC_ROSTER: SpecRoster,
  ROSTER_TYPE.FALLOUT_CLASSIC_ROSTER: FalloutClassicRoster,
- ROSTER_TYPE.FALLOUT_MULTITEAM_ROSTER: FalloutMultiteamRoster,
- ROSTER_TYPE.EVENT_ROSTER: EventRoster}
+ ROSTER_TYPE.FALLOUT_MULTITEAM_ROSTER: FalloutMultiteamRoster}
 EXTRAS_HANDLER_TYPE_TO_HANDLER = {EXTRAS_HANDLER_TYPE.EMPTY: EmptyExtrasHandler,
  EXTRAS_HANDLER_TYPE.FORT_BATTLE: ClanBattleExtrasHandler,
  EXTRAS_HANDLER_TYPE.CLUBS: ClubExtrasHandler,

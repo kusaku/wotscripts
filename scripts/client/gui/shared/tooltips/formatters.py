@@ -1,6 +1,7 @@
 # Embedded file name: scripts/client/gui/shared/tooltips/formatters.py
 from gui import makeHtmlString
-from debug_utils import LOG_ERROR
+from debug_utils import LOG_ERROR, LOG_DEBUG
+from gui.Scaleform.genConsts.ACTION_PRICE_CONSTANTS import ACTION_PRICE_CONSTANTS
 from gui.Scaleform.genConsts.BATTLE_RESULT_TYPES import BATTLE_RESULT_TYPES
 from gui.Scaleform.genConsts.BLOCKS_TOOLTIP_TYPES import BLOCKS_TOOLTIP_TYPES
 from gui.shared.formatters import text_styles
@@ -61,7 +62,7 @@ def packTextParameterBlockData(name, value, linkage = BLOCKS_TOOLTIP_TYPES.TOOLT
     return packBlockDataItem(linkage, data, padding)
 
 
-def packTextParameterWithIconBlockData(name, value, icon, linkage = BLOCKS_TOOLTIP_TYPES.TOOLTIP_TEXT_PARAMETER_WITH_ICON_BLOCK_LINKAGE, valueWidth = -1, gap = 5, padding = None):
+def packTextParameterWithIconBlockData(name, value, icon, linkage = BLOCKS_TOOLTIP_TYPES.TOOLTIP_TEXT_PARAMETER_WITH_ICON_BLOCK_LINKAGE, valueWidth = -1, gap = 5, nameOffset = -1, padding = None):
     data = {'name': name,
      'value': value,
      'icon': icon}
@@ -69,6 +70,8 @@ def packTextParameterWithIconBlockData(name, value, icon, linkage = BLOCKS_TOOLT
         data['valueWidth'] = valueWidth
     if gap != -1:
         data['gap'] = gap
+    if nameOffset != -1:
+        data['nameOffset'] = nameOffset
     return packBlockDataItem(linkage, data, padding)
 
 
@@ -123,6 +126,22 @@ def packImageBlockData(img = None, align = BLOCKS_TOOLTIP_TYPES.ALIGN_LEFT, link
     return packBlockDataItem(linkage, data, padding)
 
 
-def packSaleTextParameterBlockData(name, saleData, linkage = BLOCKS_TOOLTIP_TYPES.TOOLTIP_SALE_TEXT_PARAMETER_BLOCK_LINKAGE, padding = None):
-    return packBlockDataItem(linkage, {'name': name,
-     'saleData': saleData}, padding)
+def packSaleTextParameterBlockData(name, saleData, actionStyle = ACTION_PRICE_CONSTANTS.STATE_CAMOUFLAGE, linkage = BLOCKS_TOOLTIP_TYPES.TOOLTIP_SALE_TEXT_PARAMETER_BLOCK_LINKAGE, padding = None):
+    data = {'name': name,
+     'saleData': saleData,
+     'actionStyle': actionStyle}
+    return packBlockDataItem(linkage, data, padding)
+
+
+def packStatusDeltaBlockData(title, valueStr, statusBarData, showDecreaseArrow = False, linkage = BLOCKS_TOOLTIP_TYPES.TOOLTIP_STATUS_DELTA_PARAMETER_BLOCK_LINKAGE, padding = None):
+    data = {'title': title,
+     'valueStr': valueStr,
+     'statusBarData': statusBarData,
+     'showDecreaseArrow': showDecreaseArrow}
+    return packBlockDataItem(linkage, data, padding)
+
+
+def packImageListParameterBlockData(listIconSrc, columnWidth, rowHeight, linkage = BLOCKS_TOOLTIP_TYPES.TOOLTIP_IMAGE_LIST_BLOCK_LINKAGE, padding = None):
+    return packBlockDataItem(linkage, {'listIconSrc': listIconSrc,
+     'columnWidth': columnWidth,
+     'rowHeight': rowHeight}, padding)

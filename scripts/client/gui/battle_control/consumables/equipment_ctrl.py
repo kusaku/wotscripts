@@ -314,7 +314,7 @@ def _getSupportedTag(descriptor):
 
 
 class EquipmentsController(object):
-    __slots__ = ('__eManager', '_equipments', '__readySndName', 'onEquipmentAdded', 'onEquipmentUpdated', 'onEquipmentMarkerShown', 'onEquipmentCooldownInPercent')
+    __slots__ = ('__eManager', '_order', '_equipments', '__readySndName', 'onEquipmentAdded', 'onEquipmentUpdated', 'onEquipmentMarkerShown', 'onEquipmentCooldownInPercent')
 
     def __init__(self):
         super(EquipmentsController, self).__init__()
@@ -323,6 +323,7 @@ class EquipmentsController(object):
         self.onEquipmentUpdated = Event.Event(self.__eManager)
         self.onEquipmentMarkerShown = Event.Event(self.__eManager)
         self.onEquipmentCooldownInPercent = Event.Event(self.__eManager)
+        self._order = []
         self._equipments = {}
         self.__readySndName = 'combat_reserve'
 
@@ -343,6 +344,7 @@ class EquipmentsController(object):
     def clear(self, leave = True):
         if leave:
             self.__eManager.clear()
+        self._order = []
         while len(self._equipments):
             _, item = self._equipments.popitem()
             item.clear()
@@ -364,6 +366,9 @@ class EquipmentsController(object):
 
         return item
 
+    def getOrderedEquipmentsLayout(self):
+        return map(lambda intCD: (intCD, self._equipments[intCD]), self._order)
+
     def setEquipment(self, intCD, quantity, stage, timeRemaining):
         if not intCD:
             self.onEquipmentAdded(intCD, None)
@@ -379,6 +384,7 @@ class EquipmentsController(object):
                 descriptor = vehicles.getDictDescr(intCD)
                 item = self.createItem(descriptor, quantity, stage, timeRemaining)
                 self._equipments[intCD] = item
+                self._order.append(intCD)
                 self.onEquipmentAdded(intCD, item)
             return
 

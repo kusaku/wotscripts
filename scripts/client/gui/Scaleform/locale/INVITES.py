@@ -2,6 +2,12 @@
 from debug_utils import LOG_WARNING
 
 class INVITES(object):
+    """
+    DO NOT MODIFY!
+    Generated with yaml.
+    __author__ = 'yaml_processor'
+    null
+    """
     ERRORS_UNKNOWNUSER = '#invites:errors/unknownuser'
     ERRORS_USEROFFLINE = '#invites:errors/useroffline'
     ERRORS_SELFINVITE = '#invites:errors/selfinvite'
@@ -13,7 +19,6 @@ class INVITES(object):
     INVITES_PREBATTLE_ACCEPTNOTALLOWED_UNDEFINEDPERIPHERY = '#invites:invites/prebattle/acceptNotAllowed/undefinedPeriphery'
     INVITES_PREBATTLE_ACCEPTNOTALLOWED_OTHERPERIPHERY = '#invites:invites/prebattle/acceptNotAllowed/otherPeriphery'
     INVITES_PREBATTLE_ALREADYJOINED_SQUAD = '#invites:invites/prebattle/alreadyJoined/SQUAD'
-    INVITES_PREBATTLE_ALREADYJOINED_EVENT = '#invites:invites/prebattle/alreadyJoined/EVENT'
     INVITES_PREBATTLE_ALREADYJOINED_FALLOUT = '#invites:invites/prebattle/alreadyJoined/FALLOUT'
     INVITES_PREBATTLE_ALREADYJOINED_COMPANY = '#invites:invites/prebattle/alreadyJoined/COMPANY'
     INVITES_PREBATTLE_ALREADYJOINED_TRAINING = '#invites:invites/prebattle/alreadyJoined/TRAINING'
@@ -23,7 +28,6 @@ class INVITES(object):
     INVITES_PREBATTLE_ALREADYJOINED_SORTIE = '#invites:invites/prebattle/alreadyJoined/SORTIE'
     INVITES_TEXT_CREATORNAME = '#invites:invites/text/creatorName'
     INVITES_TEXT_SQUAD = '#invites:invites/text/SQUAD'
-    INVITES_TEXT_EVENT = '#invites:invites/text/EVENT'
     INVITES_TEXT_FALLOUT = '#invites:invites/text/FALLOUT'
     INVITES_TEXT_FALLOUT_FALLOUT_CLASSIC = '#invites:invites/text/FALLOUT/FALLOUT_CLASSIC'
     INVITES_TEXT_FALLOUT_FALLOUT_MULTITEAM = '#invites:invites/text/FALLOUT/FALLOUT_MULTITEAM'
@@ -63,10 +67,8 @@ class INVITES(object):
     INVITES_NOTE_LEAVE_COMPANY = '#invites:invites/note/leave/COMPANY'
     INVITES_NOTE_CHANGE_AND_LEAVE_COMPANY = '#invites:invites/note/change_and_leave/COMPANY'
     INVITES_NOTE_LEAVE_SQUAD = '#invites:invites/note/leave/SQUAD'
-    INVITES_NOTE_LEAVE_EVENT = '#invites:invites/note/leave/EVENT'
     INVITES_NOTE_LEAVE_FALLOUT = '#invites:invites/note/leave/FALLOUT'
     INVITES_NOTE_CHANGE_AND_LEAVE_SQUAD = '#invites:invites/note/change_and_leave/SQUAD'
-    INVITES_NOTE_CHANGE_AND_LEAVE_EVENT = '#invites:invites/note/change_and_leave/EVENT'
     INVITES_NOTE_CHANGE_AND_LEAVE_FALLOUT = '#invites:invites/note/change_and_leave/FALLOUT'
     INVITES_NOTE_LEAVE_TRAINING = '#invites:invites/note/leave/TRAINING'
     INVITES_NOTE_CHANGE_AND_LEAVE_TRAINING = '#invites:invites/note/change_and_leave/TRAINING'
@@ -123,7 +125,6 @@ class INVITES(object):
      INVITES_STATE_EXPIRED,
      INVITES_STATE_ERROR)
     INVITES_PREBATTLE_ALREADYJOINED_ENUM = (INVITES_PREBATTLE_ALREADYJOINED_SQUAD,
-     INVITES_PREBATTLE_ALREADYJOINED_EVENT,
      INVITES_PREBATTLE_ALREADYJOINED_FALLOUT,
      INVITES_PREBATTLE_ALREADYJOINED_COMPANY,
      INVITES_PREBATTLE_ALREADYJOINED_TRAINING,
@@ -134,7 +135,6 @@ class INVITES(object):
     INVITES_PREBATTLE_ACCEPTNOTALLOWED_ENUM = (INVITES_PREBATTLE_ACCEPTNOTALLOWED_UNDEFINEDPERIPHERY, INVITES_PREBATTLE_ACCEPTNOTALLOWED_OTHERPERIPHERY)
     INVITES_TEXT_ENUM = (INVITES_TEXT_CREATORNAME,
      INVITES_TEXT_SQUAD,
-     INVITES_TEXT_EVENT,
      INVITES_TEXT_FALLOUT,
      INVITES_TEXT_FALLOUT_FALLOUT_CLASSIC,
      INVITES_TEXT_FALLOUT_FALLOUT_MULTITEAM,
@@ -150,7 +150,6 @@ class INVITES(object):
      INVITES_TEXT_CLUB)
     INVITES_NOTE_CHANGE_AND_LEAVE_ENUM = (INVITES_NOTE_CHANGE_AND_LEAVE_COMPANY,
      INVITES_NOTE_CHANGE_AND_LEAVE_SQUAD,
-     INVITES_NOTE_CHANGE_AND_LEAVE_EVENT,
      INVITES_NOTE_CHANGE_AND_LEAVE_FALLOUT,
      INVITES_NOTE_CHANGE_AND_LEAVE_TRAINING,
      INVITES_NOTE_CHANGE_AND_LEAVE_UNIT,
@@ -164,7 +163,6 @@ class INVITES(object):
      INVITES_NOTE_CHANGE_AND_LEAVE_SANDBOX)
     INVITES_NOTE_LEAVE_ENUM = (INVITES_NOTE_LEAVE_COMPANY,
      INVITES_NOTE_LEAVE_SQUAD,
-     INVITES_NOTE_LEAVE_EVENT,
      INVITES_NOTE_LEAVE_FALLOUT,
      INVITES_NOTE_LEAVE_TRAINING,
      INVITES_NOTE_LEAVE_UNIT,
@@ -179,6 +177,10 @@ class INVITES(object):
 
     @staticmethod
     def invites_state(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#invites:invites/state/%s' % key
         if outcome not in INVITES.INVITES_STATE_ENUM:
             LOG_WARNING('locale key "' + outcome + '" was not found')
@@ -188,6 +190,10 @@ class INVITES(object):
 
     @staticmethod
     def invites_prebattle_alreadyjoined(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#invites:invites/prebattle/alreadyJoined/%s' % key
         if outcome not in INVITES.INVITES_PREBATTLE_ALREADYJOINED_ENUM:
             LOG_WARNING('locale key "' + outcome + '" was not found')
@@ -197,6 +203,10 @@ class INVITES(object):
 
     @staticmethod
     def invites_prebattle_acceptnotallowed(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#invites:invites/prebattle/acceptNotAllowed/%s' % key
         if outcome not in INVITES.INVITES_PREBATTLE_ACCEPTNOTALLOWED_ENUM:
             LOG_WARNING('locale key "' + outcome + '" was not found')
@@ -206,6 +216,10 @@ class INVITES(object):
 
     @staticmethod
     def invites_text(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#invites:invites/text/%s' % key
         if outcome not in INVITES.INVITES_TEXT_ENUM:
             LOG_WARNING('locale key "' + outcome + '" was not found')
@@ -215,6 +229,10 @@ class INVITES(object):
 
     @staticmethod
     def invites_note_change_and_leave(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#invites:invites/note/change_and_leave/%s' % key
         if outcome not in INVITES.INVITES_NOTE_CHANGE_AND_LEAVE_ENUM:
             LOG_WARNING('locale key "' + outcome + '" was not found')
@@ -224,6 +242,10 @@ class INVITES(object):
 
     @staticmethod
     def invites_note_leave(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#invites:invites/note/leave/%s' % key
         if outcome not in INVITES.INVITES_NOTE_LEAVE_ENUM:
             LOG_WARNING('locale key "' + outcome + '" was not found')

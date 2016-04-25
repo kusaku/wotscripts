@@ -8,6 +8,7 @@ import Settings
 import constants
 from adisp import process
 from gui import DialogsInterface, GUI_SETTINGS
+from gui.Scaleform.daapi.view.servers_data_provider import ServersDataProvider
 from gui.battle_control import g_sessionProvider
 from gui.Scaleform.Waiting import Waiting
 from gui.Scaleform import SCALEFORM_WALLPAPER_PATH
@@ -31,6 +32,7 @@ from helpers.time_utils import makeLocalServerTime
 from predefined_hosts import AUTO_LOGIN_QUERY_URL, AUTO_LOGIN_QUERY_ENABLED, g_preDefinedHosts
 from external_strings_utils import isAccountLoginValid, isPasswordValid, _PASSWORD_MIN_LENGTH, _PASSWORD_MAX_LENGTH
 from external_strings_utils import _LOGIN_NAME_MIN_LENGTH
+from helpers.statistics import g_statistics, HANGAR_LOADING_STATE
 
 class INVALID_FIELDS:
     ALL_VALID = 0
@@ -42,13 +44,15 @@ class INVALID_FIELDS:
 
 _STATUS_TO_INVALID_FIELDS_MAPPING = defaultdict(lambda : INVALID_FIELDS.ALL_VALID, {LOGIN_STATUS.LOGIN_REJECTED_INVALID_PASSWORD: INVALID_FIELDS.PWD_INVALID,
  LOGIN_STATUS.LOGIN_REJECTED_ILLEGAL_CHARACTERS: INVALID_FIELDS.LOGIN_PWD_INVALID,
- LOGIN_STATUS.LOGIN_REJECTED_SERVER_NOT_READY: INVALID_FIELDS.SERVER_INVALID})
+ LOGIN_STATUS.LOGIN_REJECTED_SERVER_NOT_READY: INVALID_FIELDS.SERVER_INVALID,
+ LOGIN_STATUS.SESSION_END: INVALID_FIELDS.PWD_INVALID})
 _ValidateCredentialsResult = namedtuple('ValidateCredentialsResult', ('isValid', 'errorMessage', 'invalidFields'))
 
 class LoginView(LoginPageMeta):
 
     def __init__(self, ctx = None):
         LoginPageMeta.__init__(self, ctx=ctx)
+        self.__isListInitialized = False
         self.__loginRetryDialogShown = False
         self.__loginQueueDialogShown = False
         self.__capsLockState = None
@@ -68,6 +72,7 @@ class LoginView(LoginPageMeta):
         self._rememberUser = rememberUser
 
     def onLogin(self, userName, password, serverName, isSocialToken2Login):
+        g_statistics.noteHangarLoadingState(HANGAR_LOADING_STATE.LOGIN, True)
         self._autoSearchVisited = serverName == AUTO_LOGIN_QUERY_URL
         result = self.__validateCredentials(userName.lower().strip(), password.strip(), bool(g_loginManager.getPreference('token2')))
         if result.isValid:
@@ -122,6 +127,8 @@ class LoginView(LoginPageMeta):
 
     def _populate(self):
         View._populate(self)
+        self._serversDP = ServersDataProvider()
+        self._serversDP.setFlashObject(self.as_getServersDPS())
         self.as_enableS(True)
         self._servers.onServersStatusChanged += self.__updateServersList
         connectionManager.onRejected += self._onLoginRejected
@@ -147,6 +154,8 @@ class LoginView(LoginPageMeta):
         g_playerEvents.onLoginQueueNumberReceived -= self.__loginQueueDialogShown
         g_playerEvents.onKickWhileLoginReceived -= self._onKickedWhileLogin
         g_playerEvents.onAccountShowGUI -= self._clearLoginView
+        self._serversDP.fini()
+        self._serversDP = None
         View._dispose(self)
         return
 
@@ -165,7 +174,7 @@ class LoginView(LoginPageMeta):
         else:
             login = g_loginManager.getPreference('login')
         self.as_setDefaultValuesS(login, password, self._rememberUser, GUI_SETTINGS.rememberPassVisible, GUI_SETTINGS.igrCredentialsReset, not GUI_SETTINGS.isEmpty('recoveryPswdURL'))
-        self.as_setServersListS(self._servers.serverList, self._servers.selectedServerIdx)
+        self.__updateServersList()
 
     def _clearLoginView(self, *args):
         Waiting.hide('login')
@@ -374,4 +383,7 @@ class LoginView(LoginPageMeta):
         ds.writeBool(self.__showLoginWallpaperNode, True)
 
     def __updateServersList(self, *args):
-        self.as_setServersListS(self._servers.serverList, self._servers.selectedServerIdx)
+        self._serversDP.rebuildList(self._servers.serverList)
+        if not self.__isListInitialized and self._servers.serverList:
+            self.__isListInitialized = True
+            self.as_setSelectedServerIndexS(self._servers.selectedServerIdx)

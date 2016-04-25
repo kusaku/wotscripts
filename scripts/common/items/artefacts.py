@@ -8,6 +8,7 @@ from constants import IS_CLIENT, IS_BASEAPP, IS_CELLAPP, IS_WEB, IS_DEVELOPMENT
 from functools import partial
 if IS_CLIENT:
     from helpers import i18n
+    import WWISE
 elif IS_WEB:
     from web_stubs import *
 
@@ -377,8 +378,6 @@ class _VehicleFilter(object):
                 self.__exclude.append(_readVehicleFilterPattern((xmlCtx, 'exclude'), subsection))
             else:
                 _xml.raiseWrongXml(xmlCtx, subsection.name, 'should be <include> or <exclude>')
-
-        self.__exclude.append({'vehicle': {'tags': frozenset(['event_battles'])}})
 
     def checkCompatibility(self, vehicleDescr):
         if self.__exclude:

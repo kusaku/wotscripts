@@ -3,6 +3,7 @@ import time
 import pickle
 import BigWorld
 import constants
+import Settings
 from debug_utils import LOG_DEBUG
 from gui import SystemMessages, makeHtmlString, GUI_SETTINGS
 from gui.Scaleform.locale.SYSTEM_MESSAGES import SYSTEM_MESSAGES
@@ -106,6 +107,7 @@ class Manager(object):
             self._preferences['session'] = session
         self.__writePeripheryLifetime()
         self._preferences.writeLoginInfo()
+        self.__dumpUserName(name)
         self._showSecurityMessage(responseData)
 
     def _showSecurityMessage(self, responseData):
@@ -152,3 +154,11 @@ class Manager(object):
                 return hostName
         else:
             return hostName
+
+    def __dumpUserName(self, name):
+        """ Dump user name to the preferences.xml (required by WGLeague's anti-cheat).
+        
+        See WOTD-55587. This method doesn't belong to Preferences class, so it's placed here.
+        """
+        Settings.g_instance.userPrefs[Settings.KEY_LOGIN_INFO].writeString('user', name)
+        Settings.g_instance.save()

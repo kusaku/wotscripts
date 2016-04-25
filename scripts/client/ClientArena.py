@@ -37,8 +37,7 @@ class ClientArena(object):
      ARENA_UPDATE.DISAPPEAR_BEFORE_RESPAWN: '_ClientArena__onDisappearVehicleBeforeRespawn',
      ARENA_UPDATE.RESOURCE_POINT_STATE_CHANGED: '_ClientArena__onResourcePointStateChanged',
      ARENA_UPDATE.OWN_VEHICLE_INSIDE_RP: '_ClientArena__onOwnVehicleInsideRP',
-     ARENA_UPDATE.OWN_VEHICLE_LOCKED_FOR_RP: '_ClientArena__onOwnVehicleLockedForRP',
-     ARENA_UPDATE.FIRST_APRIL_ACTION_SCHEDULED: '_ClientArena__onFirstAprilActionScheduled'}
+     ARENA_UPDATE.OWN_VEHICLE_LOCKED_FOR_RP: '_ClientArena__onOwnVehicleLockedForRP'}
 
     def __init__(self, arenaUniqueID, arenaTypeID, arenaBonusType, arenaGuiType, arenaExtraData, weatherPresetID):
         self.__vehicles = {}
@@ -70,7 +69,6 @@ class ClientArena(object):
         self.onRespawnResurrected = Event.Event(em)
         self.onInteractiveStats = Event.Event(em)
         self.onVehicleWillRespawn = Event.Event(em)
-        self.onFirstOfAprilAction = Event.Event(em)
         self.arenaUniqueID = arenaUniqueID
         self.arenaType = ArenaType.g_cache.get(arenaTypeID, None)
         if self.arenaType is None:
@@ -194,8 +192,8 @@ class ClientArena(object):
         return
 
     def __onBasePointsUpdate(self, argStr):
-        team, baseID, points, capturingStopped = cPickle.loads(argStr)
-        self.onTeamBasePointsUpdate(team, baseID, points, capturingStopped)
+        team, baseID, points, timeLeft, invadersCnt, capturingStopped = cPickle.loads(argStr)
+        self.onTeamBasePointsUpdate(team, baseID, points, timeLeft, invadersCnt, capturingStopped)
 
     def __onBaseCaptured(self, argStr):
         team, baseID = cPickle.loads(argStr)
@@ -260,10 +258,6 @@ class ClientArena(object):
         LOG_DEBUG('[RESOURCE POINTS] own vehicle is locked', unlockTime)
         g_ctfManager.onOwnVehicleLockedForRP(unlockTime)
 
-    def __onFirstAprilActionScheduled(self, argStr):
-        actionID, actionTime = cPickle.loads(zlib.decompress(argStr))
-        self.onFirstOfAprilAction(actionID, actionTime)
-
     def __onInteractiveStats(self, argStr):
         stats = cPickle.loads(zlib.decompress(argStr))
         self.onInteractiveStats(stats)
@@ -301,10 +295,7 @@ def _convertToList(vec4):
 
 
 def _pointInBB(bottomLeft2D, upperRight2D, point3D, minMaxHeight):
-    if bottomLeft2D[0] < point3D[0] < upperRight2D[0] and bottomLeft2D[1] < point3D[2] < upperRight2D[1] and minMaxHeight[0] < point3D[1] < minMaxHeight[1]:
-        return True
-    else:
-        return False
+    return bottomLeft2D[0] < point3D[0] < upperRight2D[0] and bottomLeft2D[1] < point3D[2] < upperRight2D[1] and minMaxHeight[0] < point3D[1] < minMaxHeight[1]
 
 
 class _BBCollider():

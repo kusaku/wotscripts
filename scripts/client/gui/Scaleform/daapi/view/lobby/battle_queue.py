@@ -3,7 +3,7 @@ import BigWorld
 import weakref
 from UnitBase import FALLOUT_QUEUE_TYPE_TO_ROSTER
 import constants
-import MusicController
+import MusicControllerWWISE
 from debug_utils import LOG_DEBUG
 from gui import makeHtmlString
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
@@ -129,15 +129,10 @@ class _FalloutQueueProvider(_QueueProvider):
         self._proxy.as_showStartS(constants.IS_DEVELOPMENT and sum(vClasses) > 1)
 
 
-class _EventQueueProvider(_RandomQueueProvider):
-    pass
-
-
 _PROVIDER_BY_QUEUE_TYPE = {constants.QUEUE_TYPE.RANDOMS: _RandomQueueProvider,
  constants.QUEUE_TYPE.COMPANIES: _CompanyQueueProvider,
  constants.QUEUE_TYPE.FALLOUT_MULTITEAM: _FalloutQueueProvider,
- constants.QUEUE_TYPE.FALLOUT_CLASSIC: _FalloutQueueProvider,
- constants.QUEUE_TYPE.EVENT_BATTLES: _EventQueueProvider}
+ constants.QUEUE_TYPE.FALLOUT_CLASSIC: _FalloutQueueProvider}
 
 def _providerFactory(proxy, qType):
     return _PROVIDER_BY_QUEUE_TYPE.get(qType, _QueueProvider)(proxy, qType)
@@ -186,8 +181,8 @@ class BattleQueue(BattleQueueMeta, LobbySubView):
         self.__updateQueueInfo()
         self.__updateTimer()
         self.__updateClientState()
-        MusicController.g_musicController.play(MusicController.MUSIC_EVENT_LOBBY)
-        MusicController.g_musicController.play(MusicController.AMBIENT_EVENT_LOBBY)
+        MusicControllerWWISE.play(MusicControllerWWISE.MUSIC_EVENT_LOBBY)
+        MusicControllerWWISE.play(MusicControllerWWISE.AMBIENT_EVENT_LOBBY)
 
     def _dispose(self):
         self.__stopUpdateScreen()
@@ -222,14 +217,8 @@ class BattleQueue(BattleQueueMeta, LobbySubView):
         if prb_getters.isCompany():
             qType = constants.QUEUE_TYPE.COMPANIES
         elif self.prbDispatcher is not None and self.prbDispatcher.getFunctionalState().isInUnit():
-            funcState = self.prbDispatcher.getFunctionalState()
-            if funcState.entityTypeID == constants.PREBATTLE_TYPE.FALLOUT:
-                rosterType = funcState.rosterType
-                qType, _ = findFirst(lambda (k, v): v == rosterType, FALLOUT_QUEUE_TYPE_TO_ROSTER.iteritems(), (constants.QUEUE_TYPE.RANDOMS, None))
-            elif funcState.entityTypeID == constants.PREBATTLE_TYPE.EVENT:
-                qType = constants.QUEUE_TYPE.EVENT_BATTLES
-            else:
-                qType = constants.QUEUE_TYPE.RANDOMS
+            rosterType = self.prbDispatcher.getFunctionalState().rosterType
+            qType, _ = findFirst(lambda (k, v): v == rosterType, FALLOUT_QUEUE_TYPE_TO_ROSTER.iteritems(), (constants.QUEUE_TYPE.RANDOMS, None))
         else:
             qType = prb_getters.getQueueType()
         self.__provider = _providerFactory(self, qType)

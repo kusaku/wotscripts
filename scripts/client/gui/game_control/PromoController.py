@@ -55,7 +55,7 @@ class PromoController(Controller):
         self.__currentVersionBrowserID = yield self.__showPromoBrowser(self.__currentVersionPromoUrl, i18n.makeString(MENU.PROMO_PATCH_TITLE), browserID=self.__currentVersionBrowserID, isAsync=isAsync)
 
     def isPatchPromoAvailable(self):
-        return self.__currentVersionPromoUrl is not None
+        return self.__currentVersionPromoUrl is not None and GUI_SETTINGS.isPatchPromoEnabled
 
     def isPatchChanged(self):
         mainVersion = self.__getClientMainVersion()

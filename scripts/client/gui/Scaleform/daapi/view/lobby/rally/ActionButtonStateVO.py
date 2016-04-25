@@ -1,5 +1,6 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/rally/ActionButtonStateVO.py
 from gui.Scaleform.locale.CYBERSPORT import CYBERSPORT
+from gui.Scaleform.locale.MESSENGER import MESSENGER
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.prb_control.settings import UNIT_RESTRICTION
 from gui.shared.formatters import text_styles
@@ -48,7 +49,9 @@ class ActionButtonStateVO(dict):
          UNIT_RESTRICTION.FALLOUT_VEHICLE_LEVEL_REQUIRED: self._getFalloutVehLevelStr(),
          UNIT_RESTRICTION.FALLOUT_VEHICLE_MIN: self._getFalloutVehMinStr(),
          UNIT_RESTRICTION.FALLOUT_VEHICLE_MAX: ('', {}),
-         UNIT_RESTRICTION.FALLOUT_VEHICLE_BROKEN: self._getFalloutVehBrokenStr()}
+         UNIT_RESTRICTION.FALLOUT_VEHICLE_BROKEN: self._getFalloutVehBrokenStr(),
+         UNIT_RESTRICTION.FORT_DISABLED: (CYBERSPORT.WINDOW_UNIT_MESSAGE_FORTIFICATIONNOTAVAILABLE, {}),
+         UNIT_RESTRICTION.VEHICLE_INVALID_LEVEL: (MESSENGER.DIALOGS_SQUAD_MESSAGE_INVALIDVEHICLELEVEL, {})}
         stateKey, stateCtx = self.__getState()
         self['stateString'] = self.__stateTextStyleFormatter(i18n.makeString(stateKey, **stateCtx))
         self['label'] = self._getLabel()
@@ -107,8 +110,6 @@ class ActionButtonStateVO(dict):
             return TOOLTIPS.CYBERSPORT_UNIT_FIGHTBTN_NOTINSLOT
         elif self.__restrictionType == UNIT_RESTRICTION.VEHICLE_NOT_VALID:
             return TOOLTIPS.CYBERSPORT_UNIT_FIGHTBTN_VEHICLENOTVALID
-        elif self.__restrictionType == UNIT_RESTRICTION.VEHICLE_WRONG_MODE:
-            return '#tooltips:cyberSport/unit/fightBtn/vehicleWrongMode'
         elif self.__isEnabled and not self._playerInfo.isReady:
             return TOOLTIPS.CYBERSPORT_UNIT_FIGHTBTN_PRESSFORREADY
         elif self.__isEnabled and self._playerInfo.isReady:

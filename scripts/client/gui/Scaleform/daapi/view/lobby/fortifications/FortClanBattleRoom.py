@@ -106,7 +106,7 @@ class FortClanBattleRoom(FortClanBattleRoomMeta, UnitListener, FortViewHelper):
         if state.getStateID() == CLIENT_FORT_STATE.HAS_FORT:
             self.__initData()
             self.__makeData()
-        elif self.fortState.getStateID() == CLIENT_FORT_STATE.CENTER_UNAVAILABLE:
+        elif self.fortState.getStateID() in CLIENT_FORT_STATE.NOT_AVAILABLE_FORT:
             self.__leaveOnError()
 
     def onUnitRejoin(self):
@@ -136,7 +136,7 @@ class FortClanBattleRoom(FortClanBattleRoomMeta, UnitListener, FortViewHelper):
         if self.fortState.getStateID() == CLIENT_FORT_STATE.HAS_FORT:
             self.__initData()
             self.__makeData()
-        elif self.fortState.getStateID() == CLIENT_FORT_STATE.CENTER_UNAVAILABLE:
+        elif self.fortState.getStateID() in CLIENT_FORT_STATE.NOT_AVAILABLE_FORT:
             self.__leaveOnError()
 
     def _dispose(self):

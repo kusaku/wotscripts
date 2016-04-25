@@ -4,7 +4,8 @@ from gui.Scaleform.daapi.view.lobby.cyberSport.VehicleSelectorBase import Vehicl
 from gui.Scaleform.daapi.view.lobby.rally.vo_converters import makeVehicleVO, makeFiltersVO
 from gui.Scaleform.daapi.view.meta.RosterSlotSettingsWindowMeta import RosterSlotSettingsWindowMeta
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
-from gui.shared.ItemsCache import g_itemsCache, REQ_CRITERIA
+from gui.shared.utils.requesters import REQ_CRITERIA
+from gui.shared.ItemsCache import g_itemsCache
 from gui.shared.events import CSRosterSlotSettingsWindow
 from gui.shared.formatters import text_styles, icons
 from gui.Scaleform.locale.CYBERSPORT import CYBERSPORT

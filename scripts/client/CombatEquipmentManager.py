@@ -49,7 +49,7 @@ class CombatEquipmentManager(object):
         else:
             p = Vector3(BigWorld.camera().position)
             d = BigWorld.camera().direction
-            collRes = BigWorld.wg_collideSegment(BigWorld.player().spaceID, p, p + d * 1000, 18, lambda matKind, collFlags, itemId, chunkId: collFlags & 8)
+            collRes = BigWorld.wg_collideSegment(BigWorld.player().spaceID, p, p + d * 1000, 18, 8)
             if collRes is None:
                 return
             strikePos = collRes[0]
@@ -124,8 +124,6 @@ class CombatEquipmentManager(object):
         if areaUID in self.__selectedAreas:
             return
         eq = vehicles.g_cache.equipments()[equipmentID]
-        if eq.name == 'artillery_moon':
-            time += 2.0
         if BattleReplay.isPlaying():
             BigWorld.callback(0.0, functools.partial(self.__showMarkerCallback, eq, pos, dir, time, areaUID))
         else:

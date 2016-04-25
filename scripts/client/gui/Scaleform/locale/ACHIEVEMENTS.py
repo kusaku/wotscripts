@@ -2,6 +2,12 @@
 
 
 class ACHIEVEMENTS(object):
+    """
+    DO NOT MODIFY!
+    Generated with yaml.
+    __author__ = 'yaml_processor'
+    null
+    """
     MARKSONGUN_DESCR_PARAM_LABEL = '#achievements:marksOnGun/descr/param/label'
     MARKSONGUN_DESCR_PARAM_VALUE = '#achievements:marksOnGun/descr/param/value'
     ACHIEVEMENT_RANK1 = '#achievements:achievement/rank1'
@@ -1193,14 +1199,22 @@ class ACHIEVEMENTS(object):
 
     @staticmethod
     def achievement(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#achievements:achievement/%s' % key
         if outcome not in ACHIEVEMENTS.ACHIEVEMENT_ENUM:
-            raise Exception, 'locale key "' + outcome + '" was not found'
+            raise Exception('locale key "' + outcome + '" was not found')
         return outcome
 
     @staticmethod
     def all(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#achievements:%s' % key
         if outcome not in ACHIEVEMENTS.all_ENUM:
-            raise Exception, 'locale key "' + outcome + '" was not found'
+            raise Exception('locale key "' + outcome + '" was not found')
         return outcome

@@ -3,11 +3,13 @@ import SoundGroups
 import BigWorld
 from adisp import process
 from debug_utils import LOG_CURRENT_EXCEPTION, LOG_ERROR, LOG_DEBUG
+from constants import HAS_DEV_RESOURCES
 from PlayerEvents import g_playerEvents
 from account_helpers import isPremiumAccount
-from CurrentVehicle import g_currentVehicle
+from CurrentVehicle import g_currentVehicle, g_currentPreviewVehicle
 from ConnectionManager import connectionManager
 from gui.app_loader import g_appLoader
+from gui.shared.items_parameters.params_cache import g_paramsCache
 from helpers import isPlayerAccount, time_utils
 from gui import SystemMessages, g_guiResetters, game_control, miniclient, macroses
 from gui.wgnc import g_wgncProvider
@@ -25,17 +27,16 @@ from account_helpers.settings_core.SettingsCore import g_settingsCore
 from account_helpers.AccountValidator import AccountValidator
 from gui.Scaleform.locale.MENU import MENU
 from gui.Scaleform.locale.SYSTEM_MESSAGES import SYSTEM_MESSAGES
-from gui.Scaleform.LogitechMonitor import LogitechMonitor
 from gui.Scaleform.daapi.view.login.EULADispatcher import EULADispatcher
 from gui.Scaleform.Waiting import Waiting
 from gui.shared import g_eventBus, g_itemsCache, events, EVENT_BUS_SCOPE
 from gui.shared.ClanCache import g_clanCache
 from gui.shared.ItemsCache import CACHE_SYNC_REASON
 from gui.shared.view_helpers.UsersInfoHelper import UsersInfoHelper
-from gui.shared.utils import ParametersCache
 from gui.shared.utils.HangarSpace import g_hangarSpace
 from gui.shared.utils.RareAchievementsCache import g_rareAchievesCache
 from gui.login import g_loginManager
+from helpers.statistics import g_statistics, HANGAR_LOADING_STATE
 try:
     from gui import mods
     guiModsInit = mods.init
@@ -48,12 +49,16 @@ except ImportError:
 @process
 def onAccountShowGUI(ctx):
     global onCenterIsLongDisconnected
+    g_statistics.noteHangarLoadingState(HANGAR_LOADING_STATE.SHOW_GUI)
     g_lobbyContext.onAccountShowGUI(ctx)
     yield g_itemsCache.update(CACHE_SYNC_REASON.SHOW_GUI)
+    g_statistics.noteHangarLoadingState(HANGAR_LOADING_STATE.QUESTS_SYNC)
     g_eventsCache.start()
     yield g_eventsCache.update()
+    g_statistics.noteHangarLoadingState(HANGAR_LOADING_STATE.USER_SERVER_SETTINGS_SYNC)
     yield g_settingsCache.update()
     if not g_itemsCache.isSynced():
+        g_appLoader.goToLoginByError('#menu:disconnect/codes/0')
         return
     eula = EULADispatcher()
     yield eula.processLicense()
@@ -61,8 +66,7 @@ def onAccountShowGUI(ctx):
     g_playerEvents.onGuiCacheSyncCompleted(ctx)
     code = yield AccountValidator().validate()
     if code > 0:
-        from gui import DialogsInterface
-        DialogsInterface.showDisconnect('#menu:disconnect/codes/%d' % code)
+        g_appLoader.goToLoginByError('#menu:disconnect/codes/%d' % code)
         return
     g_settingsCore.serverSettings.applySettings()
     game_control.g_instance.onAccountShowGUI(g_lobbyContext.getGuiCtx())
@@ -74,6 +78,7 @@ def onAccountShowGUI(ctx):
     else:
         g_hangarSpace.init(premium)
     g_currentVehicle.init()
+    g_currentPreviewVehicle.init()
     g_appLoader.showLobby()
     g_prbLoader.onAccountShowGUI(g_lobbyContext.getGuiCtx())
     g_clanCache.onAccountShowGUI()
@@ -90,6 +95,7 @@ def onAccountBecomeNonPlayer():
     g_itemsCache.clear()
     g_goodiesCache.clear()
     g_currentVehicle.destroy()
+    g_currentPreviewVehicle.destroy()
     g_hangarSpace.destroy()
     guiModsSendEvent('onAccountBecomeNonPlayer')
     UsersInfoHelper.clear()
@@ -184,11 +190,10 @@ def init(loadingScreenGUI = None):
     from gui.Scaleform import SystemMessagesInterface
     SystemMessages.g_instance = SystemMessagesInterface.SystemMessagesInterface()
     SystemMessages.g_instance.init()
-    ParametersCache.g_instance.init()
+    g_paramsCache.init()
     if loadingScreenGUI and loadingScreenGUI.script:
         loadingScreenGUI.script.active(False)
     g_prbLoader.init()
-    LogitechMonitor.init()
     g_soundsCtrl.init()
     g_itemsCache.init()
     g_settingsCache.init()
@@ -200,8 +205,7 @@ def init(loadingScreenGUI = None):
     g_vehicleProgressCache.init()
     g_goodiesCache.init()
     BigWorld.wg_setScreenshotNotifyCallback(onScreenShotMade)
-    from constants import IS_DEVELOPMENT
-    if IS_DEVELOPMENT:
+    if HAS_DEV_RESOURCES:
         try:
             from gui.development import init
         except ImportError:
@@ -220,7 +224,6 @@ def fini():
     guiModsFini()
     g_soundsCtrl.fini()
     Waiting.close()
-    LogitechMonitor.destroy()
     g_appLoader.fini()
     SystemMessages.g_instance.destroy()
     g_eventBus.clear()
@@ -249,8 +252,7 @@ def fini():
     g_playerEvents.onCenterIsLongDisconnected -= onCenterIsLongDisconnected
     g_loginManager.fini()
     BigWorld.wg_setScreenshotNotifyCallback(None)
-    from constants import IS_DEVELOPMENT
-    if IS_DEVELOPMENT:
+    if HAS_DEV_RESOURCES:
         try:
             from gui.development import fini
         except ImportError:
@@ -262,11 +264,13 @@ def fini():
 
 
 def onConnected():
+    g_statistics.noteHangarLoadingState(HANGAR_LOADING_STATE.CONNECTED)
     guiModsSendEvent('onConnected')
     game_control.g_instance.onConnected()
 
 
 def onDisconnected():
+    g_statistics.noteHangarLoadingState(HANGAR_LOADING_STATE.DISCONNECTED)
     guiModsSendEvent('onDisconnected')
     g_prbLoader.onDisconnected()
     g_clanCache.onDisconnected()

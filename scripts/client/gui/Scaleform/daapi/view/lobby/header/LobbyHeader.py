@@ -1,13 +1,17 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/header/LobbyHeader.py
 import math
 import BigWorld
-from CurrentVehicle import g_currentVehicle
 import account_helpers
+from account_helpers.settings_core import g_settingsCore
+import constants
+from CurrentVehicle import g_currentVehicle, g_currentPreviewVehicle
 from account_helpers.AccountSettings import AccountSettings, BOOSTERS
-from constants import PREBATTLE_TYPE, QUEUE_TYPE
 from gui.Scaleform.daapi.view.lobby.header import battle_selector_items
 from gui.Scaleform.framework.managers.containers import POP_UP_CRITERIA
 from gui.Scaleform.genConsts.CYBER_SPORT_ALIASES import CYBER_SPORT_ALIASES
+from gui.Scaleform.genConsts.STORE_CONSTANTS import STORE_CONSTANTS
+from gui.Scaleform.genConsts.FORTIFICATION_ALIASES import FORTIFICATION_ALIASES
+from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.game_control import getFalloutCtrl
 from gui.gold_fish import isGoldFishActionActive, isTimeToShowGoldFishPromo
@@ -19,6 +23,7 @@ from gui.shared.gui_items import GUI_ITEM_TYPE
 from gui.shared.utils.requesters.ItemsRequester import REQ_CRITERIA
 from helpers import i18n, time_utils, int2roman, isPlayerAccount
 from debug_utils import LOG_ERROR
+from predefined_hosts import g_preDefinedHosts, getPingStatus, UNDEFINED_PING_VAL
 from shared_utils import CONST_CONTAINER, findFirst
 from gui import makeHtmlString, game_control
 from gui.LobbyContext import g_lobbyContext
@@ -37,7 +42,8 @@ from gui.Scaleform.framework import g_entitiesFactories, ViewTypes
 from ConnectionManager import connectionManager
 from gui.Scaleform.locale.MENU import MENU
 from gui.Scaleform.daapi.settings.tooltips import TOOLTIPS_CONSTANTS
-from gui.Scaleform.locale.RES_ICONS import RES_ICONS
+from gui.shared.utils.functions import makeTooltip
+_MAX_BOOSTERS_TO_DISPLAY = 99
 _MAX_HEADER_SERVER_NAME_LEN = 6
 _SERVER_NAME_PREFIX = '%s..'
 
@@ -59,12 +65,22 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
         FREE_XP = 'freeXP'
         BATTLE_SELECTOR = 'battleSelector'
 
+    class TABS(CONST_CONTAINER):
+        HANGAR = 'hangar'
+        PROFILE = 'profile'
+        TECHTREE = 'techtree'
+        BARRACKS = 'barracks'
+        PREBATTLE = 'prebattle'
+        BROWSER = 'browser'
+        RESEARCH = 'research'
+
     def __init__(self):
         super(LobbyHeader, self).__init__()
         self.__falloutCtrl = None
         return
 
     def _populate(self):
+        self.__updateHangarMenuData()
         battle_selector_items.create()
         super(LobbyHeader, self)._populate()
         self.startGlobalListening()
@@ -74,8 +90,10 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
         game_control.g_instance.igr.onIgrTypeChanged += self.__onIGRChanged
         g_lobbyContext.getServerSettings().onServerSettingsChange += self.__onServerSettingChanged
         g_currentVehicle.onChanged += self.__onVehicleChanged
+        g_currentPreviewVehicle.onChanged += self.__onVehicleChanged
         g_eventsCache.onSyncCompleted += self.__onEventsCacheResync
         g_itemsCache.onSyncCompleted += self.__onItemsChanged
+        game_control.g_instance.boosters.onBoosterChangeNotify += self.__onUpdateGoodies
         self.__falloutCtrl = getFalloutCtrl()
         self.__falloutCtrl.onVehiclesChanged += self.__updateFalloutSettings
         self.__falloutCtrl.onSettingsChanged += self.__updateFalloutSettings
@@ -93,11 +111,14 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
         self.as_setFightButtonS(i18n.makeString('#menu:headerButtons/battle'))
         self.as_setWalletStatusS(game_control.g_instance.wallet.componentsStatuses)
         self.updateAccountInfo()
-        self.__updateServerName()
+        self.__updateServerData()
         if not isTimeToShowGoldFishPromo():
             enabledVal = isGoldFishActionActive()
             tooltip = TOOLTIPS.HEADER_REFILL_ACTION if enabledVal else TOOLTIPS.HEADER_REFILL
             self.as_setGoldFishEnabledS(enabledVal, False, tooltip, TOOLTIP_TYPES.COMPLEX)
+        g_preDefinedHosts.onPingPerformed += self.__onPingPerformed
+        g_preDefinedHosts.requestPing()
+        g_settingsCore.onSettingsChanged += self.__onSettingsChanged
         Waiting.hide('enter')
 
     def onClanEmblem32x32Received(self, clanDbID, emblem):
@@ -129,8 +150,14 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
     def onPreQueueFunctionalFinished(self):
         self.__updatePrebattleControls()
 
+    def __updateServerData(self):
+        serverShortName = connectionManager.serverUserNameShort.strip().split(' ')[-1]
+        if len(serverShortName) > _MAX_HEADER_SERVER_NAME_LEN:
+            serverShortName = _SERVER_NAME_PREFIX % serverShortName[:_MAX_HEADER_SERVER_NAME_LEN]
+        self.as_setServerS(serverShortName, TOOLTIPS_CONSTANTS.SETTINGS_BUTTON, TOOLTIP_TYPES.SPECIAL)
+
     def __updateServerName(self):
-        serverShortName = connectionManager.serverUserNameShort.split()[-1].strip()
+        serverShortName = connectionManager.serverUserNameShort.strip().split(' ')[-1]
         if len(serverShortName) > _MAX_HEADER_SERVER_NAME_LEN:
             serverShortName = _SERVER_NAME_PREFIX % serverShortName[:_MAX_HEADER_SERVER_NAME_LEN]
         self.as_setServerS(serverShortName, TOOLTIPS_CONSTANTS.SETTINGS_BUTTON, TOOLTIP_TYPES.SPECIAL)
@@ -146,14 +173,18 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
         game_control.g_instance.gameSession.onPremiumNotify -= self.__onPremiumTimeChanged
         game_control.g_instance.wallet.onWalletStatusChanged -= self.__onWalletChanged
         game_control.g_instance.igr.onIgrTypeChanged -= self.__onIGRChanged
-        g_lobbyContext.getServerSettings().onServerSettingsChange += self.__onServerSettingChanged
+        g_lobbyContext.getServerSettings().onServerSettingsChange -= self.__onServerSettingChanged
         g_currentVehicle.onChanged -= self.__onVehicleChanged
+        g_currentPreviewVehicle.onChanged -= self.__onVehicleChanged
         g_eventsCache.onSyncCompleted -= self.__onEventsCacheResync
         g_itemsCache.onSyncCompleted -= self.__onItemsChanged
         self.__falloutCtrl.onVehiclesChanged -= self.__updateFalloutSettings
         self.__falloutCtrl.onSettingsChanged -= self.__updateFalloutSettings
         self.__falloutCtrl = None
         self.app.containerManager.onViewAddedToContainer -= self.__onViewAddedToContainer
+        game_control.g_instance.boosters.onBoosterChangeNotify -= self.__onUpdateGoodies
+        g_preDefinedHosts.onPingPerformed -= self.__onPingPerformed
+        g_settingsCore.onSettingsChanged -= self.__onSettingsChanged
         super(LobbyHeader, self)._dispose()
         return
 
@@ -225,8 +256,34 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
             else:
                 clanAbbrev = None
             hasNew = not AccountSettings.getFilter(BOOSTERS)['wasShown']
-            hasActiveBooster = len(g_goodiesCache.getBoosters(criteria=REQ_CRITERIA.BOOSTER.ACTIVE)) > 0
-            self.as_nameResponseS(g_lobbyContext.getPlayerFullName(name, clanInfo=clanInfo), name, clanAbbrev, g_itemsCache.items.stats.isTeamKiller, g_clanCache.isInClan, hasNew, hasActiveBooster, TOOLTIPS.HEADER_ACCOUNT, TOOLTIP_TYPES.COMPLEX)
+            activeBoosters = g_goodiesCache.getBoosters(criteria=REQ_CRITERIA.BOOSTER.ACTIVE).values()
+            hasActiveBooster = len(activeBoosters) > 0
+            readyBoosters = g_goodiesCache.getBoosters(criteria=REQ_CRITERIA.BOOSTER.IS_READY_TO_ACTIVATE).values()
+            boostersAvailable = sum((booster.count for booster in readyBoosters))
+            hasAvailableBoosters = boostersAvailable > 0
+            boosterIcon, boosterText = (None, None)
+            if hasActiveBooster:
+                boosterIcon = RES_ICONS.MAPS_ICONS_BOOSTERS_ACTIVEBOOSTERICON
+                booster = sorted(activeBoosters, key=lambda x: x.getUsageLeftTime())[0]
+                boosterText = booster.getShortLeftTimeStr()
+            elif hasAvailableBoosters:
+                boosterIcon = RES_ICONS.MAPS_ICONS_BOOSTERS_AVAILABLEBOOSTERICON
+                if boostersAvailable <= _MAX_BOOSTERS_TO_DISPLAY:
+                    boosterText = str(boostersAvailable)
+                else:
+                    boosterText = str(_MAX_BOOSTERS_TO_DISPLAY) + '+'
+            self.as_nameResponseS({'userVO': {'fullName': g_lobbyContext.getPlayerFullName(name, clanInfo=clanInfo),
+                        'userName': name,
+                        'clanAbbrev': clanAbbrev},
+             'isTeamKiller': g_itemsCache.items.stats.isTeamKiller,
+             'hasNew': hasNew,
+             'hasActiveBooster': hasActiveBooster,
+             'hasAvailableBoosters': hasAvailableBoosters,
+             'tooltip': TOOLTIPS.HEADER_ACCOUNT,
+             'tooltipType': TOOLTIP_TYPES.COMPLEX,
+             'boosterIcon': boosterIcon,
+             'boosterBg': RES_ICONS.MAPS_ICONS_BOOSTERS_ACTIVEBOOSTERBG,
+             'boosterText': boosterText})
             if g_clanCache.clanDBID:
                 self.requestClanEmblem32x32(g_clanCache.clanDBID)
             else:
@@ -317,20 +374,8 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
             view = container.getView({POP_UP_CRITERIA.VIEW_ALIAS: VIEW_ALIAS.BATTLE_TYPE_SELECT_POPOVER})
         return view
 
-    def __getSquadTypeSelectPopover(self):
-        container = self.app.containerManager.getContainer(ViewTypes.WINDOW)
-        view = None
-        if container:
-            view = container.getView({POP_UP_CRITERIA.VIEW_ALIAS: VIEW_ALIAS.SQUAD_TYPE_SELECT_POPOVER})
-        return view
-
     def __closeBattleTypeSelectPopover(self):
         view = self.__getBattleTypeSelectPopover()
-        if view:
-            view.destroy()
-
-    def __closeSquadTypeSelectPopover(self):
-        view = self.__getSquadTypeSelectPopover()
         if view:
             view.destroy()
 
@@ -339,21 +384,9 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
         if view:
             view.update()
 
-    def __updateSquadTypeSelectPopover(self):
-        view = self.__getSquadTypeSelectPopover()
-        if view:
-            view.update()
-
-    def __getEventTooltipData(self):
-        header = i18n.makeString(TOOLTIPS.EVENT_SQUAD_DISABLE_HEADER)
-        vehicle = g_eventsCache.getEventVehicles()[0]
-        body = i18n.makeString(TOOLTIPS.EVENT_SQUAD_DISABLE_BODY, tankName=vehicle.shortUserName)
-        return {'header': header,
-         'body': body,
-         'note': ''}
-
     def __getFightBtnTooltipData(self, state):
-        config = self.__falloutCtrl.getConfig()
+        falloutCtrl = getFalloutCtrl()
+        config = falloutCtrl.getConfig()
         if state == PREBATTLE_RESTRICTION.VEHICLE_FALLOUT_ONLY:
             header = i18n.makeString('#menu:headerButtons/fightBtn/tooltip/falloutOnly/header')
             body = i18n.makeString('#menu:headerButtons/fightBtn/tooltip/falloutOnly/body')
@@ -379,23 +412,18 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
                 body = i18n.makeString('#menu:headerButtons/fightBtn/tooltip/falloutVehLevelRequired/body', level=int2roman(config.vehicleLevelRequired))
         else:
             return None
-        return {'header': header,
-         'body': body,
-         'note': ''}
+        return {makeTooltip(header, body)}
 
     def __getSandboxTooltipData(self):
-        return {'header': i18n.makeString(MENU.HEADERBUTTONS_FIGHTBTN_TOOLTIP_SANDBOX_INVALID_HEADER),
-         'body': i18n.makeString(MENU.HEADERBUTTONS_FIGHTBTN_TOOLTIP_SANDBOX_INVALID_LEVEL_BODY)}
+        return {makeTooltip(i18n.makeString(MENU.HEADERBUTTONS_FIGHTBTN_TOOLTIP_SANDBOX_INVALID_HEADER), i18n.makeString(MENU.HEADERBUTTONS_FIGHTBTN_TOOLTIP_SANDBOX_INVALID_LEVEL_BODY))}
 
     def __updatePrebattleControls(self):
         if not self.prbDispatcher:
             return
         else:
             items = battle_selector_items.getItems()
-            suadItems = battle_selector_items.getSquadItems()
             state = self.prbDispatcher.getFunctionalState()
             selected = items.update(state)
-            squadSelected = suadItems.update(state)
             canDo, canDoMsg = self.prbDispatcher.canPlayerDoAction()
             playerInfo = self.prbDispatcher.getPlayerInfo()
             if selected.isInSquad(state):
@@ -403,44 +431,30 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
             else:
                 isInSquad = False
                 self.as_doDisableHeaderButtonS(self.BUTTONS.SQUAD, self.prbDispatcher.getFunctionalCollection().canCreateSquad())
-            isFallout = self.__falloutCtrl.isSelected()
-            isEvent = g_eventsCache.isEventEnabled()
+            falloutCtrl = getFalloutCtrl()
+            isFallout = falloutCtrl.isSelected()
             if isInSquad:
                 tooltip = TOOLTIPS.HEADER_SQUAD_MEMBER
-            elif isFallout:
-                tooltip = TOOLTIPS.HEADER_DOMINATIONSQUAD
-            elif isEvent:
-                tooltip = TOOLTIPS.HEADER_SQUAD_MEMBER
             else:
-                tooltip = TOOLTIPS.HEADER_SQUAD
-            if state.isInUnit(PREBATTLE_TYPE.EVENT):
-                iconSquad = RES_ICONS.MAPS_ICONS_BATTLETYPES_40X40_EVENTSQUAD
-            else:
-                iconSquad = RES_ICONS.MAPS_ICONS_BATTLETYPES_40X40_SQUAD
-            self.as_updateSquadS(isInSquad, tooltip, TOOLTIP_TYPES.COMPLEX, isEvent, iconSquad)
+                tooltip = TOOLTIPS.HEADER_DOMINATIONSQUAD if isFallout else TOOLTIPS.HEADER_SQUAD
+            self.as_updateSquadS(isInSquad, tooltip, TOOLTIP_TYPES.COMPLEX)
             isFightBtnDisabled = not canDo or selected.isFightButtonForcedDisabled()
             if isFightBtnDisabled and not state.hasLockedState:
-                if state.isInPreQueue(queueType=QUEUE_TYPE.SANDBOX) and canDoMsg == QUEUE_RESTRICTION.LIMIT_LEVEL:
-                    self.as_setFightBtnTooltipDataS(self.__getSandboxTooltipData())
+                if state.isInPreQueue(queueType=constants.QUEUE_TYPE.SANDBOX) and canDoMsg == QUEUE_RESTRICTION.LIMIT_LEVEL:
+                    self.as_setFightBtnTooltipS(self.__getSandboxTooltipData())
                 elif isFallout:
-                    self.as_setFightBtnTooltipDataS(self.__getFightBtnTooltipData(canDoMsg))
-                elif isEvent and state.isInUnit(PREBATTLE_TYPE.EVENT):
-                    self.as_setFightBtnTooltipDataS(self.__getEventTooltipData())
+                    self.as_setFightBtnTooltipS(self.__getFightBtnTooltipData(canDoMsg))
                 else:
-                    self.as_setFightBtnTooltipDataS(None)
+                    self.as_setFightBtnTooltipS(None)
             else:
-                self.as_setFightBtnTooltipDataS(None)
+                self.as_setFightBtnTooltipS(None)
             self.as_disableFightButtonS(isFightBtnDisabled)
             self.as_setFightButtonS(selected.getFightButtonLabel(state, playerInfo))
-            self.as_updateBattleTypeS(i18n.makeString(selected.getLabel()), selected.getSmallIcon(), not selected.isDisabled(), TOOLTIPS.HEADER_BATTLETYPE, TOOLTIP_TYPES.COMPLEX, selected.getData())
+            self.as_updateBattleTypeS(i18n.makeString(selected.getLabel()), selected.getSmallIcon(), selected.isSelectorBtnEnabled(), TOOLTIPS.HEADER_BATTLETYPE, TOOLTIP_TYPES.COMPLEX, selected.getData())
             if selected.isDisabled():
                 self.__closeBattleTypeSelectPopover()
             else:
                 self.__updateBattleTypeSelectPopover()
-            if squadSelected.isDisabled():
-                self.__closeSquadTypeSelectPopover()
-            else:
-                self.__updateSquadTypeSelectPopover()
             isNavigationEnabled = not state.isNavigationDisabled()
             self.as_doDisableHeaderButtonS(self.BUTTONS.SILVER, isNavigationEnabled)
             self.as_doDisableHeaderButtonS(self.BUTTONS.GOLD, isNavigationEnabled)
@@ -479,6 +493,36 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
         self.updateClanInfo()
         self.updateAccountAttrs()
 
+    def __updateHangarMenuData(self):
+        tabDataProvider = [{'label': MENU.HEADERBUTTONS_HANGAR,
+          'value': self.TABS.HANGAR,
+          'textColor': 16764006,
+          'textColorOver': 16768409,
+          'tooltip': TOOLTIPS.HEADER_BUTTONS_HANGAR},
+         {'label': MENU.HEADERBUTTONS_SHOP,
+          'value': STORE_CONSTANTS.STORE,
+          'tooltip': TOOLTIPS.HEADER_BUTTONS_SHOP},
+         {'label': MENU.HEADERBUTTONS_PROFILE,
+          'value': self.TABS.PROFILE,
+          'tooltip': TOOLTIPS.HEADER_BUTTONS_PROFILE},
+         {'label': MENU.HEADERBUTTONS_TECHTREE,
+          'value': self.TABS.TECHTREE,
+          'tooltip': TOOLTIPS.HEADER_BUTTONS_TECHTREE,
+          'subValues': [self.TABS.RESEARCH]},
+         {'label': MENU.HEADERBUTTONS_BARRACKS,
+          'value': self.TABS.BARRACKS,
+          'tooltip': TOOLTIPS.HEADER_BUTTONS_BARRACKS}]
+        if constants.IS_CHINA:
+            tabDataProvider.append({'label': MENU.HEADERBUTTONS_BROWSER,
+             'value': self.TABS.BROWSER,
+             'tooltip': TOOLTIPS.HEADER_BUTTONS_BROWSER})
+        fortEnabled = g_lobbyContext.getServerSettings().isFortsEnabled()
+        tabDataProvider.append({'label': MENU.HEADERBUTTONS_FORTS,
+         'value': FORTIFICATION_ALIASES.FORTIFICATIONS_VIEW_ALIAS,
+         'tooltip': TOOLTIPS.HEADER_BUTTONS_FORTS if fortEnabled else TOOLTIPS.HEADER_BUTTONS_FORTS_TURNEDOFF,
+         'enabled': fortEnabled})
+        self.as_setHangarMenuDataS({'tabDataProvider': tabDataProvider})
+
     def __onSPAUpdated(self, _):
         enabledVal = isGoldFishActionActive()
         tooltip = TOOLTIPS.HEADER_REFILL_ACTION if enabledVal else TOOLTIPS.HEADER_REFILL
@@ -492,7 +536,7 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
     def __onItemsChanged(self, updateReason, invalidItems):
         vehiclesDiff = invalidItems.get(GUI_ITEM_TYPE.VEHICLE)
         if vehiclesDiff is not None:
-            falloutVehicle = findFirst(lambda v: v.intCD in vehiclesDiff, self.__falloutCtrl.getSelectedVehicles())
+            falloutVehicle = findFirst(lambda v: v.intCD in vehiclesDiff, getFalloutCtrl().getSelectedVehicles())
             if falloutVehicle is not None:
                 self.__updatePrebattleControls()
         return
@@ -500,3 +544,24 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
     def __onServerSettingChanged(self, diff):
         if 'isSandboxEnabled' in diff:
             self.__updatePrebattleControls()
+        if 'isFortsEnabled' in diff:
+            self.__updateHangarMenuData()
+            self.__updatePrebattleControls()
+
+    def __onUpdateGoodies(self, *args):
+        self.__setClanInfo(g_clanCache.clanInfo)
+
+    def __onPingPerformed(self, result):
+        """
+        g_preDefinedHosts.onPingPerformed event handler
+        :param result: [dict] key - periphery id, value - ping value.
+        """
+        self.__updatePing(result)
+
+    def __onSettingsChanged(self, diff):
+        if 'isColorBlind' in diff:
+            self.__updatePing(g_preDefinedHosts.getPingResult())
+
+    def __updatePing(self, pingValues):
+        currentPing = pingValues.get(connectionManager.url, UNDEFINED_PING_VAL)
+        self.as_updatePingStatusS(getPingStatus(currentPing), g_settingsCore.getSetting('isColorBlind'))

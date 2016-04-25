@@ -513,3 +513,8 @@ accountDossierLayout = (_a15x15BlockBuilder,
  _falloutCutBlockBuilder,
  _maxFalloutBlockBuilder,
  _falloutAchievementsBlockBuilder)
+ACCOUNT_DOSSIER_BLOCKS = {b.name:b for b in accountDossierLayout}
+ACCOUNT_DOSSIER_STATIC_BLOCKS = frozenset((b.name for b in accountDossierLayout if type(b) == StaticSizeBlockBuilder))
+ACCOUNT_DOSSIER_BINARY_SET_BLOCKS = [ b.name for b in accountDossierLayout if type(b) == BinarySetDossierBlockBuilder ]
+ACCOUNT_DOSSIER_DICT_BLOCKS = [ b.name for b in accountDossierLayout if type(b) == DictBlockBuilder ]
+ACCOUNT_DOSSIER_LIST_BLOCKS = [ b.name for b in accountDossierLayout if type(b) == ListBlockBuilder ]

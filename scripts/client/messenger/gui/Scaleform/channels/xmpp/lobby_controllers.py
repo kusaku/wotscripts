@@ -2,14 +2,14 @@
 from gui.shared import g_eventBus, EVENT_BUS_SCOPE
 from gui.shared.events import MessengerEvent
 from messenger.formatters.users_messages import getBroadcastIsInCoolDownMessage
-from messenger.gui.Scaleform.channels._layout import _LobbyLayout
+from messenger.gui.Scaleform.channels.layout import LobbyLayout
 from messenger.m_constants import PROTO_TYPE
 from messenger.proto import proto_getter
 from messenger.proto.events import g_messengerEvents
 from messenger.proto.xmpp.jid import makeContactJID
 from messenger.proto.xmpp.xmpp_constants import MESSAGE_LIMIT
 
-class _ChannelController(_LobbyLayout):
+class _ChannelController(LobbyLayout):
 
     def __init__(self, channel, mBuilder = None):
         super(_ChannelController, self).__init__(channel, mBuilder)
@@ -28,10 +28,7 @@ class _ChannelController(_LobbyLayout):
 
     def addMessage(self, message, doFormatting = True):
         activated = super(_ChannelController, self).addMessage(message, doFormatting)
-        if not activated:
-            self._hasUnreadMessages = True
-        else:
-            self._hasUnreadMessages = False
+        self._hasUnreadMessages = not activated
         return activated
 
     def hasUnreadMessages(self):

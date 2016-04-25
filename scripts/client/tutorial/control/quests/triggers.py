@@ -245,7 +245,7 @@ class VehicleBattleCountTrigger(TriggerWithValidateVar):
 
     def isOn(self):
         vehicleDossier = g_itemsCache.items.getVehicleDossier(self.getVar()['vehicle'])
-        return vehicleDossier.getRandomStats().getBattlesCount() >= self.getVar()['battlesCount']
+        return vehicleDossier.getTotalStats().getBattlesCount() >= self.getVar()['battlesCount']
 
     def clear(self):
         g_clientUpdateManager.removeObjectCallbacks(self)

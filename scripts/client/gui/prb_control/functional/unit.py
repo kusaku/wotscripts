@@ -10,6 +10,8 @@ from gui.prb_control.functional import action_handlers
 from gui.prb_control.restrictions import createUnitActionValidator
 from gui.prb_control.restrictions.permissions import IntroUnitPermissions
 from gui.shared.fortifications import getClientFortMgr
+from gui.server_events import g_eventsCache
+from gui.ClientUpdateManager import g_clientUpdateManager
 from messenger.ext import passCensor
 from account_helpers.AccountSettings import AccountSettings
 from adisp import process
@@ -28,12 +30,14 @@ from gui.prb_control.prb_cooldown import UnitCooldownManager
 from gui.prb_control.restrictions import permissions
 from gui.prb_control.settings import FUNCTIONAL_FLAG, CTRL_ENTITY_TYPE, PREBATTLE_ACTION_NAME_TO_QUEUE_TYPE
 from gui.prb_control.settings import PREBATTLE_ACTION_NAME
-from gui.shared import g_itemsCache, REQ_CRITERIA
+from gui.shared.utils.requesters import REQ_CRITERIA
+from gui.shared import g_itemsCache
+from gui.shared.gui_items.Vehicle import Vehicle
 from gui.shared.utils.listeners_collection import ListenersCollection
 from helpers import time_utils
 from items import vehicles as core_vehicles
 from gui.prb_control.events_dispatcher import g_eventDispatcher
-from gui.prb_control.items.unit_items import DynamicRosterSettings
+from gui.prb_control.items.unit_items import DynamicRosterSettings, BalancedSquadDynamicRosterSettings
 from shared_utils import findFirst
 
 class UnitIntro(interfaces.IPrbEntry):
@@ -123,12 +127,6 @@ class SquadEntry(UnitEntry):
 
     def _doCreate(self, unitMgr, ctx):
         unitMgr.createSquad()
-
-
-class EventSquadEntry(SquadEntry):
-
-    def _doCreate(self, unitMgr, ctx):
-        unitMgr.createEventSquad()
 
 
 class FalloutSquadEntry(UnitEntry):
@@ -286,7 +284,7 @@ class _UnitFunctional(ListenersCollection, interfaces.IUnitFunctional):
                 inSlots = unit.getPlayerSlots()
                 if dbID in inSlots:
                     isPlayerReady = unit.isPlayerReadyInSlot(inSlots[dbID])
-            if self.getEntityType() in PREBATTLE_TYPE.SQUAD_PREBATTLES:
+            if self.getEntityType() in (PREBATTLE_TYPE.SQUAD, PREBATTLE_TYPE.FALLOUT):
                 return permissions.SquadPermissions(roles, unit._flags, pDbID == dbID, isPlayerReady)
             else:
                 return permissions.UnitPermissions(roles, unit._flags, pDbID == dbID, isPlayerReady)
@@ -377,11 +375,17 @@ class _UnitFunctional(ListenersCollection, interfaces.IUnitFunctional):
                     newVehicleIDs.append(vInfo.vehInvID)
 
         if hasInvalidation:
-            if self._prbType != PREBATTLE_TYPE.FALLOUT:
-                return unit_ctx.SetVehicleUnitCtx(waitingID='prebattle/change_settings')
-            return unit_ctx.SetVehiclesCtx(newVehicleIDs, waitingID='prebattle/change_settings')
+            if self._prbType == PREBATTLE_TYPE.FALLOUT:
+                return unit_ctx.SetVehiclesCtx(newVehicleIDs, waitingID='prebattle/change_settings')
+            return unit_ctx.SetVehicleUnitCtx(waitingID='prebattle/change_settings')
         else:
             return
+
+    def isDynamic(self):
+        _, unit = self.getUnit()
+        if unit:
+            return unit.isDynamic()
+        return False
 
     def getUnitFullData(self, unitIdx = None):
         unitIdx, unit = self.getUnit(unitIdx=unitIdx)
@@ -715,14 +719,7 @@ class UnitFunctional(_UnitFunctional):
          RQ_TYPE.CHANGE_DIVISION: self.changeDivision,
          RQ_TYPE.SET_VEHICLE_LIST: self.setVehicleList,
          RQ_TYPE.CHANGE_FALLOUT_QUEUE_TYPE: self.changeFalloutQueueType}
-        if prbType == PREBATTLE_TYPE.SQUAD:
-            self._actionHandler = action_handlers.SquadActionsHandler(self)
-        elif prbType == PREBATTLE_TYPE.EVENT:
-            self._actionHandler = action_handlers.EventSquadActionsHandler(self)
-        elif prbType == PREBATTLE_TYPE.FALLOUT:
-            self._actionHandler = action_handlers.FalloutSquadActionsHandler(self)
-        else:
-            self._actionHandler = action_handlers.CommonUnitActionsHandler(self)
+        self._actionHandler = self.createActionHandler(prbType)
         super(UnitFunctional, self).__init__(handlers, interfaces.IUnitListener, prbType, rosterSettings, flags & FUNCTIONAL_FLAG.UNIT_BITMASK)
         self._requestsProcessor = None
         self._vehiclesWatcher = None
@@ -801,6 +798,18 @@ class UnitFunctional(_UnitFunctional):
             self._deferredReset = False
             return super(UnitFunctional, self).fini()
 
+    def createRosterSettings(self, unit):
+        return DynamicRosterSettings(unit)
+
+    def createActionHandler(self, prbType):
+        if prbType == PREBATTLE_TYPE.SQUAD:
+            actionHandler = action_handlers.SquadActionsHandler(self)
+        elif prbType == PREBATTLE_TYPE.FALLOUT:
+            actionHandler = action_handlers.FalloutSquadActionsHandler(self)
+        else:
+            actionHandler = action_handlers.CommonUnitActionsHandler(self)
+        return actionHandler
+
     def addListener(self, listener):
         super(UnitFunctional, self).addListener(listener)
         flags = self.getFlags()
@@ -842,7 +851,7 @@ class UnitFunctional(_UnitFunctional):
         result = True
         if unit.isSortie():
             result = not self.getPlayerInfo().isLegionary()
-        elif unit.isSquad() or unit.isFalloutSquad() or unit.isEvent():
+        elif unit.isSquad() or unit.isFalloutSquad():
             result = False
         return result
 
@@ -1231,9 +1240,6 @@ class UnitFunctional(_UnitFunctional):
         if name == PREBATTLE_ACTION_NAME.SQUAD and self._prbType in (PREBATTLE_TYPE.SQUAD, PREBATTLE_TYPE.FALLOUT):
             g_eventDispatcher.showUnitWindow(self._prbType)
             result = True
-        if name == PREBATTLE_ACTION_NAME.EVENT_SQUAD and self._prbType in (PREBATTLE_TYPE.EVENT,):
-            g_eventDispatcher.showUnitWindow(self._prbType)
-            result = True
         if name == PREBATTLE_ACTION_NAME.FORT and self._prbType in (PREBATTLE_TYPE.SORTIE, PREBATTLE_TYPE.FORT_BATTLE):
             g_eventDispatcher.showUnitWindow(self._prbType)
             result = True
@@ -1498,7 +1504,7 @@ class UnitFunctional(_UnitFunctional):
 
     def unit_onUnitRosterChanged(self):
         unitIdx, unit = self.getUnit()
-        self._rosterSettings = DynamicRosterSettings(unit)
+        self._rosterSettings = self.createRosterSettings(unit)
         self._actionValidator = createUnitActionValidator(self._prbType, self._rosterSettings, self)
         self._vehiclesWatcher.validate()
         self._invokeListeners('onUnitRosterChanged')
@@ -1658,3 +1664,121 @@ class UnitFunctional(_UnitFunctional):
                 callback(False)
             return True
         return False
+
+
+class SquadUnitFunctional(UnitFunctional):
+
+    def __init__(self, prbType, rosterSettings, flags = FUNCTIONAL_FLAG.UNIT):
+        super(SquadUnitFunctional, self).__init__(prbType, rosterSettings, flags)
+        self._isBalancedSquad = self.isBalancedSquadEnabled()
+
+    def init(self, ctx = None):
+        self._isBalancedSquad = self.isBalancedSquadEnabled()
+        unitIdx, unit = self.getUnit()
+        self._rosterSettings = self.createRosterSettings(unit)
+        self._actionValidator = createUnitActionValidator(self._prbType, self._rosterSettings, self)
+        self.invalidateVehicleStates()
+        rv = super(SquadUnitFunctional, self).init(ctx)
+        g_eventsCache.onSyncCompleted += self.onEventsSyncCompleted
+        if self._isBalancedSquad:
+            g_clientUpdateManager.addCallbacks({'inventory.1': self._onInventoryVehiclesUpdated})
+        return rv
+
+    def fini(self, woEvents = False):
+        g_eventsCache.onSyncCompleted -= self.onEventsSyncCompleted
+        if self._isBalancedSquad:
+            g_clientUpdateManager.removeObjectCallbacks(self, force=True)
+            self._isBalancedSquad = False
+            self.invalidateVehicleStates()
+        return super(SquadUnitFunctional, self).fini(woEvents)
+
+    def isBalancedSquadEnabled(self):
+        return g_eventsCache.isBalancedSquadEnabled()
+
+    def getSquadLevelBounds(self):
+        return g_eventsCache.getBalancedSquadBounds()
+
+    def createRosterSettings(self, unit):
+        if self._isBalancedSquad:
+            lowerBound, upperBound = self.getSquadLevelBounds()
+            return BalancedSquadDynamicRosterSettings(unit=unit, lowerBound=lowerBound, upperBound=upperBound)
+        return DynamicRosterSettings(unit=unit)
+
+    def createActionHandler(self, prbType):
+        if self.isBalancedSquadEnabled():
+            return action_handlers.BalancedSquadActionsHandler(self)
+        else:
+            return super(SquadUnitFunctional, self).createActionHandler(prbType)
+
+    def unit_onUnitRosterChanged(self):
+        unitIdx, unit = self.getUnit()
+        rosterSettings = self.createRosterSettings(unit)
+        if rosterSettings != self._rosterSettings:
+            self._rosterSettings = rosterSettings
+            self._actionValidator = createUnitActionValidator(self._prbType, self._rosterSettings, self)
+            self._actionHandler = self.createActionHandler(self._prbType)
+            self.invalidateVehicleStates()
+            self._vehiclesWatcher.validate()
+            self._invokeListeners('onUnitRosterChanged')
+
+    def unit_onUnitVehicleChanged(self, dbID, vehInvID, vehTypeCD):
+        super(SquadUnitFunctional, self).unit_onUnitVehicleChanged(dbID, vehInvID, vehTypeCD)
+        self._onUnitMemberVehiclesChanged(dbID)
+
+    def unit_onUnitVehiclesChanged(self, dbID, vehicles):
+        super(SquadUnitFunctional, self).unit_onUnitVehiclesChanged(dbID, vehicles)
+        self._onUnitMemberVehiclesChanged(dbID)
+
+    def unit_onUnitPlayerRoleChanged(self, playerID, prevRoleFlags, nextRoleFlags):
+        super(SquadUnitFunctional, self).unit_onUnitPlayerRoleChanged(playerID, prevRoleFlags, nextRoleFlags)
+        if self._isBalancedSquad and playerID == account_helpers.getAccountDatabaseID():
+            self.unit_onUnitRosterChanged()
+
+    def rejoin(self):
+        super(SquadUnitFunctional, self).rejoin()
+        self.unit_onUnitRosterChanged()
+
+    def onEventsSyncCompleted(self, *args):
+        enabled = self.isBalancedSquadEnabled()
+        if enabled != self._isBalancedSquad:
+            if enabled:
+                g_clientUpdateManager.addCallbacks({'inventory.1': self._onInventoryVehiclesUpdated})
+            else:
+                g_clientUpdateManager.removeObjectCallbacks(self, force=True)
+        self._isBalancedSquad = enabled
+        self.unit_onUnitRosterChanged()
+
+    def invalidateVehicleStates(self, vehicles = None):
+        state = Vehicle.VEHICLE_STATE.UNSUITABLE_TO_UNIT
+        if self._isBalancedSquad:
+            condition = lambda v: v.level in self._rosterSettings.getLevelsRange()
+        else:
+            condition = lambda _: True
+        if vehicles:
+            criteria = REQ_CRITERIA.IN_CD_LIST(vehicles)
+        else:
+            criteria = REQ_CRITERIA.INVENTORY
+        vehicles = g_itemsCache.items.getVehicles(criteria)
+        updatedVehicles = [ intCD for intCD, v in vehicles.iteritems() if self._updateVehicleState(v, state, condition) ]
+        if updatedVehicles:
+            g_prbCtrlEvents.onVehicleClientStateChanged(updatedVehicles)
+
+    def _onInventoryVehiclesUpdated(self, *args):
+        self.invalidateVehicleStates()
+
+    def _onUnitMemberVehiclesChanged(self, accoundDbID):
+        if self._isBalancedSquad and accoundDbID != account_helpers.getAccountDatabaseID():
+            unitIdx, unit = self.getUnit()
+            if unit.getCommanderDBID() == accoundDbID:
+                self.unit_onUnitRosterChanged()
+
+    def _updateVehicleState(self, vehicle, state, condition):
+        invalid = not condition(vehicle)
+        stateSet = vehicle.getCustomState() == state
+        changed = invalid ^ stateSet
+        if changed:
+            if invalid:
+                vehicle.setCustomState(state)
+            else:
+                vehicle.clearCustomState()
+        return changed

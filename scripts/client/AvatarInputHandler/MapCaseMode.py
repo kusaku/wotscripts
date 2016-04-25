@@ -20,7 +20,7 @@ from post_processing import g_postProcessing
 from items import vehicles, artefacts
 from constants import AIMING_MODE
 
-class _DefaultStrikeSelector(object, CallbackDelayer):
+class _DefaultStrikeSelector(CallbackDelayer):
     _TICK_DELAY = 0.1
 
     def __init__(self, position, equipment):
@@ -70,12 +70,12 @@ class _VehiclesSelector():
     def __onVehicleLeaveWorld(self, vehicle):
         if vehicle in self.__edgedVehicles:
             self.__edgedVehicles.remove(vehicle)
-            vehicle.removeEdge()
+            vehicle.removeEdge(True)
 
     def __clearEdgedVehicles(self):
         for v in self.__edgedVehicles:
             if v is not None:
-                v.removeEdge()
+                v.removeEdge(True)
 
         self.__edgedVehicles = []
         return
@@ -85,13 +85,7 @@ class _VehiclesSelector():
         vehicles = [ v for v in BigWorld.player().vehicles if v.isAlive() ]
         selected = self.__intersectChecker(vehicles)
         for v in selected:
-            if v.isPlayerVehicle:
-                edgeType = 0
-            elif BigWorld.player().team == v.publicInfo['team']:
-                edgeType = 2
-            else:
-                edgeType = 1
-            v.drawEdge(edgeType, 0)
+            v.drawEdge(True)
             self.__edgedVehicles.append(v)
 
 

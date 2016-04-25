@@ -1,4 +1,5 @@
 # Embedded file name: scripts/client/gui/Scaleform/framework/entities/abstract/AbstractPopOverView.py
+from debug_utils import LOG_DEBUG
 from gui.Scaleform.daapi.view.meta.PopOverViewMeta import PopOverViewMeta
 from gui.shared.events import HidePopoverEvent
 

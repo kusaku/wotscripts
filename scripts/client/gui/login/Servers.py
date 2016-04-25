@@ -1,7 +1,6 @@
 # Embedded file name: scripts/client/gui/login/Servers.py
 import BigWorld
 import Settings
-from constants import IS_DEVELOPMENT
 from gui import GUI_SETTINGS
 from Event import Event
 from predefined_hosts import g_preDefinedHosts, HOST_AVAILABILITY, REQUEST_RATE
@@ -11,9 +10,11 @@ class Servers(object):
 
     def __init__(self, loginPreferences):
         self._loginPreferences = loginPreferences
-        g_preDefinedHosts.readScriptConfig(Settings.g_instance.scriptConfig)
-        g_preDefinedHosts.onCsisQueryStart += self.__onCsisUpdate
-        g_preDefinedHosts.onCsisQueryComplete += self.__onCsisUpdate
+        s = Settings.g_instance
+        g_preDefinedHosts.readScriptConfig(s.scriptConfig, s.userPrefs)
+        g_preDefinedHosts.onCsisQueryStart += self.__onServerUpdate
+        g_preDefinedHosts.onPingPerformed += self.__onServerUpdate
+        g_preDefinedHosts.onCsisQueryComplete += self.__onServerUpdate
         if GUI_SETTINGS.csisRequestRate == REQUEST_RATE.ALWAYS:
             g_preDefinedHosts.startCSISUpdate()
         self._serverList = []
@@ -22,8 +23,9 @@ class Servers(object):
 
     def fini(self):
         g_preDefinedHosts.stopCSISUpdate()
-        g_preDefinedHosts.onCsisQueryStart -= self.__onCsisUpdate
-        g_preDefinedHosts.onCsisQueryComplete -= self.__onCsisUpdate
+        g_preDefinedHosts.onCsisQueryStart -= self.__onServerUpdate
+        g_preDefinedHosts.onPingPerformed -= self.__onServerUpdate
+        g_preDefinedHosts.onCsisQueryComplete -= self.__onServerUpdate
         self._serverList = None
         return
 
@@ -47,6 +49,8 @@ class Servers(object):
                 g_preDefinedHosts.startCSISUpdate()
             else:
                 g_preDefinedHosts.stopCSISUpdate()
+        if startListen:
+            g_preDefinedHosts.requestPing(True)
 
     @property
     def serverList(self):
@@ -56,7 +60,7 @@ class Servers(object):
     def selectedServerIdx(self):
         return self._selectedServerIdx
 
-    def __onCsisUpdate(self, response = None):
+    def __onServerUpdate(self, _ = None):
         self.updateServerList()
         self.onServersStatusChanged(self._serverList)
 
@@ -102,7 +106,7 @@ class DevelopmentServers(Servers):
             if not g_preDefinedHosts.predefined(hostName):
                 baseServerList.append((hostName,
                  friendlyName,
-                 HOST_AVAILABILITY.getDefault(),
+                 g_preDefinedHosts.getDefaultCSISStatus(),
                  None))
 
         self._setServerList(baseServerList)

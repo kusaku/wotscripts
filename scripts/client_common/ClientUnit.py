@@ -110,6 +110,9 @@ class ClientUnit(UnitBase):
     def getPlayerSlots(self):
         return self._playerSlots
 
+    def getMemberVehicles(self, dbID):
+        return self.getVehicles().get(dbID, [])
+
     def getLegionarySlots(self):
         result = {}
         for accountDBID, slotIdx in self._playerSlots.iteritems():
@@ -193,9 +196,6 @@ class ClientUnit(UnitBase):
 
     def isClub(self):
         return self._prebattleTypeID == PREBATTLE_TYPE.CLUBS
-
-    def isEvent(self):
-        return self._prebattleTypeID == PREBATTLE_TYPE.EVENT
 
     def isRated(self):
         return self.isClub() and self.getExtra().isRatedBattle

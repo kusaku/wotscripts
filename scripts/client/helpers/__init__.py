@@ -7,6 +7,7 @@ import i18n
 import constants
 from debug_utils import LOG_CURRENT_EXCEPTION
 VERSION_FILE_PATH = '../version.xml'
+gEffectsDisabled = lambda : False
 
 def isPlayerAccount():
     return hasattr(BigWorld.player(), 'databaseID')
@@ -109,7 +110,21 @@ def isShowStartupVideo():
         if not GUI_SETTINGS.guiEnabled:
             return False
         p = Settings.g_instance.userPrefs
-        return p is None or p.readInt(Settings.KEY_SHOW_STARTUP_MOVIE, 1) == 1
+        if p is not None:
+            if p.readInt(Settings.KEY_SHOW_STARTUP_MOVIE, 1) == 1:
+                import account_shared
+                mainVersion = account_shared.getClientMainVersion()
+                lastVideoVersion = p.readString(Settings.INTRO_VIDEO_VERSION, '')
+                if lastVideoVersion != mainVersion:
+                    p.writeString(Settings.INTRO_VIDEO_VERSION, mainVersion)
+                    return True
+                else:
+                    return False
+            else:
+                return False
+        else:
+            return True
+        return
 
 
 def newFakeModel():

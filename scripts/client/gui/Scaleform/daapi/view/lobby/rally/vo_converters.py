@@ -14,9 +14,10 @@ from gui.game_control import getFalloutCtrl
 from gui.prb_control import settings
 from gui.prb_control.items.sortie_items import getDivisionNameByType, getDivisionLevel
 from gui.prb_control.settings import UNIT_RESTRICTION
+from gui.server_events import g_eventsCache
 from gui.shared.ItemsCache import g_itemsCache
 from gui.shared.formatters.ranges import toRomanRangeString
-from gui.shared.gui_items.Vehicle import VEHICLE_TABLE_TYPES_ORDER_INDICES, Vehicle
+from gui.shared.gui_items.Vehicle import VEHICLE_TABLE_TYPES_ORDER_INDICES_REVERSED, Vehicle
 from helpers import i18n, int2roman
 from messenger import g_settings
 from messenger.m_constants import USER_GUI_TYPE
@@ -99,7 +100,7 @@ def makeVehicleBasicVO(vehicle, levelsRange = None, vehicleTypes = None):
          'shortUserName': vehicle.shortUserName,
          'level': vehicle.level,
          'type': vehicle.type,
-         'typeIndex': VEHICLE_TABLE_TYPES_ORDER_INDICES[vehicle.type],
+         'typeIndex': VEHICLE_TABLE_TYPES_ORDER_INDICES_REVERSED[vehicle.type],
          'smallIconPath': '../maps/icons/vehicle/small/{0}.png'.format(vehicle.name.replace(':', '-')),
          'isReadyToFight': True,
          'enabled': enabled,
@@ -275,7 +276,7 @@ def _getSlotsData(unitIdx, unit, unitState, pInfo, slotsIter, app = None, levels
         else:
             isRequired = falloutBattleType == QUEUE_TYPE.FALLOUT_MULTITEAM
             slotLabel = makeSlotLabel(unitState, slotState, isPlayerCreator, vehCount, checkForVehicles, isRequired=isRequired)
-        if unit.isSquad() or unit.isFalloutSquad() or unit.isEvent():
+        if unit.isSquad() or unit.isFalloutSquad():
             playerStatus = getSquadPlayerStatus(slotState, player)
         else:
             playerStatus = getPlayerStatus(slotState, player)
@@ -297,6 +298,15 @@ def _getSlotsData(unitIdx, unit, unitState, pInfo, slotsIter, app = None, levels
          'selectedVehicleLevel': 1 if slotState.isClosed else slotLevel,
          'restrictions': restrictions,
          'isFallout': isFallout}
+        if unit.isSquad():
+            isVisibleAdtMsg = g_eventsCache.isBalancedSquadEnabled() and player and player.isCurrentPlayer() and not isPlayerCreator and not vehicle and unit and bool(unit.getMemberVehicles(unit.getCommanderDBID()))
+            if isVisibleAdtMsg:
+                rangeString = toRomanRangeString(levelsRange, 1)
+                additionMsg = text_styles.main(i18n.makeString(MESSENGER.DIALOGS_SIMPLESQUAD_VEHICLELEVEL, level=rangeString))
+            else:
+                additionMsg = ''
+            slot.update({'isVisibleAdtMsg': isVisibleAdtMsg,
+             'additionalMsg': additionMsg})
         if isFallout:
             vehiclesNotify = [None, None, None]
             selectedVehicles = [None, None, None]

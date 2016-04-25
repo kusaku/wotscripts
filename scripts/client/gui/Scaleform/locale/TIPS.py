@@ -2,6 +2,12 @@
 
 
 class TIPS(object):
+    """
+    DO NOT MODIFY!
+    Generated with yaml.
+    __author__ = 'yaml_processor'
+    null
+    """
     PAYATTENTION = '#tips:payAttention'
     USEFULFEATURES = '#tips:usefulFeatures'
     FOLLOWTHERULES = '#tips:followTheRules'
@@ -189,7 +195,5 @@ class TIPS(object):
     TIP177_FOLLOWTHERULES_RULES_100_INFINITY_EXCEPT_7_ALL_ALL_ALL = '#tips:tip177/followTheRules/rules/100_infinity/except_7/all/all/all'
     TIP178_FOLLOWTHERULES_RULES_100_INFINITY_ALL_ALL_ALL_ALL = '#tips:tip178/followTheRules/rules/100_infinity/all/all/all/all'
     TIP179_BECAREFUL_SECURITY_0_INFINITY_ALL_ALL_ALL_ALL = '#tips:tip179/beCareful/security/0_infinity/all/all/all/all'
-    SANDBOX01 = '#tips:sandbox01'
-    SANDBOX02 = '#tips:sandbox02'
-    EVENTTITLE = '#tips:eventTitle'
-    EVENTMESSAGE = '#tips:eventMessage'
+    SANDBOX0 = '#tips:sandbox0'
+    SANDBOX1 = '#tips:sandbox1'

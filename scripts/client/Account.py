@@ -649,9 +649,9 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
         if not events.isPlayerEntityChanging:
             self.base.doCmdInt3(AccountCommands.REQUEST_ID_NO_RESPONSE, AccountCommands.CMD_DEQUEUE_UNIT_ASSEMBLER, 0, 0, 0)
 
-    def enqueueEventBattles(self, vehInvIDs):
+    def enqueueEventBattles(self, vehInvIDs, battleType, gameplaysMask = 65535, canAddToSquad = False):
         if not events.isPlayerEntityChanging:
-            arr = [len(vehInvIDs)] + vehInvIDs
+            arr = [len(vehInvIDs)] + vehInvIDs + [battleType, gameplaysMask, canAddToSquad]
             self.base.doCmdIntArr(AccountCommands.REQUEST_ID_NO_RESPONSE, AccountCommands.CMD_ENQUEUE_EVENT_BATTLES, arr)
 
     def dequeueEventBattles(self):
@@ -798,11 +798,6 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
         if events.isPlayerEntityChanging:
             return
         self._doCmdInt3(AccountCommands.CMD_PRB_CH_GAMEPLAYSMASK, gameplaysMask, 0, 0, lambda requestID, resultID, errorStr: callback(resultID))
-
-    def challengeCaptcha(self, challenge, response, callback):
-        if events.isPlayerEntityChanging:
-            return
-        self._doCmdInt2Str(AccountCommands.CMD_CAPTCHA_CHALLENGE, len(challenge), 0, challenge + response, lambda requestID, resultID, errorCode: callback(resultID, errorCode))
 
     def setLanguage(self, language):
         self._doCmdStr(AccountCommands.CMD_SET_LANGUAGE, language, None)

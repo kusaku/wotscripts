@@ -159,23 +159,28 @@ class ConsumablesPanel(object):
     def __removeListeners(self):
         g_eventBus.removeListener(GameEvent.CHOICE_CONSUMABLE, self.__handleConsumableChoice, scope=EVENT_BUS_SCOPE.BATTLE)
         vehicleCtrl = g_sessionProvider.getVehicleStateCtrl()
-        vehicleCtrl.onPostMortemSwitched -= self.__onPostMortemSwitched
-        vehicleCtrl.onRespawnBaseMoving -= self.__onRespawnBaseMoving
-        vehicleCtrl.onVehicleStateUpdated -= self.__onVehicleStateUpdated
+        if vehicleCtrl is not None:
+            vehicleCtrl.onPostMortemSwitched -= self.__onPostMortemSwitched
+            vehicleCtrl.onRespawnBaseMoving -= self.__onRespawnBaseMoving
+            vehicleCtrl.onVehicleStateUpdated -= self.__onVehicleStateUpdated
         ammoCtrl = g_sessionProvider.getAmmoCtrl()
-        ammoCtrl.onShellsAdded -= self.__onShellsAdded
-        ammoCtrl.onShellsUpdated -= self.__onShellsUpdated
-        ammoCtrl.onNextShellChanged -= self.__onNextShellChanged
-        ammoCtrl.onCurrentShellChanged -= self.__onCurrentShellChanged
-        ammoCtrl.onGunReloadTimeSet -= self.__onGunReloadTimeSet
-        ammoCtrl.onGunReloadTimeSetInPercent -= self.__onGunReloadTimeSetInPercent
+        if ammoCtrl is not None:
+            ammoCtrl.onShellsAdded -= self.__onShellsAdded
+            ammoCtrl.onShellsUpdated -= self.__onShellsUpdated
+            ammoCtrl.onNextShellChanged -= self.__onNextShellChanged
+            ammoCtrl.onCurrentShellChanged -= self.__onCurrentShellChanged
+            ammoCtrl.onGunReloadTimeSet -= self.__onGunReloadTimeSet
+            ammoCtrl.onGunReloadTimeSetInPercent -= self.__onGunReloadTimeSetInPercent
         eqCtrl = g_sessionProvider.getEquipmentsCtrl()
-        eqCtrl.onEquipmentAdded -= self.__onEquipmentAdded
-        eqCtrl.onEquipmentUpdated -= self.__onEquipmentUpdated
-        eqCtrl.onEquipmentCooldownInPercent -= self.__onEquipmentCooldownInPercent
+        if eqCtrl is not None:
+            eqCtrl.onEquipmentAdded -= self.__onEquipmentAdded
+            eqCtrl.onEquipmentUpdated -= self.__onEquipmentUpdated
+            eqCtrl.onEquipmentCooldownInPercent -= self.__onEquipmentCooldownInPercent
         optDevicesCtrl = g_sessionProvider.getOptDevicesCtrl()
-        optDevicesCtrl.onOptionalDeviceAdded -= self.__onOptionalDeviceAdded
-        optDevicesCtrl.onOptionalDeviceUpdated -= self.__onOptionalDeviceUpdated
+        if optDevicesCtrl is not None:
+            optDevicesCtrl.onOptionalDeviceAdded -= self.__onOptionalDeviceAdded
+            optDevicesCtrl.onOptionalDeviceUpdated -= self.__onOptionalDeviceUpdated
+        return
 
     def __genNextIdx(self, full, start):
         bits = self.__mask & full

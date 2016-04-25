@@ -1,13 +1,11 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/header/battle_selector_items.py
 import BigWorld
-from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.game_control import getFalloutCtrl
 from helpers import i18n, time_utils
 from account_helpers import isDemonstrator
 from constants import PREBATTLE_TYPE, QUEUE_TYPE, ACCOUNT_ATTR
 from debug_utils import LOG_WARNING, LOG_ERROR
 from gui import GUI_SETTINGS
-from gui.Scaleform.locale.MENU import MENU
 from gui.LobbyContext import g_lobbyContext
 from gui.prb_control.prb_getters import areSpecBattlesHidden
 from gui.prb_control.context import PrebattleAction
@@ -16,10 +14,12 @@ from gui.prb_control.events_dispatcher import g_eventDispatcher
 from gui.prb_control.settings import PREBATTLE_ACTION_NAME
 from gui.prb_control.settings import SELECTOR_BATTLE_TYPES
 from gui.prb_control.formatters.windows import SwitchPeripheryCompanyCtx
+from gui.Scaleform.locale.MENU import MENU
+from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.server_events import g_eventsCache
 from gui.shared.formatters import text_styles
 from gui.shared.formatters import time_formatters
-from gui.shared.fortifications import isFortificationEnabled, isSortieEnabled
+from gui.shared.fortifications import isSortieEnabled
 from gui.shared.utils import SelectorBattleTypesUtils as selectorUtils
 _SMALL_ICON_PATH = '../maps/icons/battleTypes/40x40/{0}.png'
 _LARGER_ICON_PATH = '../maps/icons/battleTypes/64x64/{0}.png'
@@ -73,7 +73,7 @@ class _SelectorItem(object):
         return label
 
     def isFightButtonForcedDisabled(self):
-        return False
+        return self._isLocked
 
     def isDemoButtonDisabled(self):
         return True
@@ -82,13 +82,17 @@ class _SelectorItem(object):
         return False
 
     def isInSquad(self, state):
-        return state.isInUnit(PREBATTLE_TYPE.SQUAD) or state.isInUnit(PREBATTLE_TYPE.FALLOUT) or state.isInUnit(PREBATTLE_TYPE.EVENT)
+        return state.isInUnit(PREBATTLE_TYPE.SQUAD) or state.isInUnit(PREBATTLE_TYPE.FALLOUT)
 
     def setLocked(self, value):
         self._isLocked = value
         if self._isLocked:
-            self._isDisabled = False
+            self._isDisabled = True
             self._isSelected = False
+            self._isVisible = False
+
+    def isSelectorBtnEnabled(self):
+        return self._isLocked or not self._isDisabled
 
     def getVO(self):
         return {'label': self.getFormattedLabel(),
@@ -140,6 +144,12 @@ class _RandomQueueItem(_SelectorItem):
 
     def isDemoButtonDisabled(self):
         return False
+
+    def setLocked(self, value):
+        self._isLocked = value
+        if self._isLocked:
+            self._isDisabled = True
+            self._isSelected = False
 
     def _update(self, state):
         self._isDisabled = state.hasLockedState
@@ -221,12 +231,10 @@ class _FortItem(_SelectorItem):
         return False
 
     def _update(self, state):
-        isEnabled = isFortificationEnabled()
-        if isEnabled:
-            self._isSelected = state.isInUnit(PREBATTLE_TYPE.SORTIE) or state.isInUnit(PREBATTLE_TYPE.FORT_BATTLE)
+        self._isSelected = state.isInUnit(PREBATTLE_TYPE.SORTIE) or state.isInUnit(PREBATTLE_TYPE.FORT_BATTLE)
+        if g_lobbyContext.getServerSettings().isFortsEnabled() or self._isSelected:
             self._isDisabled = not isSortieEnabled() or state.hasLockedState
         else:
-            self._isSelected = False
             self._isDisabled = True
 
 
@@ -256,6 +264,9 @@ class _TrainingItem(_SelectorItem):
 
 class _BattleTutorialItem(_SelectorItem):
 
+    def isRandomBattle(self):
+        return True
+
     def _update(self, state):
         self._isSelected = state.isInPreQueue(QUEUE_TYPE.TUTORIAL)
         self._isDisabled = state.hasLockedState
@@ -263,16 +274,14 @@ class _BattleTutorialItem(_SelectorItem):
 
 class _FalloutItem(_SelectorItem):
 
+    def isRandomBattle(self):
+        return True
+
     def _update(self, state):
         falloutCtrl = getFalloutCtrl()
         self._isSelected = state.isInFallout()
         self._isDisabled = state.hasLockedState
         self._isVisible = falloutCtrl.isAvailable()
-
-    def getVO(self):
-        vo = super(_FalloutItem, self).getVO()
-        vo['specialBgIcon'] = RES_ICONS.MAPS_ICONS_BUTTONS_FALLOUTSELECTORRENDERERBGEVENT
-        return vo
 
 
 class _SandboxItem(_SelectorItem):
@@ -303,7 +312,7 @@ class _BattleSelectorItems(object):
         self.__isDemoButtonEnabled = False
 
     def update(self, state):
-        selected = self.__items[self._getDefaultPAN()]
+        selected = self.__items[_DEFAULT_PAN]
         for item in self.__items.itervalues():
             item.update(state)
             if item.isSelected():
@@ -329,51 +338,9 @@ class _BattleSelectorItems(object):
     def getVOs(self):
         return (map(lambda item: item.getVO(), filter(lambda item: item.isVisible(), sorted(self.__items.itervalues()))), self.__isDemonstrator, self.__isDemoButtonEnabled)
 
-    def _getDefaultPAN(self):
-        return _DEFAULT_PAN
-
-
-class _SquadSelectorItems(_BattleSelectorItems):
-
-    def _getDefaultPAN(self):
-        return _DEFAULT_SQUAD_PAN
-
-
-class _SimpleSquadItem(_SelectorItem):
-
-    def __init__(self, label, data, order, selectorType = None, isVisible = True):
-        super(_SimpleSquadItem, self).__init__(label, data, order, selectorType, isVisible)
-        self._isDisabled = False
-        self._isSelected = False
-        self._isVisible = True
-
-    def _update(self, state):
-        self._isSelected = state.isInUnit(PREBATTLE_TYPE.SQUAD)
-        self._isDisabled = state.hasLockedState and not state.isInUnit(PREBATTLE_TYPE.SQUAD)
-
-
-class _EventSquadItem(_SelectorItem):
-
-    def __init__(self, label, data, order, selectorType = None, isVisible = True):
-        super(_EventSquadItem, self).__init__(label, data, order, selectorType, isVisible)
-        self._isDisabled = False
-        self._isSelected = False
-        self._isVisible = True
-
-    def _update(self, state):
-        self._isSelected = state.isInUnit(PREBATTLE_TYPE.EVENT)
-        self._isDisabled = state.hasLockedState and not state.isInUnit(PREBATTLE_TYPE.EVENT)
-
-    def getVO(self):
-        vo = super(_EventSquadItem, self).getVO()
-        vo['specialBgIcon'] = RES_ICONS.MAPS_ICONS_LOBBY_EVENTPOPOVERBTNBG
-        return vo
-
 
 _g_items = None
-_g_squadItems = None
 _DEFAULT_PAN = PREBATTLE_ACTION_NAME.RANDOM_QUEUE
-_DEFAULT_SQUAD_PAN = PREBATTLE_ACTION_NAME.SQUAD
 
 def _createItems():
     isInRoaming = g_lobbyContext.getServerSettings().roaming.isInRoaming()
@@ -393,13 +360,6 @@ def _createItems():
     if settings.isSandboxEnabled() and not isInRoaming:
         _addSandboxType(items)
     return _BattleSelectorItems(items)
-
-
-def _createSquadSelectorItems():
-    items = []
-    _addSimpleSquadType(items)
-    _addEventSquadType(items)
-    return _SquadSelectorItems(items)
 
 
 def _addRandomBattleType(items):
@@ -438,45 +398,23 @@ def _addSandboxType(items):
     items.append(_SandboxItem(MENU.HEADERBUTTONS_BATTLE_TYPES_BATTLETEACHING, PREBATTLE_ACTION_NAME.SANDBOX, 9))
 
 
-def _addSimpleSquadType(items):
-    label = text_styles.middleTitle(MENU.HEADERBUTTONS_BATTLE_TYPES_SIMPLESQUAD)
-    items.append(_SimpleSquadItem(label, PREBATTLE_ACTION_NAME.SQUAD, 0))
-
-
-def _addEventSquadType(items):
-    label = text_styles.middleTitle(MENU.HEADERBUTTONS_BATTLE_TYPES_EVENTSQUAD)
-    items.append(_EventSquadItem(label, PREBATTLE_ACTION_NAME.EVENT_SQUAD, 1))
-
-
 def create():
-    global _g_squadItems
     global _g_items
     if _g_items is None:
         _g_items = _createItems()
-    if _g_squadItems is None:
-        _g_squadItems = _createSquadSelectorItems()
     else:
         LOG_WARNING('Item already is created')
     return
 
 
 def clear():
-    global _g_squadItems
     global _g_items
     if _g_items:
         _g_items.fini()
         _g_items = None
-    if _g_squadItems:
-        _g_squadItems.fini()
-        _g_squadItems = None
     return
 
 
 def getItems():
     raise _g_items or AssertionError('Items is empty')
     return _g_items
-
-
-def getSquadItems():
-    raise _g_squadItems or AssertionError('Items is empty')
-    return _g_squadItems

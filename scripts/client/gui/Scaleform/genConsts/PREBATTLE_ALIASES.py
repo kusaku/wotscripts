@@ -2,6 +2,12 @@
 
 
 class PREBATTLE_ALIASES(object):
+    """
+    DO NOT MODIFY!
+    Generated with yaml.
+    __author__ = 'yaml_processor'
+    null
+    """
     COMPANY_LIST_VIEW_UI = 'CompanyListViewUI'
     COMPANY_LIST_VIEW_PY = 'prebattle/company/list'
     COMPANY_ROOM_VIEW_UI = 'CompanyRoomViewUI'
@@ -18,8 +24,6 @@ class PREBATTLE_ALIASES(object):
     AUTO_INVITE_WINDOW_PY = 'prb_windows/autoInviteWindow'
     TRAINING_LIST_VIEW_PY = 'trainings'
     TRAINING_ROOM_VIEW_PY = 'trainingRoom'
-    EVENT_SQUAD_VIEW_PY = 'prebattle/company/eventSquad'
-    EVENT_SQUAD_WINDOW_PY = 'prb_windows/eventSquadWindow'
     FLASH_ALIASES = [COMPANY_LIST_VIEW_UI, COMPANY_ROOM_VIEW_UI]
     PYTHON_ALIASES = [COMPANY_LIST_VIEW_PY,
      COMPANY_ROOM_VIEW_PY,

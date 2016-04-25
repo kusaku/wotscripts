@@ -1,6 +1,5 @@
 # Embedded file name: scripts/client/gui/prb_control/functional/sandbox_queue.py
 import BigWorld
-from itertools import chain
 from CurrentVehicle import g_currentVehicle
 from PlayerEvents import g_playerEvents
 from constants import QUEUE_TYPE, MAX_VEHICLE_LEVEL, PREBATTLE_TYPE
@@ -17,7 +16,8 @@ from gui.prb_control.functional.decorators import vehicleAmmoCheck
 from gui.prb_control.items import SelectResult
 from gui.prb_control.settings import SANDBOX_MAX_VEHICLE_LEVEL, QUEUE_RESTRICTION, FUNCTIONAL_FLAG, PREBATTLE_ACTION_NAME, CTRL_ENTITY_TYPE
 from gui.prb_control.storage import prequeue_storage_getter
-from gui.shared import g_itemsCache, REQ_CRITERIA
+from gui.shared.utils.requesters import REQ_CRITERIA
+from gui.shared import g_itemsCache
 from gui.shared.gui_items.Vehicle import Vehicle
 
 class _VehiclesWatcher(object):
@@ -31,9 +31,7 @@ class _VehiclesWatcher(object):
         self.__clearUnsuitableState()
 
     def __getUnsuitableVehicles(self):
-        vehs = g_itemsCache.items.getVehicles(REQ_CRITERIA.INVENTORY | REQ_CRITERIA.VEHICLE.LEVELS(range(SANDBOX_MAX_VEHICLE_LEVEL + 1, MAX_VEHICLE_LEVEL + 1))).itervalues()
-        eventVehs = g_itemsCache.items.getVehicles(REQ_CRITERIA.INVENTORY | REQ_CRITERIA.VEHICLE.EVENT_BATTLE).itervalues()
-        return chain(vehs, eventVehs)
+        return g_itemsCache.items.getVehicles(REQ_CRITERIA.INVENTORY | REQ_CRITERIA.VEHICLE.LEVELS(range(SANDBOX_MAX_VEHICLE_LEVEL + 1, MAX_VEHICLE_LEVEL + 1))).itervalues()
 
     def __setUnsuitableState(self):
         vehicles = self.__getUnsuitableVehicles()
@@ -125,12 +123,12 @@ class SandboxQueueFunctional(prequeue.AccountQueueFunctional):
             return (False, '')
         else:
             vehicle = g_currentVehicle.item
-            if vehicle.level <= SANDBOX_MAX_VEHICLE_LEVEL and not vehicle.isOnlyForEventBattles:
+            if vehicle.level <= SANDBOX_MAX_VEHICLE_LEVEL:
                 return super(SandboxQueueFunctional, self).canPlayerDoAction()
             return (False, QUEUE_RESTRICTION.LIMIT_LEVEL)
 
     def getConfirmDialogMeta(self, ctx):
-        if not self.hasLockedState() and ctx.getCtrlType() == CTRL_ENTITY_TYPE.UNIT and ctx.getEntityType() in (PREBATTLE_TYPE.SQUAD, PREBATTLE_TYPE.EVENT):
+        if not self.hasLockedState() and ctx.getCtrlType() == CTRL_ENTITY_TYPE.UNIT and ctx.getEntityType() == PREBATTLE_TYPE.SQUAD:
             meta = rally_dialog_meta.createLeavePreQueueMeta(ctx, self._queueType)
         else:
             meta = super(SandboxQueueFunctional, self).getConfirmDialogMeta(ctx)

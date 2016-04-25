@@ -11,7 +11,8 @@ from helpers import i18n
 from debug_utils import LOG_ERROR
 from gui.ClientUpdateManager import g_clientUpdateManager
 from gui import SystemMessages
-from gui.shared import events, g_itemsCache, REQ_CRITERIA, event_dispatcher as shared_events
+from gui.shared.utils.requesters import REQ_CRITERIA
+from gui.shared import events, g_itemsCache, event_dispatcher as shared_events
 from gui.shared.event_bus import EVENT_BUS_SCOPE
 from gui.Scaleform.daapi import LobbySubView
 from gui.Scaleform.daapi.view.meta.BarracksMeta import BarracksMeta
@@ -70,7 +71,7 @@ class Barracks(BarracksMeta, LobbySubView, GlobalListener):
 
     def __updateTanksList(self):
         data = list()
-        modulesAll = g_itemsCache.items.getVehicles(REQ_CRITERIA.INVENTORY | ~REQ_CRITERIA.VEHICLE.EVENT_BATTLE).values()
+        modulesAll = g_itemsCache.items.getVehicles(REQ_CRITERIA.INVENTORY).values()
         modulesAll.sort()
         for module in modulesAll:
             if self.filter['nation'] != -1 and self.filter['nation'] != module.descriptor.type.id[0] or self.filter['tankType'] != 'None' and self.filter['tankType'] != -1 and self.filter['tankType'] != module.type:
@@ -124,8 +125,6 @@ class Barracks(BarracksMeta, LobbySubView, GlobalListener):
                 vehicleInnationID = vehicle.innationID
                 if vehicle is None:
                     LOG_ERROR('Cannot find vehicle for tankman: ', tankman, tankman.descriptor.role, tankman.vehicle.name, tankman.firstname, tankman.lastname)
-                    continue
-                if vehicle.isOnlyForEventBattles:
                     continue
                 slot = tankman.vehicleSlotIdx
             if self.filter['nation'] != -1 and tankman.nationID != self.filter['nation'] or self.filter['role'] != 'None' and tankman.descriptor.role != self.filter['role'] or self.filter['tankType'] != 'None' and tankman.vehicleNativeType != self.filter['tankType'] or self.filter['location'] == 'tanks' and tankman.isInTank is not True or self.filter['location'] == 'barracks' and tankman.isInTank is True or self.filter['nationID'] is not None and (self.filter['location'] != str(vehicleInnationID) or self.filter['nationID'] != str(tankman.nationID)):

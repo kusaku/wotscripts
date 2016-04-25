@@ -2,6 +2,12 @@
 from debug_utils import LOG_WARNING
 
 class INGAME_GUI(object):
+    """
+    DO NOT MODIFY!
+    Generated with yaml.
+    __author__ = 'yaml_processor'
+    null
+    """
     DEVICES_ENGINE = '#ingame_gui:devices/engine'
     DEVICES_AMMO_BAY = '#ingame_gui:devices/ammo_bay'
     DEVICES_FUEL_TANK = '#ingame_gui:devices/fuel_tank'
@@ -413,15 +419,11 @@ class INGAME_GUI(object):
     DYNAMICSQUAD_INVITE = '#ingame_gui:dynamicSquad/invite'
     DYNAMICSQUAD_ALLY_RECEIVED = '#ingame_gui:dynamicSquad/ally/received'
     DYNAMICSQUAD_ENEMY_RECEIVED = '#ingame_gui:dynamicSquad/enemy/received'
+    AIM_ZOOM = '#ingame_gui:aim/zoom'
     TABSTATSHINT = '#ingame_gui:tabStatsHint'
     REPAIRPOINT_TITLE = '#ingame_gui:repairPoint/title'
     REPAIRPOINT_UNAVAILABLE = '#ingame_gui:repairPoint/unavailable'
-    EVENT_RANDOM = '#ingame_gui:event/random'
-    EVENT_BOUNCE = '#ingame_gui:event/bounce'
-    EVENT_ARTILLERY = '#ingame_gui:event/artillery'
-    EVENT_IMPULSE = '#ingame_gui:event/impulse'
-    EVENT_SLIDE = '#ingame_gui:event/slide'
-    EVENT_NOTHING = '#ingame_gui:event/nothing'
+    BATTLEENDWARNING_TEXT = '#ingame_gui:battleEndWarning/text'
     CHAT_EXAMPLE_ENUM = (CHAT_EXAMPLE_SUPPORT_ME_WITH_FIRE,
      CHAT_EXAMPLE_RELOADING_GUN,
      CHAT_EXAMPLE_RELOADING_CASSETTE,
@@ -459,6 +461,10 @@ class INGAME_GUI(object):
 
     @staticmethod
     def chat_example(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#ingame_gui:chat_example/%s' % key
         if outcome not in INGAME_GUI.CHAT_EXAMPLE_ENUM:
             LOG_WARNING('locale key "' + outcome + '" was not found')
@@ -468,6 +474,10 @@ class INGAME_GUI(object):
 
     @staticmethod
     def chat_shortcuts(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#ingame_gui:chat_shortcuts/%s' % key
         if outcome not in INGAME_GUI.CHAT_SHORTCUTS_ENUM:
             LOG_WARNING('locale key "' + outcome + '" was not found')

@@ -32,14 +32,10 @@ class ShowShooting(EntityExtra):
         vehicle = data['entity']
         gunDescr = vehicle.typeDescriptor.gun
         stages, effects, _ = gunDescr['effects']
-        data['modelMap'] = {}
-        for i, j in vehicle.appearance.modelsDesc.iteritems():
-            data['modelMap'][i] = vehicle.appearance.modelsDesc[i]['model']
-
         data['entity_id'] = vehicle.id
         data['_effectsListPlayer'] = EffectsListPlayer(effects, stages, **data)
         data['_burst'] = (burstCount, gunDescr['burst'][1])
-        data['_gunModel'] = vehicle.appearance.modelsDesc['gun']['model']
+        data['_gunModel'] = vehicle.appearance.compoundModel
         self.__doShot(data)
 
     def _cleanup(self, data):
@@ -62,15 +58,18 @@ class ShowShooting(EntityExtra):
             gunModel = data['_gunModel']
             effPlayer = data['_effectsListPlayer']
             effPlayer.stop()
+            withShot = 0
             if burstCount == 1:
                 effPlayer.play(gunModel, None, partial(self.stop, data))
+                withShot = 1
             else:
                 data['_burst'] = (burstCount - 1, burstInterval)
                 data['_timerID'] = BigWorld.callback(burstInterval, partial(self.__doShot, data))
                 effPlayer.play(gunModel)
-                if data['entity'].isPlayerVehicle:
-                    avatar = BigWorld.player()
-                    avatar.getOwnVehicleShotDispersionAngle(avatar.gunRotator.turretRotationSpeed, 2)
+                withShot = 2
+            if data['entity'].isPlayerVehicle:
+                avatar = BigWorld.player()
+                avatar.getOwnVehicleShotDispersionAngle(avatar.gunRotator.turretRotationSpeed, withShot)
             if not vehicle.appearance.isInWater:
                 groundWaveEff = effPlayer.effectsList.relatedEffects.get('groundWave')
                 if groundWaveEff is not None:
@@ -86,17 +85,8 @@ class ShowShooting(EntityExtra):
         return
 
     def __doRecoil(self, vehicle, gunModel):
-        impulseDir = Math.Matrix(gunModel.matrix).applyVector(Math.Vector3(0, 0, -1))
-        impulseValue = vehicle.typeDescriptor.gun['impulse']
         appearance = vehicle.appearance
-        appearance.gunRecoil.recoil()
-        appearance.receiveShotImpulse(impulseDir, impulseValue)
-        if vehicle.isPlayerVehicle:
-            node = gunModel.node('HP_gunFire')
-            gunPos = Math.Matrix(node).translation
-        else:
-            gunPos = vehicle.position
-        BigWorld.player().inputHandler.onVehicleShaken(vehicle, gunPos, impulseDir, vehicle.typeDescriptor.shot['shell']['caliber'], ShakeReason.OWN_SHOT_DELAYED)
+        appearance.recoil()
 
     def __doGroundWaveEffect(self, vehicle, groundWaveEff, gunModel):
         node = gunModel.node('HP_gunFire')
@@ -172,14 +162,10 @@ class Fire(EntityExtra):
         data['wasUnderwater'] = isUnderwater
         if not isUnderwater:
             stages, effects, _ = random.choice(vehicle.typeDescriptor.type.effects['flaming'])
-            data['modelMap'] = {}
-            for i, j in vehicle.appearance.modelsDesc.iteritems():
-                data['modelMap'][i] = vehicle.appearance.modelsDesc[i]['model']
-
             data['entity_id'] = vehicle.id
             effectListPlayer = EffectsListPlayer(effects, stages, **data)
             data['_effectsPlayer'] = effectListPlayer
-            effectListPlayer.play(vehicle.appearance.modelsDesc['hull']['model'], None, None, True)
+            effectListPlayer.play(vehicle.appearance.compoundModel, None, None, True)
         data['_isStarted'] = True
         vehicle.appearance.switchFireVibrations(True)
         return
@@ -210,13 +196,9 @@ class Fire(EntityExtra):
                 del data['_effectsPlayer']
         if not isVehicleUnderwater and wasUnderwater:
             stages, effects, _ = random.choice(vehicle.typeDescriptor.type.effects['flaming'])
-            data['modelMap'] = {}
-            for i, j in vehicle.appearance.modelsDesc.iteritems():
-                data['modelMap'][i] = vehicle.appearance.modelsDesc[i]['model']
-
             data['entity_id'] = vehicle.id
             effectListPlayer = EffectsListPlayer(effects, stages, **data)
             data['_effectsPlayer'] = effectListPlayer
-            effectListPlayer.play(vehicle.appearance.modelsDesc['hull']['model'], None, None, True)
+            effectListPlayer.play(vehicle.appearance.compoundModel, None, None, True)
         data['wasUnderwater'] = isVehicleUnderwater
         return
