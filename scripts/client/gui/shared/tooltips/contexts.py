@@ -211,7 +211,7 @@ class PreviewParamContext(HangarParamContext):
 
     def __init__(self):
         super(PreviewParamContext, self).__init__()
-        self.formatters = SIMPLIFIED_FORMATTERS
+        self.formatters = NO_BONUS_SIMPLIFIED_FORMATTERS
 
     def getComparator(self):
         return params_helper.vehiclesComparator(g_currentPreviewVehicle.item, g_currentPreviewVehicle.defaultItem)
@@ -511,6 +511,10 @@ class FortPopoverDefResProgressContext(FortificationContext):
 
 
 class SettingsMinimapContext(ToolTipContext):
+    pass
+
+
+class SquadRestrictionContext(ToolTipContext):
     pass
 
 

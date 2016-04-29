@@ -421,6 +421,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
         else:
             iLevel = -1
             iWeight = 10
+        _, iName, _, _, _ = self.__getVehicleData(cd)
         cd = oVehItem.get('typeCompDescr')
         if cd is not None:
             oType = vehicles_core.getVehicleType(cd)
@@ -429,6 +430,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
         else:
             oLevel = -1
             oWeight = 10
+        _, oName, _, _, _ = self.__getVehicleData(cd)
         res = cmp(oLevel, iLevel)
         if res:
             return res
@@ -436,7 +438,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
             res = cmp(iWeight, oWeight)
             if res:
                 return res
-            return cmp(iVehItem.get('vehicleName', ''), oVehItem.get('vehicleName', ''))
+            return cmp(iName, oName)
 
     def __getStatsLine(self, label = None, col1 = None, col2 = None, col3 = None, col4 = None):
         if col2 is not None:
@@ -637,8 +639,31 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
                 creditsData.append(self.__getStatsLine())
             creditsWithoutPremTotal = self.__calculateTotalCredits(sourceData, eventCredits, premCreditsFactor, isPremium, aogasFactor, creditsBase, orderCredits, boosterCredits, creditsToDraw, creditsPenalty, creditsCompensation, hasViolation, False)
             squadXP = sourceData['squadXP']
-            showSquadLabels = isPlayerInSquad and bonusType == ARENA_BONUS_TYPE.REGULAR and g_eventsCache.isBalancedSquadEnabled()
-            if showSquadLabels and dailyXpFactor == 1:
+            showSquadLabels = isPlayerInSquad and bonusType == ARENA_BONUS_TYPE.REGULAR and g_eventsCache.isSquadXpFactorsEnabled()
+            squadHasBonus = False
+            if showSquadLabels:
+                squadBonusInfo = playerAvatarData.get('squadBonusInfo', {})
+                vehicles = squadBonusInfo.get('vehicles', {})
+                squadSize = squadBonusInfo.get('size', 0)
+                if squadSize > 1:
+                    vehicleID = self.dataProvider.getVehicleID(playerDBID)
+                    joinedOnArenaVehicles = squadBonusInfo.get('joinedOnArena', {})
+                    if vehicleID in joinedOnArenaVehicles:
+                        showSquadLabels = False
+                    else:
+                        vehiclesLevels = [ g_itemsCache.items.getItemByCD(cmpDescr).level for cmpDescr in vehicles ]
+                        vehiclesLevels.sort()
+                        distance = vehiclesLevels[-1] - vehiclesLevels[0]
+                        vehData = self.dataProvider.getVehiclesData(playerDBID)[0]
+                        typeCompDescr = vehData.get('typeCompDescr', None)
+                        if typeCompDescr is not None:
+                            level = g_itemsCache.items.getItemByCD(typeCompDescr).level
+                            key = (distance, level)
+                            showSquadLabels = key not in g_eventsCache.getSquadZeroBonuses()
+                        squadHasBonus = distance in g_eventsCache.getSquadBonusLevelDistance()
+                else:
+                    showSquadLabels = False
+            if dailyXpFactor == 1 and showSquadLabels and squadHasBonus:
                 imgTag = icons.makeImageTag(RES_ICONS.MAPS_ICONS_LIBRARY_PREBATTLEINVITEICON_1)
                 xpTitleString = i18n.makeString(BATTLE_RESULTS.COMMON_DETAILS_XPTITLESQUAD, img=imgTag)
             else:
@@ -952,7 +977,15 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
         xpWithoutPremiumColumn = self.__makeXpLabel(xpWithoutPremium, not isPremiumAccount)
         xpWithPremiumColumn = self.__makeXpLabel(xpWithPremium, isPremiumAccount)
         freeXpWithoutPremiumColumn = freeXpWithPremiumColumn = None
-        return self.__getStatsLine(self.__resultLabel('squadXP'), xpWithoutPremiumColumn, freeXpWithoutPremiumColumn, xpWithPremiumColumn, freeXpWithPremiumColumn)
+        if squadXP < 0:
+            label = 'squadXPPenalty'
+            if isPremiumAccount:
+                xpWithoutPremiumColumn = None
+            else:
+                xpWithPremiumColumn = None
+        else:
+            label = 'squadXP'
+        return self.__getStatsLine(self.__resultLabel(label), xpWithoutPremiumColumn, freeXpWithoutPremiumColumn, xpWithPremiumColumn, freeXpWithPremiumColumn)
 
     @classmethod
     def _packAchievement(cls, achieve, isUnique = False):
@@ -2009,7 +2042,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
             showResearchView(itemId)
             self.onWindowClose()
         elif unlockType == PROGRESS_ACTION.NEW_SKILL_UNLOCK_TYPE:
-            showPersonalCase(itemId, 2)
+            showPersonalCase(itemId, 2, EVENT_BUS_SCOPE.LOBBY)
 
     def __onPremiumBought(self, event):
         arenaUniqueID = event.ctx.get('arenaUniqueID')

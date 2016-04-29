@@ -53,8 +53,9 @@ MEASURE_UNITS = {'aimingTime': MENU.TANK_PARAMS_S,
  'gunRotationSpeed': MENU.TANK_PARAMS_GPS,
  'turretRotationSpeed': MENU.TANK_PARAMS_GPS,
  'invisibilityStillFactor': MENU.TANK_PARAMS_PERCENT,
- 'invisibilityMovingFactor': MENU.TANK_PARAMS_PERCENT}
-NO_BONUS_SIMPLIFIED_FORMATTERS = (text_styles.critical, text_styles.warning, text_styles.middleTitle)
+ 'invisibilityMovingFactor': MENU.TANK_PARAMS_PERCENT,
+ 'maxShotDistance': MENU.TANK_PARAMS_M}
+NO_BONUS_SIMPLIFIED_FORMATTERS = (text_styles.warning, text_styles.warning, text_styles.warning)
 NO_BONUS_BASE_FORMATTERS = (text_styles.error, text_styles.stats, text_styles.stats)
 SIMPLIFIED_FORMATTERS = (text_styles.critical, text_styles.warning, text_styles.statInfo)
 BASE_FORMATTERS = (text_styles.error, text_styles.stats, text_styles.bonusAppliedText)
@@ -78,7 +79,7 @@ ITEMS_PARAMS_LIST = {ITEM_TYPES.vehicleRadio: ('radioDistance', 'weight'),
                         artefacts.Bomber: ('bombDamage', 'piercingPower', 'bombsNumberRange', 'areaSquare', 'flyDelayRange')},
  ITEM_TYPES.shell: ('caliber', 'piercingPower', 'damage', 'explosionRadius'),
  ITEM_TYPES.optionalDevice: ('weight',),
- ITEM_TYPES.vehicleGun: ('caliber', 'shellsCount', 'shellReloadingTime', 'reloadMagazineTime', 'reloadTime', 'avgPiercingPower', 'avgDamage', 'dispertionRadius', 'aimingTime', 'weight')}
+ ITEM_TYPES.vehicleGun: ('caliber', 'shellsCount', 'shellReloadingTime', 'reloadMagazineTime', 'reloadTime', 'avgPiercingPower', 'avgDamage', 'dispertionRadius', 'aimingTime', 'maxShotDistance', 'weight')}
 
 def measureUnitsForParameter(paramName):
     return i18n.makeString(MEASURE_UNITS[paramName])

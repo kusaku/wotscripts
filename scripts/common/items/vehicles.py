@@ -4259,31 +4259,26 @@ def _readChassisEffects(xmlCtx, section, subsectionName):
 
 
 def _readClientAdjustmentFactors(xmlCtx, section):
+    return {'power': section.readFloat('clientAdjustmentFactors/power', 1.0),
+     'armour': section.readFloat('clientAdjustmentFactors/armour', 1.0),
+     'mobility': section.readFloat('clientAdjustmentFactors/mobility', 1.0),
+     'visibility': section.readFloat('clientAdjustmentFactors/visibility', 1.0),
+     'camouflage': section.readFloat('clientAdjustmentFactors/camouflage', 1.0),
+     'chassis': _readClientAdjustmentSection(xmlCtx, section, 'clientAdjustmentFactors/chassis', 'rollingFriction', 'alpha', True),
+     'engines': _readClientAdjustmentSection(xmlCtx, section, 'clientAdjustmentFactors/engines', 'smplEnginePower', 'bravo', True),
+     'guns': _readClientAdjustmentSection(xmlCtx, section, 'clientAdjustmentFactors/guns', 'caliberCorrection', 'delta', False)}
+
+
+def _readClientAdjustmentSection(xmlCtx, section, subsectionName, privateFactorName, publicFactorName, throwIfMissing = True):
     res = {}
-    res['power'] = section.readFloat('clientAdjustmentFactors/power', 1.0)
-    res['armour'] = section.readFloat('clientAdjustmentFactors/armour', 1.0)
-    res['mobility'] = section.readFloat('clientAdjustmentFactors/mobility', 1.0)
-    res['visibility'] = section.readFloat('clientAdjustmentFactors/visibility', 1.0)
-    res['camouflage'] = section.readFloat('clientAdjustmentFactors/camouflage', 1.0)
-    res['chassis'] = _readClientAdjustmentChassis(xmlCtx, _xml.getSubsection(xmlCtx, section, 'clientAdjustmentFactors/chassis'))
-    res['engines'] = _readClientAdjustmentEngines(xmlCtx, _xml.getSubsection(xmlCtx, section, 'clientAdjustmentFactors/engines'))
-    return res
+    subsection = _xml.getSubsection(xmlCtx, section, subsectionName, throwIfMissing)
+    if subsection is None:
+        return res
+    else:
+        for name in subsection.keys():
+            res.setdefault(name, {}).setdefault(privateFactorName, subsection.readFloat(name + '/' + publicFactorName))
 
-
-def _readClientAdjustmentChassis(xmlCtx, section):
-    res = {}
-    for chassisName, chassis in section.items():
-        res.setdefault(chassisName, {}).setdefault('rollingFriction', section.readFloat(chassisName + '/alpha'))
-
-    return res
-
-
-def _readClientAdjustmentEngines(xmlCtx, section):
-    res = {}
-    for engineName, engine in section.items():
-        res.setdefault(engineName, {}).setdefault('smplEnginePower', section.readFloat(engineName + '/bravo'))
-
-    return res
+        return res
 
 
 def _extractNeededPrereqs(prereqs, resourceNames):

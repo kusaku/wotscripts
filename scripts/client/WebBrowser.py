@@ -37,6 +37,8 @@ class WebBrowser(object):
         self.__startFocused = isFocused
         self.__useWhitelisting = useWhitelisting
         self.__browser = None
+        self.__delayedUrls = []
+        self.__isNavigationComplete = False
         self.onLoadStart = Event()
         self.onLoadEnd = Event()
         self.onReadyToShowContent = Event()
@@ -158,8 +160,6 @@ class WebBrowser(object):
         self.__successfulLoad = False
         self.enableUpdate = True
         self.__isMouseDown = False
-        self.__isNavigationComplete = False
-        self.__delayedUrls = []
         self.__isFocused = False
         self.__isWaitingForUnfocus = False
         if self.__startFocused:

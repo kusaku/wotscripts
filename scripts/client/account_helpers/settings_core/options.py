@@ -319,7 +319,7 @@ class SoundQualitySetting(SettingAbstract):
 
     @classmethod
     def isAvailable(cls):
-        return g_soundsCtrl.system.isMSR()
+        return True
 
     def _get(self):
         return g_soundsCtrl.system.isHQEnabled()

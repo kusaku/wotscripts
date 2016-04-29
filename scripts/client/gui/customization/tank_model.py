@@ -17,8 +17,8 @@ class TankModel(object):
         return
 
     def init(self):
-        self.__hangarSpace.space.locateCameraToPreview()
         self.__hangarCameraLocation = self.__hangarSpace.space.getCameraLocation()
+        self.__hangarSpace.space.locateCameraToPreview()
         self.__events.onCustomizationViewClosed += self.applyInitialModelAttributes
         self.__events.onBackToSelectorGroup += self.__onBackToSelectorGroup
         self.__events.onSlotUpdated += self.__update

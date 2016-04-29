@@ -59,12 +59,11 @@ class VehiclesComparator(ItemsComparator):
 
     def _getPenaltiesAndBonuses(self, paramName):
         penalties = self.__penalties.get(paramName, [])
-        penaltiesRoles = map(itemgetter(0), penalties)
         compatibleBonuses = params_cache.g_paramsCache.getBonuses().get(paramName, [])
         allBonuses = []
         for bonus in compatibleBonuses:
             bonusName, bonusGroup = bonus
-            if bonus in self.__possibleBonuses or bonusGroup == 'skill' or bonusGroup == 'role' and bonusName not in penaltiesRoles or bonusGroup == 'extra':
+            if bonus in self.__possibleBonuses or bonusGroup == 'skill' or bonusGroup == 'role' or bonusGroup == 'extra':
                 allBonuses.append(bonus)
 
         bonusCondition = _getConditionsForParamBonuses(paramName, self.__bonuses)

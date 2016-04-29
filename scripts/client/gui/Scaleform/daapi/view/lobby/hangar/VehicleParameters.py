@@ -188,7 +188,7 @@ class _VehParamsDataProvider(SortableDAAPIDataProvider):
                         self._list.append(self.__makeAdvancedParamVO(param))
                         hasParams = True
 
-            if hasParams and groupIdx < len(RELATIVE_PARAMS):
+            if hasParams and groupIdx < len(RELATIVE_PARAMS) - 1:
                 self._list.append(self.__makeSeparator())
 
         return
@@ -251,7 +251,7 @@ class _VehPreviewParamsDataProvider(_VehParamsDataProvider):
         return params_helper.vehiclesComparator(self._cache.item, self._cache.defaultItem)
 
     def _getSimplifiedFormatters(self):
-        return formatters.SIMPLIFIED_FORMATTERS
+        return formatters.NO_BONUS_SIMPLIFIED_FORMATTERS
 
     def _getBaseFormatters(self):
         return formatters.BASE_FORMATTERS

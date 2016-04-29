@@ -963,7 +963,7 @@ def _JSON_Encode(obj):
                 newDict[key] = _JSON_Encode(value)
 
         return newDict
-    if isinstance(obj, list) or isinstance(obj, tuple):
+    if isinstance(obj, list) or isinstance(obj, tuple) or isinstance(obj, set):
         newList = []
         for value in obj:
             newList.append(_JSON_Encode(value))

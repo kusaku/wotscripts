@@ -9,6 +9,7 @@ import account_helpers
 from gui.prb_control.functional import action_handlers
 from gui.prb_control.restrictions import createUnitActionValidator
 from gui.prb_control.restrictions.permissions import IntroUnitPermissions
+from gui.prb_control.settings import UNIT_RESTRICTION
 from gui.shared.fortifications import getClientFortMgr
 from gui.server_events import g_eventsCache
 from gui.ClientUpdateManager import g_clientUpdateManager
@@ -1709,6 +1710,17 @@ class SquadUnitFunctional(UnitFunctional):
             return action_handlers.BalancedSquadActionsHandler(self)
         else:
             return super(SquadUnitFunctional, self).createActionHandler(prbType)
+
+    def canPlayerDoAction(self):
+        valid, restriction = super(SquadUnitFunctional, self).canPlayerDoAction()
+        if valid and g_eventsCache.isSquadXpFactorsEnabled():
+            _, unit = self.getUnit()
+            levels = unit.getSelectedVehicleLevels()
+            distance = levels[-1] - levels[0] if len(levels) else 0
+            unitHasPenalty = distance in g_eventsCache.getSquadPenaltyLevelDistance()
+            if unitHasPenalty:
+                restriction = UNIT_RESTRICTION.XP_PENALTY_VEHICLE_LEVELS
+        return (valid, restriction)
 
     def unit_onUnitRosterChanged(self):
         unitIdx, unit = self.getUnit()

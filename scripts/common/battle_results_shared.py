@@ -529,7 +529,7 @@ _AVATAR_BASE_PRIVATE_RESULTS = Meta(('accountDBID',
  bool,
  False,
  None,
- 'skip'))
+ 'skip'), ('squadBonusInfo', None, None, None, 'skip'))
 _AVATAR_BASE_PUBLIC_RESULTS = Meta(('avatarDamaged',
  int,
  0,

@@ -257,7 +257,7 @@ class ContactTooltipData(ToolTipBaseData):
             currentUnit = ''
             if USER_TAG.IGNORED in tags:
                 currentUnit += self.__makeIconUnitStr('contactIgnored.png', TOOLTIPS.CONTACT_UNITS_STATUS_DESCRIPTION_IGNORED)
-            elif USER_TAG.SUB_TO not in tags and (userEntity.isFriend() or USER_TAG.SUB_PENDING_IN in tags):
+            elif USER_TAG.SUB_TO not in tags and (USER_TAG.SUB_PENDING_IN in tags or userEntity.isFriend() and USER_TAG.SUB_FROM not in tags):
                 currentUnit += self.__addBR(currentUnit)
                 currentUnit += self.__makeIconUnitStr('contactConfirmNeeded.png', TOOLTIPS.CONTACT_UNITS_STATUS_DESCRIPTION_PENDINGFRIENDSHIP)
             if USER_TAG.BAN_CHAT in tags:
@@ -1253,6 +1253,23 @@ class SettingsMinimapCircles(BlocksTooltipData):
         blocks.append(formatters.packTextBlockData(title, padding={'bottom': 3}))
         blocks.append(formatters.packTextBlockData(body, padding={'bottom': 9}))
         return blocks
+
+
+class SquadRestrictionsInfo(BlocksTooltipData):
+
+    def __init__(self, context):
+        super(SquadRestrictionsInfo, self).__init__(context, TOOLTIP_TYPE.CONTROL)
+        self._setContentMargin(top=15, left=19, bottom=6, right=20)
+        self._setMargins(afterBlock=14)
+        self._setWidth(364)
+
+    def _packBlocks(self, *args):
+        tooltipBlocks = super(SquadRestrictionsInfo, self)._packBlocks()
+        tooltipBlocks.append(formatters.packTitleDescBlock(text_styles.highTitle(TOOLTIPS.SQUADWINDOW_INFOICON_TECHRESTRICTIONS_HEADER)))
+        tooltipBlocks.append(formatters.packImageTextBlockData(text_styles.stats(TOOLTIPS.SQUADWINDOW_INFOICON_TECHRESTRICTIONS_TITLE0), text_styles.standard(TOOLTIPS.SQUADWINDOW_INFOICON_TECHRESTRICTIONS_BODY0), RES_ICONS.MAPS_ICONS_LIBRARY_DONE, imgPadding=formatters.packPadding(left=-21, right=10), padding=formatters.packPadding(-22, 20)))
+        tooltipBlocks.append(formatters.packImageTextBlockData(text_styles.stats(TOOLTIPS.SQUADWINDOW_INFOICON_TECHRESTRICTIONS_TITLE1), text_styles.standard(TOOLTIPS.SQUADWINDOW_INFOICON_TECHRESTRICTIONS_BODY1), RES_ICONS.MAPS_ICONS_LIBRARY_ATTENTIONICONFILLEDBIG, imgPadding=formatters.packPadding(left=-21, right=12), padding=formatters.packPadding(-22, 20, 1)))
+        tooltipBlocks.append(formatters.packImageTextBlockData(text_styles.stats(TOOLTIPS.SQUADWINDOW_INFOICON_TECHRESTRICTIONS_TITLE2), text_styles.standard(TOOLTIPS.SQUADWINDOW_INFOICON_TECHRESTRICTIONS_BODY2), RES_ICONS.MAPS_ICONS_LIBRARY_ICON_ALERT_32X32, imgPadding=formatters.packPadding(left=-21, right=10), padding=formatters.packPadding(-22, 20, 11)))
+        return tooltipBlocks
 
 
 class LadderRegulations(ToolTipBaseData):

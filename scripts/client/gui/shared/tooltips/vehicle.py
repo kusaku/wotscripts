@@ -32,20 +32,11 @@ _ROLE_BONUS_TYPE = 'role'
 _EXTRA_BONUS_TYPE = 'extra'
 _TOOLTIP_MIN_WIDTH = 420
 _TOOLTIP_MAX_WIDTH = 460
-_CREW_TOOLTIP_PARAMS = {Tankman.ROLES.COMMANDER: (TOOLTIPS.VEHICLEPREVIEW_CREW_INFLUENCE_RECONNAISSANCE,
-                           TOOLTIPS.VEHICLEPREVIEW_CREW_INFLUENCE_VISIONRADIUS,
-                           '10%',
-                           '1%'),
- Tankman.ROLES.GUNNER: (TOOLTIPS.VEHICLEPREVIEW_CREW_INFLUENCE_FIREPOWER,
-                        TOOLTIPS.VEHICLEPREVIEW_CREW_INFLUENCE_AIMINGTIME,
-                        TOOLTIPS.VEHICLEPREVIEW_CREW_INFLUENCE_FIREPOWER,
-                        TOOLTIPS.VEHICLEPREVIEW_CREW_INFLUENCE_FIREPOWER),
- Tankman.ROLES.DRIVER: (TOOLTIPS.VEHICLEPREVIEW_CREW_INFLUENCE_MOBILITY,
-                        TOOLTIPS.VEHICLEPREVIEW_CREW_INFLUENCE_CHASSISROTATIONSPEED,
-                        TOOLTIPS.VEHICLEPREVIEW_CREW_INFLUENCE_MOBILITY,
-                        TOOLTIPS.VEHICLEPREVIEW_CREW_INFLUENCE_ENGINEPOWER),
- Tankman.ROLES.RADIOMAN: (TOOLTIPS.VEHICLEPREVIEW_CREW_INFLUENCE_RECONNAISSANCE, TOOLTIPS.VEHICLEPREVIEW_CREW_INFLUENCE_RADIODISTANCE),
- Tankman.ROLES.LOADER: (TOOLTIPS.VEHICLEPREVIEW_CREW_INFLUENCE_FIREPOWER, TOOLTIPS.VEHICLEPREVIEW_CREW_INFLUENCE_FIREPOWER, TOOLTIPS.VEHICLEPREVIEW_CREW_INFLUENCE_FIREPOWER)}
+_CREW_TOOLTIP_PARAMS = {Tankman.ROLES.COMMANDER: (TOOLTIPS.VEHICLEPREVIEW_CREW_INFLUENCE_RECONNAISSANCE, '10%', '1%'),
+ Tankman.ROLES.GUNNER: (TOOLTIPS.VEHICLEPREVIEW_CREW_INFLUENCE_FIREPOWER,),
+ Tankman.ROLES.DRIVER: (TOOLTIPS.VEHICLEPREVIEW_CREW_INFLUENCE_MOBILITY,),
+ Tankman.ROLES.RADIOMAN: (TOOLTIPS.VEHICLEPREVIEW_CREW_INFLUENCE_RECONNAISSANCE,),
+ Tankman.ROLES.LOADER: (TOOLTIPS.VEHICLEPREVIEW_CREW_INFLUENCE_FIREPOWER,)}
 
 def _bonusCmp(x, y):
     return cmp(x[1], y[1]) or cmp(x[0], y[0])
@@ -115,7 +106,7 @@ class VehicleParametersTooltipData(BlocksTooltipData):
         title = text_styles.highTitle(MENU.tank_params(paramName))
         if param_formatter.isRelativeParameter(paramName):
             value = param_formatter.colorizedFormatParameter(extendedData, self.context.formatters)
-            title += ' ' + text_styles.warning(_ms(TOOLTIPS.VEHICLEPARAMS_TITLE_VALUETEMPLATE, value=value, maxValue=text_styles.middleTitle(str(MAX_RELATIVE_VALUE))))
+            title += ' ' + text_styles.warning(_ms(TOOLTIPS.VEHICLEPARAMS_TITLE_VALUETEMPLATE, value=value))
         else:
             title += ' ' + text_styles.middleTitle(MEASURE_UNITS.get(paramName, ''))
         desc = _ms(TOOLTIPS.tank_params_desc(paramName))
@@ -178,7 +169,7 @@ class VehicleParametersTooltipData(BlocksTooltipData):
             else:
                 valueStr = ''
             if isOtherVehicle:
-                locKey = '#tooltips:vehicleParams/penalty/tankmanLevel/otherVehicleTemplate'
+                locKey = TOOLTIPS.VEHICLEPARAMS_PENALTY_TANKMANDIFFERENTVEHICLE_TEMPLATE
             else:
                 locKey = TOOLTIPS.VEHICLEPARAMS_PENALTY_TANKMANLEVEL_TEMPLATE
             result.append(text_styles.main(_ms(locKey, tankmanType=_ms(ITEM_TYPES.tankman_roles(tankmanType)), value=valueStr)))
@@ -423,7 +414,8 @@ class PriceBlockConstructor(VehicleTooltipBlockConstructor):
                 newPrice = (0, price)
             else:
                 newPrice = (price, 0)
-            return formatters.packSaleTextParameterBlockData(name=text, saleData={'newPrice': newPrice}, actionStyle='alignTop', padding=formatters.packPadding(left=61))
+            return formatters.packSaleTextParameterBlockData(name=text, saleData={'newPrice': newPrice,
+             'valuePadding': -8}, actionStyle='alignTop', padding=formatters.packPadding(left=61))
         else:
             return formatters.packTextParameterWithIconBlockData(name=text, value=valueFormatted, icon=currencyType, valueWidth=self._valueWidth, padding=formatters.packPadding(left=-3))
             return None
@@ -484,7 +476,7 @@ class SimplifiedStatsBlockConstructor(VehicleTooltipBlockConstructor):
         return block
 
     def __hasActualPenalties(self, penalties):
-        return sum((value != 0 for _, value in penalties)) > 0
+        return sum((value != 0 for _, _, value in penalties)) > 0
 
 
 class FootnoteBlockConstructor(VehicleTooltipBlockConstructor):

@@ -267,10 +267,13 @@ class _VehsListParser(object):
     def _getDefaultCriteria(self):
         return ~REQ_CRITERIA.SECRET
 
-    def _getVehiclesList(self, data):
+    def _getVehiclesCache(self, data):
         if self.__vehsCache is None:
-            self.__vehsCache = sorted(g_itemsCache.items.getVehicles(self._getFilterCriteria(data)).itervalues())
+            self.__vehsCache = g_itemsCache.items.getVehicles(self._getFilterCriteria(data))
         return self.__vehsCache
+
+    def _getVehiclesList(self, data):
+        return self._getVehiclesCache(data).values()
 
     def _parseFilters(self, data):
         types, nationsList, levels, classes = (None, None, None, None)
@@ -779,7 +782,7 @@ class VehicleDescr(_VehicleRequirement, _VehsListParser, _Updatable):
             return criteria | self._otherCriteria
 
     def _isAvailable(self, vehicle):
-        return vehicle in self._getVehiclesList(self._data)
+        return vehicle.intCD in self._getVehiclesCache(self._data)
 
     def _format(self, svrEvents, event = None):
         predicate = None

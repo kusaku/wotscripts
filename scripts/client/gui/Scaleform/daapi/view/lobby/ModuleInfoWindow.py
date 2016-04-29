@@ -8,6 +8,7 @@ from items import ITEM_TYPE_NAMES
 from helpers import i18n
 from gui.Scaleform.framework.entities.View import View
 from gui.Scaleform.daapi.view.meta.ModuleInfoMeta import ModuleInfoMeta
+_DEF_SHOT_DISTANCE = 720
 
 class ModuleInfoWindow(ModuleInfoMeta):
 
@@ -55,6 +56,9 @@ class ModuleInfoWindow(ModuleInfoMeta):
         isShell = module.itemTypeName == ITEM_TYPE_NAMES[10]
         excludedParametersNames = extraParamsInfo.get('excludedParams', tuple())
         if isGun:
+            if 'maxShotDistance' in moduleParameters:
+                if moduleParameters['maxShotDistance'] >= _DEF_SHOT_DISTANCE:
+                    excludedParametersNames += ('maxShotDistance',)
             gunReloadingType = extraParamsInfo[GUN_RELOADING_TYPE]
             if gunReloadingType == GUN_CLIP:
                 description = i18n.makeString(MENU.MODULEINFO_CLIPGUNLABEL)
@@ -63,7 +67,7 @@ class ModuleInfoWindow(ModuleInfoMeta):
                 otherParamsInfoList = []
                 for paramName, paramValue in formattedModuleParameters:
                     if paramName in excludedParametersNames:
-                        otherParamsInfoList.append({'type': i18n.makeString(MENU.moduleinfo_params(paramName)),
+                        otherParamsInfoList.append({'type': i18n.makeString(MENU.moduleinfo_params(paramName)) + '\n',
                          'value': paramValue})
 
                 imgPathArr = CLIP_ICON_PATH.split('..')

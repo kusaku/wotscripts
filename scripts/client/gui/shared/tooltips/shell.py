@@ -1,6 +1,7 @@
 # Embedded file name: scripts/client/gui/shared/tooltips/shell.py
 from debug_utils import LOG_ERROR
 from gui.Scaleform.genConsts.ICON_TEXT_FRAMES import ICON_TEXT_FRAMES
+from gui.Scaleform.locale.MENU import MENU
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.shared import g_itemsCache
 from gui.shared.items_parameters import params_helper, formatters as params_formatters, NO_DATA
@@ -12,6 +13,7 @@ from helpers.i18n import makeString as _ms
 from BigWorld import wg_getIntegralFormat as _int
 _TOOLTIP_MIN_WIDTH = 380
 _TOOLTIP_MAX_WIDTH = 420
+_AUTOCANNON_SHOT_DISTANCE = 400
 
 class ShellBlockToolTipData(BlocksTooltipData):
 
@@ -71,7 +73,7 @@ class HeaderBlockConstructor(ShellTooltipBlockConstructor):
         block = []
         title = shell.userName
         desc = '#item_types:shell/kinds/' + shell.type
-        block.append(formatters.packImageTextBlockData(title=text_styles.highTitle(title), desc=text_styles.standard(desc), img=shell.icon, imgPadding=formatters.packPadding(left=12), txtGap=-4, txtOffset=100 - self.leftPadding))
+        block.append(formatters.packImageTextBlockData(title=text_styles.highTitle(title), desc=text_styles.standard(desc), img=shell.icon, imgPadding=formatters.packPadding(left=7), txtGap=-4, txtOffset=100 - self.leftPadding))
         return block
 
 
@@ -137,7 +139,8 @@ class PriceBlockConstructor(ShellTooltipBlockConstructor):
                     newPrice = (0, price)
                 else:
                     newPrice = (price, 0)
-                return formatters.packSaleTextParameterBlockData(name=text, saleData={'newPrice': newPrice}, actionStyle='alignTop', padding=formatters.packPadding(left=61))
+                return formatters.packSaleTextParameterBlockData(name=text, saleData={'newPrice': newPrice,
+                 'valuePadding': -8}, actionStyle='alignTop', padding=formatters.packPadding(left=61))
             return formatters.packTextParameterWithIconBlockData(name=text, value=valueFormatted, icon=settings.frame, valueWidth=self._valueWidth, padding=formatters.packPadding(left=-5))
             return
 
@@ -156,26 +159,36 @@ class CommonStatsBlockConstructor(ShellTooltipBlockConstructor):
         params = params_helper.getParameters(shell, vDescr)
         piercingPower = params.pop('piercingPower')
         piercingPowerTable = params.pop('piercingPowerTable')
+        maxShotDistance = params.pop('maxShotDistance') if 'maxShotDistance' in params else None
         formattedParameters = params_formatters.getFormattedParamsList(shell.descriptor, params)
         block.append(formatters.packTitleDescBlock(title=text_styles.middleTitle(_ms(TOOLTIPS.TANKCARUSEL_MAINPROPERTY)), padding=formatters.packPadding(bottom=8)))
         for paramName, paramValue in formattedParameters:
-            block.append(self.__packParameterBloc(_ms('#menu:moduleInfo/params/' + paramName), paramValue, params_formatters.measureUnitsForParameter(paramName)))
+            block.append(self.__packParameterBlock(_ms('#menu:moduleInfo/params/' + paramName), paramValue, params_formatters.measureUnitsForParameter(paramName)))
 
+        piercingUnits = _ms(params_formatters.measureUnitsForParameter('piercingPower'))
         if isinstance(piercingPowerTable, list):
-            block.append(formatters.packTitleDescBlock(title=text_styles.standard(_ms('#menu:moduleInfo/params/piercingDistanceHeader')), padding=formatters.packPadding(bottom=8, top=8)))
+            block.append(formatters.packTitleDescBlock(title=text_styles.standard(_ms(MENU.MODULEINFO_PARAMS_PIERCINGDISTANCEHEADER)), padding=formatters.packPadding(bottom=8, top=8)))
             for distance, value in piercingPowerTable:
-                block.append(self.__packParameterBloc(_ms('#menu:moduleInfo/params/piercingDistance', dist=distance), params_formatters.baseFormatParameter('piercingPower', value), params_formatters.measureUnitsForParameter('piercingPower')))
+                if maxShotDistance is not None and distance == _AUTOCANNON_SHOT_DISTANCE:
+                    piercingUnits += '*'
+                block.append(self.__packParameterBlock(_ms(MENU.MODULEINFO_PARAMS_PIERCINGDISTANCE, dist=distance), params_formatters.baseFormatParameter('piercingPower', value), piercingUnits))
 
+            if maxShotDistance is not None:
+                block.append(formatters.packTitleDescBlock(title=text_styles.standard(_ms(MENU.MODULEINFO_PARAMS_MAXSHOTDISTANCE_FOOTNOTE)), padding=formatters.packPadding(top=8)))
         else:
-            ppName = _ms(params_formatters.measureUnitsForParameter('piercingPower'))
             if piercingPowerTable != NO_DATA:
-                ppName += '*'
-            block.append(self.__packParameterBloc(_ms('#menu:moduleInfo/params/piercingPower'), params_formatters.baseFormatParameter('piercingPower', piercingPower), ppName))
+                piercingUnits += '*'
+            block.append(self.__packParameterBlock(_ms(MENU.MODULEINFO_PARAMS_PIERCINGPOWER), params_formatters.baseFormatParameter('piercingPower', piercingPower), piercingUnits))
             if piercingPowerTable != NO_DATA:
-                block.append(formatters.packTitleDescBlock(title=text_styles.standard(_ms('#menu:moduleInfo/params/noPiercingDistance')), padding=formatters.packPadding(top=8)))
+                title = _ms(MENU.MODULEINFO_PARAMS_NOPIERCINGDISTANCE_FOOTNOTE)
+                distanceNote = ''
+                if maxShotDistance is not None:
+                    distanceNote = _ms(MENU.MODULEINFO_PARAMS_NOPIERCINGDISTANCE_FOOTNOTE_MAXDISTANCE)
+                title = title % distanceNote
+                block.append(formatters.packTitleDescBlock(title=text_styles.standard(title), padding=formatters.packPadding(top=8)))
         return block
 
-    def __packParameterBloc(self, name, value, measureUnits):
+    def __packParameterBlock(self, name, value, measureUnits):
         return formatters.packTextParameterBlockData(name=text_styles.main(name) + text_styles.standard(measureUnits), value=text_styles.stats(value), valueWidth=self._valueWidth, padding=formatters.packPadding(left=-5))
 
 

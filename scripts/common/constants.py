@@ -17,7 +17,7 @@ else:
     IS_BASEAPP = BigWorld.component in ('base', 'service')
     IS_WEB = False
 
-CURRENT_REALM = 'ST'
+CURRENT_REALM = 'CT'
 DEFAULT_LANGUAGE = 'ru'
 AUTH_REALM = 'RU'
 IS_DEVELOPMENT = CURRENT_REALM == 'DEV'
@@ -1551,6 +1551,8 @@ class EVENT_CLIENT_DATA:
     FORT_QUEST_REV = 14
     FALLOUT = 15
     FALLOUT_REV = 16
+    SQUAD_BONUSES = 17
+    SQUAD_BONUSES_REV = 18
 
     @staticmethod
     def REVISION(id):

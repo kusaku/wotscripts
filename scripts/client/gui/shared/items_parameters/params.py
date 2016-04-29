@@ -6,6 +6,7 @@ import operator
 from collections import namedtuple
 from operator import itemgetter
 from constants import SHELL_TYPES
+from debug_utils import LOG_DEBUG
 from gui.shared.items_parameters import calcGunParams, calcShellParams, getShotsPerMinute, getGunDescriptors, getShellDescriptors, getOptionalDeviceWeight, NO_DATA
 from gui.shared.items_parameters.comparator import BACKWARD_QUALITY_PARAMS
 from gui.shared.items_parameters.params_cache import g_paramsCache
@@ -44,6 +45,12 @@ _UI_TO_SERVER_MAP = {'turret/rotationSpeed': ('turretRotationSpeed', 'relativePo
  'vehicle/rotationSpeed': ('chassisRotationSpeed', 'relativeMobility'),
  'chassis/terrainResistance': ('chassisRotationSpeed', 'relativeMobility'),
  'shotDispersion': ('shotDispersionAngle',)}
+_SHELL_KINDS = (SHELL_TYPES.HOLLOW_CHARGE,
+ SHELL_TYPES.HIGH_EXPLOSIVE,
+ SHELL_TYPES.ARMOR_PIERCING,
+ SHELL_TYPES.ARMOR_PIERCING_HE,
+ SHELL_TYPES.ARMOR_PIERCING_CR)
+_AUTOCANNON_SHOT_DISTANCE = 400
 
 def _processExtraBonuses(vehicle):
     result = []
@@ -232,8 +239,9 @@ class VehicleParams(_ParameterBase):
 
     @property
     def chassisRotationSpeed(self):
-        trf = sum(self.__factors['chassis/terrainResistance']) / len(self.__factors['chassis/terrainResistance'])
-        return round(math.degrees(getChassisRotationSpeed(self._itemDescr, self.__factors)) / trf)
+        allTrfs = self.__factors['chassis/terrainResistance']
+        avgTrf = sum(allTrfs) / len(allTrfs)
+        return round(math.degrees(getChassisRotationSpeed(self._itemDescr, self.__factors)) / avgTrf)
 
     @property
     def hullArmor(self):
@@ -321,7 +329,9 @@ class VehicleParams(_ParameterBase):
         rotationSpeed = self.turretRotationSpeed or self.gunRotationSpeed
         turretCoefficient = 1 if self.__hasTurret() else coeffs['turretCoefficient']
         spgCorrection = 6 if 'SPG' in self._itemDescr.type.tags else 1
-        value = round(self.damageAvgPerMinute * penetration / self.shotDispersionAngle * (coeffs['rotationIntercept'] + coeffs['rotationSlope'] * rotationSpeed) * turretCoefficient * coeffs['normalization'] * self.__adjustmentCoefficient('power') * spgCorrection)
+        gunCorrection = self.__adjustmentCoefficient('guns').get(self._itemDescr.gun['name'], {})
+        gunCorrection = gunCorrection.get('caliberCorrection', 1)
+        value = round(self.damageAvgPerMinute * penetration / self.shotDispersionAngle * (coeffs['rotationIntercept'] + coeffs['rotationSlope'] * rotationSpeed) * turretCoefficient * coeffs['normalization'] * self.__adjustmentCoefficient('power') * spgCorrection * gunCorrection)
         return max(value, MIN_RELATIVE_VALUE)
 
     @property
@@ -597,6 +607,10 @@ class GunParams(WeightedParam):
         return self.avgParams.get(SHELLS_PROP_NAME, tuple())
 
     @property
+    def maxShotDistance(self):
+        return self._itemDescr['shots'][0]['maxDistance']
+
+    @property
     def turretsCompatibles(self):
         return self.precachedParams.turrets
 
@@ -613,7 +627,7 @@ class GunParams(WeightedParam):
         return avgParams
 
     def getParamsDict(self):
-        return {'caliber': self.caliber,
+        result = {'caliber': self.caliber,
          'shellsCount': self.shellsCount,
          'shellReloadingTime': self.shellReloadingTime,
          'reloadMagazineTime': self.reloadMagazineTime,
@@ -623,6 +637,9 @@ class GunParams(WeightedParam):
          'dispertionRadius': self.dispertionRadius,
          'aimingTime': self.aimingTime,
          'weight': self.weight}
+        if self.maxShotDistance == _AUTOCANNON_SHOT_DISTANCE:
+            result.update({'maxShotDistance': self.maxShotDistance})
+        return result
 
     def getReloadingType(self, vehicleCD = None):
         return self.precachedParams.getReloadingType(vehicleCD)
@@ -641,7 +658,8 @@ class GunParams(WeightedParam):
         curVehicle = _getInstalledModuleVehicle(self._vehicleDescr, self._itemDescr)
         result = []
         if len(clipVehicleNamesList) != 0:
-            result.append(('uniChargedVehicles', formatters.formatCompatibles(curVehicle, vehiclesNamesList)))
+            if len(vehiclesNamesList):
+                result.append(('uniChargedVehicles', formatters.formatCompatibles(curVehicle, vehiclesNamesList)))
             result.append(('clipVehicles', formatters.formatCompatibles(curVehicle, clipVehicleNamesList)))
         else:
             result.append(('vehicles', formatters.formatCompatibles(curVehicle, vehiclesNamesList)))
@@ -687,7 +705,7 @@ class ShellParams(CompatibleParams):
             piercingMin, piercingMax = self.piercingPower
             randFactor = self._itemDescr['piercingPowerRandomization']
             lossPerMeter = (piercingMax - piercingMin) / 400.0
-            maxDistance = getShellDescriptors(self._itemDescr, self._vehicleDescr)[0]['maxDistance']
+            maxDistance = self.maxShotDistance
             for distance in PIERCING_DISTANCES:
                 if distance > maxDistance:
                     distance = int(maxDistance)
@@ -700,15 +718,26 @@ class ShellParams(CompatibleParams):
             return
 
     @property
+    def maxShotDistance(self):
+        if self._itemDescr['kind'] in _SHELL_KINDS:
+            if self._vehicleDescr is not None:
+                return getShellDescriptors(self._itemDescr, self._vehicleDescr)[0]['maxDistance']
+        return
+
+    @property
     def compatibles(self):
         return self.precachedParams.guns
 
     def getParamsDict(self):
-        return {'caliber': self.caliber,
+        result = {'caliber': self.caliber,
          'piercingPower': self.piercingPower,
          'damage': self.damage,
          'explosionRadius': self.explosionRadius,
          'piercingPowerTable': self.piercingPowerTable}
+        maxShotDistance = self.maxShotDistance
+        if maxShotDistance == _AUTOCANNON_SHOT_DISTANCE:
+            result.update({'maxShotDistance': maxShotDistance})
+        return result
 
     def _getCompatible(self):
         return (('shellGuns', ', '.join(self.compatibles)),)

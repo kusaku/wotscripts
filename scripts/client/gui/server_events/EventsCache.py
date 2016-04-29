@@ -16,7 +16,7 @@ from gui.shared.utils.requesters.QuestsProgressRequester import QuestsProgressRe
 from helpers import isPlayerAccount
 from items import getTypeOfCompactDescr
 from dossiers2.ui.achievements import ACHIEVEMENT_BLOCK
-from debug_utils import LOG_ERROR, LOG_CURRENT_EXCEPTION, LOG_DEBUG
+from debug_utils import LOG_CURRENT_EXCEPTION, LOG_DEBUG
 from gui.LobbyContext import g_lobbyContext
 from gui.shared import events
 from gui.server_events import caches as quests_caches
@@ -343,6 +343,18 @@ class _EventsCache(object):
     def getBalancedSquadBounds(self):
         return (self.__getUnitRestrictions().get('lowerBound', 0), self.__getUnitRestrictions().get('upperBound', 0))
 
+    def isSquadXpFactorsEnabled(self):
+        return bool(self.__getUnitXpFactors().get('enabled', False))
+
+    def getSquadBonusLevelDistance(self):
+        return set(self.__getUnitXpFactors().get('levelDistanceWithBonuses', ()))
+
+    def getSquadPenaltyLevelDistance(self):
+        return set(self.__getUnitXpFactors().get('levelDistanceWithPenalties', ()))
+
+    def getSquadZeroBonuses(self):
+        return set(self.__getUnitXpFactors().get('zeroBonusesFor', ()))
+
     def getQuestsDossierBonuses(self):
         return self.__questsDossierBonuses
 
@@ -598,10 +610,16 @@ class _EventsCache(object):
         return self.__getIngameEventsData().get('eventCompanies', {})
 
     def __getUnitRestrictions(self):
-        return self.__getIngameEventsData().get('unitRestrictions', {})
+        return self.__getUnitData().get('restrictions', {})
+
+    def __getUnitXpFactors(self):
+        return self.__getUnitData().get('xpFactors', {})
 
     def __getFallout(self):
         return self.__getEventsData(EVENT_CLIENT_DATA.FALLOUT)
+
+    def __getUnitData(self):
+        return self.__getEventsData(EVENT_CLIENT_DATA.SQUAD_BONUSES)
 
     def __getCommonQuestsIterator(self):
         questsData = self.__getQuestsData()

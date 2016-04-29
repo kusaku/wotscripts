@@ -8,6 +8,7 @@ from items import vehicles
 import Math
 import BattleReplay
 from debug_utils import *
+from vehicle_systems import stricted_loading
 from vehicle_systems.tankStructure import TankPartIndexes, TankPartNames, TankNodeNames
 TextureParams = namedtuple('TextureParams', ('textureName', 'bumpTextureName', 'mirror'))
 
@@ -133,7 +134,8 @@ class ModelStickers():
                     LOG_ERROR('Failed to attach stickers to the vehicle - server returned incorrect url format: %s' % clan_emblems['url_template'])
                     continue
 
-                fileCache.get(url, self.__onClanEmblemLoaded)
+                clanCallback = stricted_loading.makeCallbackWeak(self.__onClanEmblemLoaded)
+                fileCache.get(url, clanCallback)
 
         return
 

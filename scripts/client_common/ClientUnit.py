@@ -104,6 +104,11 @@ class ClientUnit(UnitBase):
     def getVehicles(self):
         return self._vehicles
 
+    def getSelectedVehicleLevels(self):
+        lst = list(set([ vehInfo.vehLevel for vehicles in self._vehicles.itervalues() for vehInfo in vehicles ]))
+        lst.sort()
+        return lst
+
     def getRoster(self):
         return self._roster
 

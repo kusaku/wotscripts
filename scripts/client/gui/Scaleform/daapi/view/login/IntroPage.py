@@ -1,8 +1,6 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/login/IntroPage.py
-import BigWorld
 import SoundGroups
 from debug_utils import LOG_DEBUG, LOG_ERROR
-from gui.Scaleform.framework.entities.View import View
 from gui.Scaleform.daapi.view.meta.IntroPageMeta import IntroPageMeta
 from gui.doc_loaders.GuiDirReader import GuiDirReader
 from gui.shared import events
@@ -12,7 +10,7 @@ class IntroPage(IntroPageMeta):
     def __init__(self, _ = None):
         super(IntroPage, self).__init__()
         self.__movieFiles = GuiDirReader.getAvailableIntroVideoFiles()
-        self.__soundValue = SoundGroups.g_instance.getMasterVolume() / 4
+        self.__soundValue = SoundGroups.g_instance.getMasterVolume() / 2
 
     def stopVideo(self):
         if self.__movieFiles is not None and len(self.__movieFiles):

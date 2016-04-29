@@ -3,6 +3,7 @@ import account_helpers
 from gui.Scaleform.daapi.view.lobby.prb_windows.SquadActionButtonStateVO import SquadActionButtonStateVO
 from gui.Scaleform.daapi.view.lobby.rally.vo_converters import makeVehicleVO
 from gui.Scaleform.genConsts.PREBATTLE_ALIASES import PREBATTLE_ALIASES
+from gui.Scaleform.genConsts.TOOLTIPS_CONSTANTS import TOOLTIPS_CONSTANTS
 from gui.Scaleform.locale.CYBERSPORT import CYBERSPORT
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
@@ -33,6 +34,7 @@ class SquadView(SquadViewMeta):
     def onUnitVehiclesChanged(self, dbID, vInfos):
         functional = self.unitFunctional
         pInfo = functional.getPlayerInfo(dbID=dbID)
+        needToUpdateSlots = g_eventsCache.isSquadXpFactorsEnabled()
         if pInfo.isInSlot:
             slotIdx = pInfo.slotIdx
             if vInfos and not vInfos[0].isEmpty():
@@ -49,9 +51,13 @@ class SquadView(SquadViewMeta):
             self.as_setMemberVehicleS(slotIdx, slotCost, vehicleVO)
             if pInfo.isCurrentPlayer():
                 if len(vInfos) < slotIdx + 1:
-                    self._updateMembersData()
+                    needToUpdateSlots = True
             elif vehicleVO is None:
-                self._updateMembersData()
+                needToUpdateSlots = True
+        if g_eventsCache.isSquadXpFactorsEnabled():
+            self.as_setActionButtonStateS(self.__getActionButtonStateVO())
+        if needToUpdateSlots:
+            self._updateMembersData()
         return
 
     def chooseVehicleRequest(self):
@@ -119,24 +125,45 @@ class SquadView(SquadViewMeta):
     def _updateHeader(self):
         functional = self.unitFunctional
         isBalancedSquadEnabled = g_eventsCache.isBalancedSquadEnabled()
-        if functional.isDynamic():
-            headerIconSource = RES_ICONS.MAPS_ICONS_SQUAD_SQUAD_SILVER_STARS_ATTENTION
-            headerMessageText = text_styles.middleTitle(i18n.makeString(MESSENGER.DIALOGS_SQUADCHANNEL_HEADERMSG_DYNSQUAD))
+        isSquadXpFactorsEnabled = g_eventsCache.isSquadXpFactorsEnabled()
+        isArtVisible = isSquadXpFactorsEnabled
+        if isArtVisible:
+            if isBalancedSquadEnabled:
+                if functional.isDynamic():
+                    headerIconSource = RES_ICONS.MAPS_ICONS_SQUAD_SQUAD_SILVER_STARS_ATTENTION
+                    headerMessageText = text_styles.middleTitle(i18n.makeString(MESSENGER.DIALOGS_SQUADCHANNEL_HEADERMSG_DYNSQUAD))
+                    iconXPadding = 0
+                    iconYPadding = 0
+                else:
+                    headerIconSource = RES_ICONS.MAPS_ICONS_SQUAD_SQUAD_SILVER_STARS
+                    headerMessageText = text_styles.main(i18n.makeString(MESSENGER.DIALOGS_SQUADCHANNEL_HEADERMSG_SQUADFORMATION))
+                    iconXPadding = 9
+                    iconYPadding = 9
+                tooltipType = TOOLTIPS_CONSTANTS.COMPLEX
+                tooltip = TOOLTIPS.SQUADWINDOW_INFOICON_TECH
+            else:
+                tooltipType = TOOLTIPS_CONSTANTS.SPECIAL
+                tooltip = TOOLTIPS_CONSTANTS.SQUAD_RESTRICTIONS_INFO
+                headerIconSource = RES_ICONS.MAPS_ICONS_SQUAD_SQUAD_SILVER_STARS
+                headerMessageText = text_styles.main(i18n.makeString(MESSENGER.DIALOGS_SQUADCHANNEL_HEADERMSG_SQUADFORMATIONRESTRICTION))
+                iconXPadding = 9
+                iconYPadding = 9
+        else:
+            tooltip = ''
+            tooltipType = ''
+            headerIconSource = ''
+            headerMessageText = ''
             iconXPadding = 0
             iconYPadding = 0
-        else:
-            headerIconSource = RES_ICONS.MAPS_ICONS_SQUAD_SQUAD_SILVER_STARS
-            headerMessageText = text_styles.main(i18n.makeString(MESSENGER.DIALOGS_SQUADCHANNEL_HEADERMSG_SQUADFORMATION))
-            iconXPadding = 9
-            iconYPadding = 9
-        data = {'infoIconTooltip': TOOLTIPS.SQUADWINDOW_INFOICON_TECH,
-         'isVisibleInfoIcon': isBalancedSquadEnabled,
-         'isVisibleHeaderIcon': isBalancedSquadEnabled,
+        data = {'infoIconTooltip': tooltip,
+         'infoIconTooltipType': tooltipType,
+         'isVisibleInfoIcon': isArtVisible,
+         'isVisibleHeaderIcon': isArtVisible,
          'headerIconSource': headerIconSource,
          'icoXPadding': iconXPadding,
          'icoYPadding': iconYPadding,
          'headerMessageText': headerMessageText,
-         'isVisibleHeaderMessage': isBalancedSquadEnabled}
+         'isVisibleHeaderMessage': isArtVisible}
         self.as_setSimpleTeamSectionDataS(data)
 
     def _updateMembersData(self):

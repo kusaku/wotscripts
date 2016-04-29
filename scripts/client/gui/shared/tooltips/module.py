@@ -20,7 +20,8 @@ from gui.shared.tooltips import formatters
 from helpers.i18n import makeString as _ms
 from items import VEHICLE_COMPONENT_TYPE_NAMES, ITEM_TYPES
 _TOOLTIP_MIN_WIDTH = 420
-_TOOLTIP_MAX_WIDTH = 460
+_TOOLTIP_MAX_WIDTH = 480
+_AUTOCANNON_SHOT_DISTANCE = 400
 
 class ModuleBlockTooltipData(BlocksTooltipData):
 
@@ -54,7 +55,7 @@ class ModuleBlockTooltipData(BlocksTooltipData):
         priceBlock, invalidWidth = PriceBlockConstructor(module, statsConfig, valueWidth, leftPadding, rightPadding).construct()
         if len(priceBlock) > 0:
             self._setWidth(_TOOLTIP_MAX_WIDTH if invalidWidth else _TOOLTIP_MIN_WIDTH)
-            items.append(formatters.packBuildUpBlockData(priceBlock, padding=formatters.packPadding(left=leftPadding, right=rightPadding, top=-3), gap=textGap))
+            items.append(formatters.packBuildUpBlockData(priceBlock, padding=blockPadding, gap=textGap))
         if statsConfig.vehicle is not None and not module.isInstalled(statsConfig.vehicle):
             if module.itemTypeID in GUI_ITEM_TYPE.ARTEFACTS:
                 comparator = params_helper.artifactComparator(statsConfig.vehicle, module, statsConfig.slotIdx)
@@ -97,6 +98,7 @@ class ModuleTooltipBlockConstructor(object):
                              'avgPiercingPower',
                              'avgDamage',
                              'dispertionRadius',
+                             'maxShotDistance',
                              AIMING_TIME_PROP_NAME,
                              'weight')}
     EXTRA_MODULE_PARAMS = {CLIP_GUN_MODULE_PARAM: (SHELLS_COUNT_PROP_NAME, SHELL_RELOADING_TIME_PROP_NAME, RELOAD_MAGAZINE_TIME_PROP_NAME)}
@@ -120,11 +122,12 @@ class HeaderBlockConstructor(ModuleTooltipBlockConstructor):
         module = self.module
         block = []
         title = module.userName
+        imgPaddingLeft = 27
+        desc = ''
         if module.itemTypeName in VEHICLE_COMPONENT_TYPE_NAMES:
             desc = text_styles.stats(_ms(TOOLTIPS.level(str(module.level)))) + ' ' + _ms(TOOLTIPS.VEHICLE_LEVEL)
-        else:
-            desc = ''
-        block.append(formatters.packImageTextBlockData(title=text_styles.highTitle(title), desc=text_styles.standard(desc), img=module.icon, imgPadding=formatters.packPadding(left=27), txtGap=-3, txtOffset=130 - self.leftPadding, padding=formatters.packPadding(top=-6, right=self.rightPadding)))
+            imgPaddingLeft = 22
+        block.append(formatters.packImageTextBlockData(title=text_styles.highTitle(title), desc=text_styles.standard(desc), img=module.icon, imgPadding=formatters.packPadding(left=imgPaddingLeft), txtGap=-3, txtOffset=130 - self.leftPadding, padding=formatters.packPadding(top=-6, right=self.rightPadding)))
         if module.itemTypeID == GUI_ITEM_TYPE.GUN:
             vehicle = self.configuration.vehicle
             vDescr = vehicle.descriptor if vehicle is not None else None
@@ -253,7 +256,8 @@ class PriceBlockConstructor(ModuleTooltipBlockConstructor):
                     newPrice = (0, price)
                 else:
                     newPrice = (price, 0)
-                return formatters.packSaleTextParameterBlockData(name=text, saleData={'newPrice': newPrice}, actionStyle='alignTop', padding=formatters.packPadding(left=61))
+                return formatters.packSaleTextParameterBlockData(name=text, saleData={'newPrice': newPrice,
+                 'valuePadding': -8}, actionStyle='alignTop', padding=formatters.packPadding(left=92))
             return formatters.packTextParameterWithIconBlockData(name=text, value=valueFormatted, icon=settings.frame, valueWidth=self._valueWidth, padding=formatters.packPadding(left=-5))
             return
 
@@ -274,10 +278,11 @@ class CommonStatsBlockConstructor(ModuleTooltipBlockConstructor):
         moduleParams = dict(params_helper.getParameters(module, vDescr))
         paramsKeyName = module.itemTypeID
         if params:
+            reloadingType = None
             if module.itemTypeID == GUI_ITEM_TYPE.GUN:
                 reloadingType = module.getReloadingType(vehicle.descriptor if vehicle is not None else None)
-                if reloadingType == GUN_CLIP:
-                    paramsKeyName = self.CLIP_GUN_MODULE_PARAM
+            if reloadingType == GUN_CLIP:
+                paramsKeyName = self.CLIP_GUN_MODULE_PARAM
             paramsList = self.MODULE_PARAMS.get(paramsKeyName, [])
             if vehicle is not None:
                 if module.itemTypeID == GUI_ITEM_TYPE.OPTIONALDEVICE:

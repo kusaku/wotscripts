@@ -60,25 +60,29 @@ class BrowserController(Controller):
             webBrowserID = browserID
         elif type(browserID) is not int:
             webBrowserID = self.__browserIDGenerator.next()
-        if browserID not in self.__browsers:
-            texture = self._BROWSER_TEXTURE if isDefault else self._ALT_BROWSER_TEXTURE
-            app = g_appLoader.getApp()
-            if not app:
-                raise AssertionError('Application can not be None')
-                browser = WebBrowser(webBrowserID, app, texture, size, url, useWhitelisting)
-                self.__browsers[browserID] = browser
-            ctx = {'url': url,
-             'title': title,
-             'showActionBtn': showActionBtn,
-             'showWaiting': showWaiting,
-             'browserID': browserID,
-             'size': size,
-             'isDefault': isDefault,
-             'isAsync': isAsync,
-             'showCloseBtn': showCloseBtn}
-            self.__pendingBrowsers[browserID] = self.__creatingBrowser and ctx
-        else:
-            self.__createBrowser(ctx)
+        ctx = {'url': url,
+         'title': title,
+         'showActionBtn': showActionBtn,
+         'showWaiting': showWaiting,
+         'browserID': browserID,
+         'size': size,
+         'isDefault': isDefault,
+         'isAsync': isAsync,
+         'showCloseBtn': showCloseBtn}
+        texture = browserID not in self.__browsers and browserID not in self.__pendingBrowsers and (self._BROWSER_TEXTURE if isDefault else self._ALT_BROWSER_TEXTURE)
+        app = g_appLoader.getApp()
+        if not app:
+            raise AssertionError('Application can not be None')
+            browser = WebBrowser(webBrowserID, app, texture, size, url, useWhitelisting)
+            self.__browsers[browserID] = browser
+            if self.__creatingBrowser:
+                self.__pendingBrowsers[browserID] = ctx
+            else:
+                self.__createBrowser(ctx)
+        elif browserID in self.__pendingBrowsers:
+            self.__pendingBrowsers[browserID] = ctx
+        elif browserID in self.__browsers:
+            self.__browsers[browserID].navigate(url)
         callback(browserID)
         return
 

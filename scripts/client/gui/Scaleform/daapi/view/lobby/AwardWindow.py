@@ -91,10 +91,7 @@ class ExplosionBackAward(AwardAbstract):
         self.__useAnimation = useAnimation
 
     def getBackgroundImage(self):
-        if not self.__useAnimation:
-            return RES_ICONS.MAPS_ICONS_REFERRAL_AWARDBACK
-        else:
-            return None
+        return RES_ICONS.MAPS_ICONS_REFERRAL_AWARDBACK
 
     def useBackgroundAnimation(self):
         return self.__useAnimation
