@@ -197,9 +197,10 @@ def _migrateTo20(core, data, initialized):
 
 def _migrateTo21(core, data, initialized):
     aimData = data['aimData']
-    if not initialized:
-        data['aimData'].update({'arcade': core.getSetting('arcade'),
-         'sniper': core.getSetting('sniper')})
+    for settingName in ('arcade', 'sniper'):
+        if settingName not in aimData:
+            data['aimData'].update({settingName: core.getSetting(settingName)})
+
     aimData['arcade']['zoomIndicator'] = 100
     aimData['sniper']['zoomIndicator'] = 100
 

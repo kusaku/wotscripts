@@ -357,6 +357,13 @@ class EquipmentsController(object):
         else:
             return False
 
+    def hasEquipment(self, intCD):
+        """Does player go to a arena with desired equipment.
+        :param intCD: integer containing compact descriptor of equipment.
+        :return: bool.
+        """
+        return intCD in self._equipments
+
     def getEquipment(self, intCD):
         try:
             item = self._equipments[intCD]

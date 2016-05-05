@@ -154,15 +154,18 @@ class _ArtilleryStrikeSelector(_DefaultStrikeSelector, _VehiclesSelector):
         return
 
     def processHover(self, position, force = False):
-        if force:
-            position = AimingSystems.getDesiredShotPoint(Math.Vector3(position[0], 500.0, position[2]), Math.Vector3(0.0, -1.0, 0.0), True, True, True)
-            self.__marker.setPosition(position)
-            BigWorld.callback(SERVER_TICK_LENGTH, self.__markerForceUpdate)
+        if position is None:
+            return
         else:
-            self.__marker.update(position, Vector3(0.0, 0.0, 1.0), (10.0, 10.0), SERVER_TICK_LENGTH, None)
-        self.hitPosition = position
-        self.writeStateToReplay()
-        return
+            if force:
+                position = AimingSystems.getDesiredShotPoint(Math.Vector3(position[0], 500.0, position[2]), Math.Vector3(0.0, -1.0, 0.0), True, True, True)
+                self.__marker.setPosition(position)
+                BigWorld.callback(SERVER_TICK_LENGTH, self.__markerForceUpdate)
+            else:
+                self.__marker.update(position, Vector3(0.0, 0.0, 1.0), (10.0, 10.0), SERVER_TICK_LENGTH, None)
+            self.hitPosition = position
+            self.writeStateToReplay()
+            return
 
     def tick(self):
         self.highlightVehicles()

@@ -32,7 +32,6 @@ from helpers.time_utils import makeLocalServerTime
 from predefined_hosts import AUTO_LOGIN_QUERY_URL, AUTO_LOGIN_QUERY_ENABLED, g_preDefinedHosts
 from external_strings_utils import isAccountLoginValid, isPasswordValid, _PASSWORD_MIN_LENGTH, _PASSWORD_MAX_LENGTH
 from external_strings_utils import _LOGIN_NAME_MIN_LENGTH
-from helpers.statistics import g_statistics, HANGAR_LOADING_STATE
 
 class INVALID_FIELDS:
     ALL_VALID = 0
@@ -72,7 +71,6 @@ class LoginView(LoginPageMeta):
         self._rememberUser = rememberUser
 
     def onLogin(self, userName, password, serverName, isSocialToken2Login):
-        g_statistics.noteHangarLoadingState(HANGAR_LOADING_STATE.LOGIN, True)
         self._autoSearchVisited = serverName == AUTO_LOGIN_QUERY_URL
         result = self.__validateCredentials(userName.lower().strip(), password.strip(), bool(g_loginManager.getPreference('token2')))
         if result.isValid:

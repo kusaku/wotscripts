@@ -8,7 +8,11 @@ BACKWARD_QUALITY_PARAMS = ['aimingTime',
  'dispertionRadius',
  'fireStartingChance',
  'reloadTimeSecs',
- 'clipFireRate']
+ 'clipFireRate',
+ 'shellReloadingTime',
+ 'reloadMagazineTime',
+ 'weight',
+ 'vehicleWeight']
 
 class PARAM_STATE(object):
     WORSE = 'worse'

@@ -50,7 +50,7 @@ class InstallItemsTrigger(TriggerWithValidateVar):
             conditionVar = self.getVar()
             itemsList = conditionVar.get('items', [])
             for eqCD in itemsList:
-                if eqCtrl.getEquipment(eqCD) is not None:
+                if eqCtrl.hasEquipment(eqCD):
                     return True
 
         return False

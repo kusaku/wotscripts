@@ -401,8 +401,9 @@ class StatusBlockConstructor(ModuleTooltipBlockConstructor):
         isFit = True
         reason = ''
         titleFormatter = text_styles.middleTitle
+        cachedEqs = [None, None, None]
+        currentVehicleEqs = [None, None, None]
         if vehicle is not None and vehicle.isInInventory:
-            currentVehicleEqs = list()
             if vehicle is not None and vehicle.isInInventory:
                 currentVehicleEqs = list(vehicle.eqs)
                 vehicle.eqs = [None, None, None]
@@ -411,10 +412,11 @@ class StatusBlockConstructor(ModuleTooltipBlockConstructor):
                         if e is not None:
                             intCD = int(e)
                             eq = g_itemsCache.items.getItemByCD(intCD)
-                            vehicle.eqs[i] = eq
+                            cachedEqs[i] = eq
 
+                    vehicle.eqs = cachedEqs
             isFit, reason = module.mayInstall(vehicle, slotIdx)
-            vehicle.eqs = list(currentVehicleEqs)
+            vehicle.eqs = currentVehicleEqs
         inventoryVehicles = g_itemsCache.items.getVehicles(REQ_CRITERIA.INVENTORY).itervalues()
         installedVehicles = map(lambda x: x.shortUserName, module.getInstalledVehicles(inventoryVehicles))[:self.MAX_INSTALLED_LIST_LEN]
         tooltipHeader = None
@@ -424,8 +426,10 @@ class StatusBlockConstructor(ModuleTooltipBlockConstructor):
             tooltipHeader, tooltipText = getComplexStatus('#tooltips:moduleFits/%s' % reason)
             if reason == 'not_with_installed_equipment':
                 if vehicle is not None:
+                    vehicle.eqs = cachedEqs
                     conflictEqs = module.getConflictedEquipments(vehicle)
                     tooltipText %= {'eqs': ', '.join([ _ms(e.userName) for e in conflictEqs ])}
+                    vehicle.eqs = currentVehicleEqs
             elif reason == 'already_installed' and isEqOrDev and len(installedVehicles):
                 tooltipHeader, _ = getComplexStatus('#tooltips:deviceFits/already_installed' if module.itemTypeName == GUI_ITEM_TYPE.OPTIONALDEVICE else '#tooltips:moduleFits/already_installed')
                 tooltipText = ', '.join(installedVehicles)

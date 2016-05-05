@@ -795,7 +795,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
             if premiumVehicleXP > 0:
                 xpData.append(self.__getPremiumVehicleXP(premiumVehicleXP, isPremium, premXpFactor))
             if showSquadLabels:
-                xpData.append(self.__getSquadXPDetails(squadXP, isPremium, premXpFactor))
+                xpData.append(self.__getSquadXPDetails(squadXP, isPremium, isPostBattlePremium, premXpFactor))
             if aogasFactor < 1:
                 xpData.append(self.__getStatsLine(self.__resultLabel('aogasFactor'), aogasValStr, aogasValStr, aogasValStr, aogasValStr))
             if len(xpData) < 3:
@@ -969,7 +969,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
         freeXpWithPremiumColumn = self.__makeFreeXpLabel(freeXpWithPremium, isPremiumAccount)
         return self.__getStatsLine(self.__resultLabel('premiumVehicleXP'), xpWithoutPremiumColumn, freeXpWithoutPremiumColumn, xpWithPremiumColumn, freeXpWithPremiumColumn)
 
-    def __getSquadXPDetails(self, squadXP, isPremiumAccount, premAccFactor):
+    def __getSquadXPDetails(self, squadXP, isPremiumAccount, isPostBattlePremium, premAccFactor):
         if isPremiumAccount:
             xpWithPremium, xpWithoutPremium = squadXP, squadXP / premAccFactor
         else:
@@ -979,7 +979,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
         freeXpWithoutPremiumColumn = freeXpWithPremiumColumn = None
         if squadXP < 0:
             label = 'squadXPPenalty'
-            if isPremiumAccount:
+            if isPostBattlePremium:
                 xpWithoutPremiumColumn = None
             else:
                 xpWithPremiumColumn = None

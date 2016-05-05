@@ -154,7 +154,7 @@ class LogitechMonitorBattleMonoScreen(LogitechMonitorBattleMonoScreenMeta, _ITim
             parts.append('{ally}{sep}{enemy}'.format(ally=self.__fragsDisplayData.allyFrags, sep=sep, enemy=self.__fragsDisplayData.enemyFrags))
         if self.__timerDisplayData is not None:
             parts.append('')
-            parts.append('{text}: {min}{sep}{sec}'.format(text=i18n.makeString('#ingame_gui:timer/battlePeriod'), min=self.__timerDisplayData.minutes, sep=sep, sec=self.__timerDisplayData.seconds))
+            parts.append('{text} {min}{sep}{sec}'.format(text=i18n.makeString('#ingame_gui:timer/battlePeriod'), min=self.__timerDisplayData.minutes, sep=sep, sec=self.__timerDisplayData.seconds))
         self.as_setText('\n'.join(parts))
         return
 

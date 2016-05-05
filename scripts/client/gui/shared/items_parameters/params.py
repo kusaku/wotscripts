@@ -278,11 +278,15 @@ class VehicleParams(_ParameterBase):
     def turretRotationSpeed(self):
         if self.__hasTurret():
             return round(math.degrees(getTurretRotationSpeed(self._itemDescr, self.__factors)), 2)
+        else:
+            return None
 
     @property
     def gunRotationSpeed(self):
         if not self.__hasTurret():
-            return round(math.degrees(getGunRotationSpeed(self._itemDescr, self.__factors)), 2)
+            return round(math.degrees(getTurretRotationSpeed(self._itemDescr, self.__factors)), 2)
+        else:
+            return None
 
     @property
     def circularVisionRadius(self):

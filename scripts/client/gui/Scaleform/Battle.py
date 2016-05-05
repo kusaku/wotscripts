@@ -582,8 +582,6 @@ class Battle(BattleWindow):
     def onExitBattle(self, _):
         arena = getattr(BigWorld.player(), 'arena', None)
         LOG_DEBUG('onExitBattle', arena)
-        from helpers.statistics import g_statistics, HANGAR_LOADING_STATE
-        g_statistics.noteHangarLoadingState(HANGAR_LOADING_STATE.CONNECTED, True)
         if arena:
             BigWorld.player().leaveArena()
         return

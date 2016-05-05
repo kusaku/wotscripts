@@ -239,27 +239,20 @@ class PremiumDiscountUseTrigger(Trigger):
 
     def __init__(self, triggerID):
         super(PremiumDiscountUseTrigger, self).__init__(triggerID)
-        self._premiumDiscounts = g_itemsCache.items.shop.personalPremiumPacketsDiscounts
+        self.__pIdx = -1
 
     def run(self):
         if not self.isSubscribed:
+            self.__pIdx = g_tutorialWeaver.weave(pointcut=aspects.BuyPremiumWithDiscountPointcut, aspects=[aspects.BuyPremiumWithDiscountAspect(self)])
             self.isSubscribed = True
-            g_clientUpdateManager.addCallbacks({'goodies': self.__onDiscountsChange})
 
-    def isOn(self):
-        newDiscounts = g_itemsCache.items.shop.personalPremiumPacketsDiscounts
-        result = len(newDiscounts) < len(self._premiumDiscounts)
-        self._premiumDiscounts = newDiscounts
-        return result
+    def isOn(self, success = False):
+        return success
 
     def clear(self):
-        g_clientUpdateManager.removeObjectCallbacks(self)
+        g_tutorialWeaver.clear(self.__pIdx)
+        self.__pIdx = -1
         self.isSubscribed = False
-        self._premiumDiscounts = None
-        return
-
-    def __onDiscountsChange(self, *args):
-        self.toggle(isOn=self.isOn())
 
 
 class PersonalSlotDiscountsUseTrigger(Trigger):

@@ -12,7 +12,6 @@ from gui.ClientHangarSpace import ClientHangarSpace
 from gui.Scaleform.Waiting import Waiting
 from gui.LobbyContext import g_lobbyContext
 from debug_utils import LOG_DEBUG
-from helpers.statistics import g_statistics, HANGAR_LOADING_STATE
 
 class HangarVideoCameraController:
     import AvatarInputHandler
@@ -98,6 +97,7 @@ class _HangarSpace(object):
         self.onObjectSelected = Event.Event()
         self.onObjectUnselected = Event.Event()
         self.onObjectClicked = Event.Event()
+        from helpers.statistics import g_statistics
         g_statistics.subscribeToHangarSpaceCreate(self.onSpaceCreate)
         return
 
@@ -120,7 +120,6 @@ class _HangarSpace(object):
         return self.__space.spaceLoading()
 
     def init(self, isPremium):
-        g_statistics.noteHangarLoadingState(HANGAR_LOADING_STATE.START_LOADING_SPACE)
         self.__videoCameraController.init()
         self.__spaceDestroyedDuringLoad = False
         if not self.__spaceInited:
@@ -176,7 +175,6 @@ class _HangarSpace(object):
     def updateVehicle(self, vehicle):
         if self.__inited:
             Waiting.show('loadHangarSpaceVehicle', True)
-            g_statistics.noteHangarLoadingState(HANGAR_LOADING_STATE.START_LOADING_VEHICLE)
             self.__space.recreateVehicle(vehicle.getCustomizedDescriptor(), vehicle.modelState, self.__changeDone)
             self.__lastUpdatedVehicle = vehicle
 
@@ -191,7 +189,7 @@ class _HangarSpace(object):
             Waiting.show('loadHangarSpaceVehicle')
             if self.__space is not None:
                 self.__space.removeVehicle()
-            Waiting.hide('loadHangarSpaceVehicle')
+            self.__changeDone()
             self.__lastUpdatedVehicle = None
         return
 
@@ -205,11 +203,9 @@ class _HangarSpace(object):
             self.destroy()
         self.onSpaceCreate()
         Waiting.hide('loadHangarSpace')
-        g_statistics.noteHangarLoadingState(HANGAR_LOADING_STATE.FINISH_LOADING_SPACE)
 
     def __changeDone(self):
         Waiting.hide('loadHangarSpaceVehicle')
-        g_statistics.noteHangarLoadingState(HANGAR_LOADING_STATE.FINISH_LOADING_VEHICLE)
 
     def __delayedRefresh(self):
         self.__delayedRefreshCallback = None

@@ -469,14 +469,11 @@ class SimplifiedStatsBlockConstructor(VehicleTooltipBlockConstructor):
                  'minValue': 0,
                  'markerValue': stockParams[paramName],
                  'maxValue': MAX_RELATIVE_VALUE,
-                 'useAnim': False}, showDecreaseArrow=self.__hasActualPenalties(paramInfo.penalties), padding=formatters.packPadding(left=74, top=8)))
+                 'useAnim': False}, showDecreaseArrow=any((penalty[1] != 0 for penalty in paramInfo.penalties)), padding=formatters.packPadding(left=74, top=8)))
 
         if len(block) > 0:
             block.insert(0, formatters.packTextBlockData(text_styles.middleTitle(_ms(TOOLTIPS.VEHICLEPARAMS_SIMPLIFIED_TITLE)), padding=formatters.packPadding(top=-4)))
         return block
-
-    def __hasActualPenalties(self, penalties):
-        return sum((value != 0 for _, _, value in penalties)) > 0
 
 
 class FootnoteBlockConstructor(VehicleTooltipBlockConstructor):

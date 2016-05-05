@@ -1,13 +1,11 @@
 # Embedded file name: scripts/client/Flock.py
 from AvatarInputHandler import mathUtils
 import BigWorld
-import helpers
 import Math
 import ResMgr
 import math
 import random
 import BattleReplay
-import Settings
 import SoundGroups
 from debug_utils import LOG_CURRENT_EXCEPTION, LOG_ERROR
 from Math import Vector3
@@ -109,7 +107,6 @@ class FlockLike:
 
     def _loadModels(self, prereqs):
         try:
-            firstModel = True
             for modelId in prereqs.keys():
                 if modelId in prereqs.failedIDs:
                     LOG_ERROR('Failed to load flock model: %s' % modelId)
@@ -118,15 +115,16 @@ class FlockLike:
                 model.outsideOnly = 1
                 model.moveAttachments = True
                 self.addModel(model)
-                if firstModel:
+                if self.__sound is None:
                     self._addSound(model)
-                    firstModel = False
                 animSpeed = random.uniform(self.animSpeedMin, self.animSpeedMax)
                 model.actionScale = animSpeed
                 model.action('FlockAnimAction')()
 
         except Exception:
             LOG_CURRENT_EXCEPTION()
+
+        return
 
     def _addSound(self, model, soundName = ''):
         if not model.sources:
