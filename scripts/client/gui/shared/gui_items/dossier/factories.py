@@ -201,6 +201,15 @@ _ACHIEVEMENTS_BY_NAME = {(_AB.TOTAL, 'tankExpert'): _NationAchieveFactory.get(_a
  (_AB.UNIQUE, 'histBattle6_historyLessons'): _AchieveFactory.get(_abstract_achievements.HistoricalAchievement),
  (_AB.FALLOUT, 'stormLord'): _CustomAchieveFactory.get(_as.StormLordAchievement),
  (_AB.FALLOUT, 'winnerLaurels'): _CustomAchieveFactory.get(_as.WinnerLaurelsAchievement),
+ (_AB.FALLOUT, 'shoulderToShoulder'): _AchieveFactory.get(_abstract_achievements.DeprecatedAchievement),
+ (_AB.FALLOUT, 'aloneInTheField'): _AchieveFactory.get(_abstract_achievements.DeprecatedAchievement),
+ (_AB.FALLOUT, 'fallenFlags'): _AchieveFactory.get(_abstract_achievements.DeprecatedAchievement),
+ (_AB.FALLOUT, 'effectiveSupport'): _AchieveFactory.get(_abstract_achievements.DeprecatedAchievement),
+ (_AB.FALLOUT, 'falloutDieHard'): _AchieveFactory.get(_abstract_achievements.DeprecatedAchievement),
+ (_AB.FALLOUT, 'predator'): _AchieveFactory.get(_abstract_achievements.DeprecatedAchievement),
+ (_AB.FALLOUT, 'unreachable'): _AchieveFactory.get(_abstract_achievements.DeprecatedAchievement),
+ (_AB.FALLOUT, 'champion'): _AchieveFactory.get(_abstract_achievements.DeprecatedAchievement),
+ (_AB.FALLOUT, 'bannerman'): _AchieveFactory.get(_abstract_achievements.DeprecatedAchievement),
  WHITE_TIGER_RECORD: _CustomAchieveFactory.get(_as.WhiteTigerAchievement),
  RARE_STORAGE_RECORD: _RareAchievesFactory.get()}
 for _nID, _ in enumerate(nations.NAMES):

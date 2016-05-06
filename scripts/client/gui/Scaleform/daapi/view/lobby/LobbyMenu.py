@@ -21,7 +21,7 @@ def _getVersionMessage():
 class LobbyMenu(LobbyMenuMeta):
 
     def versionInfoClick(self):
-        game_control.g_instance.promo.showPatchPromo()
+        game_control.g_instance.promo.showVersionsPatchPromo()
         self.destroy()
 
     def settingsClick(self):

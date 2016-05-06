@@ -125,7 +125,8 @@ class RosterSlotSettingsWindow(RosterSlotSettingsWindowMeta, VehicleSelectorBase
             vehicle = g_itemsCache.items.getItemByCD(int(currentSlotSetting.selectedVehicle))
             return (makeVehicleVO(vehicle, self.__convertLevelsRange(self.__levelsRange), self.__vehicleTypes), VEHICLE_SELECTOR_TAB_ID)
         elif currentSlotSetting.nationIDRange or currentSlotSetting.vTypeRange or currentSlotSetting.vLevelRange:
-            return (makeFiltersVO(currentSlotSetting.nationIDRange, currentSlotSetting.vTypeRange, self.__convertLevelsRange(currentSlotSetting.vLevelRange)), RANGE_SELECTOR_TAB_ID)
+            levelsRange = self.__convertLevelsRange(currentSlotSetting.vLevelRange or self.__levelsRange)
+            return (makeFiltersVO(currentSlotSetting.nationIDRange, currentSlotSetting.vTypeRange, levelsRange), RANGE_SELECTOR_TAB_ID)
         else:
             return (None, None)
             return

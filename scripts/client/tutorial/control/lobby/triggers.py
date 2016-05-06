@@ -286,20 +286,15 @@ class FreeXPChangedTrigger(Trigger):
 
     def __init__(self, triggerID):
         super(FreeXPChangedTrigger, self).__init__(triggerID)
-        self.__freeXP = game_vars.getFreeXP()
-
-    def isOn(self, *args):
-        return self.__freeXP <= game_vars.getFreeXP()
+        self.__startProcessPointcutId = -1
 
     def run(self):
         if not self.isSubscribed:
-            g_clientUpdateManager.addCallbacks({'stats.freeXP': self.__onFreeXPChanged})
+            self.__startProcessPointcutId = g_tutorialWeaver.weave(pointcut=aspects.StartXpExchangePointcut, aspects=[aspects.StartXpExchangeAspect(self)])
             self.isSubscribed = True
 
     def clear(self):
         if self.isSubscribed:
-            g_clientUpdateManager.removeObjectCallbacks(self)
+            g_tutorialWeaver.clear(self.__startProcessPointcutId)
+            self.__startProcessPointcutId = -1
         self.isSubscribed = False
-
-    def __onFreeXPChanged(self, _):
-        self.toggle(isOn=self.isOn())

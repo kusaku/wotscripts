@@ -42,10 +42,10 @@ class ProfileStatistics(ProfileStatisticsMeta, ClubListener):
 
     def _populate(self):
         super(ProfileStatistics, self)._populate()
-        self._setInitData(PROFILE_DROPDOWN_KEYS.ALL)
+        self._setInitData()
         self.startClubListening()
 
-    def _setInitData(self, battlesType, accountDossier = None):
+    def _setInitData(self, accountDossier = None):
         dropDownProvider = [self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.ALL),
          self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.FALLOUT),
          self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.HISTORICAL),
@@ -82,7 +82,7 @@ class ProfileStatistics(ProfileStatisticsMeta, ClubListener):
         vo = getStatisticsVO(battlesType=self._battlesType, targetData=targetData, accountDossier=accountDossier, isCurrentUser=self._userID is None)
         if self._battlesType in (PROFILE_DROPDOWN_KEYS.TEAM, PROFILE_DROPDOWN_KEYS.STATICTEAM, PROFILE_DROPDOWN_KEYS.STATICTEAM_SEASON):
             if self._battlesType in (PROFILE_DROPDOWN_KEYS.STATICTEAM, PROFILE_DROPDOWN_KEYS.STATICTEAM_SEASON):
-                self._setInitData(self._battlesType, accountDossier)
+                self._setInitData(accountDossier)
                 self._battlesType = PROFILE_DROPDOWN_KEYS.STATICTEAM
                 vo['headerText'] = i18n.makeString(PROFILE.SECTION_STATISTICS_HEADERTEXT_STATICTEAM)
                 vo['dropdownSeasonLabel'] = text_styles.main(CYBERSPORT.STATICFORMATIONSTATSVIEW_SEASONFILTER)
@@ -103,4 +103,4 @@ class ProfileStatistics(ProfileStatisticsMeta, ClubListener):
         super(ProfileStatistics, self)._dispose()
 
     def onCompletedSeasonsInfoChanged(self):
-        self._setInitData(PROFILE_DROPDOWN_KEYS.ALL)
+        self._setInitData()

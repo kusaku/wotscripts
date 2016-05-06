@@ -1,6 +1,5 @@
 # Embedded file name: scripts/client/gui/shared/items_parameters/comparator.py
 import collections
-from operator import itemgetter
 from gui.shared.items_parameters import params_cache
 BACKWARD_QUALITY_PARAMS = ['aimingTime',
  'shotDispersionAngle',

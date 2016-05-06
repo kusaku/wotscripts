@@ -17,6 +17,7 @@ class Servers(object):
         g_preDefinedHosts.onCsisQueryComplete += self.__onServerUpdate
         if GUI_SETTINGS.csisRequestRate == REQUEST_RATE.ALWAYS:
             g_preDefinedHosts.startCSISUpdate()
+        g_preDefinedHosts.requestPing()
         self._serverList = []
         self._selectedServerIdx = 0
         self.updateServerList()

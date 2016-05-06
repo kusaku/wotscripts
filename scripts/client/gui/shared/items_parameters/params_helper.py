@@ -1,7 +1,7 @@
 # Embedded file name: scripts/client/gui/shared/items_parameters/params_helper.py
 from collections import namedtuple
 import copy
-from debug_utils import LOG_CURRENT_EXCEPTION
+from debug_utils import LOG_CURRENT_EXCEPTION, LOG_DEBUG, LOG_ERROR
 from gui.shared.items_parameters import params
 from gui.shared.items_parameters.comparator import VehiclesComparator, ItemsComparator
 from gui.shared.items_parameters.params_cache import g_paramsCache
@@ -56,11 +56,29 @@ def idealCrewComparator(vehicle):
 
 def itemOnVehicleComparator(vehicle, item):
     vehicleParams = params.VehicleParams(vehicle).getParamsDict()
+    withItemParams = vehicleParams
     mayInstall, reason = vehicle.descriptor.mayInstallComponent(item.intCD)
     if item.itemTypeID == ITEM_TYPES.vehicleTurret:
-        removedModules = vehicle.descriptor.installTurret(item.intCD, vehicle.gun.intCD)
-        withItemParams = params.VehicleParams(vehicle).getParamsDict()
-        vehicle.descriptor.installTurret(*removedModules)
+        if not mayInstall:
+            isInstalledDefault = False
+            for gun in item.descriptor['guns']:
+                mayInstall, _ = vehicle.descriptor.mayInstallComponent(gun['compactDescr'])
+                if mayInstall:
+                    gunCD = gun['compactDescr']
+                    removedGun = vehicle.descriptor.installComponent(gunCD)
+                    removedTurret = vehicle.descriptor.installTurret(item.intCD, gunCD)
+                    withItemParams = params.VehicleParams(vehicle).getParamsDict()
+                    vehicle.descriptor.installTurret(*removedTurret)
+                    vehicle.descriptor.installComponent(removedGun[0])
+                    isInstalledDefault = True
+                    break
+
+            if not isInstalledDefault:
+                LOG_ERROR('not possible to install turret', item)
+        else:
+            removedModules = vehicle.descriptor.installTurret(item.intCD, vehicle.gun.intCD)
+            withItemParams = params.VehicleParams(vehicle).getParamsDict()
+            vehicle.descriptor.installTurret(*removedModules)
     elif not mayInstall and reason == 'not for current vehicle' and item.itemTypeID == ITEM_TYPES.vehicleGun:
         turret = g_paramsCache.getPrecachedParameters(item.intCD).getTurretsForVehicle(vehicle.intCD)[0]
         removedModules = vehicle.descriptor.installTurret(turret, vehicle.gun.intCD)

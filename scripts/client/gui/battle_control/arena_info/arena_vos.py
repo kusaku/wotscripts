@@ -215,7 +215,7 @@ class VehicleArenaInfoVO(object):
         super(VehicleArenaInfoVO, self).__init__()
         self.vehicleID = vehicleID
         self.team = team
-        self.player = PlayerInfoVO(**kwargs)
+        self.player = PlayerInfoVO(forbidInBattleInvitations=forbidInBattleInvitations, **kwargs)
         self.vehicleType = VehicleTypeInfoVO(**kwargs)
         self.prebattleID = prebattleID
         self.vehicleStatus = self.__getVehicleStatus(isAlive, isAvatarReady)

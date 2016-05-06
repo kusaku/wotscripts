@@ -341,6 +341,7 @@ class CyberSportMainWindow(CyberSportMainWindowMeta, ClubListener):
     def __updateChatAvailability(self):
         state = self.unitFunctional.getFlags()
         pInfo = self.unitFunctional.getPlayerInfo()
-        if self.chat is not None:
-            self.chat.as_setJoinedS(not state.isInPreArena() or pInfo.isInSlot)
+        isJoined = not state.isInPreArena() or pInfo.isInSlot
+        if self.chat is not None and self.chat.isJoined() is not isJoined:
+            self.chat.as_setJoinedS(isJoined)
         return

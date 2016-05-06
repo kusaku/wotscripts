@@ -6,7 +6,6 @@ import operator
 from collections import namedtuple
 from operator import itemgetter
 from constants import SHELL_TYPES
-from debug_utils import LOG_DEBUG
 from gui.shared.items_parameters import calcGunParams, calcShellParams, getShotsPerMinute, getGunDescriptors, getShellDescriptors, getOptionalDeviceWeight, NO_DATA
 from gui.shared.items_parameters.comparator import BACKWARD_QUALITY_PARAMS
 from gui.shared.items_parameters.params_cache import g_paramsCache
@@ -14,7 +13,7 @@ from gui.shared.items_parameters import functions
 from gui.shared.utils import DAMAGE_PROP_NAME, PIERCING_POWER_PROP_NAME, AIMING_TIME_PROP_NAME, DISPERSION_RADIUS_PROP_NAME, SHELLS_PROP_NAME, GUN_NORMAL, SHELLS_COUNT_PROP_NAME, RELOAD_MAGAZINE_TIME_PROP_NAME, SHELL_RELOADING_TIME_PROP_NAME, GUN_CLIP, RELOAD_TIME_PROP_NAME, GUN_CAN_BE_CLIP
 from helpers import time_utils
 from items import getTypeOfCompactDescr, vehicles, getTypeInfoByIndex, ITEM_TYPES
-from items.utils import getRadioDistance, getCircularVisionRadius, getTurretRotationSpeed, getChassisRotationSpeed, getGunRotationSpeed, getReloadTime, getCrewAffectedFactors, getGunAimingTime, getClientInvisibility, getClientShotDispersion
+from items.utils import getRadioDistance, getCircularVisionRadius, getTurretRotationSpeed, getChassisRotationSpeed, getReloadTime, getCrewAffectedFactors, getGunAimingTime, getClientInvisibility, getClientShotDispersion
 from gui.shared.items_parameters import formatters
 MAX_VISION_RADIUS = 500
 MIN_VISION_RADIUS = 150
@@ -706,7 +705,8 @@ class ShellParams(CompatibleParams):
             if self._vehicleDescr is None:
                 return NO_DATA
             result = []
-            piercingMin, piercingMax = self.piercingPower
+            shellDescriptor = getShellDescriptors(self._itemDescr, self._vehicleDescr)[0]
+            piercingMax, piercingMin = shellDescriptor[PIERCING_POWER_PROP_NAME]
             randFactor = self._itemDescr['piercingPowerRandomization']
             lossPerMeter = (piercingMax - piercingMin) / 400.0
             maxDistance = self.maxShotDistance

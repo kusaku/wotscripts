@@ -502,8 +502,11 @@ class BuildingDescr():
         if self.hp >= levelRef.hp and self.level == 0:
             self.level = 1
         storage = max(0, resCount)
-        if self.typeID != FORT_BUILDING_TYPE.MILITARY_BASE or not allowBaseOverflow:
-            storage = min(storage, levelRef.storage)
+        if not allowBaseOverflow:
+            if self.typeID == FORT_BUILDING_TYPE.MILITARY_BASE:
+                storage = min(storage, max(self.storage, levelRef.storage))
+            else:
+                storage = min(storage, levelRef.storage)
         self.storage = storage
         resCount -= storage
         return resCount

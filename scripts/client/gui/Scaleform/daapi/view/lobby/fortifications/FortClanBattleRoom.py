@@ -1,6 +1,7 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/fortifications/FortClanBattleRoom.py
 import ArenaType
 from debug_utils import LOG_DEBUG, LOG_ERROR
+from gui.shared.utils.functions import makeTooltip
 from helpers import i18n, int2roman
 from UnitBase import UNIT_OP
 from adisp import process
@@ -253,8 +254,7 @@ class FortClanBattleRoom(FortClanBattleRoomMeta, UnitListener, FortViewHelper):
                             'buildingIndicatorTTBody': buildingIndicatorTTBody,
                             'revertArrowDirection': isReverse},
          'connectionIcon': connectionIcon,
-         'connectionIconTTHeader': connectionIconTTHeader,
-         'connectionIconTTBody': connectionIconTTBody}
+         'connectionIconTooltip': makeTooltip(connectionIconTTHeader, connectionIconTTBody)}
         self.as_updateDirectionsS(directionsData)
 
     def __defineArrowDirection(self):

@@ -257,17 +257,11 @@ class _VehPreviewParamsDataProvider(_VehParamsDataProvider):
         return formatters.BASE_FORMATTERS
 
     def _makeSimpleParamBottomVO(self, param, stockValue):
+        vo = super(_VehPreviewParamsDataProvider, self)._makeSimpleParamBottomVO(param, stockValue)
         delta = param.state[1]
         value = param.value
         if delta > 0:
             value -= delta
-        return {'state': HANGAR_ALIASES.VEH_PARAM_RENDERER_STATE_SIMPLE_BOTTOM,
-         'paramID': param.name,
-         'isEnabled': True,
-         'tooltip': self._tooltipType,
-         'indicatorVO': {'delta': delta,
-                         'value': value,
-                         'maxValue': MAX_RELATIVE_VALUE,
-                         'markerValue': stockValue,
-                         'minValue': 0,
-                         'useAnim': self._useAnim}}
+        vo['indicatorVO'].update({'value': value,
+         'delta': delta})
+        return vo

@@ -197,10 +197,12 @@ class EffectsListPlayer:
         else:
             return (True, None)
 
-    def stop(self, keepPosteffects = False):
+    def stop(self, keepPosteffects = False, forceCallback = False):
         if not self.__isStarted:
             return
         else:
+            if forceCallback and self.__callbackFunc is not None:
+                self.__callbackFunc()
             import BattleReplay
             if BattleReplay.g_replayCtrl.isPlaying:
                 EffectsListPlayer.activeEffects.remove(self)

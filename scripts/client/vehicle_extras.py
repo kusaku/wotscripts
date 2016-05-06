@@ -3,11 +3,14 @@ import BigWorld
 import Math
 import random
 from functools import partial
+import weakref
 from helpers.EffectsList import EffectsListPlayer
 from AvatarInputHandler import ShakeReason
 from debug_utils import LOG_CODEPOINT_WARNING, LOG_CURRENT_EXCEPTION
 from helpers import i18n
 from helpers.EntityExtra import EntityExtra
+from items import vehicles
+from operator import xor
 
 def reload():
     modNames = (reload.__module__,)
@@ -161,44 +164,49 @@ class Fire(EntityExtra):
         isUnderwater = vehicle.appearance.isUnderwater
         data['wasUnderwater'] = isUnderwater
         if not isUnderwater:
-            stages, effects, _ = random.choice(vehicle.typeDescriptor.type.effects['flaming'])
-            data['entity_id'] = vehicle.id
-            effectListPlayer = EffectsListPlayer(effects, stages, **data)
-            data['_effectsPlayer'] = effectListPlayer
-            effectListPlayer.play(vehicle.appearance.compoundModel, None, None, True)
+            self.__playEffect(data)
         data['_isStarted'] = True
         vehicle.appearance.switchFireVibrations(True)
-        return
 
     def _cleanup(self, data):
         if not data['_isStarted']:
             return
-        vehicle = data['entity']
-        vehicle.appearance.switchFireVibrations(False)
-        if '_effectsPlayer' in data:
-            effectsListPlayer = data['_effectsPlayer']
-            if vehicle.health <= 0:
-                effectsListPlayer.stop()
-                return
-            effectsListPlayer.keyOff()
+        else:
+            vehicle = data['entity']
+            vehicle.appearance.switchFireVibrations(False)
+            effectsListPlayer = self.__getEffectsListPlayer(data)
+            if effectsListPlayer is not None:
+                if vehicle.health <= 0:
+                    effectsListPlayer.stop(forceCallback=True)
+                    return
+                effectsListPlayer.keyOff()
+            return
 
-    def __stop(self, data):
-        if '_effectsPlayer' in data:
-            data['_effectsPlayer'].detachAllFrom(data)
+    def __getEffectsListPlayer(self, data):
+        effectsListPlayerRef = data.get('_effectsPlayer', None)
+        if effectsListPlayerRef is not None:
+            return effectsListPlayerRef()
+        else:
+            return
+
+    def __playEffect(self, data):
+        vehicle = data['entity']
+        stages, effects, _ = random.choice(vehicle.typeDescriptor.type.effects['flaming'])
+        data['entity_id'] = vehicle.id
+        waitForKeyOff = True
+        effectListPlayer = vehicle.appearance.boundEffects.addNew(None, effects, stages, waitForKeyOff, **data)
+        data['_effectsPlayer'] = weakref.ref(effectListPlayer)
+        return
 
     def checkUnderwater(self, vehicle, isVehicleUnderwater):
         data = vehicle.extras[self.index]
         wasUnderwater = data.get('wasUnderwater', False)
         if isVehicleUnderwater and not wasUnderwater:
-            if '_effectsPlayer' in data:
-                effectsListPlayer = data['_effectsPlayer']
-                effectsListPlayer.stop()
+            effectsListPlayer = self.__getEffectsListPlayer(data)
+            if effectsListPlayer is not None:
+                effectsListPlayer.stop(forceCallback=True)
                 del data['_effectsPlayer']
         if not isVehicleUnderwater and wasUnderwater:
-            stages, effects, _ = random.choice(vehicle.typeDescriptor.type.effects['flaming'])
-            data['entity_id'] = vehicle.id
-            effectListPlayer = EffectsListPlayer(effects, stages, **data)
-            data['_effectsPlayer'] = effectListPlayer
-            effectListPlayer.play(vehicle.appearance.compoundModel, None, None, True)
+            self.__playEffect(data)
         data['wasUnderwater'] = isVehicleUnderwater
         return

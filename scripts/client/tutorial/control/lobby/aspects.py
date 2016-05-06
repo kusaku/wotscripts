@@ -21,10 +21,33 @@ class BuySlotAspect(aop.Aspect):
         return
 
 
+class StartXpExchangeAspect(aop.Aspect):
+
+    def __init__(self, trigger, *args, **kwargs):
+        super(StartXpExchangeAspect, self).__init__()
+        self.__triggerRef = weakref.ref(trigger)
+
+    def atCall(self, cd):
+        trigger = self.__triggerRef()
+        if trigger is not None:
+            trigger.toggle()
+        return
+
+    def clear(self):
+        self.__triggerRef = None
+        return
+
+
 class BuySlotPointcut(aop.Pointcut):
 
     def __init__(self):
         aop.Pointcut.__init__(self, 'gui.shared.gui_items.processors.vehicle', 'VehicleSlotBuyer', '_successHandler')
+
+
+class StartXpExchangePointcut(aop.Pointcut):
+
+    def __init__(self):
+        aop.Pointcut.__init__(self, 'gui.shared.gui_items.processors.common', 'FreeXPExchanger', '_request')
 
 
 class BuyPremiumWithDiscountAspect(aop.Aspect):
