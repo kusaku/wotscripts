@@ -34,11 +34,13 @@ from vehicle_systems.tankStructure import TankPartNames
 from vehicle_systems.assembly_utility import ComponentSystem, ComponentDescriptor
 from vehicle_systems import model_assembler
 from CustomEffectManager import EffectSettings
+from components.TrackScroll import TrackScrollController
 _VEHICLE_APPEAR_TIME = 0.2
 _ROOT_NODE_NAME = 'V'
 _GUN_RECOIL_NODE_NAME = 'G'
 _PERIODIC_TIME = 0.25
 _PERIODIC_TIME_ENGINE = 0.1
+_PERIODIC_TIME_TRACK_SCROLL = 0.05
 _LOD_DISTANCE_EXHAUST = 200.0
 _LOD_DISTANCE_TRAIL_PARTICLES = 100.0
 _MOVE_THROUGH_WATER_SOUND = '/vehicles/tanks/water'
@@ -76,6 +78,7 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
     isPillbox = property(lambda self: self.__isPillbox)
     rpm = property(lambda self: self.__rpm)
     gear = property(lambda self: self.__gear)
+    trackScrollController = property(lambda self: self.__trackScroll)
     detailedEngineState = ComponentDescriptor()
     engineAudition = ComponentDescriptor()
     trackCrashAudition = ComponentDescriptor()
@@ -109,7 +112,6 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
         self.__swingMoveFlags = 0
         self.__currTerrainMatKind = [-1] * _MATKIND_COUNT
         self.__periodicTimerID = None
-        self.__periodicTimerIDEngine = None
         self.__leftLightRotMat = None
         self.__rightLightRotMat = None
         self.__leftFrontLight = None
@@ -141,6 +143,7 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
         self.__customEffectManager = None
         self.__exhaustEffects = None
         self.__trailEffects = None
+        self.__trackScroll = TrackScrollController(self)
         return
 
     def prerequisites(self, vehicle):
@@ -171,6 +174,9 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
         return out
 
     def destroy(self):
+        if self.__trackScroll is not None:
+            self.__trackScroll.destroy()
+            self.__trackScroll = None
         if self.__vehicle is None:
             return
         else:
@@ -201,9 +207,6 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
             if self.__periodicTimerID is not None:
                 BigWorld.cancelCallback(self.__periodicTimerID)
                 self.__periodicTimerID = None
-            if self.__periodicTimerIDEngine is not None:
-                BigWorld.cancelCallback(self.__periodicTimerIDEngine)
-                self.__periodicTimerIDEngine = None
             self.__crashedTracksCtrl.destroy()
             self.__crashedTracksCtrl = None
             self.__chassisOcclusionDecal.destroy()
@@ -277,10 +280,12 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
             self.compoundModel.stipple = True
             self.delayCallback(_VEHICLE_APPEAR_TIME, self.__disableStipple)
         self.__vehicleMatrixProv = vehicle.model.matrix
+        self.__trackScroll.setVehicle(self.__vehicle)
         return
 
     def startSystems(self):
         self.__periodicTimerID = BigWorld.callback(_PERIODIC_TIME, self.__onPeriodicTimer)
+        self.delayCallback(_PERIODIC_TIME_TRACK_SCROLL, self.__onPeriodicTimerTrackStroll)
         if self.__vehicle.isPlayerVehicle:
             self.delayCallback(_PERIODIC_TIME_ENGINE, self.__onPeriodicTimerEngine)
         self.detailedEngineState.start(self.__vehicle)
@@ -632,9 +637,7 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
     def updateTracksScroll(self, leftScroll, rightScroll):
         self.__leftTrackScroll = leftScroll
         self.__rightTrackScroll = rightScroll
-        if self.__vehicle is not None and self.customEffectManager:
-            self.__customEffectManager.updateTrackScroll(leftScroll, rightScroll)
-        return
+        self.__trackScroll.updateExtScroll(leftScroll, rightScroll)
 
     def __onPeriodicTimerEngine(self):
         if self.detailedEngineState is None or self.engineAudition is None:
@@ -690,6 +693,13 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
 
             return
 
+    def __onPeriodicTimerTrackStroll(self):
+        if self.__isPillbox or self.__fashion is None:
+            return
+        else:
+            self.__trackScroll.simulate(_PERIODIC_TIME_TRACK_SCROLL)
+            return _PERIODIC_TIME_TRACK_SCROLL
+
     def __updateEffectsLOD(self):
         enableExhaust = self.__distanceFromPlayer <= _LOD_DISTANCE_EXHAUST
         if self.exhaustEffects:
@@ -699,7 +709,7 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
         if self.trailEffects:
             self.__trailEffects.enable(enableTrails)
         if self.customEffectManager:
-            self.__customEffectManager.enable(True)
+            self.__customEffectManager.enable(enableTrails, EffectSettings.SETTING_DUST)
             self.__customEffectManager.enable(enableExhaust, EffectSettings.SETTING_EXHAUST)
 
     def __updateCurrTerrainMatKinds(self):

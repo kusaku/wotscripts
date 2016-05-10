@@ -262,6 +262,9 @@ class _EventsCache(object):
     def isEventEnabled(self):
         return len(self.__getEventBattles()) > 0
 
+    def isGasAttackEnabled(self):
+        return len(self.__getGasAttack()) > 0
+
     def getEventVehicles(self):
         from gui.shared import g_itemsCache
         result = []
@@ -617,6 +620,9 @@ class _EventsCache(object):
 
     def __getFallout(self):
         return self.__getEventsData(EVENT_CLIENT_DATA.FALLOUT)
+
+    def __getGasAttack(self):
+        return self.__getEventsData(EVENT_CLIENT_DATA.INGAME_EVENTS).get('gasAttack', {})
 
     def __getUnitData(self):
         return self.__getEventsData(EVENT_CLIENT_DATA.SQUAD_BONUSES)

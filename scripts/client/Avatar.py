@@ -702,8 +702,6 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
             appearance.set_normalisedRPM(normalisedRPM)
             appearance.updateTracksScroll(leftScroll, rightScroll)
             g_sessionProvider.invalidateVehicleState(VEHICLE_VIEW_STATE.RPM, normalisedRPM)
-            if vehicle.physicsMode == VEHICLE_PHYSICS_MODE.DETAILED:
-                vehicle.filter.setTracksSpeed((leftScroll, rightScroll, 1.0))
             syncStabilisedYPR = getattr(vehicle.filter, 'syncStabilisedYPR', None)
             if syncStabilisedYPR:
                 syncStabilisedYPR(y, p, r)

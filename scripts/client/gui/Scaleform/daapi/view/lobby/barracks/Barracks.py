@@ -111,8 +111,13 @@ class Barracks(BarracksMeta, LobbySubView, GlobalListener):
              'state': (None, ACTION_TOOLTIPS_STATE.DISCOUNT),
              'newPrice': (0, berthPrice[0]),
              'oldPrice': (0, defaultBerthPrice[0])}
+        gold = g_itemsCache.items.stats.money[1]
+        enoughGold = True
+        if berthPrice[0] > gold:
+            enoughGold = False
         tankmenList.append({'buy': True,
          'price': BigWorld.wg_getGoldFormat(berthPrice[0]),
+         'enoughGold': enoughGold,
          'actionPriceData': action,
          'count': berthPrice[1]})
         for tankman in sorted(tankmen, TankmenComparator(g_itemsCache.items.getVehicle)):

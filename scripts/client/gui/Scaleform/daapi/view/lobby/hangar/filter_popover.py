@@ -126,9 +126,10 @@ class FilterPopover(TankCarouselFilterPopoverMeta):
         self.__update()
 
     def _dispose(self):
-        self.__filter.save()
-        self.__tankCarousel.blinkCounter()
-        self.__tankCarousel = None
+        if self.__tankCarousel is not None and self.__tankCarousel.filter is not None:
+            self.__filter.save()
+            self.__tankCarousel.blinkCounter()
+            self.__tankCarousel = None
         super(FilterPopover, self)._dispose()
         return
 

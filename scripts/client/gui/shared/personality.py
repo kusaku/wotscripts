@@ -265,6 +265,7 @@ def onConnected():
 
 
 def onDisconnected():
+    g_loginManager.writePeripheryLifetime()
     guiModsSendEvent('onDisconnected')
     g_prbLoader.onDisconnected()
     g_clanCache.onDisconnected()

@@ -105,7 +105,7 @@ class Manager(object):
             if not AUTO_LOGIN_QUERY_ENABLED:
                 self._preferences['server_name'] = serverName
             self._preferences['session'] = session
-        self.__writePeripheryLifetime()
+        self.writePeripheryLifetime()
         self._preferences.writeLoginInfo()
         self.__dumpUserName(name)
         self._showSecurityMessage(responseData)
@@ -120,18 +120,9 @@ class Manager(object):
             SystemMessages.pushI18nMessage('#system_messages:securityMessage/%s' % securityWarningType, type=SystemMessages.SM_TYPE.Warning, link=securityLink)
         return
 
-    def __writePeripheryLifetime(self):
+    def writePeripheryLifetime(self):
         if AUTO_LOGIN_QUERY_ENABLED and connectionManager.peripheryID:
-            pickledData = self._preferences['peripheryLifetime']
-            try:
-                savedPeripheryID, savedExpiration = pickle.loads(pickledData)
-            except:
-                self._preferences['peripheryLifetime'] = pickle.dumps((connectionManager.peripheryID, time.time() + _PERIPHERY_DEFAULT_LIFETIME))
-                return None
-
-            if not (savedPeripheryID != connectionManager.peripheryID and savedExpiration > time.time()):
-                self._preferences['peripheryLifetime'] = pickle.dumps((connectionManager.peripheryID, time.time() + _PERIPHERY_DEFAULT_LIFETIME))
-        return None
+            self._preferences['peripheryLifetime'] = pickle.dumps((connectionManager.peripheryID, time.time() + _PERIPHERY_DEFAULT_LIFETIME))
 
     def _getHost(self, authMethod, hostName):
         if hostName != AUTO_LOGIN_QUERY_URL:

@@ -127,7 +127,6 @@ class TIPS(object):
     TIP109 = '#tips:tip109'
     TIP110 = '#tips:tip110'
     TIP111_PAYATTENTION_TACTICS_50_500_EXCEPT_7_ALL_ALL_ALL = '#tips:tip111/payAttention/tactics/50_500/except_7/all/all/all'
-    TIP112_PAYATTENTION_ECONOMICS_0_100_EXCEPT_7_ALL_ALL_ALL = '#tips:tip112/payAttention/economics/0_100/except_7/all/all/all'
     TIP113 = '#tips:tip113'
     TIP114_FOLLOWTHERULES_SECURITY_0_INFINITY_ALL_ALL_ALL_ALL = '#tips:tip114/followTheRules/security/0_infinity/all/all/all/all'
     TIP115_FOLLOWTHERULES_RULES_100_INFINITY_ALL_ALL_ALL_ALL = '#tips:tip115/followTheRules/rules/100_infinity/all/all/all/all'

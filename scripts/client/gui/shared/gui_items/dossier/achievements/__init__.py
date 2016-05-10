@@ -63,3 +63,4 @@ from ReadyForBattleALLAchievement import ReadyForBattleALLAchievement
 from Achieved import Achieved
 from StormLordAchievement import StormLordAchievement
 from WinnerLaurelsAchievement import WinnerLaurelsAchievement
+from SauronsEyeAchievement import SauronsEyeAchievement

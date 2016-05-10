@@ -79,6 +79,8 @@ class DetailedEngineState(assembly_utility.Component):
         if mode > DetailedEngineState._STOPPED:
             if self._mode == DetailedEngineState._STOPPED:
                 self.__starting = True
+            else:
+                self.__starting = False
         else:
             self.__starting = False
         self._mode = mode
@@ -150,7 +152,7 @@ class DetailedEngineStateWWISE(DetailedEngineState):
             self._gearNum = math.ceil(math.floor(math.fabs(self.__speed) * 50) / 50 / speedRangeGear)
             if self.__prevGearNum2 != self._gearNum:
                 self.__prevGearNum = self.__prevGearNum2
-            self._gearUp = self.__prevGearNum2 < self._gearNum
+            self._gearUp = self.__prevGearNum2 < self._gearNum and self._engineLoad > self._IDLE
             if self._gearUp and self._gearUpCbk is not None:
                 self._gearUpCbk()
             if self._gearNum == 2 and self.__prevGearNum < self._gearNum:
@@ -162,7 +164,7 @@ class DetailedEngineStateWWISE(DetailedEngineState):
             else:
                 self.__gear_3 = 0
             self.__prevGearNum2 = self._gearNum
-            if self._gearNum != 0:
+            if self._gearNum != 0 and self._engineLoad > self._IDLE:
                 self._reativelRPM = math.fabs(1 + (self.__speed - self._gearNum * speedRangeGear) / speedRangeGear)
                 self._reativelRPM = self._reativelRPM * (1.0 - self._GEAR_DELTA * self._gearNum) + self._GEAR_DELTA * self._gearNum
             else:
