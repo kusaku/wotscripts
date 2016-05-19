@@ -168,8 +168,8 @@ class _VehParamsDataProvider(SortableDAAPIDataProvider):
     def _getComparator(self):
         return params_helper.idealCrewComparator(self._cache.item)
 
-    def _getSimplifiedFormatters(self):
-        return formatters.NO_BONUS_SIMPLIFIED_FORMATTERS
+    def _getSimplifiedValue(self, param):
+        return formatters.colorizedFormatParameter(param, formatters.NO_BONUS_SIMPLIFIED_FORMATTERS)
 
     def _getBaseFormatters(self):
         return formatters.NO_BONUS_BASE_FORMATTERS
@@ -180,7 +180,7 @@ class _VehParamsDataProvider(SortableDAAPIDataProvider):
         for groupIdx, groupName in enumerate(RELATIVE_PARAMS):
             hasParams = False
             relativeParam = comparator.getExtendedData(groupName)
-            self._list.extend([self.__makeSimpleParamHeaderVO(relativeParam, self._expandedGroups[groupName]), self._makeSimpleParamBottomVO(relativeParam, stockParams[groupName])])
+            self._list.extend([self._makeSimpleParamHeaderVO(relativeParam, self._expandedGroups[groupName]), self._makeSimpleParamBottomVO(relativeParam, stockParams[groupName])])
             if self._expandedGroups[groupName]:
                 for paramName in PARAMS_GROUPS[groupName]:
                     param = comparator.getExtendedData(paramName)
@@ -205,15 +205,18 @@ class _VehParamsDataProvider(SortableDAAPIDataProvider):
 
         return
 
-    def __makeSimpleParamHeaderVO(self, param, isOpen):
+    def _makeSimpleParamHeaderVO(self, param, isOpen):
         return {'state': HANGAR_ALIASES.VEH_PARAM_RENDERER_STATE_SIMPLE_TOP,
          'titleText': formatters.formatVehicleParamName(param.name),
-         'valueText': formatters.colorizedFormatParameter(param, self._getSimplifiedFormatters()),
+         'valueText': self._getSimplifiedValue(param),
          'paramID': param.name,
          'isEnabled': True,
          'tooltip': self._tooltipType,
          'isOpen': isOpen,
-         'showDecreaseArrow': param.state[0] == PARAM_STATE.WORSE}
+         'showDecreaseArrow': self._showDecreaseArrow(param)}
+
+    def _showDecreaseArrow(self, param):
+        return param.state[0] == PARAM_STATE.WORSE
 
     def _makeSimpleParamBottomVO(self, param, stockValue):
         return {'state': HANGAR_ALIASES.VEH_PARAM_RENDERER_STATE_SIMPLE_BOTTOM,
@@ -250,8 +253,8 @@ class _VehPreviewParamsDataProvider(_VehParamsDataProvider):
     def _getComparator(self):
         return params_helper.vehiclesComparator(self._cache.item, self._cache.defaultItem)
 
-    def _getSimplifiedFormatters(self):
-        return formatters.NO_BONUS_SIMPLIFIED_FORMATTERS
+    def _getSimplifiedValue(self, param):
+        return formatters.simlifiedDeltaParameter(param)
 
     def _getBaseFormatters(self):
         return formatters.BASE_FORMATTERS
@@ -265,3 +268,6 @@ class _VehPreviewParamsDataProvider(_VehParamsDataProvider):
         vo['indicatorVO'].update({'value': value,
          'delta': delta})
         return vo
+
+    def _showDecreaseArrow(self, param):
+        return False

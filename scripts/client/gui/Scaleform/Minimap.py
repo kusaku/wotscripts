@@ -834,7 +834,7 @@ class Minimap(object):
         self.__parentUI.call('minimap.setShowVehicleName', [value])
 
     def __addEntryLit(self, vInfo, guiProps, matrix, visible = True):
-        if vInfo.isObserver():
+        if vInfo.isObserver() or not vInfo.isAlive():
             return
         elif matrix is None:
             return

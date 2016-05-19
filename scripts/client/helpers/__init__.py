@@ -5,7 +5,7 @@ import ResMgr
 import Settings
 import i18n
 import constants
-from debug_utils import LOG_CURRENT_EXCEPTION
+from debug_utils import LOG_CURRENT_EXCEPTION, LOG_DEBUG
 VERSION_FILE_PATH = '../version.xml'
 gEffectsDisabled = lambda : False
 
@@ -112,19 +112,31 @@ def isShowStartupVideo():
         p = Settings.g_instance.userPrefs
         if p is not None:
             if p.readInt(Settings.KEY_SHOW_STARTUP_MOVIE, 1) == 1:
-                import account_shared
-                mainVersion = account_shared.getClientMainVersion()
-                lastVideoVersion = p.readString(Settings.INTRO_VIDEO_VERSION, '')
-                if lastVideoVersion != mainVersion:
-                    p.writeString(Settings.INTRO_VIDEO_VERSION, mainVersion)
+                if GUI_SETTINGS.compulsoryIntroVideos:
                     return True
                 else:
-                    return False
+                    return isIntroVideoSettingChanged(p)
             else:
                 return False
         else:
             return True
         return
+
+
+def isIntroVideoSettingChanged(userPrefs = None):
+    userPrefs = userPrefs or Settings.g_instance.userPrefs
+    import account_shared
+    mainVersion = account_shared.getClientMainVersion()
+    lastVideoVersion = userPrefs.readString(Settings.INTRO_VIDEO_VERSION, '')
+    LOG_DEBUG('!!!!!!', lastVideoVersion, mainVersion, lastVideoVersion != mainVersion)
+    return lastVideoVersion != mainVersion
+
+
+def writeIntroVideoSetting():
+    userPrefs = Settings.g_instance.userPrefs
+    if userPrefs:
+        import account_shared
+        userPrefs.writeString(Settings.INTRO_VIDEO_VERSION, account_shared.getClientMainVersion())
 
 
 def newFakeModel():

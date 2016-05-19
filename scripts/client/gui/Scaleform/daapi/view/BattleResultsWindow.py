@@ -817,7 +817,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
                 else:
                     showPremium = isPremium or isPostBattlePremium
                     personalDataOutput['xpStr'] = BigWorld.wg_getIntegralFormat(xpWithPremTotal if showPremium else xpWithoutPremTotal)
-                    personalDataOutput['creditsStr'] = BigWorld.wg_getIntegralFormat(creditsWithoutPremTotal if showPremium else creditsWithoutPremTotal)
+                    personalDataOutput['creditsStr'] = BigWorld.wg_getIntegralFormat(creditsWithPremTotal if showPremium else creditsWithoutPremTotal)
             showDiffs = False
             personalDataOutput['hasGetPremBtn'] = False
             creditsDiff = creditsWithPremTotal - creditsWithoutPremTotal

@@ -715,10 +715,13 @@ class _VehicleAppearance():
             self.__fashions = VehiclePartsTuple(BigWorld.WGVehicleFashion(False, _CFG['v_scale']), None, None, None)
             import VehicleAppearance
             VehicleAppearance.setupTracksFashion(self.__fashions.chassis, self.__vDesc, self.__isVehicleDestroyed)
-            self.updateCamouflage()
+            self.__model.setupFashions(self.__fashions)
             chassisFashion = self.__fashions.chassis
             chassisFashion.initialUpdateTracks(1.0, 10.0)
             VehicleAppearance.setupSplineTracks(chassisFashion, self.__vDesc, self.__model, self.__resources)
+        else:
+            self.__fashions = VehiclePartsTuple(None, None, None, None)
+        self.updateCamouflage()
         return self.__model
 
     def __removeHangarShadowMap(self):
@@ -817,7 +820,6 @@ class _VehicleAppearance():
                 if self.__onLoadedCallback is not None:
                     self.__onLoadedCallback()
                     self.__onLoadedCallback = None
-                self.updateCamouflage()
                 if self.__smCb is None:
                     self.__setupHangarShadowMap()
             if self.__vDesc is not None and 'observer' in self.__vDesc.type.tags:

@@ -2,6 +2,7 @@
 from collections import namedtuple
 import math
 import Account
+from AvatarInputHandler import mathUtils
 from gui.LobbyContext import g_lobbyContext
 import items
 from items import vehicles
@@ -37,6 +38,7 @@ class ModelStickers():
         self.__clanID = 0
         self.__vehicleDescriptor = vDesc
         self.__model = None
+        self.__toPartRootMatrix = mathUtils.createIdentityMatrix()
         self.__parentNode = None
         self.__isDamaged = False
         self.__calcTexParams(vDesc, emblemSlots, onHull, insigniaRank)
@@ -101,12 +103,14 @@ class ModelStickers():
         self.__isLoadingClanEmblems = False
         self.detachStickers()
 
-    def attachStickers(self, model, parentNode, isDamaged):
+    def attachStickers(self, model, parentNode, isDamaged, toPartRootMatrix = None):
         self.detachStickers()
         self.__model = model
+        if toPartRootMatrix is not None:
+            self.__toPartRootMatrix = toPartRootMatrix
         self.__parentNode = parentNode
         self.__isDamaged = isDamaged
-        self.__stickerModel.setupSuperModel(self.__model)
+        self.__stickerModel.setupSuperModel(self.__model, self.__toPartRootMatrix)
         self.__parentNode.attach(self.__stickerModel)
         replayCtrl = BattleReplay.g_replayCtrl
         for slotType, slots in self.__slotsByType.iteritems():
@@ -300,7 +304,10 @@ class VehicleStickers(object):
             return
         else:
             gunGeometry = compoundModel.getPartGeometryLink(TankPartIndexes.GUN)
-            self.__stickers['gunInsignia'].stickers.attachStickers(gunGeometry, gunNode, isDamaged)
+            toPartRoot = Math.Matrix(gunNode)
+            toPartRoot.invert()
+            toPartRoot.preMultiply(compoundModel.node(TankNodeNames.GUN_INCLINATION))
+            self.__stickers['gunInsignia'].stickers.attachStickers(gunGeometry, gunNode, isDamaged, toPartRoot)
             return
 
     def detach(self):

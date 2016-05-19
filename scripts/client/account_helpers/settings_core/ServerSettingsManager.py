@@ -37,7 +37,6 @@ class SETTINGS_SECTIONS(CONST_CONTAINER):
 
 
 class ServerSettingsManager(object):
-    __version = 21
     GAME = settings_constants.GAME
     GRAPHICS = settings_constants.GRAPHICS
     SOUND = settings_constants.SOUND
@@ -357,10 +356,6 @@ class ServerSettingsManager(object):
             return
         g_settingsCache.setSettings(storingValue)
         self._core.onSettingsChanged(settings)
-
-    def setVersion(self):
-        if g_settingsCache.getVersion() != self.__version:
-            g_settingsCache.setVersion(self.__version)
 
     def getVersion(self):
         return g_settingsCache.getVersion()

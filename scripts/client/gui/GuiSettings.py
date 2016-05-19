@@ -110,7 +110,8 @@ _DEFAULT_SETTINGS = {'registrationURL': '',
  'allowedNotSupportedGraphicSettings': {},
  'userRoomsService': '',
  'cryptLoginInfo': True,
- 'useNewCarouselFilters': True}
+ 'useNewCarouselFilters': True,
+ 'compulsoryIntroVideos': []}
 
 class GuiSettings(object):
 

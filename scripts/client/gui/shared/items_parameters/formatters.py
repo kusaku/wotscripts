@@ -205,7 +205,7 @@ def colorizedFormatParameter(parameter, colorScheme):
     return _formatParameter(parameter.name, parameter.value, parameter.state, colorScheme)
 
 
-def simlifiedModuleParameter(parameter):
+def simlifiedDeltaParameter(parameter):
     mainFormatter = SIMPLIFIED_FORMATTERS[1]
     delta = int(parameter.state[1])
     paramStr = _formatParameter(parameter.name, parameter.value)

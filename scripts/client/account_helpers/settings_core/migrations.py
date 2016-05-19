@@ -209,6 +209,15 @@ def _migrateTo22(core, data, initialized):
     data['gameExtData'][GAME.SIMPLIFIED_TTC] = True
 
 
+def _migrateTo23(core, data, initialized):
+    from account_helpers.settings_core.ServerSettingsManager import SETTINGS_SECTIONS
+    storedValue = g_settingsCache.getSectionSettings(SETTINGS_SECTIONS.GAME, 0)
+    settingOffset = 1610612736
+    currentValue = (storedValue & settingOffset) >> 29
+    if currentValue == 0:
+        data['gameData'][GAME.SHOW_VEH_MODELS_ON_MAP] = 2
+
+
 _versions = ((1,
   _initializeDefaultSettings,
   True,
@@ -291,6 +300,10 @@ _versions = ((1,
   False),
  (22,
   _migrateTo22,
+  False,
+  False),
+ (23,
+  _migrateTo23,
   False,
   False))
 

@@ -2241,6 +2241,7 @@ class RES_ICONS(object):
     MAPS_ICONS_TOOLTIP_FLAGTOOLTIP = '../maps/icons/tooltip/flagTooltip.png'
     MAPS_ICONS_TOOLTIP_IGR_64X26 = '../maps/icons/tooltip/igr_64x26.png'
     MAPS_ICONS_TOOLTIP_KILL = '../maps/icons/tooltip/kill.png'
+    MAPS_ICONS_TOOLTIP_MAIN_TYPE = '../maps/icons/tooltip/main_type.png'
     MAPS_ICONS_TOOLTIP_RESOURCETOOLTIP = '../maps/icons/tooltip/resourceTooltip.png'
     MAPS_ICONS_TOOLTIP_SPOTTED = '../maps/icons/tooltip/spotted.png'
     MAPS_ICONS_TOOLTIP_TEAMKILL = '../maps/icons/tooltip/teamKill.png'

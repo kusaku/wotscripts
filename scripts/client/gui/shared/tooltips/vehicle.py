@@ -47,7 +47,7 @@ class VehicleInfoTooltipData(BlocksTooltipData):
     def __init__(self, context):
         super(VehicleInfoTooltipData, self).__init__(context, TOOLTIP_TYPE.VEHICLE)
         self.item = None
-        self._setContentMargin(top=0, left=0, bottom=20, right=20)
+        self._setContentMargin(top=0, left=0, bottom=20, right=0)
         self._setMargins(10, 15)
         self._setWidth(_TOOLTIP_MIN_WIDTH)
         return
@@ -230,18 +230,21 @@ class HeaderBlockConstructor(VehicleTooltipBlockConstructor):
 
     def construct(self):
         block = []
+        headerBlocks = []
         if self.vehicle.isElite:
             vehicleType = TOOLTIPS.tankcaruseltooltip_vehicletype_elite(self.vehicle.type)
-            bgLinkage = BLOCKS_TOOLTIP_TYPES.TOOLTIP_BUILDUP_BLOCK_ELITE_VEHICLE_FAVORITE_BG_LINKAGE if self.vehicle.isFavorite else BLOCKS_TOOLTIP_TYPES.TOOLTIP_BUILDUP_BLOCK_ELITE_VEHICLE_BG_LINKAGE
+            bgLinkage = BLOCKS_TOOLTIP_TYPES.TOOLTIP_BUILDUP_BLOCK_ELITE_VEHICLE_BG_LINKAGE
         else:
             vehicleType = TOOLTIPS.tankcaruseltooltip_vehicletype_normal(self.vehicle.type)
-            bgLinkage = BLOCKS_TOOLTIP_TYPES.TOOLTIP_BUILDUP_BLOCK_NORMAL_VEHICLE_FAVORITE_BG_LINKAGE if self.vehicle.isFavorite else BLOCKS_TOOLTIP_TYPES.TOOLTIP_BUILDUP_BLOCK_NORMAL_VEHICLE_BG_LINKAGE
+            bgLinkage = BLOCKS_TOOLTIP_TYPES.TOOLTIP_BUILDUP_BLOCK_NORMAL_VEHICLE_BG_LINKAGE
         nameStr = text_styles.highTitle(self.vehicle.userName)
         typeStr = text_styles.main(vehicleType)
         levelStr = text_styles.concatStylesWithSpace(text_styles.stats(int2roman(self.vehicle.level)), text_styles.standard(_ms(TOOLTIPS.VEHICLE_LEVEL)))
         icon = '../maps/icons/vehicleTypes/big/' + self.vehicle.type + ('_elite.png' if self.vehicle.isElite else '.png')
-        iconBlock = formatters.packImageTextBlockData(title=nameStr, desc=text_styles.concatStylesToMultiLine(levelStr + ' ' + typeStr, ''), img=icon, imgPadding=formatters.packPadding(left=10, top=-15), txtGap=-2, txtOffset=99, padding=formatters.packPadding(top=15, bottom=-15))
-        block.append(formatters.packBuildUpBlockData([iconBlock], stretchBg=False, linkage=bgLinkage, padding=formatters.packPadding(left=-self.leftPadding, top=0)))
+        headerBlocks.append(formatters.packImageTextBlockData(title=nameStr, desc=text_styles.concatStylesToMultiLine(levelStr + ' ' + typeStr, ''), img=icon, imgPadding=formatters.packPadding(left=10, top=-15), txtGap=-2, txtOffset=99, padding=formatters.packPadding(top=15, bottom=-15 if self.vehicle.isFavorite else -21)))
+        if self.vehicle.isFavorite:
+            headerBlocks.append(formatters.packImageTextBlockData(title=text_styles.neutral(TOOLTIPS.VEHICLE_FAVORITE), img=RES_ICONS.MAPS_ICONS_TOOLTIP_MAIN_TYPE, imgPadding=formatters.packPadding(top=-15), imgAtLeft=False, txtPadding=formatters.packPadding(left=10), txtAlign=BLOCKS_TOOLTIP_TYPES.ALIGN_RIGHT, padding=formatters.packPadding(top=-28, bottom=-27)))
+        block.append(formatters.packBuildUpBlockData(headerBlocks, stretchBg=False, linkage=bgLinkage, padding=formatters.packPadding(left=-self.leftPadding)))
         return block
 
 
@@ -372,7 +375,7 @@ class PriceBlockConstructor(VehicleTooltipBlockConstructor):
                 rentLeftInfo = rentFormatter.getRentLeftStr('#tooltips:vehicle/rentLeft/%s', formatter=lambda key, countType, count, _ = None: {'left': count,
                  'descr': i18n.makeString(key % countType)})
                 if rentLeftInfo:
-                    block.append(formatters.packTextParameterWithIconBlockData(name=text_styles.main(rentLeftInfo['descr']), value=text_styles.main(rentLeftInfo['left']), icon=ICON_TEXT_FRAMES.RENTALS, valueWidth=self._valueWidth, padding=paddings))
+                    block.append(formatters.packTextParameterWithIconBlockData(name=text_styles.main(rentLeftInfo['descr']), value=text_styles.main(rentLeftInfo['left']), icon=ICON_TEXT_FRAMES.RENTALS, valueWidth=self._valueWidth, padding=formatters.packPadding(left=-4, bottom=-16)))
             notEnoughMoney = neededValue > 0
             hasAction = actionPrc > 0
             return (block, notEnoughMoney or hasAction)
@@ -484,7 +487,7 @@ class FootnoteBlockConstructor(VehicleTooltipBlockConstructor):
     def construct(self):
         currentCrewSize = len([ x for _, x in self.vehicle.crew if x is not None ])
         if currentCrewSize < len(self.vehicle.descriptor.type.crewRoles):
-            return [formatters.packImageTextBlockData(title='', desc=text_styles.standard(TOOLTIPS.VEHICLE_STATS_FOOTNOTE), img=RES_ICONS.MAPS_ICONS_LIBRARY_STORE_CONDITION_OFF, imgPadding=formatters.packPadding(top=4), txtGap=-4, txtOffset=20, padding=formatters.packPadding(left=59))]
+            return [formatters.packImageTextBlockData(title='', desc=text_styles.standard(TOOLTIPS.VEHICLE_STATS_FOOTNOTE), img=RES_ICONS.MAPS_ICONS_LIBRARY_STORE_CONDITION_OFF, imgPadding=formatters.packPadding(top=4), txtGap=-4, txtOffset=20, padding=formatters.packPadding(left=59, right=20))]
         else:
             return []
 

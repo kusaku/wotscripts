@@ -583,7 +583,10 @@ def makeUnitRosterVO(unit, pInfo, index = None, isSortie = False, levelsRange = 
     else:
         vehiclesData = pInfo.getVehiclesToSlot(index)
     vehicleVOs = map(lambda vehTypeCD: makeVehicleVO(vehicleGetter(vehTypeCD)), vehiclesData)
-    return getUnitRosterModel(vehicleVOs, makeUnitRosterConditions(unit, index, isSortie, levelsRange), pInfo.isCreator())
+    roster = unit.getRoster()
+    rosterSlots = roster.slots
+    isDefaultSlot = roster.isDefaultSlot
+    return getUnitRosterModel(vehicleVOs, makeUnitRosterConditions(rosterSlots, isDefaultSlot, index, isSortie, levelsRange), pInfo.isCreator())
 
 
 def makeUnitRosterConditions(slots, isDefaultSlot, index = None, isSortie = False, levelsRange = None):

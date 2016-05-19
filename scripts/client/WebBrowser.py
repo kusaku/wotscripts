@@ -272,10 +272,6 @@ class WebBrowser(object):
              event.isAltDown(),
              event.isShiftDown(),
              event.isCtrlDown()))
-        if event.key == Keys.KEY_LEFTMOUSE:
-            if not event.isKeyDown():
-                self.browserUp(0, 0, 0)
-            return False
         if event.key == Keys.KEY_ESCAPE:
             return False
         if event.key == Keys.KEY_RETURN and event.isAltDown():
@@ -297,29 +293,23 @@ class WebBrowser(object):
     def browserDown(self, x, y, z):
         if not (self.hasBrowser and self.enableUpdate):
             return
-        elif self.__isMouseDown:
+        if self.__isMouseDown:
             return
-        else:
-            if not self.isFocused:
-                self.focus()
-                self.__isMouseDown = True
-                self.browserUp(x, y, z)
-                self.browserMove(x, y, z)
+        if not self.isFocused:
+            self.focus()
             self.__isMouseDown = True
-            self.__browser.injectKeyEvent(BigWorld.KeyEvent(Keys.KEY_LEFTMOUSE, 0, 0, None, (x, y)))
-            return
+            self.browserUp(x, y, z)
+            self.browserMove(x, y, z)
+        self.__isMouseDown = True
 
     def browserUp(self, x, y, z):
         if not (self.hasBrowser and self.enableUpdate):
             return
-        elif not self.__isMouseDown:
+        if not self.__isMouseDown:
             return
-        else:
-            self.__isMouseDown = False
-            self.__browser.injectKeyEvent(BigWorld.KeyEvent(Keys.KEY_LEFTMOUSE, -1, 0, None, (x, y)))
-            if self.__isWaitingForUnfocus:
-                self.unfocus()
-            return
+        self.__isMouseDown = False
+        if self.__isWaitingForUnfocus:
+            self.unfocus()
 
     def browserFocusOut(self):
         if self.isFocused and self.__isMouseDown:

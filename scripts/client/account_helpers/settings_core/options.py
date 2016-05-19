@@ -319,7 +319,7 @@ class SoundQualitySetting(SettingAbstract):
 
     @classmethod
     def isAvailable(cls):
-        return True
+        return g_soundsCtrl.system.isMSR()
 
     def _get(self):
         return g_soundsCtrl.system.isHQEnabled()
@@ -1491,7 +1491,7 @@ class MinimapVehModelsSetting(StorageDumpSetting):
         return [ settingsKey % (self.settingName, type) for type in self.VEHICLE_MODELS_TYPES ]
 
     def getDefaultValue(self):
-        return 0
+        return self.VEHICLE_MODELS_TYPES.index(self.OPTIONS.ALWAYS)
 
 
 class BattleLoadingTipSetting(AccountDumpSetting):

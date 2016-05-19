@@ -1,5 +1,7 @@
 # Embedded file name: scripts/client/gui/shared/items_parameters/comparator.py
 import collections
+import sys
+from debug_utils import LOG_DEBUG
 from gui.shared.items_parameters import params_cache
 BACKWARD_QUALITY_PARAMS = ['aimingTime',
  'shotDispersionAngle',
@@ -20,6 +22,7 @@ class PARAM_STATE(object):
 
 
 PARAMS_STATES = (PARAM_STATE.WORSE, PARAM_STATE.NORMAL, PARAM_STATE.BETTER)
+DEFAULT_AVG_VALUE = (sys.maxint, -1)
 
 class ItemsComparator(object):
 
@@ -45,7 +48,9 @@ class ItemsComparator(object):
     def getExtendedData(self, paramName):
         value = self._currentParams.get(paramName)
         possibleBonuses, bonuses, penalties = self._getPenaltiesAndBonuses(paramName)
-        otherValue = self._otherParams.get(paramName) or value
+        otherValue = self._otherParams.get(paramName)
+        if otherValue is None or otherValue == DEFAULT_AVG_VALUE:
+            otherValue = value
         return _ParameterInfo(paramName, value, _rateParameterState(paramName, value, otherValue), possibleBonuses, bonuses, penalties)
 
     def _getPenaltiesAndBonuses(self, _):

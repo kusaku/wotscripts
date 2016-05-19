@@ -188,8 +188,11 @@ class EngineAuditionWWISE(EngineAudition):
 
     def onEngineStart(self):
         if SoundGroups.ENABLE_ENGINE_N_TRACKS:
-            self.__engineSound.play(self.__event)
-            self.__movementSound.play(self.__eventC)
+            if self.__engineSound is not None:
+                self.__engineSound.play(self.__event)
+            if self.__movementSound is not None:
+                self.__movementSound.play(self.__eventC)
+        return
 
     def tick(self):
         if not SoundGroups.ENABLE_ENGINE_N_TRACKS:

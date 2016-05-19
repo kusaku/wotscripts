@@ -317,7 +317,7 @@ class _PreDefinedHostList(object):
             LOG_WARNING('Callback is not defined.')
             return
         elif self.__autoLoginQueryState != AUTO_LOGIN_QUERY_STATE.DEFAULT:
-            LOG_WARNING('Auto login query in process.')
+            LOG_WARNING('Auto login query in process. Current state: {}'.format(self.__autoLoginQueryState))
             return
         elif len(self._hosts) < 2:
             callback(self.first())
@@ -594,7 +594,8 @@ class _PreDefinedHostList(object):
 
     def __onPingPerformed(self, result):
         self.onPingPerformed(result)
-        self.__autoLoginQueryCompleted(AUTO_LOGIN_QUERY_STATE.PING_PERFORMED)
+        if self.__autoLoginQueryState & AUTO_LOGIN_QUERY_STATE.START:
+            self.__autoLoginQueryCompleted(AUTO_LOGIN_QUERY_STATE.PING_PERFORMED)
 
     def __receiveAutoLoginCSISResponse(self, response):
         self.__csisAction = CSIS_ACTION.removeIfHas(self.__csisAction, CSIS_ACTION.AUTO_LOGIN_REQUEST)

@@ -323,7 +323,7 @@ class SimplifiedStatsBlockConstructor(ModuleTooltipBlockConstructor):
             value = parameter.value
             if delta > 0:
                 value -= delta
-            block.append(formatters.packStatusDeltaBlockData(title=text_styles.middleTitle(MENU.tank_params(parameter.name)), valueStr=params_formatters.simlifiedModuleParameter(parameter), statusBarData={'value': value,
+            block.append(formatters.packStatusDeltaBlockData(title=text_styles.middleTitle(MENU.tank_params(parameter.name)), valueStr=params_formatters.simlifiedDeltaParameter(parameter), statusBarData={'value': value,
              'delta': delta,
              'minValue': 0,
              'markerValue': self.__stockParams[parameter.name],

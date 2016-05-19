@@ -98,8 +98,9 @@ def packResultBlockData(title, text):
     return packBuildUpBlockData([packTextBlockData(title, True, BATTLE_RESULT_TYPES.TOOLTIP_RESULT_TTILE_LEFT_LINKAGE), packTextBlockData(text, True, BATTLE_RESULT_TYPES.TOOLTIP_ICON_TEXT_PARAMETER_LINKAGE)])
 
 
-def packImageTextBlockData(title = None, desc = None, img = None, imgPadding = None, imgAtLeft = True, txtGap = 0, txtOffset = -1, linkage = BLOCKS_TOOLTIP_TYPES.TOOLTIP_IMAGETEXT_BLOCK_LINKAGE, padding = None):
-    data = {'imageAtLeft': imgAtLeft}
+def packImageTextBlockData(title = None, desc = None, img = None, imgPadding = None, imgAtLeft = True, txtPadding = None, txtGap = 0, txtOffset = -1, txtAlign = 'left', linkage = BLOCKS_TOOLTIP_TYPES.TOOLTIP_IMAGETEXT_BLOCK_LINKAGE, padding = None):
+    data = {'imageAtLeft': imgAtLeft,
+     'textsAlign': txtAlign}
     if title is not None:
         data['title'] = title
     if desc is not None:
@@ -108,6 +109,8 @@ def packImageTextBlockData(title = None, desc = None, img = None, imgPadding = N
         data['imagePath'] = img
     if imgPadding is not None:
         data['imagePadding'] = imgPadding
+    if txtPadding is not None:
+        data['textsPadding'] = txtPadding
     if txtGap != 0:
         data['textsGap'] = txtGap
     if txtOffset != 0:
