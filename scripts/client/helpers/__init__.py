@@ -103,7 +103,7 @@ def getFullClientVersion():
 
 
 def isShowStartupVideo():
-    if not BigWorld.wg_isSSE2Supported():
+    if BigWorld.isLowProductivityPC():
         return False
     else:
         from gui import GUI_SETTINGS

@@ -1,8 +1,8 @@
 # Embedded file name: scripts/client/gui/game_control/PromoController.py
 from account_helpers import getAccountDatabaseID
 from account_helpers.AccountSettings import AccountSettings, PROMO, LAST_PROMO_PATCH_VERSION
-from account_shared import parseVersion, readClientServerVersion
-from debug_utils import LOG_DEBUG, LOG_ERROR
+from account_shared import getClientMainVersion
+from debug_utils import LOG_DEBUG
 from adisp import async, process
 from gui import GUI_SETTINGS
 from gui.LobbyContext import g_lobbyContext
@@ -64,7 +64,7 @@ class PromoController(Controller):
         return self.__currentVersionPromoUrl is not None and GUI_SETTINGS.isPatchPromoEnabled
 
     def isPatchChanged(self):
-        mainVersion = self.__getClientMainVersion()
+        mainVersion = getClientMainVersion()
         return mainVersion is not None and AccountSettings.getSettings(LAST_PROMO_PATCH_VERSION) != mainVersion
 
     def _stop(self):
@@ -80,7 +80,7 @@ class PromoController(Controller):
         yield lambda callback: callback(True)
         if self.isPatchPromoAvailable() and self.isPatchChanged() and self.isPromoAutoViewsEnabled() and not self._isPromoShown:
             LOG_DEBUG('Showing patchnote promo:', self.__currentVersionPromoUrl)
-            AccountSettings.setSettings(LAST_PROMO_PATCH_VERSION, self.__getClientMainVersion())
+            AccountSettings.setSettings(LAST_PROMO_PATCH_VERSION, getClientMainVersion())
             self.__currentVersionBrowserShown = True
             self._isPromoShown = True
             self.showCurrentVersionPatchPromo(isAsync=True)
@@ -130,17 +130,6 @@ class PromoController(Controller):
     def __onEventNotification(self, added, removed):
         self._updatePromo(self._getPromoEventNotifications())
         self._processPromo(added)
-
-    def __getClientMainVersion(self):
-        mainVersion = None
-        try:
-            _, clentVersion = readClientServerVersion()
-            parsedVersion = parseVersion(clentVersion)
-            _, mainVersion, _ = parsedVersion
-        except:
-            LOG_ERROR('Can not read or parse client-server version')
-        finally:
-            return mainVersion
 
     def __onBrowserDeleted(self, browserID):
         if self.__currentVersionBrowserID == browserID:

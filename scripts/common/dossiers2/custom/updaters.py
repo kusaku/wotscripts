@@ -1,6 +1,8 @@
 # Embedded file name: scripts/common/dossiers2/custom/updaters.py
+import sys
 import struct
 import constants
+from functools import partial
 from dossiers2.common.updater_utils import getNewStaticSizeBlockValues, getStaticSizeBlockRecordValues
 from dossiers2.common.updater_utils import getNewBinarySetBlockValues, setStaticSizeBlockRecordValues
 from dossiers2.common.updater_utils import addBlock, removeBlock, addRecords, removeRecords, setVersion, getHeader
@@ -3061,6 +3063,24 @@ def __updateFromVehicleDossier93(compDescr):
     setVersion(updateCtx, 94)
     return (94, updateCtx['dossierCompDescr'])
 
+
+def __bootstrapTankmanDossierFrom(ver, compDescr):
+    if ver > 14:
+        return (ver, compDescr)
+    return (TANKMAN_DOSSIER_VERSION, dossiers2.custom.tankmen_dossier1_updater.updateDossierCompDescr(compDescr))
+
+
+def __addTankmanDossierUpdaters(module, seq):
+    for v in seq:
+        updaterName = '__updateFromTankmanDossier%d' % (v,)
+        if getattr(module, updaterName, None) is None:
+            setattr(module, updaterName, partial(__bootstrapTankmanDossierFrom, v))
+            getattr(module, updaterName).__name__ = updaterName
+
+    return
+
+
+__addTankmanDossierUpdaters(sys.modules[__name__], xrange(10, 64))
 
 def __updateFromTankmanDossier64(compDescr):
     blocksLayout = ['total', 'achievements']

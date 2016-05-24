@@ -80,6 +80,8 @@ class VersionUpdaterBase(object):
                 resultVer = versionOrGetter(*args)
             else:
                 resultVer, args = result[0], result[1:]
-            raise resultVer == fromVer + 1 or AssertionError('resultVer=%s, ver=%s, updater=%s' % (resultVer, fromVer, updater.__name__))
+            raise resultVer == fromVer + 1 or resultVer == self._latestVersion or AssertionError('resultVer=%s, ver=%s, updater=%s' % (resultVer, fromVer, updater.__name__))
+            if resultVer == self._latestVersion:
+                break
 
         return args

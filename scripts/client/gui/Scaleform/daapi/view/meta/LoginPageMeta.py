@@ -131,6 +131,31 @@ class LoginPageMeta(View):
         """
         self._printOverrideError('changeAccount')
 
+    def switchBgMode(self):
+        """
+        :return :
+        """
+        self._printOverrideError('switchBgMode')
+
+    def setMute(self, value):
+        """
+        :param value:
+        :return :
+        """
+        self._printOverrideError('setMute')
+
+    def onVideoLoaded(self):
+        """
+        :return :
+        """
+        self._printOverrideError('onVideoLoaded')
+
+    def musicFadeOut(self):
+        """
+        :return :
+        """
+        self._printOverrideError('musicFadeOut')
+
     def as_setDefaultValuesS(self, loginName, pwd, rememberPwd, rememberPwdVisible, isIgrCredentialsReset, showRecoveryLink):
         """
         :param loginName:
@@ -170,14 +195,25 @@ class LoginPageMeta(View):
         if self._isDAAPIInited():
             return self.flashObject.as_setCopyright(copyrightVal, legalInfo)
 
-    def as_showWallpaperS(self, isShow, path):
+    def as_showWallpaperS(self, isShow, path, showSwitcher, isMuted):
         """
         :param isShow:
         :param path:
+        :param showSwitcher:
+        :param isMuted:
         :return :
         """
         if self._isDAAPIInited():
-            return self.flashObject.as_showWallpaper(isShow, path)
+            return self.flashObject.as_showWallpaper(isShow, path, showSwitcher, isMuted)
+
+    def as_showLoginVideoS(self, path, isMuted):
+        """
+        :param path:
+        :param isMuted:
+        :return :
+        """
+        if self._isDAAPIInited():
+            return self.flashObject.as_showLoginVideo(path, isMuted)
 
     def as_setCapsLockStateS(self, isActive):
         """

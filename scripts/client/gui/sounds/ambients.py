@@ -5,6 +5,7 @@ from Event import Event
 import MusicControllerWWISE as _MC
 from constants import FORT_BUILDING_TYPE as FBT, ARENA_PERIOD as _PERIOD
 from ClientFortifiedRegion import BUILDING_UPDATE_REASON as _BUR
+from shared_utils import BoundMethodWeakref
 from gui.shared import g_eventBus, events, EVENT_BUS_SCOPE
 from gui.shared.utils.scheduled_notifications import PeriodicNotifier, Notifiable
 from gui.shared.fortifications.settings import CLIENT_FORT_STATE as _CFS
@@ -49,6 +50,9 @@ class SoundEvent(Notifiable):
         self.onStarted = Event()
         self.onFinished = Event()
 
+    def __del__(self):
+        self.clearNotification()
+
     def getID(self):
         return self._soundEventID
 
@@ -69,7 +73,7 @@ class SoundEvent(Notifiable):
             SOUND_DEBUG('Start playing sound event', self._soundEventID, self._params)
             _MC.g_musicController.play(self._soundEventID, self._params)
             if self._checkFinish:
-                self.addNotificators(PeriodicNotifier(self._getNotificationDelta, self._onCheckAmbientNotification, (PLAYING_SOUND_CHECK_PERIOD,)))
+                self.addNotificators(PeriodicNotifier(BoundMethodWeakref(self._getNotificationDelta), BoundMethodWeakref(self._onCheckAmbientNotification), (PLAYING_SOUND_CHECK_PERIOD,)))
                 self.startNotification()
                 self.onStarted()
         else:
@@ -248,6 +252,10 @@ class LobbySpaceEnv(SoundEnv):
         super(LobbySpaceEnv, self).__init__(soundsCtrl, music=SoundEvent(_MC.MUSIC_EVENT_LOBBY, checkFinish=True), ambient=SoundEvent(_MC.AMBIENT_EVENT_LOBBY))
         self._music.onFinished += self._onMusicFinished
 
+    def stop(self):
+        self._music.onFinished -= self._onMusicFinished
+        super(LobbySpaceEnv, self).stop()
+
     def _onMusicFinished(self, isCompleted = False):
         if isCompleted:
             self._music.onFinished -= self._onMusicFinished
@@ -416,8 +424,7 @@ class GuiAmbientsCtrl(object):
     ambient events walking through all active environments from @__customEnvs in priority order.
     Any ambient can fire onChanged event and starts restart this algo.
     """
-    _spaces = {_SPACE_ID.LOGIN: LoginSpaceEnv,
-     _SPACE_ID.LOBBY: LobbySpaceEnv,
+    _spaces = {_SPACE_ID.LOBBY: LobbySpaceEnv,
      _SPACE_ID.BATTLE_LOADING: BattleLoadingSpaceEnv,
      _SPACE_ID.BATTLE: BattleSpaceEnv}
 

@@ -51,6 +51,8 @@ class DetailedEngineState(assembly_utility.Component):
             BigWorld.cancelCallback(self.__startEngineCbk)
         self._vehicle = None
         self._gearUpCbk = None
+        self.onEngineStart.clear()
+        self.onEngineStart = None
         return
 
     def __arenaPeriodChanged(self, *args):

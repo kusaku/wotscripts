@@ -8,7 +8,6 @@ from items import _xml
 from PlayerEvents import g_playerEvents
 from helpers import isPlayerAvatar
 MUSIC_EVENT_NONE = 0
-MUSIC_EVENT_LOGIN = 1
 MUSIC_EVENT_LOBBY = 2
 MUSIC_EVENT_COMBAT = 3
 MUSIC_EVENT_COMBAT_LOADING = 4
@@ -214,14 +213,12 @@ class MusicController(object):
             return
 
     def stopMusic(self):
-        for musicEvent in self.__musicEvents:
-            musicEvent.destroy()
+        musicEvent = self.__musicEvents[MusicController._MUSIC_EVENT]
+        musicEvent.destroy()
 
     def stopAmbient(self):
         ambientEvent = self.__musicEvents[MusicController._AMBIENT_EVENT]
-        if ambientEvent is not None:
-            ambientEvent.destroy()
-        return
+        ambientEvent.destroy()
 
     def stop(self):
         self.stopAmbient()
@@ -232,6 +229,10 @@ class MusicController(object):
         if e is not None:
             e.stop()
         return
+
+    def muteMusic(self, isMute):
+        musicEvent = self.__musicEvents[MusicController._MUSIC_EVENT]
+        musicEvent.mute(isMute)
 
     def setEventParam(self, eventId, paramName, paramValue):
         WWISE.WW_setRTCPGlobal(paramName, paramValue)
@@ -317,7 +318,6 @@ class MusicController(object):
         for i in section.items():
             s = i[1]
             if i[0] == 'music':
-                eventNames[MUSIC_EVENT_LOGIN] = s.readString('wwlogin')
                 eventNames[MUSIC_EVENT_LOBBY] = (s.readString('wwlobby'), s.readString('wwlobby'))
                 eventNames[MUSIC_EVENT_COMBAT_VICTORY] = s.readString('wwcombat_victory')
                 eventNames[MUSIC_EVENT_COMBAT_LOSE] = s.readString('wwcombat_lose')
