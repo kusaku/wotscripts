@@ -615,6 +615,8 @@ class Vehicle(BigWorld.Entity):
         if hlEnabled:
             highlighter.highlight(False)
         super(Vehicle, self).delModel(model)
+        if hlEnabled:
+            highlighter.highlight(True)
 
 
 def _stripVehCompDescrIfRoaming(vehCompDescr):

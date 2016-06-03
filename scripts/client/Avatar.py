@@ -597,8 +597,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                     if self.__stopUntilFire and isDown and not isGuiEnabled:
                         self.__stopUntilFire = False
                         self.__updateCruiseControlPanel()
-                    if not isGuiEnabled:
-                        self.moveVehicle(self.makeVehicleMovementCommandByKeys(), isDown)
+                    self.moveVehicle(self.makeVehicleMovementCommandByKeys(), isDown)
                     return True
                 if not isGuiEnabled and cmdMap.isFiredList(xrange(CommandMapping.CMD_AMMO_CHOICE_1, CommandMapping.CMD_AMMO_CHOICE_0 + 1), key) and isDown and mods == 0:
                     gui_event_dispatcher.choiceConsumable(key)

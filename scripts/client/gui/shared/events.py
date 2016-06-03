@@ -404,6 +404,7 @@ class OpenLinkEvent(SharedEvent):
     GLOBAL_MAP_PROMO_SUMMARY = 'globalMapPromoSummary'
     GLOBAL_MAP_CAP = 'globalMapCap'
     GLOBAL_MAP_PROMO = 'globalMapPromo'
+    FOOTBALL_PROMO = 'footballPromo'
 
     def __init__(self, eventType, url = '', title = ''):
         super(OpenLinkEvent, self).__init__(eventType)
