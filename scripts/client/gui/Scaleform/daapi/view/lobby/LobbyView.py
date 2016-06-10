@@ -14,6 +14,10 @@ from gui.Scaleform.genConsts.FORTIFICATION_ALIASES import FORTIFICATION_ALIASES
 from gui.Scaleform.genConsts.PREBATTLE_ALIASES import PREBATTLE_ALIASES
 from gui.Scaleform.locale.SYSTEM_MESSAGES import SYSTEM_MESSAGES
 from gui.prb_control.dispatcher import g_prbLoader
+from gui.prb_control.storage import prequeue_storage_getter
+from gui.server_events.EventsCache import g_eventsCache
+from account_helpers.AccountSettings import AccountSettings
+from constants import QUEUE_TYPE
 from gui.shared.ItemsCache import g_itemsCache
 from gui.shared.utils.HangarSpace import g_hangarSpace
 from gui.shared import EVENT_BUS_SCOPE, events, event_dispatcher as shared_events
@@ -22,6 +26,21 @@ from gui.Scaleform.Waiting import Waiting
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui.shared.utils.functions import getViewName
 from helpers import i18n
+
+class FootballVehicleSelector(object):
+
+    def select(self):
+        if not self.pveStorage.isModeSelected():
+            evtVehicles = g_eventsCache.getEventVehicles()
+            if evtVehicles and not AccountSettings.getSettings('FootballVehSelectedOnce'):
+                from CurrentVehicle import g_currentVehicle
+                g_currentVehicle.selectVehicle(evtVehicles[0].invID)
+                AccountSettings.setSettings('FootballVehSelectedOnce', True)
+
+    @prequeue_storage_getter(QUEUE_TYPE.SANDBOX)
+    def pveStorage(self):
+        return None
+
 
 class LobbyView(LobbyPageMeta):
     VIEW_WAITING = (VIEW_ALIAS.LOBBY_HANGAR,
@@ -53,6 +72,9 @@ class LobbyView(LobbyPageMeta):
         View._populate(self)
         self.__currIgrType = gui.game_control.g_instance.igr.getRoomType()
         g_prbLoader.setEnabled(True)
+        if g_eventsCache.isEventEnabled():
+            selector = FootballVehicleSelector()
+            selector.select()
         self.addListener(events.LobbySimpleEvent.SHOW_HELPLAYOUT, self.__showHelpLayout, EVENT_BUS_SCOPE.LOBBY)
         self.addListener(events.LobbySimpleEvent.CLOSE_HELPLAYOUT, self.__closeHelpLayout, EVENT_BUS_SCOPE.LOBBY)
         self.addListener(events.GameEvent.SCREEN_SHOT_MADE, self.__handleScreenShotMade, EVENT_BUS_SCOPE.GLOBAL)

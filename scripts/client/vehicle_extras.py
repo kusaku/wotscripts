@@ -210,3 +210,57 @@ class Fire(EntityExtra):
             self.__playEffect(data)
         data['wasUnderwater'] = isVehicleUnderwater
         return
+
+
+class Afterburning(EntityExtra):
+    _EFFECT_NAME = 'effect'
+
+    def _readConfig(self, dataSection, containerName):
+        effectsName = dataSection.readString(Afterburning._EFFECT_NAME)
+        if not effectsName:
+            self._raiseWrongConfig(Afterburning._EFFECT_NAME, containerName)
+        self.afterburningEffectsList = vehicles.g_cache._vehicleEffects.get(effectsName, None)
+        if self.afterburningEffectsList is None:
+            self._raiseWrongConfig(Afterburning._EFFECT_NAME, containerName)
+        return
+
+    def _start(self, data, args):
+        vehicle = data['entity']
+        data['entity_id'] = vehicle.id
+        getRunning = vehicle.getRunningExtra
+        hasTrackCrash = getRunning('leftTrackHealth') is not None or getRunning('rightTrackHealth') is not None
+        if not hasTrackCrash:
+            self.startEmission(vehicle, data)
+        return
+
+    def _cleanup(self, data):
+        effectsList = data['_effectsListPlayer']()
+        if effectsList is not None:
+            effectsList.keyOff()
+        return
+
+    def startEmission(self, vehicle, data = None):
+        if data is None:
+            data = vehicle.extras[self.index]
+        effects = random.choice(self.afterburningEffectsList)
+        effectsPlayer = data.get('_effectsListPlayer', None)
+        if effectsPlayer is not None:
+            effectsPlayer = effectsPlayer()
+        if effectsPlayer is None:
+            effectsPlayer = vehicle.appearance.boundEffects.addNew(None, effects.effectsList, effects.keyPoints, True, **data)
+            data['_effectsListPlayer'] = weakref.ref(effectsPlayer)
+        effectsPlayer.stop()
+        effectsPlayer.play(vehicle.appearance.compoundModel, None, None, True)
+        return
+
+    def ceaseEmission(self, vehicle, data = None):
+        hasOnlyOnceCrash = xor(vehicle.getRunningExtra('leftTrackHealth') is not None, vehicle.getRunningExtra('rightTrackHealth') is not None)
+        if not hasOnlyOnceCrash:
+            return
+        else:
+            if data is None:
+                data = vehicle.extras[self.index]
+            effectsListPlayer = data['_effectsListPlayer']()
+            if effectsListPlayer is not None:
+                effectsListPlayer.keyOff()
+            return

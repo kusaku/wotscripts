@@ -32,3 +32,7 @@ def showClanJoinAward(clanAbbrev, clanName, clanDbID):
 
 def showTelecomAward(vehicleDesrs, hasCrew, hasBrotherhood):
     showAwardWindow(specialAwards.TelecomAward(vehicleDesrs, hasCrew, hasBrotherhood))
+
+
+def showFootballTournamentAward(awardId, awardTitle):
+    showAwardWindow(specialAwards.FootballTournamentAward(awardId, awardTitle))

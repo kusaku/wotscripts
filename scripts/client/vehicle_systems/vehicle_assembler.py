@@ -13,6 +13,7 @@ import WoT
 from vehicle_systems.components.engine_state import DetailedEngineStateWWISE
 from vehicle_systems.components.highlighter import Highlighter
 from helpers import gEffectsDisabled
+from FootballManager import FootballManager
 
 def createAssembler(vehicle):
     return PanzerAssemblerWWISE(vehicle)
@@ -128,6 +129,10 @@ def _createEffects(vehicle, appearance):
     else:
         if vehicle.physicsMode == VEHICLE_PHYSICS_MODE.DETAILED:
             appearance.customEffectManager = CustomEffectManager(vehicle, appearance.detailedEngineState)
+            if FootballManager.isFootballBattle():
+                appearance.customEffectManager.isNitroLink = lambda : vehicle.getRunningExtra('afterburning') is not None
+            else:
+                appearance.customEffectManager.isNitroLink = None
         else:
             appearance.exhaustEffects = VehicleExhaustEffects(vehicle.typeDescriptor)
             appearance.trailEffects = VehicleTrailEffects(vehicle)

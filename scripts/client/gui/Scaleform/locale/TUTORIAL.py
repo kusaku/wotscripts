@@ -11,6 +11,7 @@ class TUTORIAL(object):
     MESSAGES_REQUEST_BONUS_FAILED = '#tutorial:messages/request-bonus-failed'
     MESSAGES_TUTORIAL_DISABLED = '#tutorial:messages/tutorial-disabled'
     ONCEONLYHINTS_FALLOUTQUESTSTAB = '#tutorial:onceOnlyHints/falloutQuestsTab'
+    ONCEONLYHINTS_OPENCUSTOMIZATIONWINDOW = '#tutorial:onceOnlyHints/openCustomizationWindow'
     HANGARTUTORIAL_RESEARCHTREE_RESEARCHTREE = '#tutorial:hangarTutorial/researchTree/researchTree'
     HANGARTUTORIAL_RESEARCH_PREVVEHICLES = '#tutorial:hangarTutorial/research/prevVehicles'
     HANGARTUTORIAL_RESEARCH_TANKINFO = '#tutorial:hangarTutorial/research/tankInfo'

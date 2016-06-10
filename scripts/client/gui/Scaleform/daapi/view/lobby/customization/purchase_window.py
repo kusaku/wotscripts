@@ -1,5 +1,6 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/customization/purchase_window.py
 import itertools
+from CurrentVehicle import g_currentVehicle
 from adisp import process
 from Event import Event
 from gui import makeHtmlString
@@ -30,7 +31,8 @@ def _getDropdownPriceVO(element):
             icon = RES_ICONS.MAPS_ICONS_LIBRARY_CREDITSICON_2
         dropdownItem = {'labelPrice': text_styles.main(_ms(text)),
          'label': makeHtmlString('html_templates:lobby/customization', 'DDString', {'text': textStyle(element.getPrice(duration)),
-                   'icon': getAbsoluteUrl(icon)})}
+                   'icon': getAbsoluteUrl(icon)}),
+         'enabled': not (g_currentVehicle.isEvent() and duration == DURATION.PERMANENT)}
         if element.isOnSale(duration):
             isGold = duration == DURATION.PERMANENT
             dropdownItem['salePrice'] = getSalePriceString(isGold, element, duration)
@@ -110,6 +112,11 @@ class PurchaseWindow(CustomizationBuyWindowMeta):
         self.__searchDP = PurchaseDataProvider(self.__controller.cart)
         self.__searchDP.setFlashObject(self.as_getPurchaseDPS())
         self.__searchDP.selectionChanged += self.__setTotalData
+        isFootBallEvent = g_currentVehicle.isEvent()
+        if not isFootBallEvent:
+            tableHeader = [_getColumnHeaderVO('itemName', text_styles.main(VEHICLE_CUSTOMIZATION.WINDOW_PURCHASE_TABLEHEADER_ITEMS), 250), _getColumnHeaderVO('lblBonus', text_styles.main(VEHICLE_CUSTOMIZATION.WINDOW_PURCHASE_TABLEHEADER_BONUS), 110), _getColumnHeaderVO('lblPrice', text_styles.main(VEHICLE_CUSTOMIZATION.WINDOW_PURCHASE_TABLEHEADER_COST), 150)]
+        else:
+            tableHeader = [_getColumnHeaderVO('itemName', text_styles.main(VEHICLE_CUSTOMIZATION.WINDOW_PURCHASE_TABLEHEADER_ITEMS), 360), _getColumnHeaderVO('lblPrice', text_styles.main(VEHICLE_CUSTOMIZATION.WINDOW_PURCHASE_TABLEHEADER_COST), 150)]
         self.as_setInitDataS({'windowTitle': VEHICLE_CUSTOMIZATION.WINDOW_PURCHASE_HEADER,
          'imgGold': RES_ICONS.MAPS_ICONS_LIBRARY_GOLDICON_1,
          'imgCredits': RES_ICONS.MAPS_ICONS_LIBRARY_CREDITSICON_1,
@@ -117,7 +124,8 @@ class PurchaseWindow(CustomizationBuyWindowMeta):
          'btnCancelLabel': VEHICLE_CUSTOMIZATION.WINDOW_PURCHASE_BTNCANCEL,
          'buyDisabledTooltip': VEHICLE_CUSTOMIZATION.CUSTOMIZATION_BUYDISABLED_BODY,
          'defaultSortIndex': 0,
-         'tableHeader': [_getColumnHeaderVO('itemName', text_styles.main(VEHICLE_CUSTOMIZATION.WINDOW_PURCHASE_TABLEHEADER_ITEMS), 250), _getColumnHeaderVO('lblBonus', text_styles.main(VEHICLE_CUSTOMIZATION.WINDOW_PURCHASE_TABLEHEADER_BONUS), 110), _getColumnHeaderVO('lblPrice', text_styles.main(VEHICLE_CUSTOMIZATION.WINDOW_PURCHASE_TABLEHEADER_COST), 150)]})
+         'tableHeader': tableHeader,
+         'warning': text_styles.concatStylesWithSpace(icons.attention(), text_styles.standard(VEHICLE_CUSTOMIZATION.WINDOW_PURCHASE_EVENT_WARNING)) if isFootBallEvent else ''})
         self.__setTotalData()
 
     def __setTotalData(self, *args):
@@ -190,6 +198,7 @@ class PurchaseDataProvider(SortableDAAPIDataProvider):
     def buildList(self, cartItems):
         self.clear()
         elementGroups = [[], [], []]
+        isFootBallEvent = g_currentVehicle.isEvent()
         for item in cartItems:
             element = item['object']
             dropdownItem = {'id': element.getID(),
@@ -197,9 +206,9 @@ class PurchaseDataProvider(SortableDAAPIDataProvider):
              'selected': item['isSelected'],
              'cType': item['type'],
              'itemName': element.getName(),
-             'imgBonus': element.qualifier.getIcon16x16(),
+             'imgBonus': element.qualifier.getIcon16x16() if not isFootBallEvent else '',
              'price': element.getPrice(item['duration']),
-             'lblBonus': text_styles.stats('+{0}%{1}'.format(element.qualifier.getValue(), '*' if element.qualifier.getDescription() is not None else '')),
+             'lblBonus': text_styles.stats('+{0}%{1}'.format(element.qualifier.getValue(), '*' if element.qualifier.getDescription() is not None else '')) if not isFootBallEvent else '',
              'titleMode': False,
              'DDPrice': _getDropdownPriceVO(element),
              'selectIndex': DURATION.ALL.index(item['duration']),
@@ -208,7 +217,14 @@ class PurchaseDataProvider(SortableDAAPIDataProvider):
              'duplicatePriceTooltip': makeTooltip(_ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_BUYWINDOW_COPY_HEADER), _ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_BUYWINDOW_COPY_BODY))}
             elementGroups[item['type']].append(dropdownItem)
 
-        for elements, title in zip(elementGroups, _CUSTOMIZATION_TYPE_TITLES):
+        if g_currentVehicle.isEvent():
+            inscription = VEHICLE_CUSTOMIZATION.BUYWINDOW_TITLE_INSCRIPTION
+            if inscription in _CUSTOMIZATION_TYPE_TITLES:
+                titles = list(_CUSTOMIZATION_TYPE_TITLES)
+                titles[titles.index(inscription)] = VEHICLE_CUSTOMIZATION.BUYWINDOW_TITLE_FOOTBALLFLAG
+        else:
+            titles = _CUSTOMIZATION_TYPE_TITLES
+        for elements, title in zip(elementGroups, titles):
             if elements:
                 elements.insert(0, {'titleMode': True,
                  'titleText': _ms(text_styles.middleTitle(title))})

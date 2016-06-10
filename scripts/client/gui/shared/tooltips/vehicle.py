@@ -8,6 +8,7 @@ from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.Scaleform.locale.MENU import MENU
 from gui.Scaleform.locale.ITEM_TYPES import ITEM_TYPES
 from gui.game_control import getFalloutCtrl
+from gui.server_events import g_eventsCache
 from gui.shared.formatters import text_styles, icons
 from gui.shared.formatters.time_formatters import RentLeftFormatter
 from gui.shared.items_parameters import RELATIVE_PARAMS, MAX_RELATIVE_VALUE, formatters as param_formatter, params_helper
@@ -19,7 +20,7 @@ from gui.shared.tooltips import getComplexStatus, getUnlockPrice, TOOLTIP_TYPE
 from gui.shared.gui_items.Vehicle import Vehicle
 from gui.shared.tooltips import formatters
 from helpers.i18n import makeString as _ms
-from BigWorld import wg_getIntegralFormat as _int
+from BigWorld import wg_getIntegralFormat as _int, wg_getShortDateFormat
 from gui.shared.gui_items.Vehicle import VEHICLE_CLASS_NAME
 from gui.shared.items_parameters.formatters import MEASURE_UNITS
 from gui.shared.gui_items.Tankman import Tankman
@@ -67,14 +68,18 @@ class VehicleInfoTooltipData(BlocksTooltipData):
         blockPadding = formatters.packPadding(left=leftPadding, right=rightPadding, top=blockTopPadding)
         valueWidth = 75
         textGap = -2
-        items.append(formatters.packBuildUpBlockData(HeaderBlockConstructor(vehicle, statsConfig, leftPadding, rightPadding).construct(), padding=leftRightPadding))
+        if not vehicle.isEvent:
+            items.append(formatters.packBuildUpBlockData(HeaderBlockConstructor(vehicle, statsConfig, leftPadding, rightPadding).construct(), padding=leftRightPadding))
+        else:
+            items.append(formatters.packBuildUpBlockData(EventHeaderBlockConstructor(vehicle, statsConfig, leftPadding, rightPadding).construct()))
         telecomBlock = TelecomBlockConstructor(vehicle, valueWidth, leftPadding, rightPadding).construct()
         if len(telecomBlock) > 0:
             items.append(formatters.packBuildUpBlockData(telecomBlock, padding=leftRightPadding))
-        priceBlock, invalidWidth = PriceBlockConstructor(vehicle, statsConfig, valueWidth, leftPadding, rightPadding).construct()
-        if len(priceBlock) > 0:
-            self._setWidth(_TOOLTIP_MAX_WIDTH if invalidWidth else _TOOLTIP_MIN_WIDTH)
-            items.append(formatters.packBuildUpBlockData(priceBlock, gap=textGap, padding=blockPadding))
+        if not vehicle.isEvent:
+            priceBlock, invalidWidth = PriceBlockConstructor(vehicle, statsConfig, valueWidth, leftPadding, rightPadding).construct()
+            if len(priceBlock) > 0:
+                self._setWidth(_TOOLTIP_MAX_WIDTH if invalidWidth else _TOOLTIP_MIN_WIDTH)
+                items.append(formatters.packBuildUpBlockData(priceBlock, gap=textGap, padding=blockPadding))
         items.append(formatters.packBuildUpBlockData(SimplifiedStatsBlockConstructor(vehicle, paramsConfig, leftPadding, rightPadding).construct(), gap=-4, linkage=BLOCKS_TOOLTIP_TYPES.TOOLTIP_BUILDUP_BLOCK_WHITE_BG_LINKAGE, padding=leftRightPadding))
         commonStatsBlock = CommonStatsBlockConstructor(vehicle, paramsConfig, valueWidth, leftPadding, rightPadding).construct()
         if len(commonStatsBlock) > 0:
@@ -245,6 +250,33 @@ class HeaderBlockConstructor(VehicleTooltipBlockConstructor):
         if self.vehicle.isFavorite:
             headerBlocks.append(formatters.packImageTextBlockData(title=text_styles.neutral(TOOLTIPS.VEHICLE_FAVORITE), img=RES_ICONS.MAPS_ICONS_TOOLTIP_MAIN_TYPE, imgPadding=formatters.packPadding(top=-15), imgAtLeft=False, txtPadding=formatters.packPadding(left=10), txtAlign=BLOCKS_TOOLTIP_TYPES.ALIGN_RIGHT, padding=formatters.packPadding(top=-28, bottom=-27)))
         block.append(formatters.packBuildUpBlockData(headerBlocks, stretchBg=False, linkage=bgLinkage, padding=formatters.packPadding(left=-self.leftPadding)))
+        return block
+
+
+class EventHeaderBlockConstructor(VehicleTooltipBlockConstructor):
+
+    def __init__(self, vehicle, configuration, leftPadding, rightPadding):
+        super(EventHeaderBlockConstructor, self).__init__(vehicle, configuration, leftPadding, rightPadding)
+
+    def construct(self):
+        block = []
+        vehicleType = TOOLTIPS.tankcaruseltooltip_vehicletype_elite(self.vehicle.type)
+        bgLinkage = BLOCKS_TOOLTIP_TYPES.TOOLTIP_BUILDUP_BLOCK_FOOTBALL_BG_LINKAGE
+        nameStr = text_styles.highTitle(self.vehicle.userName)
+        typeStr = text_styles.main(vehicleType)
+        levelStr = text_styles.concatStylesWithSpace(text_styles.stats(int2roman(self.vehicle.level)), text_styles.standard(_ms(TOOLTIPS.VEHICLE_LEVEL)))
+        imgOffset = 4
+        textOffset = 82
+        iconBlock = formatters.packImageTextBlockData(title=nameStr, desc=text_styles.concatStylesToMultiLine(typeStr, levelStr), img=RES_ICONS.MAPS_ICONS_VEHICLETYPES_BIG_MEDIUMTANK_ELITE, imgPadding={'left': imgOffset,
+         'top': -15}, txtGap=-2, txtOffset=textOffset, padding=formatters.packPadding(top=15, bottom=-15))
+        eventBlock = formatters.packTextBlockData(text=text_styles.main(_ms(TOOLTIPS.VEHICLE_DEAL_FOOTBALL_MAIN)), padding=formatters.packPadding(left=textOffset, right=self.rightPadding, top=10))
+        timeLeft = ''
+        dueDate = g_eventsCache.getEventDueDate()
+        if dueDate:
+            name = text_styles.tutorial(_ms(TOOLTIPS.VEHICLE_DEAL_FOOTBALL_TIME, date=wg_getShortDateFormat(dueDate)))
+            padding = formatters.packPadding(left=self.leftPadding, right=self.rightPadding, bottom=-15)
+            timeLeft = formatters.packTextParameterWithIconBlockData(name=name, value='', icon=ICON_TEXT_FRAMES.RENTALS, valueWidth=36, padding=padding)
+        block.append(formatters.packBuildUpBlockData([iconBlock, eventBlock, timeLeft], stretchBg=False, linkage=bgLinkage, padding=formatters.packPadding(left=-19 + self.leftPadding, top=-1)))
         return block
 
 

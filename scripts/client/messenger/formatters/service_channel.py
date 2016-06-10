@@ -78,7 +78,7 @@ def _extendCustomizationData(newData, extendable):
 
 
 @async
-def _getRareTitle(rareID, callback):
+def getRareTitle(rareID, callback):
     rare_achievements.getRareAchievementText(getClientLanguage(), rareID, lambda rID, text: callback(text.get('title')))
 
 
@@ -86,7 +86,7 @@ def _getRareTitle(rareID, callback):
 def processAchieves(rares, appendCallback):
     unknownAchieves = 0
     for rareID in rares:
-        title = yield _getRareTitle(rareID)
+        title = yield getRareTitle(rareID)
         if title is None:
             unknownAchieves += 1
         else:
@@ -253,6 +253,9 @@ class BattleResultsFormatter(WaitItemsSyncFormatter):
                              'clanAbbrev': ''})
                         if battleResKey == 0:
                             battleResKey = 1 if buildTeam == team else -1
+                elif guiType == ARENA_GUI_TYPE.EVENT_BATTLES:
+                    if battleResKey == 0 and battleResults.get('finishReason', 0) == FINISH_REASON.TECHNICAL:
+                        battleResKey = -1
                 ctx['club'] = self.__makeClubString(battleResults)
                 if guiType == ARENA_GUI_TYPE.FALLOUT_MULTITEAM:
                     templateName = self.__eventBattleResultKeys[battleResKey]
@@ -262,6 +265,8 @@ class BattleResultsFormatter(WaitItemsSyncFormatter):
                 arenaUniqueID = battleResults.get('arenaUniqueID', 0)
                 if guiType == ARENA_GUI_TYPE.FORT_BATTLE:
                     bgIconSource = 'FORT_BATTLE'
+                elif guiType == ARENA_GUI_TYPE.EVENT_BATTLES:
+                    bgIconSource = 'EVENT'
                 formatted = g_settings.msgTemplates.format(templateName, ctx=ctx, data={'timestamp': arenaCreateTime,
                  'savedData': arenaUniqueID}, bgIconSource=bgIconSource)
                 settings = self._getGuiSettings(message, templateName)
@@ -1115,7 +1120,7 @@ class PrebattleKickFormatter(PrebattleFormatter):
         if prbType > 0 and kickReason > 0:
             ctx = {}
             key = '#system_messages:prebattle/kick/type/unknown'
-            if prbType in (PREBATTLE_TYPE.SQUAD, PREBATTLE_TYPE.FALLOUT):
+            if prbType in PREBATTLE_TYPE.SQUAD_PREBATTLES:
                 key = '#system_messages:prebattle/kick/type/squad'
             elif prbType == PREBATTLE_TYPE.COMPANY:
                 key = '#system_messages:prebattle/kick/type/team'

@@ -111,6 +111,7 @@ class ArenaVehiclesListener(_Listener):
             arena.onVehicleStatisticsUpdate += self.__arena_onVehicleStatisticsUpdate
             arena.onTeamKiller += self.__arena_onTeamKiller
             arena.onInteractiveStats += self.__arena_onInteractiveStats
+            arena.onFootballPenaltyPoints += self.__arena_onFootballPenaltyPoints
             return
 
     def stop(self):
@@ -203,6 +204,10 @@ class ArenaVehiclesListener(_Listener):
     def __arena_onInteractiveStats(self, stats):
         self.__arenaDP.updateVehicleInteractiveStats(stats)
         self._invokeListenersMethod('invalidateVehicleInteractiveStats')
+
+    def __arena_onFootballPenaltyPoints(self, data):
+        self.__arenaDP.updateFootballPenaltyPoints(data)
+        self._invokeListenersMethod('invalidateFootballPenaltyPoints', data)
 
     def __isRequiredDataExists(self):
         return self.__arenaDP is not None and self.__arenaDP.isRequiredDataExists()

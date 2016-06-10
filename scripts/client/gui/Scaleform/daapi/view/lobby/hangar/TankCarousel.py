@@ -7,12 +7,12 @@ from CurrentVehicle import g_currentVehicle
 from debug_utils import LOG_DEBUG
 from gui import GUI_NATIONS
 from gui import SystemMessages
-from gui.Scaleform import getVehicleTypeAssetPath, getNationsFilterAssetPath, getButtonsAssetPath
-from gui.Scaleform.daapi.view.meta.TankCarouselMeta import TankCarouselMeta
+from gui.Scaleform import getNationsFilterAssetPath, getButtonsAssetPath
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui.Scaleform.locale.FALLOUT import FALLOUT
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.game_control import g_instance as g_gameCtrl, getFalloutCtrl
+from gui.server_events import g_eventsCache
 from gui.shared.formatters.ranges import toRomanRangeString
 from gui.shared.formatters.text_styles import alert, standard, main, middleTitle, highTitle, statInfo, critical
 from gui.shared.formatters.time_formatters import RentLeftFormatter
@@ -21,10 +21,8 @@ from gui.shared.utils.functions import makeTooltip
 from gui.prb_control.prb_helpers import GlobalListener
 from gui.shared.utils.requesters import REQ_CRITERIA
 from gui.shared import events, EVENT_BUS_SCOPE, g_itemsCache
-from gui.shared.formatters import icons
 from gui.shared.formatters import text_styles
 from gui.shared.gui_items import CLAN_LOCK
-from gui.shared.gui_items.Vehicle import Vehicle, VEHICLE_TYPES_ORDER
 from gui.shared.gui_items.processors.vehicle import VehicleSlotBuyer
 from gui.shared.utils import decorators
 from gui.Scaleform.daapi.view.lobby.hangar.tank_carousel_filter import IGR_FILTER_ID, createCarouselFilter
@@ -91,6 +89,7 @@ class TankCarousel(TankCarouselMeta, GlobalListener):
         self.__falloutCtrl = getFalloutCtrl()
         self.__falloutCtrl.onVehiclesChanged += self._updateFalloutVehicles
         self.__falloutCtrl.onSettingsChanged += self._updateFalloutSettings
+        g_eventsCache.onSyncCompleted += self._updateEventFilter
         self.__multiselectionMode = self.__falloutCtrl.isSelected()
         self._initializeFilters()
         self._setupFilters(self.__multiselectionMode)
@@ -107,6 +106,7 @@ class TankCarousel(TankCarouselMeta, GlobalListener):
         self.__falloutCtrl.onVehiclesChanged -= self._updateFalloutVehicles
         self.__falloutCtrl.onSettingsChanged -= self._updateFalloutSettings
         self.__falloutCtrl = None
+        g_eventsCache.onSyncCompleted -= self._updateEventFilter
         self._filter = None
         super(TankCarousel, self)._dispose()
         return
@@ -168,9 +168,15 @@ class TankCarousel(TankCarouselMeta, GlobalListener):
         self.updateVehicles(filterCriteria=filterCriteria, updateFallout=False)
         self.__updateMultiselectionData()
 
+    def _updateEventFilter(self):
+        if not g_eventsCache.isEventEnabled():
+            self._filter.reset(('event',))
+        self.showVehicles()
+
     def showVehicles(self):
-        totalVehicles = g_itemsCache.items.getVehicles(self._filter.getDefaultCriteria())
-        filteredVehicles = g_itemsCache.items.getVehicles(self._filter.getCriteria())
+        items = g_itemsCache.items
+        totalVehicles = items.getVehicles(self._filter.getDefaultCriteria())
+        filteredVehicles = items.getVehicles(self._filter.getCriteria())
 
         def sorting(v1, v2):
             if v1.isFavorite and not v2.isFavorite:
@@ -180,10 +186,14 @@ class TankCarousel(TankCarouselMeta, GlobalListener):
             return cmp(v1, v2)
 
         vehsCDs = map(attrgetter('intCD'), sorted(filteredVehicles.values(), sorting))
+        if self._filter.get('event') and g_eventsCache.isEventEnabled():
+            eventsVehicles = items.getVehicles(REQ_CRITERIA.VEHICLE.EVENT)
+            eventVehsCDs = map(attrgetter('intCD'), sorted(eventsVehicles.values(), sorting))
+            vehsCDs = eventVehsCDs + vehsCDs
         LOG_DEBUG('Showing carousel vehicles:', vehsCDs)
         self.as_showVehiclesS(vehsCDs)
         self.__totalVehicleCount = len(totalVehicles)
-        self.__currentVehicleCount = len(filteredVehicles)
+        self.__currentVehicleCount = len(vehsCDs)
         if not self._filter.isDefault():
             if self.__currentVehicleCount == 0:
                 currentCountStyle = text_styles.error
@@ -200,6 +210,8 @@ class TankCarousel(TankCarouselMeta, GlobalListener):
             filterCriteria |= REQ_CRITERIA.IN_CD_LIST(vehicles)
         items = g_itemsCache.items
         filteredVehs = items.getVehicles(filterCriteria)
+        eventsVehicles = items.getVehicles(REQ_CRITERIA.VEHICLE.EVENT)
+        filteredVehs.update(eventsVehicles)
         if vehicles is None:
             vehicles = filteredVehs.keys()
         hasEmptySlots = self.__multiselectionMode and len(self.__falloutCtrl.getEmptySlots()) > 0
@@ -287,6 +299,7 @@ class TankCarousel(TankCarouselMeta, GlobalListener):
         return statusStr
 
     def _getVehicleData(self, vehicle, vState, vStateLvl, rentInfoStr):
+        notEventVehicle = not vehicle.isEvent
         return {'id': vehicle.invID,
          'inventoryId': vehicle.invID,
          'label': vehicle.shortUserName if vehicle.isPremiumIGR else vehicle.userName,
@@ -306,7 +319,9 @@ class TankCarousel(TankCarouselMeta, GlobalListener):
          'current': 0,
          'enabled': True,
          'rentLeft': rentInfoStr,
-         'selectableForSlot': self.__multiselectionMode and vehicle.isFalloutAvailable and not vehicle.isDisabledInPremIGR}
+         'selectableForSlot': self.__multiselectionMode and vehicle.isFalloutAvailable and not vehicle.isDisabledInPremIGR,
+         'flagVisible': notEventVehicle,
+         'showMultyXp': notEventVehicle}
 
     def __getMultiselectionSlots(self):
         result = []

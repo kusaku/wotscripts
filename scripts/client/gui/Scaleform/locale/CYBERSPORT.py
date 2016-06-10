@@ -103,6 +103,7 @@ class CYBERSPORT(object):
     WINDOW_UNIT_MESSAGE_CURFEW = '#cyberSport:window/unit/message/curfew'
     WINDOW_UNIT_MESSAGE_VEHICLENOTSELECTED = '#cyberSport:window/unit/message/vehicleNotSelected'
     WINDOW_UNIT_MESSAGE_VEHICLENOTVALID = '#cyberSport:window/unit/message/vehicleNotValid'
+    WINDOW_UNIT_MESSAGE_EVENT_VEHICLEINVALID = '#cyberSport:window/unit/message/event/vehicleInvalid'
     WINDOW_UNIT_MESSAGE_VEHICLEINNOTREADY_BROKEN = '#cyberSport:window/unit/message/vehicleInNotReady/broken'
     WINDOW_UNIT_MESSAGE_VEHICLEINNOTREADY_CREWNOTFULL = '#cyberSport:window/unit/message/vehicleInNotReady/crewNotFull'
     WINDOW_UNIT_MESSAGE_VEHICLEINNOTREADY_RENTISOVER = '#cyberSport:window/unit/message/vehicleInNotReady/rentIsOver'

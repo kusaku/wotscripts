@@ -136,6 +136,7 @@ class PREBATTLE_ACTION_NAME(object):
     COMPANY = 'companyList'
     SPEC_BATTLE = 'specBattleList'
     SQUAD = 'squad'
+    EVENT_SQUAD = 'eventSquad'
     TOURNAMENT = 'tournament'
     CLAN = 'clan'
     UNIT = 'unit'

@@ -7,6 +7,7 @@ from tutorial.control.chains import functional as chains_func
 from tutorial.control.quests import queries
 from tutorial.control.chains.context import ChainsStartReqs, ChainsBonusesRequester
 from tutorial.control.lobby import functional as lobby_func
+from tutorial.control.quests import functional as quests_func
 __all__ = ('ChainsControlsFactory', 'ChainsStartReqs')
 
 class ChainsControlsFactory(ControlsFactory):
@@ -31,7 +32,8 @@ class ChainsControlsFactory(ControlsFactory):
          EFFECT_TYPE.CLOSE_HINT: chains_func.FunctionalCloseHint,
          EFFECT_TYPE.ENTER_QUEUE: chains_func.FunctionalSwitchToRandom,
          EFFECT_TYPE.SHOW_UNLOCKED_CHAPTER: chains_func.FunctionalShowUnlockedChapter,
-         EFFECT_TYPE.SHOW_AWARD_WINDOW: chains_func.FunctionalShowAwardWindow}
+         EFFECT_TYPE.SHOW_AWARD_WINDOW: chains_func.FunctionalShowAwardWindow,
+         EFFECT_TYPE.SAVE_ACCOUNT_SETTING: quests_func.SaveAccountSettingEffect}
         queries_ = {'awardWindow': queries.AwardWindowContentQuery}
         ControlsFactory.__init__(self, effects, queries_)
 

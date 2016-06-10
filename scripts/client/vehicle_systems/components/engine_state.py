@@ -55,11 +55,9 @@ class DetailedEngineState(assembly_utility.Component):
         self.onEngineStart = None
         return
 
-    def __arenaPeriodChanged(self, *args):
-        period = BigWorld.player().arena.period
-        if period != self.__prevArenaPeriod and period == ARENA_PERIOD.PREBATTLE:
+    def __arenaPeriodChanged(self, period, periodEndTime, periodLength, periodAdditionalInfo):
+        if period > self.__prevArenaPeriod and period == ARENA_PERIOD.PREBATTLE:
             self._mode = DetailedEngineState._STOPPED
-            self.__prevArenaPeriod = period
             maxTime = BigWorld.player().arena.periodEndTime - BigWorld.serverTime()
             maxTime = maxTime * 0.7 if maxTime > 0.0 else 1.0
             time = uniform(0.0, maxTime)
@@ -68,6 +66,7 @@ class DetailedEngineState(assembly_utility.Component):
             if self.__startEngineCbk is None and self._mode == DetailedEngineState._STOPPED:
                 self.onEngineStart()
             self.__starting = False
+        self.__prevArenaPeriod = period
         return
 
     def __startEngineFunc(self):
@@ -171,6 +170,8 @@ class DetailedEngineStateWWISE(DetailedEngineState):
                 self._reativelRPM = self._reativelRPM * (1.0 - self._GEAR_DELTA * self._gearNum) + self._GEAR_DELTA * self._gearNum
             else:
                 self._reativelRPM = 0.0
+            self._rpm = self._reativelRPM * 100.0
+            self._rpm = self._reativelRPM * 100.0
             self._rpm = self._reativelRPM * 100.0
         else:
             self._gearUp = self.__newPhysicGear > self._gearNum

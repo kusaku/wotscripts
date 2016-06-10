@@ -5,11 +5,12 @@ from PlayerEvents import g_playerEvents
 from debug_utils import LOG_DEBUG
 from adisp import async
 from gui.battle_control import consumables, vehicle_state_ctrl
+from gui.battle_control.arena_info.football_arena_dataprovider import FootballArenaDataProvider
 from gui.battle_control.avatar_stats_controller import AvatarStatsController
 from gui.battle_control.BattleContext import BattleContext
 from gui.battle_control.RespawnsController import RespawnsController
 from gui.battle_control.NotificationsController import NotificationsController
-from gui.battle_control.arena_info import getClientArena
+from gui.battle_control.arena_info import getClientArena, isEventBattle
 from gui.battle_control.avatar_getter import leaveArena
 from gui.battle_control.battle_constants import BATTLE_CTRL, VIEW_COMPONENT_RULE
 from gui.battle_control.battle_constants import VEHICLE_VIEW_STATE
@@ -251,7 +252,7 @@ class BattleSessionProvider(object):
         """
         isReplayRecording = startCtx.replayCtrl.isRecording
         isReplayPlaying = startCtx.replayCtrl.isPlaying
-        self.__arenaDP = ArenaDataProvider(avatar=startCtx.avatar)
+        self.__arenaDP = ArenaDataProvider(avatar=startCtx.avatar) if not isEventBattle() else FootballArenaDataProvider(avatar=startCtx.avatar)
         self.__ctx.start(self.__arenaDP)
         self.__ammoCtrl = consumables.createAmmoCtrl(isReplayPlaying, isReplayRecording)
         self.__equipmentsCtrl = consumables.createEquipmentCtrl(isReplayPlaying)

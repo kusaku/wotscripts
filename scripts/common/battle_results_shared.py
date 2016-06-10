@@ -202,7 +202,27 @@ _VEH_CELL_RESULTS_PUBLIC = Meta(('health',
  dict,
  {},
  BunchProxyPacker(VEH_CELL_RESULTS_EXTS['extPublic']),
- 'joinExts'))
+ 'joinExts'), ('firstGoalTime',
+ int,
+ 0,
+ None,
+ 'min'), ('firstAssistTime',
+ int,
+ 0,
+ None,
+ 'min'), ('numGoals',
+ int,
+ 0,
+ None,
+ 'sum'), ('numAssists',
+ int,
+ 0,
+ None,
+ 'sum'), ('numAutoGoals',
+ int,
+ 0,
+ None,
+ 'sum'))
 _VEH_CELL_RESULTS_PRIVATE = Meta(('repair',
  int,
  0,
@@ -1008,9 +1028,17 @@ COMMON_RESULTS = Meta(('arenaTypeID',
  dict,
  {},
  None,
+ 'skip'), ('footballScore',
+ tuple,
+ (0, 0),
+ None,
+ 'skip'), ('zonePercentage',
+ tuple,
+ (0, 0),
+ None,
  'skip'))
 raise not set(VEH_FULL_RESULTS.names()) & set(COMMON_RESULTS.names()) or AssertionError
-VEH_INTERACTIVE_STATS = ('xp', 'damageDealt', 'capturePts', 'flagActions', 'winPoints', 'deathCount', 'resourceAbsorbed', 'stopRespawn', 'equipmentDamage', 'equipmentKills')
+VEH_INTERACTIVE_STATS = ('xp', 'damageDealt', 'capturePts', 'flagActions', 'winPoints', 'deathCount', 'resourceAbsorbed', 'stopRespawn', 'equipmentDamage', 'equipmentKills', 'goalsTimeLine', 'autoGoalsTimeLine', 'assistTimeLine')
 VEH_INTERACTIVE_STATS_INDICES = dict(((x[1], x[0]) for x in enumerate(VEH_INTERACTIVE_STATS)))
 AVATAR_PRIVATE_STATS = ('ragePoints',)
 AVATAR_PRIVATE_STATS_INDICES = dict(((x[1], x[0]) for x in enumerate(AVATAR_PRIVATE_STATS)))

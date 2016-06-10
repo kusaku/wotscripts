@@ -25,9 +25,9 @@ _SMALL_ICON_PATH = '../maps/icons/battleTypes/40x40/{0}.png'
 _LARGER_ICON_PATH = '../maps/icons/battleTypes/64x64/{0}.png'
 
 class _SelectorItem(object):
-    __slots__ = ('_label', '_data', '_order', '_isSelected', '_isNew', '_isDisabled', '_isLocked', '_isVisible', '_selectorType')
+    __slots__ = ('_label', '_data', '_order', '_isSelected', '_isNew', '_isDisabled', '_isLocked', '_isVisible', '_selectorType', '_specialBgIcon')
 
-    def __init__(self, label, data, order, selectorType = None, isVisible = True):
+    def __init__(self, label, data, order, selectorType = None, isVisible = True, specialBgIcon = ''):
         super(_SelectorItem, self).__init__()
         self._label = label
         self._data = data
@@ -38,6 +38,7 @@ class _SelectorItem(object):
         self._isDisabled = True
         self._isVisible = isVisible
         self._selectorType = selectorType
+        self._specialBgIcon = specialBgIcon
 
     def __cmp__(self, other):
         return cmp(self.getOrder(), other.getOrder())
@@ -82,7 +83,7 @@ class _SelectorItem(object):
         return False
 
     def isInSquad(self, state):
-        return state.isInUnit(PREBATTLE_TYPE.SQUAD) or state.isInUnit(PREBATTLE_TYPE.FALLOUT)
+        return state.isInUnit(PREBATTLE_TYPE.SQUAD) or state.isInUnit(PREBATTLE_TYPE.FALLOUT) or state.isInUnit(PREBATTLE_TYPE.EVENT)
 
     def setLocked(self, value):
         self._isLocked = value
@@ -101,7 +102,7 @@ class _SelectorItem(object):
          'icon': self.getLargerIcon(),
          'active': self._isSelected,
          'isNew': self._isNew,
-         'specialBgIcon': ''}
+         'specialBgIcon': self._specialBgIcon}
 
     def getFormattedLabel(self):
         return text_styles.middleTitle(i18n.makeString(self._label))
@@ -312,7 +313,7 @@ class _BattleSelectorItems(object):
         self.__isDemoButtonEnabled = False
 
     def update(self, state):
-        selected = self.__items[_DEFAULT_PAN]
+        selected = self.__items[self._getDefaultPAN()]
         for item in self.__items.itervalues():
             item.update(state)
             if item.isSelected():
@@ -338,9 +339,46 @@ class _BattleSelectorItems(object):
     def getVOs(self):
         return (map(lambda item: item.getVO(), filter(lambda item: item.isVisible(), sorted(self.__items.itervalues()))), self.__isDemonstrator, self.__isDemoButtonEnabled)
 
+    def _getDefaultPAN(self):
+        return _DEFAULT_PAN
+
+
+class _SquadSelectorItems(_BattleSelectorItems):
+
+    def _getDefaultPAN(self):
+        return _DEFAULT_SQUAD_PAN
+
+
+class _SimpleSquadItem(_SelectorItem):
+
+    def __init__(self, label, data, order, selectorType = None, isVisible = True, specialBgIcon = ''):
+        super(_SimpleSquadItem, self).__init__(label, data, order, selectorType, isVisible, specialBgIcon)
+        self._isDisabled = False
+        self._isSelected = False
+        self._isVisible = True
+
+    def _update(self, state):
+        self._isSelected = state.isInUnit(PREBATTLE_TYPE.SQUAD)
+        self._isDisabled = state.hasLockedState and not state.isInUnit(PREBATTLE_TYPE.SQUAD)
+
+
+class _EventSquadItem(_SelectorItem):
+
+    def __init__(self, label, data, order, selectorType = None, isVisible = True, specialBgIcon = ''):
+        super(_EventSquadItem, self).__init__(label, data, order, selectorType, isVisible, specialBgIcon)
+        self._isDisabled = False
+        self._isSelected = False
+        self._isVisible = True
+
+    def _update(self, state):
+        self._isSelected = state.isInUnit(PREBATTLE_TYPE.EVENT)
+        self._isDisabled = state.hasLockedState and not state.isInUnit(PREBATTLE_TYPE.EVENT)
+
 
 _g_items = None
+_g_squadItems = None
 _DEFAULT_PAN = PREBATTLE_ACTION_NAME.RANDOM_QUEUE
+_DEFAULT_SQUAD_PAN = PREBATTLE_ACTION_NAME.SQUAD
 
 def _createItems():
     isInRoaming = g_lobbyContext.getServerSettings().roaming.isInRoaming()
@@ -360,6 +398,13 @@ def _createItems():
     if settings.isSandboxEnabled() and not isInRoaming:
         _addSandboxType(items)
     return _BattleSelectorItems(items)
+
+
+def _createSquadSelectorItems():
+    items = []
+    _addSimpleSquadType(items)
+    _addEventSquadType(items)
+    return _SquadSelectorItems(items)
 
 
 def _addRandomBattleType(items):
@@ -398,23 +443,45 @@ def _addSandboxType(items):
     items.append(_SandboxItem(MENU.HEADERBUTTONS_BATTLE_TYPES_BATTLETEACHING, PREBATTLE_ACTION_NAME.SANDBOX, 9))
 
 
+def _addSimpleSquadType(items):
+    label = text_styles.middleTitle(MENU.HEADERBUTTONS_BATTLE_TYPES_SIMPLESQUAD) + '\n' + text_styles.main(MENU.HEADERBUTTONS_BATTLE_TYPES_SIMPLESQUAD_BODY)
+    items.append(_SimpleSquadItem(label, PREBATTLE_ACTION_NAME.SQUAD, 0))
+
+
+def _addEventSquadType(items):
+    label = text_styles.middleTitle(MENU.HEADERBUTTONS_BATTLE_TYPES_EVENTSQUAD) + '\n' + text_styles.main(MENU.HEADERBUTTONS_BATTLE_TYPES_EVENTSQUAD_BODY)
+    items.append(_EventSquadItem(label, PREBATTLE_ACTION_NAME.EVENT_SQUAD, 1, specialBgIcon=RES_ICONS.MAPS_ICONS_BATTLETYPES_BGEVENTSQUAD))
+
+
 def create():
+    global _g_squadItems
     global _g_items
     if _g_items is None:
         _g_items = _createItems()
+    if _g_squadItems is None:
+        _g_squadItems = _createSquadSelectorItems()
     else:
         LOG_WARNING('Item already is created')
     return
 
 
 def clear():
+    global _g_squadItems
     global _g_items
     if _g_items:
         _g_items.fini()
         _g_items = None
+    if _g_squadItems:
+        _g_squadItems.fini()
+        _g_squadItems = None
     return
 
 
 def getItems():
     raise _g_items or AssertionError('Items is empty')
     return _g_items
+
+
+def getSquadItems():
+    raise _g_squadItems or AssertionError('Items is empty')
+    return _g_squadItems

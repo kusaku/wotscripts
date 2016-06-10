@@ -5,6 +5,7 @@ from gui import GUI_NATIONS
 from gui.Scaleform import getNationsFilterAssetPath, getVehicleTypeAssetPath, getLevelsAssetPath
 from gui.Scaleform.daapi.view.meta.TankCarouselFilterPopoverMeta import TankCarouselFilterPopoverMeta
 from gui.prb_control.settings import VEHICLE_LEVELS
+from gui.server_events import g_eventsCache
 from gui.shared.gui_items.Vehicle import VEHICLE_TYPES_ORDER
 from gui.shared.formatters import text_styles, icons
 from gui.shared.utils.functions import makeTooltip
@@ -28,7 +29,7 @@ _SECTIONS_MAP = {_SECTIONS.NATION: GUI_NATIONS,
  _SECTIONS.LEVELS: FILTER_VEHICLE_LEVELS,
  _SECTIONS.RENT_VEHICLE: ('hideRented',)}
 if constants.IS_KOREA:
-    _SECTIONS_MAP[_SECTIONS.SPECIAL_LEFT] = _SECTIONS_MAP[_SECTIONS.SPECIAL_LEFT] + ('igr',)
+    _SECTIONS_MAP[_SECTIONS.SPECIAL_RIGHT] += ('igr',)
 _POPOVER_FILERS = set(itertools.chain.from_iterable(_SECTIONS_MAP.values()))
 
 def _getInitialVO(filters, hasRentedVehicles):
@@ -59,8 +60,12 @@ def _getInitialVO(filters, hasRentedVehicles):
                       'selected': filters['hideRented'],
                       'enabled': not filters['igr'] if constants.IS_KOREA else True}}
     if constants.IS_KOREA:
-        dataVO['specialTypeLeft'].append({'label': icons.premiumIgrSmall(),
+        dataVO['specialTypeRight'].append({'label': icons.premiumIgrSmall(),
          'selected': filters['igr']})
+    if g_eventsCache.isEventEnabled():
+        dataVO['specialTypeLeft'].append({'label': text_styles.standard('#tank_carousel_filter:filter/popover/checkBox/Event'),
+         'tooltip': makeTooltip('#tank_carousel_filter:filter/popover/tooltip/event/header', '#tank_carousel_filter:filter/popover/tooltip/event/body'),
+         'selected': filters['event']})
     for nation in GUI_NATIONS:
         dataVO['nationsType'].append({'value': getNationsFilterAssetPath(nation),
          'tooltip': makeTooltip(_ms('#nations:%s' % nation), _ms('#tank_carousel_filter:filter/popover/tooltip/nation/body')),
@@ -103,12 +108,17 @@ class FilterPopover(TankCarouselFilterPopoverMeta):
     def __init__(self, ctx = None):
         super(FilterPopover, self).__init__()
         self.__tankCarousel = None
+        if g_eventsCache.isEventEnabled():
+            _SECTIONS_MAP[_SECTIONS.SPECIAL_LEFT] = ('premium', 'event')
+        else:
+            _SECTIONS_MAP[_SECTIONS.SPECIAL_LEFT] = ('premium',)
+        self.__popoverFilers = set(itertools.chain.from_iterable(_SECTIONS_MAP.values()))
         return
 
     def setTankCarousel(self, tankCarousel):
         self.__tankCarousel = tankCarousel
-        self.as_setInitDataS(_getInitialVO(self.__filter.getFilters(_POPOVER_FILERS), self.__tankCarousel.hasRentedVehicles))
-        self.as_enableDefBtnS(not self.__filter.isDefault(_POPOVER_FILERS))
+        self.as_setInitDataS(_getInitialVO(self.__filter.getFilters(self.__popoverFilers), self.__tankCarousel.hasRentedVehicles))
+        self.as_enableDefBtnS(not self.__filter.isDefault(self.__popoverFilers))
 
     def changeFilter(self, sectionId, itemId):
         """Switch boolean value of the filter entry
@@ -122,7 +132,7 @@ class FilterPopover(TankCarouselFilterPopoverMeta):
     def setDefaultFilter(self):
         """ Reset only popover filters
         """
-        self.__filter.reset(_POPOVER_FILERS, save=False)
+        self.__filter.reset(self.__popoverFilers, save=False)
         self.__update()
 
     def _dispose(self):
@@ -134,8 +144,8 @@ class FilterPopover(TankCarouselFilterPopoverMeta):
         return
 
     def __update(self):
-        self.as_setStateS(_getUpdateVO(self.__filter.getFilters(_POPOVER_FILERS)))
-        self.as_enableDefBtnS(not self.__filter.isDefault(_POPOVER_FILERS))
+        self.as_setStateS(_getUpdateVO(self.__filter.getFilters(self.__popoverFilers)))
+        self.as_enableDefBtnS(not self.__filter.isDefault(self.__popoverFilers))
         self.__tankCarousel.showVehicles()
 
     @property

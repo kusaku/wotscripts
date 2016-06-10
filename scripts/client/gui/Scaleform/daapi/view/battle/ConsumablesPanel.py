@@ -4,6 +4,7 @@ from functools import partial
 import math
 import BigWorld
 import CommandMapping
+from gui.battle_control.consumables.equipment_ctrl import _AfterburningItem
 import rage
 from constants import EQUIPMENT_STAGES
 from debug_utils import LOG_ERROR, LOG_DEBUG
@@ -73,7 +74,7 @@ class ConsumablesPanel(object):
         self.__keys = {}
         self.__currentOrderIdx = -1
         self.__plugins = PluginsCollection(self)
-        plugins = {}
+        plugins = {'progressBar': _ProgressPlugin}
         if hasRage():
             plugins['rageBar'] = _RageBarPlugin
         self.__plugins.addPlugins(plugins)
@@ -84,11 +85,11 @@ class ConsumablesPanel(object):
         if self.__flashObject:
             self.__flashObject.resync()
             self.__flashObject.script = self
-            self.__plugins.init()
-            self.__plugins.start()
             props = _FalloutSlotViewProps(useStandardLayout=not hasRage())
             self.__flashObject.setProperties(isFalloutBattle(), props._asdict())
             self.__addListeners()
+            self.__plugins.init()
+            self.__plugins.start()
         else:
             LOG_ERROR('Display object is not found in the swf file.')
 
@@ -102,6 +103,9 @@ class ConsumablesPanel(object):
             self.__flashObject.script = None
             self.__flashObject = None
         return
+
+    def getEquipmentIndexesMapping(self):
+        return self.__cds
 
     def bindCommands(self):
         keys = {}
@@ -443,14 +447,49 @@ class ConsumablesPanel(object):
                 self.__keys[bwKey] = partial(self.__handleEquipmentPressed, self.__cds[idx], deviceName)
 
 
-class _RageBarPlugin(IPlugin):
+class _BaseConsumablesPlugin(IPlugin):
+
+    def __init__(self, parentObj):
+        super(_BaseConsumablesPlugin, self).__init__(parentObj)
+        self.__inited = False
+        self.__started = False
+
+    def init(self):
+        super(_BaseConsumablesPlugin, self).init()
+        if not self.__inited:
+            self.__init = True
+            self._init()
+
+    def start(self):
+        super(_BaseConsumablesPlugin, self).start()
+        if not self.__started:
+            self.__started = True
+            self._start()
+
+    def fini(self):
+        self.__inited = False
+        super(_BaseConsumablesPlugin, self).fini()
+
+    def stop(self):
+        self.__started = False
+        super(_BaseConsumablesPlugin, self).stop()
+
+    def _init(self):
+        pass
+
+    def _start(self):
+        pass
+
+
+class _RageBarPlugin(_BaseConsumablesPlugin):
 
     def __init__(self, parentObj):
         super(_RageBarPlugin, self).__init__(parentObj)
         self.__currentValue = 0
+        self.__inited = False
 
-    def init(self):
-        super(_RageBarPlugin, self).init()
+    def _init(self):
+        super(_RageBarPlugin, self)._init()
         avatarStatsCtrl = g_sessionProvider.getAvatarStatsCtrl()
         avatarStatsCtrl.onUpdated += self.__onAvatarStatsUpdated
 
@@ -480,3 +519,49 @@ class _RageBarPlugin(IPlugin):
         else:
             self._parentObj.flashObject.updateProgressBarValueByDelta(delta)
         self.__currentValue = newValue
+
+
+class _ProgressPlugin(_BaseConsumablesPlugin):
+
+    def _init(self):
+        super(_ProgressPlugin, self)._init()
+        eqCtrl = g_sessionProvider.getEquipmentsCtrl()
+        eqCtrl.onEquipmentAdded += self.__onEquipmentAdded
+        eqCtrl.onEquipmentUpdated += self.__onEquipmentUpdated
+        eqCtrl.onEquipmentCooldownInPercent += self.__onEquipmentCooldownInPercent
+
+    def fini(self):
+        eqCtrl = g_sessionProvider.getEquipmentsCtrl()
+        eqCtrl.onEquipmentAdded -= self.__onEquipmentAdded
+        eqCtrl.onEquipmentUpdated -= self.__onEquipmentUpdated
+        eqCtrl.onEquipmentCooldownInPercent -= self.__onEquipmentCooldownInPercent
+        super(_ProgressPlugin, self).fini()
+
+    def _start(self):
+        super(_ProgressPlugin, self)._start()
+
+    def __onEquipmentAdded(self, intCD, item):
+        self.__updateProgress(intCD, item)
+
+    def __onEquipmentUpdated(self, intCD, item):
+        self.__updateProgress(intCD, item)
+
+    def __onEquipmentCooldownInPercent(self, intCD, percent):
+        pass
+
+    def __updateProgress(self, intCD, item):
+        if isinstance(item, _AfterburningItem):
+            stage = item.getStage()
+            percentValue = item.getNitroPercentValue()
+            timeRemaining = item.getNitroTimeRemaining()
+            if stage == EQUIPMENT_STAGES.ACTIVE:
+                self._parentObj.flashObject.setItemActivatedForTime(self.__getEquipmentIndex(intCD), percentValue, timeRemaining)
+            elif stage == EQUIPMENT_STAGES.READY:
+                self._parentObj.flashObject.setItemRechargeForTime(self.__getEquipmentIndex(intCD), percentValue, timeRemaining)
+            elif stage == EQUIPMENT_STAGES.UNAVAILABLE:
+                self._parentObj.flashObject.setOrderAvailable(self.__getEquipmentIndex(intCD), False)
+            else:
+                LOG_DEBUG('Invoke state: %s.' % stage)
+
+    def __getEquipmentIndex(self, intCD):
+        return self._parentObj.getEquipmentIndexesMapping().index(intCD)

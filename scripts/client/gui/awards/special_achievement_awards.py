@@ -12,6 +12,13 @@ from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.Scaleform.daapi.view.lobby.AwardWindow import AwardAbstract, ExplosionBackAward
 from helpers import i18n
 
+class FOOTBALL_AWARD_TYPE:
+    VICTORY_IN_TOURNAMENT = 1276
+    VICTORY_IN_STAGE = 1275
+    REGISTER = 1274
+    ALL = {VICTORY_IN_TOURNAMENT, VICTORY_IN_STAGE, REGISTER}
+
+
 class ResearchAward(ExplosionBackAward):
 
     def __init__(self, vehiclesCount, messageNumber):
@@ -292,3 +299,35 @@ class TelecomAward(AwardAbstract):
         if hasattr(item, 'invID'):
             g_currentVehicle.selectVehicle(item.invID)
         shared_events.showHangar()
+
+
+class FootballTournamentAward(ExplosionBackAward):
+
+    def __init__(self, awardId, awardTitle):
+        super(FootballTournamentAward, self).__init__()
+        self.__awardTitle = awardTitle
+        self.__awardId = awardId
+        self.__awardInfo = {FOOTBALL_AWARD_TYPE.VICTORY_IN_TOURNAMENT: RES_ICONS.MAPS_ICONS_AWARDS_VICTORYINFOOTBALLTOURNAMENT,
+         FOOTBALL_AWARD_TYPE.VICTORY_IN_STAGE: RES_ICONS.MAPS_ICONS_AWARDS_VICTORYINFOOTBALLSTAGE,
+         FOOTBALL_AWARD_TYPE.REGISTER: RES_ICONS.MAPS_ICONS_AWARDS_REGISTERINFOOTBALLTOURNAMENT}
+
+    def getWindowTitle(self):
+        return i18n.makeString(MENU.AWARDWINDOW_FOOTBALLTOURNAMENTAWARD_TITLE)
+
+    def getBackgroundImage(self):
+        return RES_ICONS.MAPS_ICONS_REFERRAL_AWARDBACK
+
+    def getAwardImage(self):
+        return self.__awardInfo[self.__awardId]
+
+    def getHeader(self):
+        return text_styles.highTitle(MENU.AWARDWINDOW_FOOTBALLTOURNAMENTAWARD_HEADER)
+
+    def getDescription(self):
+        return text_styles.main(i18n.makeString(MENU.AWARDWINDOW_FOOTBALLTOURNAMENTAWARD_DESC, awardTitle=self.__awardTitle))
+
+    def getButtonStates(self):
+        return (True, False, False)
+
+    def handleOkButton(self):
+        pass

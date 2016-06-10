@@ -9,7 +9,8 @@ from collections import defaultdict
 from constants import IGR_TYPE, FLAG_ACTION
 from gui import makeHtmlString
 from gui.server_events import g_eventsCache
-from gui.battle_control.arena_info import settings, getPlayerVehicleID
+from gui.battle_control.arena_info import settings
+from gui.battle_control import arena_info
 from gui.battle_control.arena_info import isPlayerTeamKillSuspected
 from items.vehicles import VEHICLE_CLASS_TAGS, PREMIUM_IGR_TAGS
 from gui.shared.gui_items import Vehicle
@@ -307,7 +308,7 @@ class VehicleArenaInfoVO(object):
     def isTeamKiller(self, playerTeam = None):
         if playerTeam is not None and self.team != playerTeam:
             return False
-        elif self.vehicleID == getPlayerVehicleID() and isPlayerTeamKillSuspected():
+        elif self.vehicleID == arena_info.getPlayerVehicleID() and isPlayerTeamKillSuspected():
             return True
         else:
             return self.playerStatus & _PLAYER_STATUS.IS_TEAM_KILLER > 0

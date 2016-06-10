@@ -65,7 +65,8 @@ class DynSquadViewListener(object):
         else:
             idGetter = lambda i: i.receiverDBID
         for invite in invites:
-            if invite.type == INVITATION_TYPE.SQUAD and idGetter(invite) == userId:
+            isAllowedInviteType = invite.type in (INVITATION_TYPE.SQUAD, INVITATION_TYPE.EVENT)
+            if isAllowedInviteType and idGetter(invite) == userId:
                 return invite.clientID
 
         return None

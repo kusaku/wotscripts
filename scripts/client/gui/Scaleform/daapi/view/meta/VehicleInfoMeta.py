@@ -22,10 +22,10 @@ class VehicleInfoMeta(AbstractWindowView):
         """
         self._printOverrideError('onCancelClick')
 
-    def as_setVehicleInfoS(self, vehicleInfo):
+    def as_setVehicleInfoS(self, data):
         """
-        :param vehicleInfo:
+        :param data:
         :return :
         """
         if self._isDAAPIInited():
-            return self.flashObject.as_setVehicleInfo(vehicleInfo)
+            return self.flashObject.as_setVehicleInfo(data)

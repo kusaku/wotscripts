@@ -123,7 +123,7 @@ class ClientFortProvider(object):
         if not self.isStarted():
             LOG_DEBUG('Fort provider already is stopped')
             return
-        self.__cachedState = self.__state
+        self.__cachedFortState = self.__state.getStateID()
         self.__initial = 0
         self.clear()
         fortMgr = getClientFortMgr()

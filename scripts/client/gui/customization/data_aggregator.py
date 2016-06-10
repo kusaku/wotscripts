@@ -83,6 +83,11 @@ class DataAggregator(object):
             allowedNations = None
             allowedVehicles = list(rawElement['allow'])
             notAllowedVehicles = rawElement['deny']
+            if self._currentVehicle.isEvent():
+                if groupName == 'winter':
+                    igrLessGroupName = 'event/blue'
+                elif groupName == 'desert':
+                    igrLessGroupName = 'event/red'
             readableGroupName = '#vehicle_customization:camouflage/{0}'.format(igrLessGroupName)
         numberOfDays = None
         numberOfItems = None

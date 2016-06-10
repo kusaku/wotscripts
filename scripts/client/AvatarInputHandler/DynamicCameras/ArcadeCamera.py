@@ -174,8 +174,12 @@ class ArcadeCamera(ICamera, CallbackDelayer, TimeDeltaMeter):
         self.__setVehicleMProv(self.getTargetMProv())
 
     def setToVehicleDirection(self):
-        matrix = Math.Matrix(self.getTargetMProv())
-        self.setYawPitch(matrix.yaw, matrix.pitch)
+        if self.__aimingSystem is not None:
+            self.setCameraDistance(self.__cfg['startDist'])
+            matrix = Math.Matrix(self.getTargetMProv())
+            self.setYawPitch(matrix.yaw, matrix.pitch)
+            self.__aimingSystem.pitch = self.__cfg['startAngle']
+        return
 
     def destroy(self):
         CallbackDelayer.destroy(self)

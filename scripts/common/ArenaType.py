@@ -4,6 +4,7 @@ import ResMgr
 from constants import IS_BOT, IS_WEB, IS_CLIENT, ARENA_TYPE_XML_PATH
 from constants import ARENA_GAMEPLAY_IDS, TEAMS_IN_ARENA, ARENA_GAMEPLAY_NAMES
 from items.vehicles import CAMOUFLAGE_KINDS
+from items import _xml
 from debug_utils import LOG_CURRENT_EXCEPTION
 from GasAttackSettings import GasAttackSettings
 if IS_CLIENT:
@@ -15,6 +16,7 @@ g_cache = {}
 g_geometryNamesToIDs = {}
 g_gameplayNames = set()
 g_gameplaysMask = 0
+g_serverCell = {}
 
 def getVisibilityMask(gameplayID):
     return 1 << gameplayID
@@ -64,9 +66,39 @@ def init():
         geometriesSet.add(geometryID)
         __buildCache(geometryID, value.readString('name'), defaultXml)
 
+    rootSection = ResMgr.openSection(ARENA_TYPE_XML_PATH + 'ServerCollision.xml')
+    if rootSection is None:
+        raise Exception("Can't open '%s'" % (ARENA_TYPE_XML_PATH + 'ServerCollision.xml'))
+    __buildServerCell(rootSection, defaultXml)
     g_gameplaysMask = getGameplaysMask(g_gameplayNames)
     g_geometryNamesToIDs = dict([ (arenaType.geometryName, arenaType.geometryID) for arenaType in g_cache.itervalues() ])
     return
+
+
+def __buildServerCell(rootSection, defaultXml):
+    global g_serverCell
+    g_serverCell = {'points': [],
+     'planes': []}
+    try:
+        print rootSection
+        points = rootSection['points']
+        planes = rootSection['planes']
+        for name, subsection in points.items():
+            if name == 'point':
+                g_serverCell['points'].append({'id': __readInt('id', subsection, defaultXml),
+                 'geometry': _xml.readTupleOfFloats(defaultXml, subsection, 'geometry', 3)})
+
+        for name, subsection in planes.items():
+            if name == 'plane':
+                pqty = __readInt('pqty', subsection, defaultXml)
+                g_serverCell['planes'].append({'id': __readInt('id', subsection, defaultXml),
+                 'pqty': pqty,
+                 'pindices': _xml.readTupleOfInts(defaultXml, subsection, 'pindices', pqty),
+                 'normal': _xml.readTupleOfFloats(defaultXml, subsection, 'normal', 3)})
+
+    except Exception as e:
+        LOG_CURRENT_EXCEPTION()
+        raise Exception("Wrong arena type XML '%s' : %s" % ('ServerCell', e))
 
 
 class ArenaType(object):
@@ -107,6 +139,10 @@ def __readGeometryCfg(geometryID, geometryName, section, defaultXml):
         cfg['boundingBox'] = __readBoundingBox(section)
         cfg['weatherPresets'] = __readWeatherPresets(section)
         cfg['vehicleCamouflageKind'] = __readVehicleCamouflageKind(section)
+        if __hasKey('footballCell', section, defaultXml):
+            cfg['footballCell'] = __readFootballCell(section['footballCell'])
+        else:
+            cfg['footballCell'] = None
         if IS_CLIENT or IS_WEB:
             cfg['name'] = i18n.makeString(__readString('name', section, defaultXml))
         if IS_CLIENT:
@@ -512,6 +548,7 @@ def __readGameplayPoints(section, geometryCfg):
     aps = []
     rps = {}
     rsps = []
+    bsp = []
     repairPointIDByGUID = geometryCfg.setdefault('repairPointIDByGUID', {})
     for name, value in section.items():
         if name == 'flagSpawnPoint':
@@ -545,16 +582,36 @@ def __readGameplayPoints(section, geometryCfg):
              'reuseCount': value.readInt('reuseCount'),
              'team': value.readInt('team'),
              'guid': value.readString('guid')})
+        elif name == 'ballSpawnPoint':
+            bsp.append({'position': value.readVector3('position')})
 
     cfg = {'flagSpawnPoints': sps,
      'flagAbsorptionPoints': aps,
      'repairPoints': rps,
-     'resourcePoints': rsps}
+     'resourcePoints': rsps,
+     'ballSpawnPoints': bsp}
     return cfg
 
 
 def __readGasAttackSettings(section):
     return GasAttackSettings(section.readInt('attackLength'), section.readFloat('preparationPeriod'), section.readVector3('position'), section.readFloat('startRadius'), section.readFloat('endRadius'), section.readFloat('compressionTime'))
+
+
+def __readFootballCell(section):
+    settings = dict()
+    settings['fieldType'] = section.readInt('fieldType')
+    settings['position'] = section.readVector3('position')
+    settings['size'] = section.readVector2('size')
+    settings['gateSize'] = section.readVector3('gateSize')
+    settings['bottomRadius'] = section.readFloat('bottomRadius')
+    settings['bottomPlanes'] = section.readInt('bottomPlanes')
+    settings['sideRadius'] = section.readFloat('sideRadius')
+    settings['sidePlanes'] = section.readInt('sidePlanes')
+    settings['cornerRadius'] = section.readFloat('cornerRadius')
+    settings['cornerPlanes'] = section.readInt('cornerPlanes')
+    settings['cornerTruncation'] = section.readFloat('cornerTruncation')
+    settings['edgeTruncation'] = section.readFloat('edgeTruncation')
+    return settings
 
 
 def __readWinPoints(section):

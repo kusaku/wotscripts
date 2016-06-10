@@ -3,7 +3,7 @@ import BigWorld
 from constants import FLAG_ACTION, IGR_TYPE
 from external_strings_utils import unicode_from_utf8, normalized_unicode_trim
 from gui import makeHtmlString
-from gui.Scaleform.daapi.view.battle import getColorValue, findHTMLFormat
+from gui.Scaleform.daapi.view.battle import getColorValue, findHTMLFormat, getHTMLString
 from gui.Scaleform.locale.INGAME_GUI import INGAME_GUI
 from gui.battle_control.arena_info import hasResourcePoints
 from gui.battle_control import g_sessionProvider
@@ -178,9 +178,39 @@ class _MultiteamFalloutStatsForm(_FalloutStatsForm):
         return self._getHTMLString('falloutSelfGold', self._ui.colorManager) + padding
 
 
-def statsFormFactory(parentUI, isFallout = False, isMutlipleTeams = False):
+class _EventStatsForm(_StatsForm):
+
+    def getFormattedStrings(self, vInfoVO, vStatsVO, viStatsVO, ctx, fullPlayerName):
+        strings = super(_EventStatsForm, self).getFormattedStrings(vInfoVO, vStatsVO, viStatsVO, ctx, fullPlayerName)
+        score = vStatsVO.frags
+        if score:
+            goals = score & 3
+            autogoals = score >> 2
+            format = self._findPlayerHTMLFormat(vInfoVO, ctx, self._ui.colorManager)
+            strList = list(strings)
+            if autogoals:
+                autogoalsFormatted = getHTMLString('redColor', self._ui.colorManager, False) % autogoals
+                if goals:
+                    totalScore = '%s %s'
+                    if g_sessionProvider.getArenaDP().isEnemyTeam(vInfoVO.team):
+                        totalScore %= (autogoalsFormatted, goals)
+                    else:
+                        totalScore %= (goals, autogoalsFormatted)
+                    fragsString = format % totalScore
+                else:
+                    fragsString = format % autogoalsFormatted
+            else:
+                fragsString = format % str(goals)
+            strList[1] = fragsString
+            strings = tuple(strList)
+        return strings
+
+
+def statsFormFactory(parentUI, isFallout = False, isMutlipleTeams = False, isEvent = False):
     if isFallout:
         if isMutlipleTeams:
             return _MultiteamFalloutStatsForm(parentUI, 'FalloutMultiteamStatisticForm.swf')
         return _FalloutStatsForm(parentUI, 'FalloutStatisticForm.swf')
+    if isEvent:
+        return _EventStatsForm(parentUI, 'FootballStatisticForm.swf')
     return _StatsForm(parentUI, 'StatisticForm.swf')

@@ -162,6 +162,7 @@ class MESSENGER(object):
     DIALOGS_SQUADCHANNEL_VEHICLES = '#messenger:dialogs/squadChannel/vehicles'
     DIALOGS_SQUADCHANNEL_VEHICLESLBL = '#messenger:dialogs/squadChannel/vehiclesLbl'
     DIALOGS_SIMPLESQUAD_VEHICLELEVEL = '#messenger:dialogs/simpleSquad/vehicleLevel'
+    DIALOGS_EVENTSQUAD_SPORTVEHICLE = '#messenger:dialogs/eventSquad/sportVehicle'
     DIALOGS_SQUADCHANNEL_BATTLETYPE = '#messenger:dialogs/squadChannel/battleType'
     DIALOGS_SQUADCHANNEL_BATTLETYPEDOMINATION = '#messenger:dialogs/squadChannel/battleTypeDomination'
     DIALOGS_SQUADCHANNEL_BUTTONS_INVITE = '#messenger:dialogs/squadChannel/buttons/invite'

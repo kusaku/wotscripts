@@ -195,3 +195,11 @@ class CustomizationMainViewMeta(View):
         """
         if self._isDAAPIInited():
             return self.flashObject.as_setBottomPanelInitData(data)
+
+    def as_bonusPanelVisibleS(self, visible):
+        """
+        :param visible:
+        :return :
+        """
+        if self._isDAAPIInited():
+            return self.flashObject.as_bonusPanelVisible(visible)

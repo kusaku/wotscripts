@@ -42,6 +42,14 @@ class DIALOGS(object):
     QUITBATTLEIGR_MESSAGE = '#dialogs:quitBattleIGR/message'
     QUITBATTLEIGR_SUBMIT = '#dialogs:quitBattleIGR/submit'
     QUITBATTLEIGR_CANCEL = '#dialogs:quitBattleIGR/cancel'
+    QUITBATTLEFOOTBALL_TITLE = '#dialogs:quitBattleFootball/title'
+    QUITBATTLEFOOTBALL_MESSAGE = '#dialogs:quitBattleFootball/message'
+    QUITBATTLEFOOTBALL_SUBMIT = '#dialogs:quitBattleFootball/submit'
+    QUITBATTLEFOOTBALL_CANCEL = '#dialogs:quitBattleFootball/cancel'
+    QUITBATTLEFOOTBALL_DESERTER_TITLE = '#dialogs:quitBattleFootball/deserter/title'
+    QUITBATTLEFOOTBALL_DESERTER_MESSAGE = '#dialogs:quitBattleFootball/deserter/message'
+    QUITBATTLEFOOTBALL_DESERTER_SUBMIT = '#dialogs:quitBattleFootball/deserter/submit'
+    QUITBATTLEFOOTBALL_DESERTER_CANCEL = '#dialogs:quitBattleFootball/deserter/cancel'
     QUITBATTLEIGR_DESERTER_TITLE = '#dialogs:quitBattleIGR/deserter/title'
     QUITBATTLEIGR_DESERTER_MESSAGE = '#dialogs:quitBattleIGR/deserter/message'
     QUITBATTLEIGR_DESERTER_SUBMIT = '#dialogs:quitBattleIGR/deserter/submit'
@@ -892,6 +900,14 @@ class DIALOGS(object):
      QUITBATTLEIGR_MESSAGE,
      QUITBATTLEIGR_SUBMIT,
      QUITBATTLEIGR_CANCEL,
+     QUITBATTLEFOOTBALL_TITLE,
+     QUITBATTLEFOOTBALL_MESSAGE,
+     QUITBATTLEFOOTBALL_SUBMIT,
+     QUITBATTLEFOOTBALL_CANCEL,
+     QUITBATTLEFOOTBALL_DESERTER_TITLE,
+     QUITBATTLEFOOTBALL_DESERTER_MESSAGE,
+     QUITBATTLEFOOTBALL_DESERTER_SUBMIT,
+     QUITBATTLEFOOTBALL_DESERTER_CANCEL,
      QUITBATTLEIGR_DESERTER_TITLE,
      QUITBATTLEIGR_DESERTER_MESSAGE,
      QUITBATTLEIGR_DESERTER_SUBMIT,

@@ -25,6 +25,7 @@ class BLOCKS_TOOLTIP_TYPES(object):
     TOOLTIP_BUILDUP_BLOCK_NORMAL_VEHICLE_FAVORITE_BG_LINKAGE = 'TooltipBuildUpBlockNormalVehicleFavoriteBgUI'
     TOOLTIP_VEHICLE_HEADER_LINKAGE = 'VehicleHeaderBlockUI'
     TOOLTIP_IMAGE_LIST_BLOCK_LINKAGE = 'ImageListBlockUI'
+    TOOLTIP_BUILDUP_BLOCK_FOOTBALL_BG_LINKAGE = 'TooltipBuildUpBlockFootballBgUI'
     ALIGN_LEFT = 'left'
     ALIGN_RIGHT = 'right'
     ALIGN_CENTER = 'center'

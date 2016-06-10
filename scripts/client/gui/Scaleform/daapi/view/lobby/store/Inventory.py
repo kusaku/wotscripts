@@ -1,10 +1,13 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/store/Inventory.py
+from BigWorld import wg_getShortDateFormat
 from account_helpers.AccountSettings import AccountSettings
 from constants import IS_RENTALS_ENABLED
 from debug_utils import LOG_ERROR, LOG_DEBUG
 from gui import getNationIndex, DialogsInterface
 from gui.ClientUpdateManager import g_clientUpdateManager
 from gui.Scaleform.Waiting import Waiting
+from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
+from gui.server_events import g_eventsCache
 from gui.shared.formatters.time_formatters import RentLeftFormatter
 from gui.shared.gui_items.Vehicle import Vehicle
 from gui.shared.tooltips import getItemActionTooltipData
@@ -243,14 +246,20 @@ class Inventory(InventoryMeta):
         inventoryId = None
         isRented = False
         rentLeftTimeStr = ''
+        notEventVehicle = True
         if module.itemTypeID == GUI_ITEM_TYPE.VEHICLE:
             statusLevel = module.getState()[1]
             if module.isRented:
                 isRented = True
-                formatter = RentLeftFormatter(module.rentInfo, module.isPremiumIGR)
-                rentLeftTimeStr = formatter.getRentLeftStr('#tooltips:vehicle/rentLeft/%s', formatter=lambda key, countType, count, _ = None: ''.join([makeString(key % countType), ': ', str(count)]))
-            if module.isInInventory:
-                inventoryId = module.invID
+                frmtr = RentLeftFormatter(module.rentInfo, module.isPremiumIGR)
+                rentLeftTimeStr = frmtr.getRentLeftStr('#tooltips:vehicle/rentLeft/%s', formatter=lambda key, countType, count, _ = None: ''.join([makeString(key % countType), ': ', str(count)]))
+                if module.isInInventory:
+                    inventoryId = module.invID
+            elif module.isEvent and g_eventsCache.isEventEnabled():
+                notEventVehicle = False
+                dueDate = g_eventsCache.getEventDueDate()
+                if dueDate:
+                    rentLeftTimeStr = makeString(TOOLTIPS.VEHICLE_DEAL_FOOTBALL_TIME, date=wg_getShortDateFormat(dueDate))
         name = module.userName if module.itemTypeID in GUI_ITEM_TYPE.ARTEFACTS else module.longUserName
         action = None
         if module.sellPrice != module.defaultSellPrice and not isRented:
@@ -284,4 +293,5 @@ class Inventory(InventoryMeta):
          'actionPriceData': action,
          'rentLeft': rentLeftTimeStr,
          'moduleLabel': module.getGUIEmblemID(),
-         EXTRA_MODULE_INFO: extraModuleInfo}
+         EXTRA_MODULE_INFO: extraModuleInfo,
+         'flagVisible': notEventVehicle}

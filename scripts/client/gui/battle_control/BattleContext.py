@@ -121,11 +121,11 @@ class BattleContext(object):
     def getPlayerGuiProps(self, vID, team):
         return self.__arenaDP.getPlayerGuiProps(vID, team)
 
-    def getArenaTypeName(self, isInBattle = True):
-        return self.__arenaDP.getPersonalDescription().getTypeName(isInBattle)
-
     def getArenaDescriptionString(self, isInBattle = True):
         return self.__arenaDP.getPersonalDescription().getDescriptionString(isInBattle)
+
+    def getArenaTypeName(self, isInBattle = True):
+        return self.__arenaDP.getPersonalDescription().getTypeName(isInBattle)
 
     def getArenaWinString(self, isInBattle = True):
         return self.__arenaDP.getPersonalDescription().getWinString(isInBattle)

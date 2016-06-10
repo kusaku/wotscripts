@@ -1,6 +1,7 @@
 # Embedded file name: scripts/client/MapActivities.py
 import BigWorld
 import ResMgr
+from collections import namedtuple
 import PlayerEvents
 import math
 import random
@@ -55,12 +56,14 @@ class IMapActivity:
 
 
 class MapActivities(object):
+    NamedActivitySettings = namedtuple('NamedActivitySettings', ('activityType', 'xmlSettings'))
 
     def __init__(self):
         self.__cbID = None
         self.__isOnArena = False
         self.__pendingActivities = []
         self.__currActivities = []
+        self.__namedActivitiesSettings = {}
         PlayerEvents.g_playerEvents.onArenaPeriodChange += self.__onArenaPeriodChange
         PlayerEvents.g_playerEvents.onAvatarBecomeNonPlayer += self._onAvatarBecomeNonPlayer
         PlayerEvents.g_playerEvents.onAvatarReady += self.__onAvatarReady
@@ -76,9 +79,18 @@ class MapActivities(object):
         return
 
     def start(self, name):
-        for activity in self.__pendingActivities:
-            if activity.name() == name:
-                activity.setStartTime(Timer.getTime())
+        activitySettings = self.__namedActivitiesSettings.get(name, None)
+        if activitySettings is None:
+            return
+        else:
+            activity = _createActivity(activitySettings.activityType)
+            if activity is None:
+                return
+            curTime = Timer.getTime()
+            if activity.create(activitySettings.xmlSettings, curTime):
+                activity.setStartTime(curTime)
+                self.__pendingActivities.append(activity)
+            return
 
     def stop(self):
         for activity in self.__currActivities:
@@ -126,10 +138,15 @@ class MapActivities(object):
             for activityType, activityXML in settings.items():
                 i += 1
                 startTime = startTimes[i]
-                activity = _createActivity(activityType)
-                if activity is not None:
-                    if activity.create(activityXML, startTime):
-                        self.__pendingActivities.append(activity)
+                activityName = activityXML.readString('name', '')
+                if activityName:
+                    namedActivitySettings = MapActivities.NamedActivitySettings(activityType, activityXML)
+                    self.__namedActivitiesSettings[activityName] = namedActivitySettings
+                else:
+                    activity = _createActivity(activityType)
+                    if activity is not None:
+                        if activity.create(activityXML, startTime):
+                            self.__pendingActivities.append(activity)
 
             return
 

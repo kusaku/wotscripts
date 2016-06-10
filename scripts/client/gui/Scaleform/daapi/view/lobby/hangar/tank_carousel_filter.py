@@ -5,6 +5,7 @@ from account_helpers.AccountSettings import AccountSettings, CAROUSEL_FILTER, FA
 from account_helpers.settings_core.SettingsCore import g_settingsCore
 from gui import GUI_NATIONS
 from gui.prb_control.settings import VEHICLE_LEVELS
+from gui.server_events import g_eventsCache
 from gui.shared.utils.requesters import REQ_CRITERIA
 from gui.shared.gui_items.Vehicle import VEHICLE_TYPES_ORDER
 IGR_FILTER_ID = 100
@@ -76,6 +77,9 @@ class _CarouselFilter(object):
         else:
             filters = self._filters.copy()
         return filters
+
+    def get(self, key):
+        return self._filters[key]
 
     def isDefault(self, keys = None):
         """ Check whether filters are in default state or not.
@@ -175,6 +179,8 @@ class CarouselFilter(_CarouselFilter):
             criteria |= REQ_CRITERIA.VEHICLE.HAS_XP_FACTOR
         if self._filters['favorite']:
             criteria |= REQ_CRITERIA.VEHICLE.FAVORITE
+        if g_eventsCache.isEventEnabled():
+            criteria |= ~REQ_CRITERIA.VEHICLE.EVENT
         return criteria
 
     def update(self, params, save = True):

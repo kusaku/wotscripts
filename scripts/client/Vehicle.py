@@ -71,6 +71,12 @@ class Vehicle(BigWorld.Entity):
         vehicles.reload()
         self.respawn(self.publicInfo.compDescr)
 
+    def resetGunTurret(self):
+        syncGunAngles = getattr(self.filter, 'syncGunAngles', None)
+        if syncGunAngles:
+            syncGunAngles(0.0, 0.0)
+        return
+
     def prerequisites(self, respawnCompactDescr = None):
         if self.respawnCompactDescr is not None:
             respawnCompactDescr = self.respawnCompactDescr
@@ -104,6 +110,16 @@ class Vehicle(BigWorld.Entity):
             if vehicle is not None:
                 vehicle.respawnCompactDescr = compactDescr
                 vehicle.wg_respawn()
+        return
+
+    @staticmethod
+    def resetPenalty():
+        for vRef in _g_waitingVehicle.values():
+            if vRef is not None:
+                vehicle = vRef()
+                if vehicle is not None:
+                    vehicle.resetGunTurret()
+
         return
 
     def onEnterWorld(self, prereqs):
@@ -617,6 +633,13 @@ class Vehicle(BigWorld.Entity):
         super(Vehicle, self).delModel(model)
         if hlEnabled:
             highlighter.highlight(True)
+
+    def getRunningExtra(self, extraName):
+        extra = self.typeDescriptor.extrasDict[extraName]
+        if extra.isRunningFor(self):
+            return extra
+        else:
+            return None
 
 
 def _stripVehCompDescrIfRoaming(vehCompDescr):

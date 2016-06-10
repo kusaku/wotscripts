@@ -150,6 +150,13 @@ class IArenaVehiclesController(IArenaLoadController):
         """
         pass
 
+    def invalidateFootballPenaltyPoints(self, data):
+        """
+        :param data: dict, contains information of ball possession {'ballPossession': [team0, team1, team2]}
+        In overtime period data extends by information: 'penaltyPoints': [team0, team1, team2]
+        """
+        pass
+
 
 class ITeamsBasesController(IArenaController):
     __slots__ = ()

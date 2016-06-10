@@ -552,9 +552,13 @@ class _SoundEffectDesc(_EffectDesc, object):
             elem['node'] = node = _findTargetNodeSafe(model, self._pos)
             pos = Math.Matrix(node.actualNode).translation
             startParams = args.get('soundParams', ())
+            soundObject = args.get('soundObject', None)
             if self._dynamic is True or self._stopSyncVisual:
-                objectName = soundName + '_NODE_' + str(args.get('entity_id')) + '_' + str(self._pos)
-                elem['sound'] = SoundGroups.g_instance.WWgetSoundObject(objectName, node.actualNode)
+                if soundObject is not None:
+                    elem['sound'] = soundObject
+                else:
+                    objectName = soundName + '_NODE_' + str(args.get('entity_id')) + '_' + str(self._pos)
+                    elem['sound'] = SoundGroups.g_instance.WWgetSoundObject(objectName, node.actualNode)
                 if SoundGroups.DEBUG_TRACE_EFFECTLIST is True:
                     LOG_DEBUG('SOUND: EffectList dynamic, ', soundName, args, node.actualNode, self._pos, elem['sound'])
                 if SoundGroups.DEBUG_TRACE_STACK is True:
@@ -609,16 +613,20 @@ class _SoundEffectDesc(_EffectDesc, object):
                         sound.setRTPC(soundStartParam.name, soundStartParam.value)
 
             elif len(startParams) > 0:
-                sound = SoundGroups.g_instance.WWgetSoundPos(soundName, soundName + '_POS_' + str(id(pos)), pos)
-                if SoundGroups.DEBUG_TRACE_EFFECTLIST is True:
-                    LOG_DEBUG('SOUND: EffectList WWgetSoundPos, ', soundName, args, sound, pos)
-                if SoundGroups.DEBUG_TRACE_STACK is True:
-                    import traceback
-                    traceback.print_stack()
-                if sound is not None:
-                    sound.play()
+                if soundObject is not None:
+                    soundObject.play(soundName)
+                else:
+                    soundObject = SoundGroups.g_instance.WWgetSoundPos(soundName, soundName + '_POS_' + str(id(pos)), pos)
+                    if SoundGroups.DEBUG_TRACE_EFFECTLIST is True:
+                        LOG_DEBUG('SOUND: EffectList WWgetSoundPos, ', soundName, args, soundObject, pos)
+                    if SoundGroups.DEBUG_TRACE_STACK is True:
+                        import traceback
+                        traceback.print_stack()
+                    if soundObject is not None:
+                        soundObject.play()
+                if soundObject is not None:
                     for soundStartParam in startParams:
-                        sound.setRTPC(soundStartParam.name, soundStartParam.value)
+                        soundObject.setRTPC(soundStartParam.name, soundStartParam.value)
 
             else:
                 idd = SoundGroups.g_instance.playSoundPos(soundName, pos)
@@ -634,7 +642,6 @@ class _SoundEffectDesc(_EffectDesc, object):
 
     def delete(self, elem, reason):
         if elem.has_key('sound') and elem['sound'] is not None:
-            elem['sound'].stopAll()
             elem['sound'] = None
         if elem.has_key('node'):
             elem['node'] = None

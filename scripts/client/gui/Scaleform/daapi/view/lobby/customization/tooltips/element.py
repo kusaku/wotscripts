@@ -1,5 +1,6 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/customization/tooltips/element.py
 import BigWorld
+from CurrentVehicle import g_currentVehicle
 import nations
 from constants import IGR_TYPE
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
@@ -12,6 +13,7 @@ from gui.shared.tooltips import formatters, TOOLTIP_TYPE
 from gui.Scaleform.genConsts.BLOCKS_TOOLTIP_TYPES import BLOCKS_TOOLTIP_TYPES
 from helpers.i18n import makeString as _ms
 from nations import NONE_INDEX as ANY_NATION
+from gui.Scaleform.locale.VEHICLE_CUSTOMIZATION import VEHICLE_CUSTOMIZATION
 from gui.customization import g_customizationController as controller
 from gui.customization.shared import DURATION, CUSTOMIZATION_TYPE, PURCHASE_TYPE
 
@@ -73,7 +75,8 @@ class ElementTooltip(BlocksTooltipData):
             data['itemsCount'] = None
         items.append(self._packTitleBlock(data))
         items.append(self._packIconBlock(data))
-        items.append(self._packBonusBlock(data))
+        if not g_currentVehicle.isEvent():
+            items.append(self._packBonusBlock(data))
         if data['condition'] is not None and data['type'] != CUSTOMIZATION_TYPE.CAMOUFLAGE:
             items.append(self._packConditionBlock(data))
         if data['wasBought']:
@@ -91,7 +94,7 @@ class ElementTooltip(BlocksTooltipData):
         if itemsCount is not None and itemsCount > 1:
             title += _ms('#vehicle_customization:customization/tooltip/alreadyHave/count', count=itemsCount)
         typeText = ''
-        if self._cType == CUSTOMIZATION_TYPE.CAMOUFLAGE:
+        if self._cType == CUSTOMIZATION_TYPE.CAMOUFLAGE and not g_currentVehicle.isEvent():
             typeText = _ms('#vehicle_customization:camouflage')
         elif self._cType == CUSTOMIZATION_TYPE.EMBLEM:
             typeText = _ms('#vehicle_customization:emblem')
@@ -167,6 +170,9 @@ class ElementTooltip(BlocksTooltipData):
             elif buyItem['type'] == BUY_ITEM_TYPE.WAYS_TO_BUY_IGR:
                 subBlocks.append(formatters.packTextParameterBlockData(name=buyItemDesc, value=icons.premiumIgrSmall(), padding={'left': 0}))
 
+        if g_currentVehicle.isEvent():
+            subBlocks.append(formatters.packTextBlockData(text_styles.concatStylesWithSpace(icons.attention(), text_styles.standard(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_TOOLTIP_EVENT_WARNING)), padding={'left': 5,
+             'top': 5}))
         return formatters.packBuildUpBlockData(subBlocks, 0, BLOCKS_TOOLTIP_TYPES.TOOLTIP_BUILDUP_BLOCK_LINKAGE, {'left': 3})
 
     def _packAlreadyHaveBlock(self, data):
@@ -344,8 +350,11 @@ class ElementTooltip(BlocksTooltipData):
              'desc': _ms('#vehicle_customization:customization/tooltip/taskDescription', name=questName)})
         else:
             status = STATUS.AVAILABLE_FOR_BUY
+            isPermanentDisabled = g_currentVehicle.isEvent()
             for duration in DURATION.ALL:
                 if duration == DURATION.PERMANENT:
+                    if isPermanentDisabled:
+                        continue
                     buyString = 'forever'
                     wayToBuy = BUY_ITEM_TYPE.WAYS_TO_BUY_FOREVER
                 else:

@@ -3,6 +3,7 @@ from tutorial.doc_loader import sub_parsers
 from tutorial.doc_loader.sub_parsers import quests
 from tutorial.control.quests.battle import triggers
 from tutorial.data import effects
+from tutorial.doc_loader.sub_parsers import lobby
 _EFFECT_TYPE = effects.EFFECT_TYPE
 
 def _readUseItemsTriggerSection(xmlCtx, section, chapter, triggerID):
@@ -15,7 +16,7 @@ def _readInstallItemsTriggerSection(xmlCtx, section, chapter, triggerID):
 
 def init():
     sub_parsers.setEffectsParsers({'save-setting': quests.readSaveTutorialSettingSection})
-    sub_parsers.setEntitiesParsers({'tutorial-setting': quests.readTutorialSettingSection})
+    sub_parsers.setEntitiesParsers({'tutorial-setting': lobby.readTutorialSettingSection})
     sub_parsers.setTriggersParsers({'tutorialIntSetting': quests.readTutorialIntSettingTriggerSection,
      'tutorialAccountSetting': quests.readTutorialAccountSettingTriggerSection,
      'useItem': _readUseItemsTriggerSection,

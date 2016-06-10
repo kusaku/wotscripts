@@ -119,10 +119,18 @@ class PremiumIGRViewState(SelectedViewState):
         return
 
 
+class SelectedEventViewState(SelectedViewState):
+
+    def isCustomizationEnabled(self):
+        return self._isOnlyForEventBattles and self._isInHangar and not self._locked and not self._isBroken and not self._isDisabledInRent
+
+
 def createState4CurrentVehicle(vehicle):
     if vehicle.isPresent():
         if vehicle.isPremiumIGR():
             state = PremiumIGRViewState(vehicle)
+        elif vehicle.isEvent():
+            state = SelectedEventViewState(vehicle)
         else:
             state = SelectedViewState(vehicle)
     else:

@@ -117,7 +117,11 @@ VEHICLE_ATTRIBUTE_FACTORS = {'engine/power': 1.0,
  'chassis/terrainResistance': [1.0, 1.0, 1.0],
  'ramming': 1.0,
  'crewLevelIncrease': 0,
- 'crewChanceToHitFactor': 1.0}
+ 'crewChanceToHitFactor': 1.0,
+ 'vehicle/maxSpeed': 1.0,
+ 'vehicle/angularSpeedHold': 1.0,
+ 'vehicle/angularSpeedMove': 1.0,
+ 'vehicle/skidAccelerator': 1.0}
 
 def init(preloadEverything, pricesToCollect):
     global g_list
@@ -213,6 +217,8 @@ class VehicleDescr(object):
     def setCamouflage(self, position, camouflageID, startTime, durationDays):
         p = self.camouflages
         if camouflageID is None:
+            if 'event_battles' in self.type.tags:
+                camouflageID = self.type.defaultCamouflageIDs[position]
             startTime = _CUSTOMIZATION_EPOCH
             durationDays = 0
             p[position]
@@ -1115,6 +1121,8 @@ class VehicleType(object):
          self._defEmblem,
          self._defEmblem)
         hornPriceFactor, self.hornDistanceFactor, self.hornVolumeFactor = _readVehicleHorns(xmlCtx, section, 'horns')
+        if 'event_battles' in self.tags:
+            self.defaultCamouflageIDs = (_xml.readIntOrNone(xmlCtx, section, 'defaultCamouflageIDs/winter'), _xml.readIntOrNone(xmlCtx, section, 'defaultCamouflageIDs/summer'), _xml.readIntOrNone(xmlCtx, section, 'defaultCamouflageIDs/desert'))
         pricesDest = _g_prices
         if pricesDest is not None:
             pricesDest['vehicleCamouflagePriceFactors'][self.compactDescr] = _xml.readNonNegativeFloat(xmlCtx, section, 'camouflage/priceFactor')

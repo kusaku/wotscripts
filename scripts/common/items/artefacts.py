@@ -306,14 +306,17 @@ class RemovedRpmLimiter(Equipment):
 class Afterburning(Equipment):
 
     def _readConfig(self, xmlCtx, section):
+        self.maxAmount = _xml.readInt(xmlCtx, section, 'maxAmount', 0)
+        self.deployTime = _xml.readPositiveFloat(xmlCtx, section, 'deployTime')
+        self.consumePerSec = _xml.readInt(xmlCtx, section, 'consumePerSec', 0)
+        self.rechargePerSec = _xml.readInt(xmlCtx, section, 'rechargePerSec', 0)
         self.enginePowerFactor = _xml.readPositiveFloat(xmlCtx, section, 'enginePowerFactor')
-        self.durationSeconds = _xml.readInt(xmlCtx, section, 'durationSeconds', 1)
-
-    def updateVehicleAttrFactors(self, factors):
-        try:
-            factors['engine/power'] *= self.enginePowerFactor
-        except:
-            pass
+        self.powerFactorPerUnit = _xml.readPositiveFloat(xmlCtx, section, 'powerFactorPerUnit')
+        self.instantPowerIncrease = _xml.readBool(xmlCtx, section, 'instantPowerIncrease')
+        self.maxSpeedFactor = _xml.readPositiveFloat(xmlCtx, section, 'maxSpeedFactor')
+        self.angularSpeedHoldFactor = _xml.readPositiveFloat(xmlCtx, section, 'angularSpeedHoldFactor')
+        self.angularSpeedMoveFactor = _xml.readPositiveFloat(xmlCtx, section, 'angularSpeedMoveFactor')
+        self.skidAcceleratorFactor = _xml.readPositiveFloat(xmlCtx, section, 'skidAcceleratorFactor')
 
 
 class Artillery(Equipment):

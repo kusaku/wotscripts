@@ -12,6 +12,7 @@ from ConnectionManager import connectionManager
 from account_helpers.settings_core.SettingsCore import g_settingsCore
 from gui.Scaleform.daapi.view.battle import indicators
 from gui.Scaleform.daapi.view.battle.damage_info_panel import VehicleDamageInfoPanel
+from gui.Scaleform.daapi.view.battle.football_over_time_bar import FootballOverTimeBar
 from gui.Scaleform.daapi.view.battle.gas_attack import GasAttackPlugin
 from gui.Scaleform.daapi.view.battle.repair_timer import RepairTimerPlugin
 from gui.Scaleform.daapi.view.battle.resource_points import ResourcePointsPlugin
@@ -23,7 +24,7 @@ from gui.Scaleform.daapi.view.battle.players_panel import playersPanelFactory
 from gui.Scaleform.daapi.view.battle.score_panel import scorePanelFactory
 from gui.Scaleform.daapi.view.battle.ConsumablesPanel import ConsumablesPanel
 from gui.Scaleform.daapi.view.battle.BattleRibbonsPanel import BattleRibbonsPanel
-from gui.Scaleform.daapi.view.battle.TimersBar import TimersBar
+from gui.Scaleform.daapi.view.battle.TimersBar import timersBarFactory
 from gui.Scaleform.daapi.view.battle.battle_end_warning_panel import BattleEndWarningPanel, BattleEndWarningEmptyObject
 from gui.Scaleform.daapi.view.battle.damage_panel import DamagePanel
 from gui.Scaleform.daapi.view.battle.messages import PlayerMessages, VehicleErrorMessages, VehicleMessages
@@ -33,6 +34,7 @@ from gui.Scaleform.daapi.view.battle.markers import MarkersManager
 from gui.Scaleform.daapi.view.common.report_bug import makeHyperLink, reportBugOpenConfirm
 from gui.Scaleform.locale.MENU import MENU
 import gui
+from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.battle_control import g_sessionProvider
 from gui.battle_control.DynSquadViewListener import DynSquadViewListener
 from gui.battle_control.DynSquadViewListener import RecordDynSquadViewListener, ReplayDynSquadViewListener
@@ -42,6 +44,7 @@ from gui.battle_control.debug_ctrl import IDebugPanel
 from gui.shared import g_eventBus, events, EVENT_BUS_SCOPE
 from gui.shared.utils.plugins import PluginsCollection
 from messenger import MessengerEntry
+from vehicle_systems.camouflages import getFootballEventCamouflageKind
 from windows import BattleWindow
 from SettingsInterface import SettingsInterface
 from debug_utils import LOG_DEBUG, LOG_ERROR
@@ -58,7 +61,7 @@ from gui.Scaleform.Minimap import Minimap
 from gui.Scaleform.CursorDelegator import g_cursorDelegator
 from gui.Scaleform.ingame_help import IngameHelp
 from gui.Scaleform import SCALEFORM_SWF_PATH
-from gui.battle_control.arena_info import hasFlags, hasRespawns, hasResourcePoints, isFalloutMultiTeam, hasRepairPoints, isFalloutBattle, hasGasAttack, isRandomBattle, getArenaType, battleEndWarningEnabled
+from gui.battle_control.arena_info import hasFlags, hasRespawns, hasResourcePoints, isFalloutMultiTeam, hasRepairPoints, isFalloutBattle, hasGasAttack, isRandomBattle, getArenaType, battleEndWarningEnabled, isEventBattle
 from gui.battle_control import avatar_getter
 _SCOPE = EVENT_BUS_SCOPE.BATTLE
 _BATTLE_END_WARNING_COMPONENT = 'legacy/battleEndWarning'
@@ -73,6 +76,7 @@ _COMPONENTS_TO_CTRLS = ((BATTLE_CTRL.HIT_DIRECTION, ('legacy/hitDirection',)),
 class Battle(BattleWindow):
     teamBasesPanel = property(lambda self: self.__teamBasesPanel)
     timersBar = property(lambda self: self.__timersBar)
+    footballOverTimeBar = property(lambda self: self.__footballOverTimeBar)
     consumablesPanel = property(lambda self: self.__consumablesPanel)
     damagePanel = property(lambda self: self.__damagePanel)
     markersManager = property(lambda self: self.__markersManager)
@@ -140,6 +144,8 @@ class Battle(BattleWindow):
         self.addExternalCallbacks({'battle.showCursor': self.cursorVisibility,
          'battle.tryLeaveRequest': self.tryLeaveRequest,
          'battle.populateFragCorrelationBar': self.populateFragCorrelationBar,
+         'battle.populateTimersBar': self.populateTimersBar,
+         'battle.populateFootballOverTimeBar': self.populateFootballOverTimeBar,
          'Battle.UsersRoster.Appeal': self.onDenunciationReceived,
          'Battle.selectPlayer': self.selectPlayer,
          'battle.helpDialogOpenStatus': self.helpDialogOpenStatus,
@@ -172,6 +178,16 @@ class Battle(BattleWindow):
 
     def getCameraVehicleID(self):
         return self.__cameraVehicleID
+
+    def populateTimersBar(self, _):
+        if self.__timersBar is not None:
+            self.__timersBar.populate()
+        return
+
+    def populateFootballOverTimeBar(self, _):
+        if self.__footballOverTimeBar is not None:
+            self.__footballOverTimeBar.populate()
+        return
 
     def populateFragCorrelationBar(self, _):
         if self.__fragCorrelation is not None:
@@ -300,6 +316,7 @@ class Battle(BattleWindow):
         g_settingsCore.interfaceScale.onScaleChanged += self.__onRecreateDevice
         isMutlipleTeams = isFalloutMultiTeam()
         isFallout = isFalloutBattle()
+        isEvent = isEventBattle()
         self.proxy = weakref.proxy(self)
         self.__battle_flashObject = self.proxy.getMember('_level0')
         if self.__battle_flashObject:
@@ -316,7 +333,7 @@ class Battle(BattleWindow):
         self.__soundManager = SoundManager()
         self.__soundManager.populateUI(self.proxy)
         self.__debugPanel = DebugPanel()
-        self.__timersBar = TimersBar(self.proxy, isFallout)
+        self.__timersBar = timersBarFactory(self.proxy, isEvent)
         if battleEndWarningEnabled():
             self.__battleEndWarningPanel = BattleEndWarningPanel(self.proxy, getArenaType())
         else:
@@ -330,13 +347,16 @@ class Battle(BattleWindow):
         self.__radialMenu = RadialMenu(self.proxy)
         self.__ribbonsPanel = BattleRibbonsPanel(self.proxy)
         self.__ppSwitcher = PlayersPanelsSwitcher(self.proxy)
+        self.__footballOverTimeBar = None
+        if isEvent:
+            self.__footballOverTimeBar = FootballOverTimeBar(self.__arena, self.proxy)
         isColorBlind = g_settingsCore.getSetting('isColorBlind')
         self.__leftPlayersPanel = playersPanelFactory(self.proxy, True, isColorBlind, isFallout, isMutlipleTeams)
         self.__rightPlayersPanel = playersPanelFactory(self.proxy, False, isColorBlind, isFallout, isMutlipleTeams)
         self.__damageInfoPanel = VehicleDamageInfoPanel(self.proxy)
         self.__damageInfoPanel.start()
-        self.__fragCorrelation = scorePanelFactory(self.proxy, isFallout, isMutlipleTeams)
-        self.__statsForm = statsFormFactory(self.proxy, isFallout, isMutlipleTeams)
+        self.__fragCorrelation = scorePanelFactory(self.proxy, isFallout, isMutlipleTeams, isEvent)
+        self.__statsForm = statsFormFactory(self.proxy, isFallout, isMutlipleTeams, isEvent)
         self.__plugins.init()
         self.isVehicleCountersVisible = g_settingsCore.getSetting('showVehiclesCounter')
         self.__fragCorrelation.showVehiclesCounter(self.isVehicleCountersVisible)
@@ -355,6 +375,7 @@ class Battle(BattleWindow):
         markers = {'enemy': g_settingsCore.getSetting('enemy'),
          'dead': g_settingsCore.getSetting('dead'),
          'ally': g_settingsCore.getSetting('ally')}
+        self.__updateEventMarkerSettings(markers)
         self.__markersManager.setMarkerSettings(markers)
         MessengerEntry.g_instance.gui.invoke('populateUI', self.proxy)
         g_guiResetters.add(self.__onRecreateDevice)
@@ -379,13 +400,17 @@ class Battle(BattleWindow):
         add('legacy/prebattleTimer', self.__timersBar)
         add('legacy/ppSwitcher', self.__ppSwitcher)
         add(_BATTLE_END_WARNING_COMPONENT, self.__battleEndWarningPanel)
-        self.__arenaCtrl = battleArenaControllerFactory(self, isFallout, isMutlipleTeams)
+        self.__arenaCtrl = battleArenaControllerFactory(self, isFallout, isMutlipleTeams, isEvent)
         g_sessionProvider.addArenaCtrl(self.__arenaCtrl)
         self.updateFlagsColor()
         self.movie.setFocussed(SCALEFORM_SWF_PATH)
         self.call('battle.initDynamicSquad', self.__getDynamicSquadsInitParams(enableButton=not BattleReplay.g_replayCtrl.isPlaying))
         self.call('sixthSenseIndicator.setDuration', [GUI_SETTINGS.sixthSenseDuration])
-        g_tankActiveCamouflage[player.vehicleTypeDescriptor.type.compactDescr] = self.__arena.arenaType.vehicleCamouflageKind
+        if isEvent:
+            storingCamoKind = getFootballEventCamouflageKind(g_sessionProvider.getArenaDP().getNumberOfTeam())
+        else:
+            storingCamoKind = self.__arena.arenaType.vehicleCamouflageKind
+        g_tankActiveCamouflage[player.vehicleTypeDescriptor.type.compactDescr] = storingCamoKind
         keyCode = CommandMapping.g_instance.get('CMD_VOICECHAT_MUTE')
         if not BigWorld.isKeyDown(keyCode):
             VOIP.getVOIPManager().setMicMute(True)
@@ -399,6 +424,7 @@ class Battle(BattleWindow):
         else:
             self.__dynSquadListener = DynSquadViewListener(self.proxy)
         g_eventBus.handleEvent(event(self.__ns, event.INITIALIZED))
+        return
 
     def beforeDelete(self):
         LOG_DEBUG('[Battle] beforeDelete')
@@ -441,6 +467,8 @@ class Battle(BattleWindow):
         g_settingsCore.onSettingsChanged -= self.__accs_onSettingsChanged
         g_settingsCore.interfaceScale.onScaleChanged -= self.__onRecreateDevice
         self.__timersBar.destroy()
+        if self.__footballOverTimeBar:
+            self.__footballOverTimeBar.destroy()
         self.__battleEndWarningPanel.destroy()
         self.__teamBasesPanel.destroy()
         self.__consumablesPanel.destroy()
@@ -549,6 +577,10 @@ class Battle(BattleWindow):
 
     def tryLeaveRequest(self, _):
         resStr = 'quitBattle'
+        icon = RES_ICONS.MAPS_ICONS_BATTLE_DESERTERLEAVEBATTLE
+        if isEventBattle():
+            resStr = 'quitBattleFootball'
+            icon = RES_ICONS.MAPS_ICONS_BATTLE_FOOTBALLLEAVEBATTLE
         replayCtrl = BattleReplay.g_replayCtrl
         canRespawn = False
         player = BigWorld.player()
@@ -576,7 +608,7 @@ class Battle(BattleWindow):
                 resStr += '/deserter'
         else:
             isDeserter = False
-        self.__callEx('tryLeaveResponse', [resStr, isDeserter])
+        self.__callEx('tryLeaveResponse', [resStr, isDeserter, icon])
         return
 
     def onExitBattle(self, _):
@@ -619,7 +651,8 @@ class Battle(BattleWindow):
         reportBugOpenConfirm(g_sessionProvider.getArenaDP().getVehicleInfo().player.accountDBID)
 
     def __getDynamicSquadsInitParams(self, enableAlly = True, enableEnemy = False, enableButton = True):
-        return [isRandomBattle() and enableAlly, enableEnemy, isRandomBattle() and enableButton]
+        isAvailableBattleType = isRandomBattle() or isEventBattle()
+        return [isAvailableBattleType and enableAlly, enableEnemy, isAvailableBattleType and enableButton]
 
     def __populateData(self):
         ctx = g_sessionProvider.getCtx()
@@ -673,6 +706,7 @@ class Battle(BattleWindow):
             markers = {'enemy': g_settingsCore.getSetting('enemy'),
              'dead': g_settingsCore.getSetting('dead'),
              'ally': g_settingsCore.getSetting('ally')}
+            self.__updateEventMarkerSettings(markers)
             self.__markersManager.setMarkerSettings(markers)
             self.__markersManager.updateMarkerSettings()
         if 'showVehiclesCounter' in diff:
@@ -683,9 +717,41 @@ class Battle(BattleWindow):
         self.__arenaCtrl.invalidateGUI()
         self.__arenaCtrl.invalidateArenaInfo()
 
+    def __updateEventMarkerSettings(self, markers):
+        """
+        Football Event functionality. Method have to be removed after event!!!
+        :param markers:
+        """
+        if isEventBattle():
+
+            def __forbidSettings(settings):
+                for key in settings.iterkeys():
+                    if key == 'markerBaseHp' or key == 'markerAltHp':
+                        settings[key] = 3
+                    elif key != 'markerBasePlayerName' and key != 'markerAltPlayerName':
+                        typeOfSetting = type(settings[key])
+                        if typeOfSetting is bool:
+                            settings[key] = False
+                        elif typeOfSetting is int or typeOfSetting is long:
+                            settings[key] = 0
+
+            __forbidSettings(markers['enemy'])
+            __forbidSettings(markers['ally'])
+            __forbidSettings(markers['dead'])
+
     def setTeamValuesData(self, data):
         if self.__battle_flashObject is not None:
             self.__battle_flashObject.setTeamValues(data)
+        return
+
+    def setFootballGoalsData(self, data):
+        if self.__battle_flashObject is not None:
+            self.__battle_flashObject.setFootballGoalsData(data)
+        return
+
+    def setFootballBallPossessionData(self, data):
+        if self.__battle_flashObject is not None:
+            self.__battle_flashObject.setFootballBallPossessionData(data)
         return
 
     def setMultiteamValues(self, data):
@@ -706,6 +772,9 @@ class Battle(BattleWindow):
 
     def getBattleTimer(self):
         return self.__timersBar
+
+    def getFootballOverTimeBar(self):
+        return self.__footballOverTimeBar
 
     def getPreBattleTimer(self):
         return self.__timersBar

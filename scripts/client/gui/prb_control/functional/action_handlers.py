@@ -7,6 +7,7 @@ from constants import PREBATTLE_TYPE, MAX_VEHICLE_LEVEL, MIN_VEHICLE_LEVEL
 from debug_utils import LOG_DEBUG
 from gui import DialogsInterface, SystemMessages
 from gui.Scaleform.daapi.view.dialogs import I18nConfirmDialogMeta, rally_dialog_meta
+from gui.server_events import g_eventsCache
 from gui.prb_control.context import unit_ctx, SendInvitesCtx
 from gui.prb_control.events_dispatcher import g_eventDispatcher
 from gui.prb_control.formatters import messages
@@ -213,6 +214,15 @@ class SquadActionsHandler(AbstractActionsHandler):
 
     def __onKickedFromQueue(self, *args):
         SystemMessages.pushMessage(messages.getKickReasonMessage('timeout'), type=SystemMessages.SM_TYPE.Warning)
+
+
+class EventSquadActionsHandler(SquadActionsHandler):
+
+    def _loadWindow(self, ctx):
+        g_eventDispatcher.loadEventSquad(ctx, self._getTeamReady())
+        if not self._functional.getPlayerInfo().isReady:
+            eventVehicle = g_eventsCache.getEventVehicles()[0]
+            g_currentVehicle.selectVehicle(eventVehicle.invID)
 
 
 class BalancedSquadActionsHandler(SquadActionsHandler):

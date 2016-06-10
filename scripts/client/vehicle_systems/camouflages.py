@@ -125,3 +125,16 @@ def applyRepaint(vDesc, fashions):
                 LOG_ERROR('Unexpected lack of fashion, but repaint is being applied. Use prepareFashions function!')
 
         return VehiclePartsTuple(*fashions)
+
+
+def getFootballEventCamouflageKind(team):
+    """
+    blue team - winter camouflage type, tuple position '0'
+    red team - desert camo type, tuple position '2'
+    unused - summer camo type, tuple position '1'
+    :param team:
+    :return:
+    """
+    if team == 2:
+        return 0
+    return 2

@@ -127,6 +127,15 @@ class HeaderBlockConstructor(ModuleTooltipBlockConstructor):
         if module.itemTypeName in VEHICLE_COMPONENT_TYPE_NAMES:
             desc = text_styles.stats(_ms(TOOLTIPS.level(str(module.level)))) + ' ' + _ms(TOOLTIPS.VEHICLE_LEVEL)
             imgPaddingLeft = 22
+        else:
+
+            def checkLocalization(key):
+                localization = _ms('#artefacts:%s' % key)
+                return (key != localization, localization)
+
+            note = checkLocalization('%s/note' % module.descriptor['name'])
+            if note[0] and len(note[1]) > 0:
+                desc = note[1]
         block.append(formatters.packImageTextBlockData(title=text_styles.highTitle(title), desc=text_styles.standard(desc), img=module.icon, imgPadding=formatters.packPadding(left=imgPaddingLeft), txtGap=-3, txtOffset=130 - self.leftPadding, padding=formatters.packPadding(top=-6, right=self.rightPadding)))
         if module.itemTypeID == GUI_ITEM_TYPE.GUN:
             vehicle = self.configuration.vehicle

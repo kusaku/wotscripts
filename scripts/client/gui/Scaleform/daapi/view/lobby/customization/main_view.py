@@ -1,6 +1,6 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/customization/main_view.py
 from adisp import process
-from constants import IGR_TYPE, EVENT_TYPE
+from constants import IGR_TYPE, EVENT_TYPE, IS_CHINA
 from CurrentVehicle import g_currentVehicle
 from gui import DialogsInterface, makeHtmlString
 from gui.ClientUpdateManager import g_clientUpdateManager
@@ -12,7 +12,6 @@ from gui.shared.events import LobbySimpleEvent
 from gui.shared.event_bus import EVENT_BUS_SCOPE
 from gui.shared.formatters import text_styles, icons
 from gui.shared.utils.functions import makeTooltip, getAbsoluteUrl
-from gui.shared.utils.HangarSpace import g_hangarSpace
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui.Scaleform.daapi.view.dialogs import I18nConfirmDialogMeta, DIALOG_BUTTON_ID
 from gui.Scaleform.daapi.view.meta.CustomizationMainViewMeta import CustomizationMainViewMeta
@@ -25,6 +24,7 @@ from helpers.i18n import makeString as _ms
 from shared import getDialogRemoveElement, getDialogReplaceElement
 from gui.customization.shared import checkInQuest, formatPriceCredits, formatPriceGold, getSalePriceString, DURATION, CUSTOMIZATION_TYPE, QUALIFIER_TYPE, QUALIFIER_TYPE_INDEX, FILTER_TYPE
 from gui.customization import g_customizationController
+_FOOTBALL_CUSTOMIZATION_FLAG = 'footballFlag'
 _DURATION_TOOLTIPS = {DURATION.PERMANENT: (VEHICLE_CUSTOMIZATION.CUSTOMIZATION_FILTER_DURATION_ALWAYS, VEHICLE_CUSTOMIZATION.CUSTOMIZATION_FILTER_DURATION_LOWERCASE_ALWAYS),
  DURATION.MONTH: (VEHICLE_CUSTOMIZATION.CUSTOMIZATION_FILTER_DURATION_MONTH, VEHICLE_CUSTOMIZATION.CUSTOMIZATION_FILTER_DURATION_LOWERCASE_MONTH),
  DURATION.WEEK: (VEHICLE_CUSTOMIZATION.CUSTOMIZATION_FILTER_DURATION_WEEK, VEHICLE_CUSTOMIZATION.CUSTOMIZATION_FILTER_DURATION_LOWERCASE_WEEK)}
@@ -35,10 +35,20 @@ _EMPTY_SLOTS_ICONS = {CUSTOMIZATION_TYPE.CAMOUFLAGE: (RES_ICONS.MAPS_ICONS_CUSTO
  CUSTOMIZATION_TYPE.EMBLEM: RES_ICONS.MAPS_ICONS_CUSTOMIZATION_SLOTS_EMPTY_EMBLEM,
  CUSTOMIZATION_TYPE.INSCRIPTION: RES_ICONS.MAPS_ICONS_CUSTOMIZATION_SLOTS_EMPTY_INSCRIPTION}
 
+def _getCustomizationLblKey(cType):
+    if g_currentVehicle.isEvent() and cType == CUSTOMIZATION_TYPE.INSCRIPTION:
+        return _FOOTBALL_CUSTOMIZATION_FLAG
+    else:
+        return cType
+
+
 def _getSlotsPanelDataVO(slotsData):
     slotsDataVO = {'data': []}
-    for cType in CUSTOMIZATION_TYPE.ALL:
-        header = text_styles.middleTitle(_ms('#vehicle_customization:typeSwitchScreen/typeName/{0}'.format(cType)))
+    type_all = list(CUSTOMIZATION_TYPE.ALL)
+    if IS_CHINA and g_currentVehicle.isEvent():
+        type_all.remove(type_all.index(CUSTOMIZATION_TYPE.INSCRIPTION))
+    for cType in type_all:
+        header = text_styles.middleTitle(_ms('#vehicle_customization:typeSwitchScreen/typeName/{0}'.format(_getCustomizationLblKey(cType))))
         selectorSlotsData = []
         for slotIdx in range(0, len(slotsData[cType])):
             selectorSlotsData.append(_getSlotVO(slotsData[cType][slotIdx], cType, slotIdx))
@@ -59,16 +69,23 @@ def _getSlotVO(slotData, cType, slotIdx):
     else:
         elementID = slotData['element'].getID()
         slotImage = slotData['element'].getTexturePath()
+    isFootballEvent = g_currentVehicle.isEvent()
+    if isFootballEvent and cType == CUSTOMIZATION_TYPE.INSCRIPTION:
+        slotTTGroup = '#vehicle_customization:customization/tooltip/slot/footballFlag'
+    else:
+        slotTTGroup = _SLOT_TYPE_TOOLTIPS[cType]
     slotVO = {'itemID': elementID,
-     'slotTooltip': makeTooltip(_ms(TOOLTIPS.CUSTOMIZATION_SLOT_HEADER, groupName=_ms(_SLOT_TYPE_TOOLTIPS[cType])), TOOLTIPS.CUSTOMIZATION_SLOT_BODY),
+     'slotTooltip': makeTooltip(_ms(TOOLTIPS.CUSTOMIZATION_SLOT_HEADER, groupName=_ms(slotTTGroup)), TOOLTIPS.CUSTOMIZATION_SLOT_BODY),
+     'removeBtnVisible': elementID >= 0 and not (isFootballEvent and cType == CUSTOMIZATION_TYPE.CAMOUFLAGE),
      'removeBtnTooltip': makeTooltip(TOOLTIPS.CUSTOMIZATION_SLOTREMOVE_HEADER, TOOLTIPS.CUSTOMIZATION_SLOTREMOVE_BODY),
      'revertBtnVisible': slotData['isRevertible'],
      'revertBtnTooltip': makeTooltip(TOOLTIPS.CUSTOMIZATION_SLOTREVERT_HEADER, TOOLTIPS.CUSTOMIZATION_SLOTREVERT_BODY),
      'spot': slotData['spot'],
      'isInDossier': slotData['isInDossier'],
-     'img': slotImage}
+     'img': slotImage,
+     'enabled': not (cType == CUSTOMIZATION_TYPE.CAMOUFLAGE and slotIdx == 1 and isFootballEvent)}
     if slotData['element'] is not None:
-        slotVO['bonus'] = _getSlotBonusString(slotData['element'].qualifier, slotData['isInDossier'])
+        slotVO['bonus'] = _getSlotBonusString(slotData['element'].qualifier, slotData['isInDossier']) if not isFootballEvent else ''
         if slotData['isInQuest']:
             purchaseTypeIcon = RES_ICONS.MAPS_ICONS_LIBRARY_QUEST_ICON
         elif slotData['duration'] == DURATION.PERMANENT:
@@ -89,19 +106,22 @@ def _getSlotBonusString(qualifier, isInDossier):
     return bonus
 
 
-def _getDurationTypeVO():
+def _getDurationTypeVO(isPermanentDisabled = True):
     durationTypeVOs = []
     for duration, (tooltipText, tooltipLowercaseText) in _DURATION_TOOLTIPS.items():
         if duration == DURATION.PERMANENT:
             icon = icons.gold()
+            enabled = not isPermanentDisabled
         else:
             icon = icons.credits()
+            enabled = True
         label = '{0}{1}'.format(_ms(tooltipText), icon)
         tooltip = makeTooltip(_ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_CAROUSEL_DURATIONTYPE_HEADER, time=_ms(tooltipText)), _ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_CAROUSEL_DURATIONTYPE_BODY, time=_ms(tooltipLowercaseText)))
         tooltipDisabled = makeTooltip(_ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_CAROUSEL_DURATIONTYPE_HEADER, time=_ms(tooltipText)), VEHICLE_CUSTOMIZATION.CUSTOMIZATION_FILTER_DURATION_DISABLED)
         durationTypeVOs.append({'label': label,
          'tooltip': tooltip,
-         'tooltipDisabled': tooltipDisabled})
+         'tooltipDisabled': tooltipDisabled,
+         'enabled': enabled})
 
     return durationTypeVOs
 
@@ -119,7 +139,7 @@ def _createBonusVOList(blData, bonusNameList):
 
 
 def _getInvoiceItemDialogMeta(dialogType, cType, carouselItem, l10nExtraParams):
-    l10nParams = {'cTypeName': _ms('#vehicle_customization:typeSwitchScreen/typeName/{0}'.format(cType)),
+    l10nParams = {'cTypeName': _ms('#vehicle_customization:typeSwitchScreen/typeName/{0}'.format(_getCustomizationLblKey(cType))),
      'itemName': carouselItem.getName()}
     l10nParams.update(l10nExtraParams)
     return I18nConfirmDialogMeta('customization/install_invoice_item/{0}'.format(dialogType), messageCtx=l10nParams, focusedID=DIALOG_BUTTON_ID.CLOSE)
@@ -131,6 +151,7 @@ class MainView(CustomizationMainViewMeta):
         super(MainView, self).__init__()
         self.__isCarouselHidden = True
         self.__controller = None
+        self.__isFootballEventVehicle = False
         return
 
     def showGroup(self, cType, slotIdx):
@@ -179,6 +200,8 @@ class MainView(CustomizationMainViewMeta):
 
     def _populate(self):
         super(MainView, self)._populate()
+        self.__isFootballEventVehicle = g_currentVehicle.isEvent()
+        self.as_bonusPanelVisibleS(not self.__isFootballEventVehicle)
         self.__controller = g_customizationController
         self.__controller.init()
         self.__controller.events.onCartUpdated += self.__setBottomPanelData
@@ -227,9 +250,14 @@ class MainView(CustomizationMainViewMeta):
     def __setBottomPanelData(self, *args):
         if self.__isCarouselHidden:
             occupiedSlotsNum, totalSlotsNum = self.__controller.slots.getSummary()
+            if self.__isFootballEventVehicle:
+                totalSlotsNum -= 3 if IS_CHINA else 1
             label = text_styles.highTitle(_ms(VEHICLE_CUSTOMIZATION.TYPESWITCHSCREEN_SLOTSUMMARY, occupiedSlotsNum=occupiedSlotsNum, totalSlotsNum=totalSlotsNum))
+            isInfoIconVisible = False
         else:
-            label = text_styles.middleTitle(_ms('#vehicle_customization:typeSwitchScreen/typeName/plural/{0}'.format(self.__controller.slots.currentType)))
+            current_slot_type = self.__controller.slots.currentType
+            isInfoIconVisible = self.__isFootballEventVehicle and current_slot_type == CUSTOMIZATION_TYPE.CAMOUFLAGE
+            label = text_styles.middleTitle(_ms('#vehicle_customization:typeSwitchScreen/typeName/plural/{0}'.format(_getCustomizationLblKey(current_slot_type))))
         totalGold = self.__controller.cart.totalPriceGold
         totalCredits = self.__controller.cart.totalPriceCredits
         notEnoughGoldTooltip = notEnoughCreditsTooltip = ''
@@ -248,7 +276,9 @@ class MainView(CustomizationMainViewMeta):
                         'enoughGold': enoughGold,
                         'enoughCredits': enoughCredits,
                         'notEnoughGoldTooltip': notEnoughGoldTooltip,
-                        'notEnoughCreditsTooltip': notEnoughCreditsTooltip}})
+                        'notEnoughCreditsTooltip': notEnoughCreditsTooltip},
+         'isInfoIconVisible': isInfoIconVisible,
+         'infoIconTooltip': TOOLTIPS.CUSTOMIZATION_FOOTBALL_CAMOUFLAGE_INFOICON})
 
     def __setHeaderInitData(self):
         isElite = g_currentVehicle.item.isElite
@@ -279,14 +309,22 @@ class MainView(CustomizationMainViewMeta):
                              'bonusRenderersList': visibilityPanelRenderList}})
 
     def __setCarouselInitData(self):
+        vos = _getDurationTypeVO(self.__isFootballEventVehicle)
+        sel_index = len(vos)
+        for vo in reversed(vos):
+            if vo['enabled']:
+                sel_index -= 1
+
         self.as_setCarouselInitS({'icoFilter': RES_ICONS.MAPS_ICONS_BUTTONS_FILTER,
-         'durationType': _getDurationTypeVO(),
-         'durationSelectIndex': 0,
+         'durationType': vos,
+         'durationSelectIndex': sel_index,
          'onlyPurchased': True,
          'icoPurchased': RES_ICONS.MAPS_ICONS_FILTERS_PRESENCE,
          'message': '{2}{0}\n{1}'.format(text_styles.neutral(VEHICLE_CUSTOMIZATION.CAROUSEL_MESSAGE_HEADER), text_styles.main(VEHICLE_CUSTOMIZATION.CAROUSEL_MESSAGE_DESCRIPTION), icons.makeImageTag(RES_ICONS.MAPS_ICONS_LIBRARY_ATTENTIONICONFILLED, vSpace=-3)),
          'fitterTooltip': makeTooltip(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_CAROUSEL_FILTER_HEADER, VEHICLE_CUSTOMIZATION.CUSTOMIZATION_CAROUSEL_FILTER_BODY),
-         'chbPurchasedTooltip': makeTooltip(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_CAROUSEL_CHBPURCHASED_HEADER, VEHICLE_CUSTOMIZATION.CUSTOMIZATION_CAROUSEL_CHBPURCHASED_BODY)})
+         'chbPurchasedTooltip': None if self.__isFootballEventVehicle else makeTooltip(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_CAROUSEL_CHBPURCHASED_HEADER, VEHICLE_CUSTOMIZATION.CUSTOMIZATION_CAROUSEL_CHBPURCHASED_BODY),
+         'isFootballMode': self.__isFootballEventVehicle})
+        return
 
     def __setCarouselData(self, blData):
         itemVOs = []
@@ -315,8 +353,8 @@ class MainView(CustomizationMainViewMeta):
                 label = priceFormatter('{0}{1}'.format(element.getPrice(item['duration']), priceIcon))
             data = {'id': element.getID(),
              'icon': element.getTexturePath(),
-             'bonusType': element.qualifier.getIcon16x16(),
-             'bonusPower': text_styles.stats('+{0}%{1}'.format(element.qualifier.getValue(), '*' if element.qualifier.getDescription() is not None else '')),
+             'bonusType': element.qualifier.getIcon16x16() if not self.__isFootballEventVehicle else '',
+             'bonusPower': text_styles.stats('+{0}%{1}'.format(element.qualifier.getValue(), '*' if element.qualifier.getDescription() is not None else '')) if not self.__isFootballEventVehicle else '',
              'label': label,
              'selected': item['appliedToCurrentSlot'] or item['installedInCurrentSlot'] and not blData['hasAppliedItem'],
              'goToTaskBtnVisible': isInQuest,
@@ -333,7 +371,6 @@ class MainView(CustomizationMainViewMeta):
          'rendererWidth': blData['rendererWidth'],
          'filterCounter': '{0}{1}'.format(text_styles.stats(carouselLength) if carouselLength > 0 else text_styles.error(carouselLength), text_styles.main(_ms(VEHICLE_CUSTOMIZATION.CAROUSEL_FILTER_COUNTER, all=blData['unfilteredLength']))),
          'messageVisible': carouselLength == 0,
-         'counterVisible': True,
          'goToIndex': blData['goToIndex'],
          'selectedIndex': selectedIndex})
         return

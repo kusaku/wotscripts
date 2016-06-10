@@ -5,7 +5,9 @@ from abc import ABCMeta, abstractmethod
 import ArenaType
 import potapov_quests
 import gui.awards.event_dispatcher as shared_events
+from adisp import process
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
+from gui.awards.special_achievement_awards import FOOTBALL_AWARD_TYPE
 from gui.gold_fish import isGoldFishActionActive, isTimeToShowGoldFishPromo
 from gui.goodies import g_goodiesCache
 from gui.prb_control.settings import BATTLES_TO_SELECT_RANDOM_MIN_LIMIT
@@ -20,7 +22,7 @@ from debug_utils import LOG_CURRENT_EXCEPTION, LOG_WARNING, LOG_ERROR, LOG_DEBUG
 from items import ITEM_TYPE_INDICES, getTypeOfCompactDescr, vehicles as vehicles_core
 from messenger.proto.events import g_messengerEvents
 from messenger.formatters import NCContextItemFormatter, TimeFormatter
-from messenger.formatters.service_channel import TelecomReceivedInvoiceFormatter
+from messenger.formatters.service_channel import TelecomReceivedInvoiceFormatter, getRareTitle
 from dossiers2.custom.records import DB_ID_TO_RECORD
 from dossiers2.ui.layouts import POTAPOV_QUESTS_GROUP
 from gui.Scaleform.daapi.view.dialogs import I18PunishmentDialogMeta
@@ -60,7 +62,8 @@ class AwardController(Controller, GlobalListener):
          PotapovQuestsAutoWindowHandler(self),
          GoldFishHandler(self),
          FalloutVehiclesBuyHandler(self),
-         TelecomHandler(self)]
+         TelecomHandler(self),
+         FootballAwardHandler(self)]
         self.__delayedHandlers = []
         self.__isLobbyLoaded = False
 
@@ -659,3 +662,20 @@ class TelecomHandler(ServiceChannelHandler):
             shared_events.showTelecomAward(vehicleDesrs, hasCrew, hasBrotherhood)
         else:
             LOG_ERROR("Can't show telecom award window!")
+
+
+class FootballAwardHandler(ServiceChannelHandler):
+
+    def __init__(self, awardCtrl):
+        super(FootballAwardHandler, self).__init__(SYS_MESSAGE_TYPE.achievementReceived.index(), awardCtrl)
+
+    @process
+    def _showAward(self, ctx):
+        data = ctx[1].data
+        achievements = {rareID for rareID in data.get('rareAchievements', [])} & FOOTBALL_AWARD_TYPE.ALL
+        for rareID in achievements:
+            title = yield getRareTitle(rareID)
+            if title is not None:
+                shared_events.showFootballTournamentAward(rareID, title)
+
+        return

@@ -3,22 +3,35 @@ from AvatarInputHandler import mathUtils
 import BigWorld
 import Math
 from debug_utils import LOG_ERROR
+from gui.battle_control import g_sessionProvider
 import material_kinds
 from Math import Matrix
 from ModelHitTester import SegmentCollisionResult
 from VehicleEffects import DamageFromShotDecoder
+from vehicle_systems.assembly_utility import ComponentSystem
+from vehicle_systems import assembly_utility
 from vehicle_systems.tankStructure import TankPartNames, TankNodeNames
 from helpers.EffectMaterialCalculation import calcSurfaceMaterialNearPoint
 from helpers.EffectsList import EffectsListPlayer, SoundStartParam, SpecialKeyPointNames
 from helpers.bound_effects import ModelBoundEffects
 from items import vehicles
-from constants import SERVER_TICK_LENGTH
+from constants import SERVER_TICK_LENGTH, ARENA_BONUS_TYPE_CAPS
 _MIN_COLLISION_SPEED = 3.5
 
-class DetachedTurret(BigWorld.Entity):
+class DetachedTurret(BigWorld.Entity, ComponentSystem):
     allTurrets = list()
+    turretHitEffects = assembly_utility.ComponentDescriptor()
+    gunHitEffects = assembly_utility.ComponentDescriptor()
+    detachmentEffects = assembly_utility.ComponentDescriptor()
+    vehicleCollisionEffects = assembly_utility.ComponentDescriptor()
 
     def __init__(self):
+        if ARENA_BONUS_TYPE_CAPS.get(BigWorld.player().arena.bonusType) & ARENA_BONUS_TYPE_CAPS.FOOTBALL:
+            import FootballManager
+            self.__customAssembler = FootballManager.assemblyBall
+        else:
+            self.__customAssembler = None
+        ComponentSystem.__init__(self)
         self.__vehDescr = vehicles.VehicleDescr(compactDescr=self.vehicleCompDescr)
         self.filter = BigWorld.WGTurretFilter()
         self.__detachConfirmationTimer = SynchronousDetachment(self)
@@ -26,7 +39,6 @@ class DetachedTurret(BigWorld.Entity):
         self.__detachmentEffects = None
         self.__hitEffects = {TankPartNames.TURRET: None,
          TankPartNames.GUN: None}
-        self.__reactors = []
         self.targetFullBounds = True
         self.targetCaps = [1]
         self.__isBeingPulledCallback = None
@@ -49,15 +61,15 @@ class DetachedTurret(BigWorld.Entity):
         self.__detachConfirmationTimer.onEnterWorld()
         self.__vehDescr.keepPrereqs(prereqs)
         turretDescr = self.__vehDescr.turret
-        if self.isUnderWater == 0:
-            self.__detachmentEffects = _TurretDetachmentEffects(self.model, turretDescr['turretDetachmentEffects'], self.isCollidingWithWorld == 1)
-            self.__reactors.append(self.__detachmentEffects)
-        else:
-            self.__detachmentEffects = None
-        self.__hitEffects[TankPartNames.TURRET] = turretHitEffects = _HitEffects(self.model)
-        self.__hitEffects[TankPartNames.GUN] = gunHitEffects = _HitEffects(self.__gunModel)
-        self.__reactors.append(turretHitEffects)
-        self.__reactors.append(gunHitEffects)
+        if self.__customAssembler is not None:
+            self.__customAssembler(self)
+        elif self.isUnderWater == 0:
+            self.detachmentEffects = _TurretDetachmentEffects(self.model, turretDescr['turretDetachmentEffects'], self.isCollidingWithWorld == 1)
+            self.turretHitEffects = _HitEffects(self.model)
+            self.gunHitEffects = _HitEffects(self.__gunModel)
+        self.__hitEffects[TankPartNames.TURRET] = self.turretHitEffects
+        self.__hitEffects[TankPartNames.GUN] = self.gunHitEffects
+        self.__detachmentEffects = self.detachmentEffects
         self.__componentsDesc = (self.__vehDescr.turret, self.__vehDescr.gun)
         for desc in self.__componentsDesc:
             desc['hitTester'].loadBspModel()
@@ -69,19 +81,16 @@ class DetachedTurret(BigWorld.Entity):
         return
 
     def onLeaveWorld(self):
+        ComponentSystem.destroy(self)
         DetachedTurret.allTurrets.remove(self)
         self.__detachConfirmationTimer.cancel()
         self.__detachConfirmationTimer = None
-        for reactor in self.__reactors:
-            if reactor is not None:
-                reactor.destroy()
-
         self.__isBeingPulledCallback.destroy()
         self.__isBeingPulledCallback = None
         return
 
     def onStaticCollision(self, energy, point, normal):
-        if self.__detachmentEffects is not None:
+        if self.__detachmentEffects is not None and self.model.visible:
             surfaceMaterial = calcSurfaceMaterialNearPoint(point, normal, self.spaceID)
             effectIdx = surfaceMaterial.effectIdx
             groundEffect = True
@@ -94,23 +103,36 @@ class DetachedTurret(BigWorld.Entity):
             self.__detachmentEffects.notifyAboutCollision(energy, point, effectIdx, groundEffect, self.isUnderWater)
         return
 
-    def showDamageFromShot(self, points, effectsIndex):
-        maxHitEffectCode, decodedPoints = DamageFromShotDecoder.decodeHitPoints(points, self.__vehDescr)
-        for shotPoint in decodedPoints:
-            hitEffects = self.__hitEffects.get(shotPoint.componentName)
-            if hitEffects is not None:
-                hitEffects.showHit(shotPoint, effectsIndex)
-            else:
-                LOG_ERROR("Detached turret got hit into %s component, but it's impossible" % shotPoint.componentName)
-
+    def onVehicleCollision(self, energy, point, normal):
+        if self.vehicleCollisionEffects is not None and self.model.visible:
+            self.vehicleCollisionEffects.notifyAboutCollision(energy, point, normal)
         return
+
+    def onGoal(self, scoredTeam):
+        pass
+
+    def showDamageFromShot(self, attackerID, points, effectsIndex):
+        if not self.model.visible:
+            return
+        else:
+            maxHitEffectCode, decodedPoints = DamageFromShotDecoder.decodeHitPoints(points, self.__vehDescr)
+            for shotPoint in decodedPoints:
+                hitEffects = self.__hitEffects.get(shotPoint.componentName)
+                if hitEffects is not None:
+                    hitEffects.showHit(attackerID, shotPoint, effectsIndex)
+                else:
+                    LOG_ERROR("Detached turret got hit into %s component, but it's impossible" % shotPoint.componentName)
+
+            return
 
     def collideSegment(self, startPoint, endPoint, skipGun = False):
         res = None
-        filterMethod = getattr(self.filter, 'segmentMayHitEntity', lambda : True)
-        if not filterMethod(startPoint, endPoint, 0):
+        if not self.model.visible:
             return res
         else:
+            filterMethod = getattr(self.filter, 'segmentMayHitEntity', lambda : True)
+            if not filterMethod(startPoint, endPoint, 0):
+                return res
             modelsToCheck = (self.model,) if skipGun else (self.model, self.__gunModel)
             for model, desc in zip(modelsToCheck, self.__componentsDesc):
                 toModel = Matrix(model.matrix)
@@ -151,7 +173,7 @@ class DetachedTurret(BigWorld.Entity):
         return SERVER_TICK_LENGTH
 
 
-class _TurretDetachmentEffects(object):
+class _TurretDetachmentEffects(assembly_utility.Component):
 
     class State:
         FLYING = 0
@@ -209,6 +231,17 @@ class _TurretDetachmentEffects(object):
                 self.__playStateEffect()
         return
 
+    def notifyAboutBallCollision(self, energy, collisionPoint, effectMaterialIdx, groundEffect, underWater, soundObject):
+        if groundEffect:
+            stages, effectsList, _ = self.__detachmentEffectsDesc['collision'][effectMaterialIdx]
+            dropEnergyParam = SoundStartParam('RTPC_ext_ev_football_drop_energy', energy)
+            BigWorld.player().terrainEffects.addNew(collisionPoint, effectsList, stages, None, soundParams=(dropEnergyParam,), soundObject=soundObject)
+        if self.__state != self.State.ON_GROUND:
+            self.__state = self.State.ON_GROUND
+            if not underWater:
+                self.__playStateEffect()
+        return
+
     def notifyAboutBeingPulled(self, isPulled, effectMaterialIdx):
         if isPulled:
             if self.__pullEffectListPlayer is None or self.__pullEffectListPlayer.effectMaterialIdx != effectMaterialIdx:
@@ -238,15 +271,15 @@ class _TurretDetachmentEffects(object):
         return mathUtils.lerp(_TurretDetachmentEffects._MIN_NORMALIZED_ENERGY, 1.0, t)
 
 
-class _HitEffects(ModelBoundEffects):
+class _HitEffects(ModelBoundEffects, assembly_utility.Component):
 
     def __init__(self, model):
         ModelBoundEffects.__init__(self, model)
 
-    def showHit(self, shotPoint, effectsIndex):
+    def showHit(self, attackerID, shotPoint, effectsIndex):
         effectsDescr = vehicles.g_cache.shotEffects[effectsIndex]
         effectsTimeLine = effectsDescr[shotPoint.hitEffectGroup]
-        self.addNew(shotPoint.matrix, effectsTimeLine.effectsList, effectsTimeLine.keyPoints)
+        self.addNew(shotPoint.matrix, effectsTimeLine.effectsList, effectsTimeLine.keyPoints, showDecal=False)
 
 
 class VehicleEnterTimer(object):

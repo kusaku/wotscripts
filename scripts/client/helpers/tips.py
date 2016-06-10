@@ -1,4 +1,5 @@
 # Embedded file name: scripts/client/helpers/tips.py
+import random
 import re
 import sys
 from collections import defaultdict, namedtuple
@@ -102,8 +103,29 @@ class SandboxTipsCriteria(_TipsCriteria):
         return _FoundTip(i18n.makeString('#tips:howToPlay'), i18n.makeString('#tips:sandbox%s' % geometryIndex), TIPS_IMAGE_SOURCE % ('sandbox' + str(geometryIndex) + str(positionIndex)))
 
 
+class EventTipsCriteria(_TipsCriteria):
+
+    def find(self):
+        tips = [{'header': 'header01',
+          'body': 'body01',
+          'image': 'football01'},
+         {'header': 'header02',
+          'body': 'body02',
+          'image': 'football02'},
+         {'header': 'header03',
+          'body': 'body03',
+          'image': 'football03'},
+         {'header': 'header04',
+          'body': 'body04',
+          'image': 'football04'}]
+        tip = random.choice(tips)
+        return _FoundTip(i18n.makeString('#tips:football/%s' % tip['header']), i18n.makeString('#tips:football/%s' % tip['body']), TIPS_IMAGE_SOURCE % tip['image'])
+
+
 def getTipsCriteria(arena):
-    if arena_info.isInSandboxBattle(arena):
+    if arena_info.isEventBattle():
+        return EventTipsCriteria()
+    elif arena_info.isInSandboxBattle(arena):
         return SandboxTipsCriteria()
     else:
         return RandomTipsCriteria()

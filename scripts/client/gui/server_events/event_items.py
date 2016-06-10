@@ -6,6 +6,7 @@ from collections import namedtuple
 from debug_utils import LOG_CURRENT_EXCEPTION
 import nations
 import constants
+from items import vehicles as vehicles_core
 from ConnectionManager import connectionManager
 from dossiers2.ui.achievements import ACHIEVEMENT_BLOCK
 from potapov_quests import PQ_STATE as _PQS, PQ_BRANCH
@@ -20,7 +21,8 @@ from gui.Scaleform.locale.QUESTS import QUESTS
 EventBattles = namedtuple('EventBattles', ['vehicleTags',
  'vehicles',
  'enabled',
- 'arenaTypeID'])
+ 'arenaTypeID',
+ 'dueDate'])
 
 class DEFAULTS_GROUPS(object):
     UNGROUPED_ACTIONS = 'ungroupedActions'
@@ -264,8 +266,8 @@ class Quest(ServerEventAbstract):
         vehBonuses = self.getBonuses('vehicles')
         for vehBonus in vehBonuses:
             vehicles = vehBonus.getValue()
-            for intCD, data in vehicles.iteritems():
-                item = g_itemsCache.items.getItemByCD(intCD)
+            for vehDescr, data in vehicles.iteritems():
+                item = g_itemsCache.items.getItemByCD(vehicles_core.getVehicleType(vehDescr).compactDescr)
                 if item.isPremiumIGR and data.get('rent', None) is not None:
                     return True
 

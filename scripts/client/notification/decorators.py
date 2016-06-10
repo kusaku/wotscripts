@@ -1,5 +1,6 @@
 # Embedded file name: scripts/client/notification/decorators.py
 import BigWorld
+from constants import PREBATTLE_TYPE_NAMES
 from debug_utils import LOG_ERROR, LOG_DEBUG
 from gui.Scaleform.locale.INVITES import INVITES
 from gui.clans.clan_controller import g_clanCtrl
@@ -237,11 +238,12 @@ class PrbInviteDecorator(_NotificationDecorator):
                 cancelState |= NOTIFICATION_BUTTON_STATE.ENABLED
         else:
             submitState = cancelState = 0
+        bgIconSource = PREBATTLE_TYPE_NAMES[invite.type]
         message = g_settings.msgTemplates.format('invite', ctx={'text': formatter.getText(invite)}, data={'timestamp': self._createdAt,
          'icon': makePathToIcon(formatter.getIconName(invite)),
          'defaultIcon': makePathToIcon('prebattleInviteIcon'),
          'buttonsStates': {'submit': submitState,
-                           'cancel': cancelState}})
+                           'cancel': cancelState}}, bgIconSource=bgIconSource)
         self._vo = {'typeID': self.getType(),
          'entityID': self.getID(),
          'message': message,

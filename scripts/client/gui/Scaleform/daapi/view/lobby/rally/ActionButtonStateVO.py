@@ -4,14 +4,15 @@ from gui.Scaleform.locale.MESSENGER import MESSENGER
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.prb_control.settings import UNIT_RESTRICTION
+from gui.server_events import g_eventsCache
 from gui.shared.formatters import text_styles, icons
+from gui.shared.utils.functions import makeTooltip
 from helpers import i18n
 
 class ActionButtonStateVO(dict):
     __NOT_CRITICAL_STATES = (UNIT_RESTRICTION.UNDEFINED,
      UNIT_RESTRICTION.IS_IN_IDLE,
      UNIT_RESTRICTION.IS_IN_PRE_ARENA,
-     UNIT_RESTRICTION.VEHICLE_NOT_VALID_FOR_EVENT,
      UNIT_RESTRICTION.FALLOUT_NOT_ENOUGH_PLAYERS)
 
     def __init__(self, unitFunctional):
@@ -43,7 +44,7 @@ class ActionButtonStateVO(dict):
          UNIT_RESTRICTION.ZERO_TOTAL_LEVEL: ('', {}),
          UNIT_RESTRICTION.IS_IN_PRE_ARENA: (CYBERSPORT.WINDOW_UNIT_MESSAGE_WAITCOMMANDER, {}),
          UNIT_RESTRICTION.NOT_IN_SLOT: self.__notInSlotMessage(),
-         UNIT_RESTRICTION.VEHICLE_NOT_VALID_FOR_EVENT: (CYBERSPORT.WINDOW_UNIT_MESSAGE_VEHICLENOTVALID, {}),
+         UNIT_RESTRICTION.VEHICLE_NOT_VALID_FOR_EVENT: ('#cyberSport:window/unit/message/event/vehicleInvalid', {}),
          UNIT_RESTRICTION.CURFEW: (CYBERSPORT.WINDOW_UNIT_MESSAGE_CURFEW, {}),
          UNIT_RESTRICTION.VEHICLE_WRONG_MODE: (CYBERSPORT.WINDOW_UNIT_MESSAGE_VEHICLEINNOTREADY_WRONGMODE, {}),
          UNIT_RESTRICTION.FALLOUT_NOT_ENOUGH_PLAYERS: ('', {}),
@@ -115,6 +116,11 @@ class ActionButtonStateVO(dict):
             return TOOLTIPS.CYBERSPORT_UNIT_FIGHTBTN_NOTINSLOT
         elif self.__restrictionType == UNIT_RESTRICTION.VEHICLE_NOT_VALID:
             return TOOLTIPS.CYBERSPORT_UNIT_FIGHTBTN_VEHICLENOTVALID
+        elif self.__restrictionType == UNIT_RESTRICTION.VEHICLE_WRONG_MODE:
+            return TOOLTIPS.SQUADWINDOW_SQUAD_FOOTBALL_VEHICLENOTSUPPORTED
+        elif self.__restrictionType == UNIT_RESTRICTION.VEHICLE_NOT_VALID_FOR_EVENT:
+            vehicle = g_eventsCache.getEventVehicles()[0]
+            return makeTooltip(i18n.makeString(TOOLTIPS.SQUADWINDOW_EVENTSQUAD_FOOTBALL_VEHICLENOTSUPPORTED_HEADER), i18n.makeString(TOOLTIPS.SQUADWINDOW_EVENTSQUAD_FOOTBALL_VEHICLENOTSUPPORTED_BODY, tankName=vehicle.userName))
         elif self.__isEnabled and not self._playerInfo.isReady:
             return TOOLTIPS.CYBERSPORT_UNIT_FIGHTBTN_PRESSFORREADY
         elif self.__isEnabled and self._playerInfo.isReady:

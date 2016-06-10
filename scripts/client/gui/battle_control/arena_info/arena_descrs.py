@@ -287,9 +287,24 @@ class FalloutBattlesDescription(ArenaWithLabelDescription):
             return _QuestInfo(i18n.makeString(INGAME_GUI.POTAPOVQUESTS_TIP_NOQUESTS_BATTLETYPE), '', '')
 
 
+class EventBattleDescription(ArenaWithLabelDescription):
+    __slots__ = ()
+
+    def getWinString(self, isInBattle = True):
+        if isInBattle:
+            return i18n.makeString(ARENAS.TYPE_FOOTBALL_DESCRIPTIONBATTLE)
+        else:
+            return i18n.makeString(ARENAS.TYPE_FOOTBALL_DESCRIPTION)
+
+    def getGuiEventType(self):
+        return 'event'
+
+
 def createDescription(arena):
     guiType = arena.guiType
-    if guiType in (ARENA_GUI_TYPE.RANDOM, ARENA_GUI_TYPE.TRAINING):
+    if guiType == ARENA_GUI_TYPE.EVENT_BATTLES:
+        description = EventBattleDescription(arena)
+    elif guiType in (ARENA_GUI_TYPE.RANDOM, ARENA_GUI_TYPE.TRAINING):
         description = ArenaWithBasesDescription(arena)
     elif guiType == ARENA_GUI_TYPE.TUTORIAL:
         description = TutorialBattleDescription(arena)

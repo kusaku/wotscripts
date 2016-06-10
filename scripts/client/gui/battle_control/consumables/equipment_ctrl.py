@@ -4,7 +4,7 @@ from functools import partial
 import Event
 import BigWorld
 from constants import VEHICLE_SETTING, EQUIPMENT_STAGES
-from debug_utils import LOG_ERROR
+from debug_utils import LOG_ERROR, LOG_DEBUG
 from gui.battle_control import avatar_getter, vehicle_getter
 from gui.battle_control.battle_constants import makeExtraName, VEHICLE_COMPLEX_ITEMS
 from gui.shared.utils.decorators import ReprInjector
@@ -28,6 +28,10 @@ class EquipmentSound:
         if soundName is not None:
             SoundGroups.g_instance.playSound2D(soundName)
         return
+
+    @staticmethod
+    def playReady():
+        avatar_getter.getSoundNotifications().play('combat_reserve')
 
 
 @ReprInjector.simple(('_tag', 'tag'), ('_quantity', 'quantity'), ('_stage', 'stage'), ('_prevStage', 'prevStage'), ('_timeRemaining', 'timeRemaining'))
@@ -86,12 +90,12 @@ class _EquipmentItem(object):
         return
 
     def update(self, quantity, stage, timeRemaining):
-        if quantity == 0 and self._quantity != quantity:
-            EquipmentSound.playSound(self._descriptor.compactDescr)
+        prevQuantity = self._quantity
         self._quantity = quantity
         self._prevStage = self._stage
         self._stage = stage
         self._timeRemaining = timeRemaining
+        self._soundUpdate(prevQuantity, quantity)
 
     def activate(self, entityName = None, avatar = None):
         if 'avatar' in self._descriptor.tags:
@@ -135,6 +139,12 @@ class _EquipmentItem(object):
 
     def isAvatar(self):
         return 'avatar' in self._descriptor.tags
+
+    def _soundUpdate(self, prevQuantity, quantity):
+        if quantity == 0 and prevQuantity != quantity:
+            EquipmentSound.playSound(self._descriptor.compactDescr)
+        if self._stage == EQUIPMENT_STAGES.READY and self._prevStage in (EQUIPMENT_STAGES.DEPLOYING, EQUIPMENT_STAGES.UNAVAILABLE, EQUIPMENT_STAGES.COOLDOWN):
+            EquipmentSound.playReady()
 
 
 class _AutoItem(_EquipmentItem):
@@ -254,6 +264,76 @@ class _RepairKitItem(_ExpandedItem):
             return super(_RepairKitItem, self)._getEntityUserString(entityName, avatar)
 
 
+class _AfterburningItem(_TriggerItem):
+    __slots__ = ('__nitroPercentValue', '__nitroTimeRemaining', '__callbackID')
+
+    def __init__(self, descriptor, quantity, stage, timeRemaining, tag = None):
+        self.__nitroPercentValue = 0
+        self.__nitroTimeRemaining = 0
+        self.__callbackID = None
+        super(_AfterburningItem, self).__init__(descriptor, quantity, stage, timeRemaining, tag)
+        return
+
+    def clear(self):
+        super(_AfterburningItem, self).clear()
+        if self.__callbackID is not None:
+            BigWorld.cancelCallback(self.__callbackID)
+        return
+
+    def getTag(self):
+        return 'afterburning'
+
+    def getNitroPercentValue(self):
+        return self.__nitroPercentValue
+
+    def getNitroTimeRemaining(self):
+        return self.__nitroTimeRemaining
+
+    def update(self, quantity, stage, timeRemaining):
+        if stage in (EQUIPMENT_STAGES.ACTIVE, EQUIPMENT_STAGES.READY):
+            if self.__callbackID is not None:
+                BigWorld.cancelCallback(self.__callbackID)
+                self.__callbackID = None
+            if stage == EQUIPMENT_STAGES.READY and timeRemaining > -1:
+                self.__callbackID = BigWorld.callback(timeRemaining, self.__nitroFull)
+            self.__nitroPercentValue = quantity
+            self.__nitroTimeRemaining = timeRemaining
+            timeRemaining = 0
+            quantity = 1
+        elif stage == EQUIPMENT_STAGES.DEPLOYING:
+            self.__nitroPercentValue = 0
+            self.__nitroTimeRemaining = 0
+        elif stage == EQUIPMENT_STAGES.UNAVAILABLE:
+            self.__nitroPercentValue = quantity = 100
+            self.__nitroTimeRemaining = -1
+        super(_AfterburningItem, self).update(quantity, stage, timeRemaining)
+        return
+
+    def canActivate(self, entityName = None, avatar = None):
+        if self._timeRemaining > 0 and self._stage and self._stage not in (EQUIPMENT_STAGES.DEPLOYING, EQUIPMENT_STAGES.COOLDOWN, EQUIPMENT_STAGES.ACTIVE):
+            result = False
+            error = _ActivationError('equipmentAlreadyActivated', {'name': self._descriptor.userString})
+        elif self._stage and self._stage not in (EQUIPMENT_STAGES.READY, EQUIPMENT_STAGES.PREPARING, EQUIPMENT_STAGES.ACTIVE):
+            result = False
+            error = None
+        elif self._quantity <= 0:
+            result = False
+            error = None
+        else:
+            result = True
+            error = None
+        return (result, error)
+
+    def _soundUpdate(self, prevQuantity, quantity):
+        if self._stage == EQUIPMENT_STAGES.READY and self._prevStage in (EQUIPMENT_STAGES.DEPLOYING, EQUIPMENT_STAGES.UNAVAILABLE, EQUIPMENT_STAGES.COOLDOWN):
+            EquipmentSound.playReady()
+
+    def __nitroFull(self):
+        EquipmentSound.playReady()
+        self.__callbackID = None
+        return
+
+
 class _OrderItem(_TriggerItem):
 
     def deactivate(self):
@@ -294,6 +374,8 @@ def _triggerItemFactory(descriptor, quantity, stage, timeRemaining, tag = None):
         return _ArtilleryItem(descriptor, quantity, stage, timeRemaining, tag)
     if descriptor.name.startswith('bomber'):
         return _BomberItem(descriptor, quantity, stage, timeRemaining, tag)
+    if descriptor.name == 'afterburning':
+        return _AfterburningItem(descriptor, quantity, stage, timeRemaining, tag)
     return _TriggerItem(descriptor, quantity, stage, timeRemaining, tag)
 
 
@@ -314,7 +396,7 @@ def _getSupportedTag(descriptor):
 
 
 class EquipmentsController(object):
-    __slots__ = ('__eManager', '_order', '_equipments', '__readySndName', 'onEquipmentAdded', 'onEquipmentUpdated', 'onEquipmentMarkerShown', 'onEquipmentCooldownInPercent')
+    __slots__ = ('__eManager', '_order', '_equipments', 'onEquipmentAdded', 'onEquipmentUpdated', 'onEquipmentMarkerShown', 'onEquipmentCooldownInPercent')
 
     def __init__(self):
         super(EquipmentsController, self).__init__()
@@ -325,7 +407,6 @@ class EquipmentsController(object):
         self.onEquipmentCooldownInPercent = Event.Event(self.__eManager)
         self._order = []
         self._equipments = {}
-        self.__readySndName = 'combat_reserve'
 
     def __repr__(self):
         return 'EquipmentsController({0!r:s})'.format(self._equipments)
@@ -385,8 +466,6 @@ class EquipmentsController(object):
                 item = self._equipments[intCD]
                 item.update(quantity, stage, timeRemaining)
                 self.onEquipmentUpdated(intCD, item)
-                if item.getPrevStage() in (EQUIPMENT_STAGES.DEPLOYING, EQUIPMENT_STAGES.UNAVAILABLE, EQUIPMENT_STAGES.COOLDOWN) and item.getStage() == EQUIPMENT_STAGES.READY:
-                    avatar_getter.getSoundNotifications().play(self.__readySndName)
             else:
                 descriptor = vehicles.getDictDescr(intCD)
                 item = self.createItem(descriptor, quantity, stage, timeRemaining)

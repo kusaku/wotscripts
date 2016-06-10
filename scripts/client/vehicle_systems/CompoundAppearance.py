@@ -5,6 +5,7 @@ import math
 from AvatarInputHandler import ShakeReason
 import Math
 from VehicleAppearance import VehicleDamageState, _setupVehicleFashion, setupSplineTracks, VehicleAppearance
+from vehicle_systems.camouflages import getFootballEventCamouflageKind
 from vehicle_systems.components.CrashedTracks import CrashedTrackController
 from debug_utils import *
 from VehicleEffects import VehicleTrailEffects, VehicleExhaustEffects
@@ -434,11 +435,19 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
         self.__crashedTracksCtrl.addTrack(isLeft)
         if not self.__vehicle.isEnteringWorld and self.trackCrashAudition:
             self.trackCrashAudition.playCrashSound(isLeft)
+        extra = self.__vehicle.getRunningExtra('afterburning')
+        if extra:
+            extra.ceaseEmission(self.__vehicle)
 
     def delCrashedTrack(self, isLeft):
-        self.__crashedTracksCtrl.delTrack(isLeft)
+        tracksCtrl = self.__crashedTracksCtrl
+        tracksCtrl.delTrack(isLeft)
         if not self.__vehicle.isEnteringWorld and self.trackCrashAudition and self.__vehicle.isPlayerVehicle:
             self.trackCrashAudition.playCrashSound(isLeft, True)
+        if not (tracksCtrl.isLeftTrackBroken() or tracksCtrl.isRightTrackBroken()):
+            extra = self.__vehicle.getRunningExtra('afterburning')
+            if extra:
+                extra.startEmission(self.__vehicle)
 
     def __requestModelsRefresh(self):
         currentModelState = self.__currentDamageState.modelState
@@ -531,51 +540,47 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
         self.__effectsPlayer = EffectsListPlayer(effects[1], effects[0], showShockWave=vehicle.isPlayerVehicle, showFlashBang=vehicle.isPlayerVehicle, isPlayer=vehicle.isPlayerVehicle, showDecal=enableDecal, start=vehicle.position + Math.Vector3(0.0, -1.0, 0.0), end=vehicle.position + Math.Vector3(0.0, 1.0, 0.0), entity_id=vehicle.id)
         self.__effectsPlayer.play(self.__compoundModel, *modifs)
 
-    __SPORT_ACTIONS_CAMOUFLAGES = {'ussr:T62A_sport': (95, 94),
-     'usa:M24_Chaffee_GT': (82, 83)}
-
     def __getCamouflageParams(self, vehicle):
         vDesc = vehicle.typeDescriptor
         vehicleInfo = BigWorld.player().arena.vehicles.get(vehicle.id)
-        if vehicleInfo is not None:
-            camouflageIdPerTeam = VehicleAppearance.SPORT_ACTIONS_CAMOUFLAGES.get(vDesc.name)
-            if camouflageIdPerTeam is not None:
-                camouflageId = camouflageIdPerTeam[0] if vehicleInfo['team'] == 1 else camouflageIdPerTeam[1]
-                return (camouflageId, time.time(), 100.0)
-            camouflagePseudoname = vehicleInfo['events'].get('hunting', None)
-            if camouflagePseudoname is not None:
-                camouflIdsByNation = {0: {'black': 29,
-                     'gold': 30,
-                     'red': 31,
-                     'silver': 32},
-                 1: {'black': 25,
-                     'gold': 26,
-                     'red': 27,
-                     'silver': 28},
-                 2: {'black': 52,
-                     'gold': 50,
-                     'red': 51,
-                     'silver': 53},
-                 3: {'black': 48,
-                     'gold': 46,
-                     'red': 47,
-                     'silver': 49},
-                 4: {'black': 60,
-                     'gold': 58,
-                     'red': 59,
-                     'silver': 61},
-                 5: {'black': 56,
-                     'gold': 54,
-                     'red': 55,
-                     'silver': 57}}
-                camouflIds = camouflIdsByNation.get(vDesc.type.customizationNationID)
-                if camouflIds is not None:
-                    ret = camouflIds.get(camouflagePseudoname)
-                    if ret is not None:
-                        return (ret, time.time(), 100.0)
-        arenaType = BigWorld.player().arena.arenaType
-        camouflageKind = arenaType.vehicleCamouflageKind
-        return vDesc.camouflages[camouflageKind]
+        if vehicleInfo is not None and BigWorld.player().arena.bonusType in constants.ARENA_BONUS_TYPE.FOOTBALL_RANGE and bool(constants.ARENA_BONUS_TYPE_CAPS.get(BigWorld.player().arena.bonusType) & constants.ARENA_BONUS_TYPE_CAPS.FOOTBALL):
+            return (vDesc.camouflages[getFootballEventCamouflageKind(vehicleInfo['team'])][0], time.time(), 100.0)
+        else:
+            if vehicleInfo is not None:
+                camouflagePseudoname = vehicleInfo['events'].get('hunting', None)
+                if camouflagePseudoname is not None:
+                    camouflIdsByNation = {0: {'black': 29,
+                         'gold': 30,
+                         'red': 31,
+                         'silver': 32},
+                     1: {'black': 25,
+                         'gold': 26,
+                         'red': 27,
+                         'silver': 28},
+                     2: {'black': 52,
+                         'gold': 50,
+                         'red': 51,
+                         'silver': 53},
+                     3: {'black': 48,
+                         'gold': 46,
+                         'red': 47,
+                         'silver': 49},
+                     4: {'black': 60,
+                         'gold': 58,
+                         'red': 59,
+                         'silver': 61},
+                     5: {'black': 56,
+                         'gold': 54,
+                         'red': 55,
+                         'silver': 57}}
+                    camouflIds = camouflIdsByNation.get(vDesc.type.customizationNationID)
+                    if camouflIds is not None:
+                        ret = camouflIds.get(camouflagePseudoname)
+                        if ret is not None:
+                            return (ret, time.time(), 100.0)
+            arenaType = BigWorld.player().arena.arenaType
+            camouflageKind = arenaType.vehicleCamouflageKind
+            return vDesc.camouflages[camouflageKind]
 
     def __stopEffects(self):
         if self.__effectsPlayer is not None:

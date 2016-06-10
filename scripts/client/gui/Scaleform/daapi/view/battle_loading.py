@@ -230,7 +230,7 @@ class BattleLoading(LobbySubView, BaseBattleLoadingMeta, IArenaVehiclesControlle
 
     def __makeVisualTipVO(self, arenaDP, arena, tip = None):
         setting = g_settingsCore.options.getSetting(settings_constants.GAME.BATTLE_LOADING_INFO)
-        settingID = setting.getSettingID(isInSandbox=arena_info.isInSandboxBattle(arena), isFallout=arena_info.isFalloutBattle())
+        settingID = setting.getSettingID(isInSandbox=arena_info.isInSandboxBattle(arena), isFallout=arena_info.isFalloutBattle(), isEvent=arena_info.isEventBattle(arena))
         return {'settingID': settingID,
          'tipIcon': tip.icon if settingID == BattleLoadingTipSetting.OPTIONS.VISUAL else None,
          'arenaTypeID': arena_info.getArenaTypeID(),

@@ -14,8 +14,7 @@ from gui.battle_results.VehicleProgressCache import g_vehicleProgressCache
 from gui.battle_results.VehicleProgressHelper import VehicleProgressHelper, PROGRESS_ACTION
 from gui.prb_control.dispatcher import g_prbLoader
 from gui.shared.event_bus import EVENT_BUS_SCOPE
-from gui.shared.event_dispatcher import showResearchView, showPersonalCase, showBattleResultsFromData
-from gui.shared.notifications import NotificationPriorityLevel
+from gui.shared.event_dispatcher import showResearchView, showPersonalCase, showBattleResultsFromData, runTutorialChain
 from gui.shared.utils.functions import getArenaSubTypeName
 from gui.Scaleform.daapi.view.fallout_info_panel_helper import getCosts
 import nations
@@ -27,7 +26,7 @@ from debug_utils import LOG_DEBUG
 from helpers import i18n, time_utils
 from adisp import async, process
 from CurrentVehicle import g_currentVehicle
-from constants import ARENA_BONUS_TYPE, ARENA_GUI_TYPE, IGR_TYPE, EVENT_TYPE, FINISH_REASON as FR, FLAG_ACTION, TEAMS_IN_ARENA
+from constants import ARENA_BONUS_TYPE, ARENA_GUI_TYPE, IGR_TYPE, EVENT_TYPE, FINISH_REASON as FR, FLAG_ACTION
 from dossiers2.custom.records import RECORD_DB_IDS, DB_ID_TO_RECORD
 from dossiers2.ui import achievements
 from dossiers2.ui.achievements import ACHIEVEMENT_TYPE, MARK_ON_GUN_RECORD, MARK_OF_MASTERY_RECORD
@@ -80,7 +79,6 @@ UNKNOWN_VEHICLE_NAME_VALUE = '#ingame_gui:players_panel/unknown_vehicle'
 ARENA_TYPE = '#arenas:type/{0}/name'
 ARENA_SPECIAL_TYPE = '#menu:loading/battleTypes/{0}'
 VEHICLE_ICON_FILE = '../maps/icons/vehicle/{0}.png'
-VEHICLE_ICON_FALLOUT_FILE = '../maps/icons/vehicle/falloutBattleResults/{0}.png'
 VEHICLE_ICON_SMALL_FILE = '../maps/icons/vehicle/small/{0}.png'
 VEHICLE_NO_IMAGE_FILE_NAME = 'noImage'
 ARENA_SCREEN_FILE = '../maps/icons/map/stats/%s.png'
@@ -344,6 +342,8 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
         return
 
     def _dispose(self):
+        if self.__isFootballEvent and not AccountSettings.getSettings('FootballCustTriggerShown') and g_currentVehicle.getViewState().isCustomizationEnabled():
+            runTutorialChain('Football_customization')
         self.dataProvider.destroy()
         self.removeListener(events.LobbySimpleEvent.PREMIUM_BOUGHT, self.__onPremiumBought)
         self.removeListener(events.HideWindowEvent.HIDE_BATTLE_RESULT_WINDOW, self.__onWindowClose, scope=EVENT_BUS_SCOPE.LOBBY)
@@ -378,7 +378,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
                 self.__playersNameCache[playerDBID] = playerNameRes
         return playerNameRes
 
-    def __getVehicleData(self, vehicleCompDesc):
+    def __getVehicleData(self, vehicleCompDesc, team = None):
         vehicleName = i18n.makeString(UNKNOWN_VEHICLE_NAME_VALUE)
         vehicleShortName = i18n.makeString(UNKNOWN_VEHICLE_NAME_VALUE)
         vehicleIcon = VEHICLE_ICON_FILE.format(VEHICLE_NO_IMAGE_FILE_NAME)
@@ -389,11 +389,12 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
             vehicleName = vehicle.userName
             vehicleShortName = vehicle.shortUserName
             nameReplaced = vehicle.name.replace(':', '-')
-            if vehicle.isEvent:
-                vehicleIcon = VEHICLE_ICON_FALLOUT_FILE.format(nameReplaced)
+            if team is not None and vehicle.isEvent:
+                vehicleIcon = VEHICLE_ICON_FILE.format(nameReplaced + '_' + str(team))
+                vehicleIconSmall = VEHICLE_ICON_SMALL_FILE.format(nameReplaced + '_' + str(team))
             else:
                 vehicleIcon = vehicle.icon
-            vehicleIconSmall = vehicle.iconSmall
+                vehicleIconSmall = vehicle.iconSmall
             nation = vehicle.nationID
         return (vehicleName,
          vehicleShortName,
@@ -535,7 +536,8 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
                 valueFormatted = node.get(key, '')
             if isSelf and selfKey is not None:
                 key = selfKey
-            result.append({'label': i18n.makeString(STATS_KEY_BASE.format(key)),
+            label = i18n.makeString(STATS_KEY_BASE.format(key))
+            result.append({'label': label,
              'value': valueFormatted})
 
         return result
@@ -1057,6 +1059,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
         valsStr = makeHtmlString('html_templates:lobby/battle_results', 'tooltip_params_style', {'text': i18n.makeString(BATTLE_RESULTS.COMMON_TOOLTIP_PARAMS_VAL)})
         bots = commonData.get('bots', {})
         details = []
+        enemyTeam = 3 - pCommonData['team']
         for techniquesGroup, enemiesGroup, basesGroup in self.__buildEfficiencyDataSource(pData, pCommonData, playersData, commonData):
             enemies = []
             for (vId, vIdx), iInfo in enemiesGroup:
@@ -1074,7 +1077,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
                 if vehsData:
                     vInfo = vehsData[0]
                     deathReason = vInfo.get('deathReason', -1)
-                _, result['vehicleName'], _, result['tankIcon'], _ = self.__getVehicleData(vIntCD)
+                _, result['vehicleName'], _, result['tankIcon'], _ = self.__getVehicleData(vIntCD, enemyTeam)
                 result['deathReason'] = deathReason
                 result['spotted'] = iInfo.get('spotted', 0)
                 result['piercings'] = iInfo.get('piercings', 0)
@@ -1229,7 +1232,23 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
                 return i18n.makeString(formatter.format(''.join([str(finishReason), str(status)])), **kwargs)
             return i18n.makeString(formatter.format(finishReason))
 
-        if bonusType == ARENA_BONUS_TYPE.FORT_BATTLE:
+        if self.__isFootballEvent:
+            _frFormatter = lambda : ''
+            if status == 'tie':
+                if finishReason != FR.TECHNICAL:
+                    commonDataOutput['resultShortStr'] = 'football_tie'
+                else:
+                    status = 'lose'
+                    commonDataOutput['resultShortStr'] = 'football_%s_%s' % (str(playerTeam), status)
+                    _frFormatter = lambda : _finishReasonFormatter(FINISH_REASON)
+            else:
+                commonDataOutput['resultShortStr'] = 'football_%s_%s' % (str(playerTeam), status)
+                if commonData['footballScore'][0] == commonData['footballScore'][1]:
+                    if winnerTeam == playerTeam:
+                        _frFormatter = lambda : BATTLE_RESULTS.FINISH_FOOTBALL_REASON_WIN
+                    else:
+                        _frFormatter = lambda : BATTLE_RESULTS.FINISH_FOOTBALL_REASON_LOSE
+        elif bonusType == ARENA_BONUS_TYPE.FORT_BATTLE:
             fortBuilding = avatarData.get('fortBuilding', {})
             buildTypeID, buildTeam = fortBuilding.get('buildTypeID'), fortBuilding.get('buildTeam')
             if status == 'tie':
@@ -1279,7 +1298,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
             vehsData.append({'tankIcon': RES_ICONS.MAPS_ICONS_LIBRARY_FALLOUTVEHICLESALL})
         for vehTypeCompDescr, data in pData:
             curVeh = {}
-            vehicleName, _, curVeh['tankIcon'], _, nation = self.__getVehicleData(vehTypeCompDescr)
+            vehicleName, _, curVeh['tankIcon'], _, nation = self.__getVehicleData(vehTypeCompDescr, data['team'])
             killerID = data.get('killerID', 0)
             curVeh['killerID'] = killerID
             deathReason = data.get('deathReason', -1)
@@ -1304,6 +1323,9 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
                     curVeh['killerClanNameStr'], curVeh['killerRegionNameStr'] = ('', '')
             else:
                 curVeh['vehicleStateStr'] = BATTLE_RESULTS.COMMON_VEHICLESTATE_ALIVE
+            if self.__isFootballEvent:
+                curVeh['vehicleStateStr'] = ''
+                curVeh['killerID'] = 0
             vehNames.append(vehicleName)
             vehsData.append(curVeh)
 
@@ -1419,10 +1441,20 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
               'victory': enemyVictory,
               'tooltip': tooltipText,
               'specialStatusStr': enemiesSpecialStatus}]
+        if self.__isFootballEvent:
+            allyPossession, enemyPossession = self.__getAllyEnemyTuple(commonData['zonePercentage'], playerTeam == 2)
+            commonDataOutput['victoryScore'] = [{'ballHanding': '%d%%' % round(allyPossession * 100),
+              'isFootballMode': self.__isFootballEvent,
+              'ballHandingDescr': BATTLE_RESULTS.FOOTBALL_RETENTIONONALLYSIDE}, {'ballHanding': '%d%%' % round(enemyPossession * 100),
+              'isFootballMode': self.__isFootballEvent,
+              'ballHandingDescr': BATTLE_RESULTS.FOOTBALL_RETENTIONONENEMYSIDE}]
         isInfluencePointsAvailable = True
         teamResource = 0
         teamInfluence = 0
-        processSquads = bonusType in (ARENA_BONUS_TYPE.REGULAR, ARENA_BONUS_TYPE.FALLOUT_MULTITEAM, ARENA_BONUS_TYPE.FALLOUT_CLASSIC)
+        processSquads = bonusType in (ARENA_BONUS_TYPE.REGULAR,
+         ARENA_BONUS_TYPE.FALLOUT_MULTITEAM,
+         ARENA_BONUS_TYPE.FALLOUT_CLASSIC,
+         ARENA_BONUS_TYPE.EVENT_BATTLES)
         for pId, pInfo in playersData.iteritems():
             rawVehsData = self.dataProvider.getVehiclesData(pId)
 
@@ -1492,13 +1524,13 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
                 vehs.append({'label': i18n.makeString(BATTLE_RESULTS.ALLVEHICLES),
                  'icon': RES_ICONS.MAPS_ICONS_LIBRARY_FALLOUTVEHICLESALL})
                 for vInfo in vehsData:
-                    _, vehicleName, tankIcon, _, nation = self.__getVehicleData(vInfo.get('typeCompDescr', None))
+                    _, vehicleName, tankIcon, _, nation = self.__getVehicleData(vInfo.get('typeCompDescr', None), team)
                     vehs.append({'label': vehicleName,
                      'icon': tankIcon,
                      'flag': nations.NAMES[nation]})
 
             else:
-                row['vehicleFullName'], row['vehicleName'], tankIcon, row['tankIcon'], _ = self.__getVehicleData(vInfo.get('typeCompDescr', None))
+                row['vehicleFullName'], row['vehicleName'], tankIcon, row['tankIcon'], _ = self.__getVehicleData(vInfo.get('typeCompDescr', None), team)
                 row['vehicleCD'] = vInfo.get('typeCompDescr', None)
                 vehs.append({'icon': tankIcon})
             row['vehicles'] = vehs
@@ -1573,6 +1605,22 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
              'region': playerRegion,
              'igrType': playerIgrType}
             row['playerNamePosition'] = playerNamePosition
+            if self.__isFootballEvent:
+                goals = vInfo.get('numGoals', 0)
+                autogoals = vInfo.get('numAutoGoals', 0)
+                footballAssists = vInfo.get('numAssists', 0)
+                footballGoals = None
+                if goals > 0 and autogoals > 0:
+                    footballGoals = '%s %s' % (text_styles.neutral(str(goals)), text_styles.error(autogoals))
+                elif goals > 0:
+                    footballGoals = text_styles.neutral(str(goals))
+                elif autogoals > 0:
+                    footballGoals = text_styles.error(str(autogoals))
+                row['footballGoals'] = footballGoals
+                row['footballGoalsSortValue'] = goals
+                row['footballAssists'] = footballAssists
+                row['vehicleStateStr'] = ''
+                row['killerID'] = 0
             if self.__isFallout:
                 flagActions = totalStatValues['flagActions']
                 row['falloutResourcePoints'] = totalStatValues['resourceAbsorbed']
@@ -1824,6 +1872,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
             arenaBonusType = self.dataProvider.getArenaBonusType()
             arenaGUIType = self.dataProvider.getArenaGuiType()
             self.__isFallout = arenaGUIType in ARENA_GUI_TYPE.FALLOUT_RANGE
+            self.__isFootballEvent = arenaGUIType == ARENA_GUI_TYPE.EVENT_BATTLES
             teams = {}
             for pInfo in playersData.itervalues():
                 team = pInfo['team']
@@ -1879,6 +1928,9 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
                     falloutMode = 'points'
                 else:
                     falloutMode = 'flags'
+            commonDataOutput['footballMode'] = self.__isFootballEvent
+            ally, enemy = self.__getAllyEnemyTuple(commonData['footballScore'], personalCommonData.get('team') == 2)
+            commonDataOutput['footballScore'] = '{}:{}'.format(ally, enemy)
             commonDataOutput['falloutMode'] = falloutMode
             commonDataOutput['wasInBattle'] = self.dataProvider.wasInBattle(getAccountDatabaseID())
             if isMultiTeamMode:
@@ -2071,6 +2123,13 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
                 premSum += int(round(xpCell * premXpFactor))
 
         return premSum
+
+    def __getAllyEnemyTuple(self, data, condition):
+        if condition:
+            enemy, ally = data
+        else:
+            ally, enemy = data
+        return (ally, enemy)
 
     def __onWindowClose(self, event):
         self.onWindowClose()

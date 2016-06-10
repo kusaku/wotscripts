@@ -335,6 +335,11 @@ class AvatarInputHandler(CallbackDelayer):
         self.__identifySPG()
         self.setReloading(-1)
 
+    def resetDirection(self, force = False):
+        self.onControlModeChanged('arcade', force=force)
+        arcadeMode = self.__ctrls['arcade']
+        arcadeMode.camera.setToVehicleDirection()
+
     def setKillerVehicleID(self, killerVehicleID):
         self.__killerVehicleID = killerVehicleID
 
@@ -407,7 +412,8 @@ class AvatarInputHandler(CallbackDelayer):
         return
 
     def onControlModeChanged(self, eMode, **args):
-        if not self.__isArenaStarted and eMode != 'postmortem':
+        force = args.get('force', False)
+        if eMode != 'postmortem' and not self.__isArenaStarted and not force:
             return
         else:
             player = BigWorld.player()

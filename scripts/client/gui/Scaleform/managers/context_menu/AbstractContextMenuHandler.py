@@ -41,11 +41,12 @@ class AbstractContextMenuHandler(object):
         return
 
     @classmethod
-    def _makeItem(cls, optId, optLabel = None, optInitData = None, optSubMenu = None):
+    def _makeItem(cls, optId, optLabel = None, optInitData = None, optSubMenu = None, labelColor = 9868935):
         return {'id': optId,
          'label': optLabel,
          'initData': optInitData,
-         'submenu': optSubMenu}
+         'submenu': optSubMenu,
+         'labelColor': labelColor}
 
     def _makeSeparator(self):
         return self._makeItem(_SEPARATOR_ID)

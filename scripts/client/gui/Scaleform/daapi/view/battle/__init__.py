@@ -1,6 +1,5 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/battle/__init__.py
 from account_helpers.settings_core import g_settingsCore
-from debug_utils import LOG_ERROR
 AMMO_ICON_PATH = '../maps/icons/ammopanel/battle_ammo/%s'
 NO_AMMO_ICON_PATH = '../maps/icons/ammopanel/battle_ammo/NO_%s'
 COMMAND_AMMO_CHOICE_MASK = 'CMD_AMMO_CHOICE_{0:d}'
@@ -27,10 +26,12 @@ def getColorValue(schemeName, csManager):
     return (int(rgba[0]) << 16) + (int(rgba[1]) << 8) + (int(rgba[2]) << 0)
 
 
-def getHTMLString(colorScheme, csManager):
+def getHTMLString(colorScheme, csManager, addNewLine = True):
     color = getColorValue(colorScheme, csManager)
     if color:
-        result = "<font color='#{0:06x}'>%s</font><br/>".format(color)
+        result = "<font color='#{0:06x}'>%s</font>".format(color)
     else:
-        result = '<font>%s</font><br/>'
+        result = '<font>%s</font>'
+    if addNewLine:
+        result += '<br/>'
     return result

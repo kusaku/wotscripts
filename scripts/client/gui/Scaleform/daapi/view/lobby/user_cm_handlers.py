@@ -5,6 +5,8 @@ from debug_utils import LOG_DEBUG
 from gui.clans.clan_helpers import showClanInviteSystemMsg
 from gui.clans.contexts import CreateInviteCtx
 from gui.prb_control.settings import PREBATTLE_ACTION_NAME
+from gui.server_events import g_eventsCache
+from gui.shared.formatters import text_styles
 from helpers import i18n
 from gui import SystemMessages
 from gui.clans.clan_controller import g_clanCtrl
@@ -39,6 +41,7 @@ class USER(object):
     SET_MUTED = 'setMuted'
     UNSET_MUTED = 'unsetMuted'
     CREATE_SQUAD = 'createSquad'
+    CREATE_EVENT_SQUAD = 'createEventSquad'
     INVITE = 'invite'
     REQUEST_FRIENDSHIP = 'requestFriendship'
     VEHICLE_INFO = 'vehicleInfoEx'
@@ -134,6 +137,9 @@ class BaseUserCMHandler(AbstractContextMenuHandler, EventSystemEntity):
     def createSquad(self):
         self.prbDispatcher.doSelectAction(PrebattleAction(PREBATTLE_ACTION_NAME.SQUAD, accountsToInvite=(self.databaseID,)))
 
+    def createEventSquad(self):
+        self.prbDispatcher.doSelectAction(PrebattleAction(PREBATTLE_ACTION_NAME.EVENT_SQUAD, accountsToInvite=(self.databaseID,)))
+
     def invite(self):
         user = self.usersStorage.getUser(self.databaseID)
         for func in self.prbDispatcher.getFunctionalCollection().getIterator():
@@ -161,6 +167,7 @@ class BaseUserCMHandler(AbstractContextMenuHandler, EventSystemEntity):
          USER.SET_MUTED: 'setMuted',
          USER.UNSET_MUTED: 'unsetMuted',
          USER.CREATE_SQUAD: 'createSquad',
+         USER.CREATE_EVENT_SQUAD: 'createEventSquad',
          USER.INVITE: 'invite',
          USER.REQUEST_FRIENDSHIP: 'requestFriendship'}
 
@@ -229,6 +236,8 @@ class BaseUserCMHandler(AbstractContextMenuHandler, EventSystemEntity):
         if not isIgnored and not self.isSquadCreator():
             canCreate = self.prbDispatcher.getFunctionalCollection().canCreateSquad()
             options.append(self._makeItem(USER.CREATE_SQUAD, MENU.contextmenu(USER.CREATE_SQUAD), optInitData={'enabled': canCreate}))
+            if g_eventsCache.isEventEnabled():
+                options.append(self._makeItem(USER.CREATE_EVENT_SQUAD, MENU.contextmenu(USER.CREATE_EVENT_SQUAD), optInitData={'enabled': canCreate}, labelColor=13347959))
         return options
 
     def _addPrebattleInfo(self, options, userCMInfo):

@@ -254,13 +254,17 @@ class _EventsCache(object):
     def getEventBattles(self):
         battles = self.__getEventBattles()
         if len(battles):
-            return EventBattles(battles.get('vehicleTags', set()), battles.get('vehicles', []), bool(battles.get('enabled', 0)), battles.get('arenaTypeID'))
+            return EventBattles(battles.get('vehicleTags', set()), battles.get('vehicles', []), bool(battles.get('enabled', 0)), battles.get('arenaTypeID'), battles.get('dueDate'))
         else:
-            return EventBattles(set(), [], 0, None)
+            return EventBattles(set(), [], False, None, None)
             return None
 
     def isEventEnabled(self):
-        return len(self.__getEventBattles()) > 0
+        battles = self.__getEventBattles()
+        return bool(battles.get('enabled', 0)) and len(self.getEventVehicles()) > 0
+
+    def getEventDueDate(self):
+        return self.getEventBattles().dueDate
 
     def isGasAttackEnabled(self):
         return len(self.__getGasAttack()) > 0
@@ -268,7 +272,7 @@ class _EventsCache(object):
     def getEventVehicles(self):
         from gui.shared import g_itemsCache
         result = []
-        for v in g_eventsCache.getEventBattles().vehicles:
+        for v in self.getEventBattles().vehicles:
             item = g_itemsCache.items.getItemByCD(v)
             if item.isInInventory:
                 result.append(item)

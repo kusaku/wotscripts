@@ -64,6 +64,26 @@ def readSwitchToRandomSection(xmlCtx, section, flags, conditions):
     return effects.SimpleEffect(effects.EFFECT_TYPE.ENTER_QUEUE, conditions=conditions)
 
 
+def readSaveAccountSettingSection(xmlCtx, section, _, conditions):
+    settingID = sub_parsers.parseID(xmlCtx, section, 'Specify a setting ID')
+    return effects.HasTargetEffect(settingID, effects.EFFECT_TYPE.SAVE_ACCOUNT_SETTING, conditions=conditions)
+
+
+def readTutorialSettingSection(xmlCtx, section, flags):
+    settingID = sub_parsers.parseID(xmlCtx, section, 'Specify a setting ID')
+    settingName = None
+    if 'setting-name' in section.keys():
+        settingName = _xml.readString(xmlCtx, section, 'setting-name')
+    else:
+        _xml.raiseWrongXml(xmlCtx, section.name, 'Specify a setting name')
+    settingValue = None
+    if 'setting-value' in section.keys():
+        settingValue = _xml.readBool(xmlCtx, section, 'setting-value')
+    else:
+        _xml.raiseWrongXml(xmlCtx, section.name, 'Specify a setting value')
+    return chapter.TutorialSetting(settingID, settingName, settingValue)
+
+
 def _readBonusSection(xmlCtx, section, content):
     bonusSec = _xml.getSubsection(xmlCtx, section, 'bonus')
     content['bonusValue'] = translation(_xml.readString(xmlCtx, bonusSec, 'value'))

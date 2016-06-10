@@ -343,8 +343,8 @@ class VehiclesBonus(SimpleBonus):
     def getVehicles(self):
         result = []
         if self._value is not None:
-            for intCD, vehInfo in self._value.iteritems():
-                item = g_itemsCache.items.getItemByCD(intCD)
+            for vehDescr, vehInfo in self._value.iteritems():
+                item = g_itemsCache.items.getItemByCD(vehicles.getVehicleType(vehDescr).compactDescr)
                 if item is not None:
                     result.append((item, vehInfo))
 

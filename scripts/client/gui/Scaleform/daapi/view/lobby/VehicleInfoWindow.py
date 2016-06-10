@@ -43,9 +43,10 @@ class VehicleInfoWindow(VehicleInfoMeta):
              'vehicleNation': vehicle.nationID,
              'vehicleElite': vehicle.isElite,
              'vehicleType': vehicle.type,
-             'VehicleInfoPropsData': [ {'name': n,
+             'vehicleInfoPropsData': [ {'name': n,
                                       'value': v} for n, v in paramsList ],
-             'VehicleInfoBaseData': params['base'],
-             'VehicleInfoCrewData': tankmenParams}
+             'vehicleInfoBaseData': params['base'],
+             'vehicleInfoCrewData': tankmenParams,
+             'flagVisible': not vehicle.isEvent}
             self.as_setVehicleInfoS(info)
             return

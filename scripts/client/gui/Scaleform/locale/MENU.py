@@ -134,6 +134,8 @@ class MENU(object):
     LOADING_BATTLETYPES_DESC_13 = '#menu:loading/battleTypes/desc/13'
     LOADING_BATTLETYPES_14 = '#menu:loading/battleTypes/14'
     LOADING_BATTLETYPES_DESC_14 = '#menu:loading/battleTypes/desc/14'
+    LOADING_BATTLETYPES_15 = '#menu:loading/battleTypes/15'
+    LOADING_BATTLETYPES_DESC_15 = '#menu:loading/battleTypes/desc/15'
     LOADING_TEAM1 = '#menu:loading/team1'
     LOADING_TEAM2 = '#menu:loading/team2'
     LOADING_TEAMS_ALLIES = '#menu:loading/teams/allies'
@@ -474,6 +476,7 @@ class MENU(object):
     DESCRIPTIONS_SHELLFULL = '#menu:descriptions/shellFull'
     HEADERBUTTONS_BTNLABEL_INSQUAD = '#menu:headerButtons/btnLabel/inSquad'
     HEADERBUTTONS_BTNLABEL_CREATESQUAD = '#menu:headerButtons/btnLabel/createSquad'
+    HEADERBUTTONS_BTNLABEL_CREATEEVENTSQUAD = '#menu:headerButtons/btnLabel/createEventSquad'
     HEADERBUTTONS_BTNLABEL_PREMIUM = '#menu:headerButtons/btnLabel/premium'
     HEADERBUTTONS_DOLABEL_PREMIUM = '#menu:headerButtons/doLabel/premium'
     HEADERBUTTONS_BTNLABEL_BUY_GOLD = '#menu:headerButtons/btnLabel/buy_gold'
@@ -514,6 +517,10 @@ class MENU(object):
     HEADERBUTTONS_BATTLE_TYPES_HISTORICALBATTLESLEAVE = '#menu:headerButtons/battle/types/historicalBattlesLeave'
     HEADERBUTTONS_BATTLE_TYPES_BATTLETUTORIAL = '#menu:headerButtons/battle/types/battleTutorial'
     HEADERBUTTONS_BATTLE_TYPES_FALLOUT = '#menu:headerButtons/battle/types/fallout'
+    HEADERBUTTONS_BATTLE_TYPES_SIMPLESQUAD = '#menu:headerButtons/battle/types/simpleSquad'
+    HEADERBUTTONS_BATTLE_TYPES_SIMPLESQUAD_BODY = '#menu:headerButtons/battle/types/simpleSquad/body'
+    HEADERBUTTONS_BATTLE_TYPES_EVENTSQUAD = '#menu:headerButtons/battle/types/eventSquad'
+    HEADERBUTTONS_BATTLE_TYPES_EVENTSQUAD_BODY = '#menu:headerButtons/battle/types/eventSquad/body'
     HEADERBUTTONS_BATTLE_AVAILABLESINCE = '#menu:headerButtons/battle/availableSince'
     HEADERBUTTONS_BATTLE_AVAILABLESINCESOON = '#menu:headerButtons/battle/availableSinceSoon'
     HEADERBUTTONS_BATTLE_AVAILABLEUNTIL = '#menu:headerButtons/battle/availableUntil'
@@ -528,6 +535,7 @@ class MENU(object):
     HEADERBUTTONS_BATTLE_MENU_BATTLE_SESSION = '#menu:headerButtons/battle/menu/battle_session'
     HEADERBUTTONS_BATTLE_MENU_UNIT = '#menu:headerButtons/battle/menu/unit'
     HEADERBUTTONS_BATTLE_MENU_HISTORICAL = '#menu:headerButtons/battle/menu/historical'
+    HEADERBUTTONS_BATTLE_MENU_EVENT = '#menu:headerButtons/battle/menu/event'
     HEADERBUTTONS_HANGAR = '#menu:headerButtons/hangar'
     HEADERBUTTONS_SHOP = '#menu:headerButtons/shop'
     HEADERBUTTONS_BATTLE = '#menu:headerButtons/battle'
@@ -547,6 +555,8 @@ class MENU(object):
     HEADERBUTTONS_FIGHTBTN_TOOLTIP_FALLOUTVEHMIN_BODY = '#menu:headerButtons/fightBtn/tooltip/falloutVehMin/body'
     HEADERBUTTONS_FIGHTBTN_TOOLTIP_SANDBOX_INVALID_HEADER = '#menu:headerButtons/fightBtn/tooltip/sandbox/invalid/header'
     HEADERBUTTONS_FIGHTBTN_TOOLTIP_SANDBOX_INVALID_LEVEL_BODY = '#menu:headerButtons/fightBtn/tooltip/sandbox/invalid/level/body'
+    HEADERBUTTONS_FIGHTBTN_TOOLTIP_FOOTBALL_VEHICLENOTSUPPORTED_HEADER = '#menu:headerButtons/fightBtn/tooltip/football/vehicleNotSupported/header'
+    HEADERBUTTONS_FIGHTBTN_TOOLTIP_FOOTBALL_VEHICLENOTSUPPORTED_BODY = '#menu:headerButtons/fightBtn/tooltip/football/vehicleNotSupported/body'
     PVESANDBOX_QUEUE_TITLE = '#menu:pveSandbox/queue/title'
     PVESANDBOX_QUEUE_UNITS = '#menu:pveSandbox/queue/units'
     PVESANDBOX_QUEUE_MESSAGE = '#menu:pveSandbox/queue/message'
@@ -1219,6 +1229,7 @@ class MENU(object):
     CONTEXTMENU_GIVELEADERSHIP = '#menu:contextMenu/giveLeadership'
     CONTEXTMENU_TAKELEADERSHIP = '#menu:contextMenu/takeLeadership'
     CONTEXTMENU_CREATESQUAD = '#menu:contextMenu/createSquad'
+    CONTEXTMENU_CREATEEVENTSQUAD = '#menu:contextMenu/createEventSquad'
     CONTEXTMENU_INVITE = '#menu:contextMenu/invite'
     CONTEXTMENU_APPEAL = '#menu:contextMenu/appeal'
     CONTEXTMENU_OFFEND = '#menu:contextMenu/offend'
@@ -1456,6 +1467,9 @@ class MENU(object):
     AWARDWINDOW_TELECOMAWARD_VEHICLES = '#menu:awardWindow/telecomAward/vehicles'
     AWARDWINDOW_TELECOMAWARD_SUBDESCRIPTION = '#menu:awardWindow/telecomAward/subdescription'
     AWARDWINDOW_TELECOMAWARD_BUTTON_LABEL = '#menu:awardWindow/telecomAward/button/label'
+    AWARDWINDOW_FOOTBALLTOURNAMENTAWARD_TITLE = '#menu:awardWindow/footballTournamentAward/title'
+    AWARDWINDOW_FOOTBALLTOURNAMENTAWARD_HEADER = '#menu:awardWindow/footballTournamentAward/header'
+    AWARDWINDOW_FOOTBALLTOURNAMENTAWARD_DESC = '#menu:awardWindow/footballTournamentAward/desc'
     REFERRALMANAGEMENTWINDOW_TITLE = '#menu:ReferralManagementWindow/title'
     REFERRALMANAGEMENTWINDOW_INFOHEADER_HAVENOTTANK = '#menu:ReferralManagementWindow/infoHeader/haveNotTank'
     REFERRALMANAGEMENTWINDOW_INFOHEADER_HAVETANK = '#menu:ReferralManagementWindow/infoHeader/haveTank'
@@ -1922,7 +1936,8 @@ class MENU(object):
      LOADING_BATTLETYPES_11,
      LOADING_BATTLETYPES_12,
      LOADING_BATTLETYPES_13,
-     LOADING_BATTLETYPES_14)
+     LOADING_BATTLETYPES_14,
+     LOADING_BATTLETYPES_15)
     REFERRALREFERRERINTROWINDOW_TEXTBLOCK_BODY_ENUM = (REFERRALREFERRERINTROWINDOW_TEXTBLOCK_BODY_INVITE_BLOCK, REFERRALREFERRERINTROWINDOW_TEXTBLOCK_BODY_SQUAD_BLOCK, REFERRALREFERRERINTROWINDOW_TEXTBLOCK_BODY_REFERRALS_BLOCK)
     TANKCAROUSEL_VEHICLESTATES_ENUM = (TANKCAROUSEL_VEHICLESTATES_BATTLE,
      TANKCAROUSEL_VEHICLESTATES_LOCKED,
@@ -1985,7 +2000,8 @@ class MENU(object):
      LOADING_BATTLETYPES_DESC_11,
      LOADING_BATTLETYPES_DESC_12,
      LOADING_BATTLETYPES_DESC_13,
-     LOADING_BATTLETYPES_DESC_14)
+     LOADING_BATTLETYPES_DESC_14,
+     LOADING_BATTLETYPES_DESC_15)
     PROFILE_STATS_BLOCKS_ENUM = (PROFILE_STATS_BLOCKS_COMMON,
      PROFILE_STATS_BLOCKS_BATTLEEFFECT,
      PROFILE_STATS_BLOCKS_CREDITS,
@@ -2113,6 +2129,7 @@ class MENU(object):
      CONTEXTMENU_GIVELEADERSHIP,
      CONTEXTMENU_TAKELEADERSHIP,
      CONTEXTMENU_CREATESQUAD,
+     CONTEXTMENU_CREATEEVENTSQUAD,
      CONTEXTMENU_INVITE,
      CONTEXTMENU_APPEAL,
      CONTEXTMENU_OFFEND,

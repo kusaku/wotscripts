@@ -187,7 +187,7 @@ class EngineAuditionWWISE(EngineAudition):
         self.stopSounds()
 
     def onEngineStart(self):
-        if SoundGroups.ENABLE_ENGINE_N_TRACKS:
+        if SoundGroups.ENABLE_ENGINE_N_TRACKS and not self.__engineSound.isPlaying(self.__event):
             if self.__engineSound is not None:
                 self.__engineSound.play(self.__event)
             if self.__movementSound is not None:

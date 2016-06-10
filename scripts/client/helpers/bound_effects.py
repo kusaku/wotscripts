@@ -24,7 +24,7 @@ class StaticSceneBoundEffects(object):
     def addNew(self, position, effectsList, keyPoints, callbackOnStop, **args):
         model = helpers.newFakeModel()
         model.position = position
-        BigWorld.addModel(model)
+        BigWorld.addModel(model, BigWorld.player().spaceID)
         dir = args.get('dir', None)
         if dir is not None:
             model.rotate(dir.yaw, (0.0, 1.0, 0.0))

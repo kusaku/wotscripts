@@ -236,6 +236,7 @@ class BattleArenaController(IArenaVehiclesController):
             for index, (vInfoVO, vStatsVO, viStatsVO) in enumerate(arenaDP.getTeamIterator(team)):
                 if not self._battleCtx.isObserver(vInfoVO.vehicleID):
                     fragCorrelation.addVehicle(team, vInfoVO.vehicleID, vInfoVO.vehicleType.getClassName(), vInfoVO.isAlive())
+                    fragCorrelation.addFrags(team, vStatsVO.frags)
                     if not vInfoVO.isAlive():
                         fragCorrelation.addKilled(team)
 
@@ -354,7 +355,8 @@ class BattleArenaController(IArenaVehiclesController):
             state = INVITE_DISABLED
         arenaUniqueID = getArenaUniqueID()
         for invite in self.prbInvites.getInvites():
-            if invite.type == PREBATTLE_TYPE.SQUAD and invite.isActive() and invite.isSameBattle(arenaUniqueID):
+            isAllowedInviteType = invite.type in (PREBATTLE_TYPE.SQUAD, PREBATTLE_TYPE.EVENT)
+            if isAllowedInviteType and invite.isActive() and invite.isSameBattle(arenaUniqueID):
                 if invite.creatorDBID == userDBID and invite.receiverDBID == currentAccountDBID and not invitesReceivingProhibited:
                     state = INVITE_RECEIVED
                 elif not inviteSendingProhibited and invite.creatorDBID == currentAccountDBID and userDBID == invite.receiverDBID:
@@ -513,9 +515,68 @@ class MultiteamBattleArenaController(BattleArenaController):
         return map(__pack, teamsList)
 
 
-def battleArenaControllerFactory(battleUI, isFalloutBattle = False, isMutlipleTeams = False):
+class FootballBattleArenaController(BattleArenaController):
+
+    def _updateTeamData(self, isEnemy, team, arenaDP, isFragsUpdate = True):
+        super(FootballBattleArenaController, self)._updateTeamData(isEnemy, team, arenaDP, isFragsUpdate)
+        if isFragsUpdate:
+            self._battleUI.setFootballGoalsData(self._getGoalsData(arenaDP))
+
+    def invalidateFootballPenaltyPoints(self, data):
+        """
+        :param data: dict, contains information of ball possession {'ballPossession': [team0, team1, team2]}
+        In overtime period mode data extends by information: 'penaltyPoints': [team0, team1, team2]
+        """
+        arenaDP = self._battleCtx.getArenaDP()
+        possiession_data = self._getPossessionData(arenaDP)
+        vo = {'ballPossessionTeam1': possiession_data[0],
+         'ballPossessionTeam2': possiession_data[1]}
+        self._battleUI.setFootballBallPossessionData(vo)
+
+    def _getPossessionData(self, arenaDP):
+        possessionPoints = arenaDP.getBallPossession()
+        possession_vals = list(possessionPoints) if possessionPoints is not None else [0, 0]
+        vals_sum = sum(possession_vals)
+        if vals_sum > 0:
+            for i, val in enumerate(possession_vals):
+                possession_vals[i] = round(float(val) * 100 / vals_sum)
+
+        return possession_vals
+
+    def _getGoalsData(self, arenaDP):
+        goals, enemyGoals = arenaDP.getScores()
+        goalsTimeLine = []
+        for vInfoVO, vStatsVO, viStatsVO in arenaDP.getAllVehiclesIterator():
+            for goalTime in viStatsVO.goalsTimeLine:
+                self.__insertItem(vInfoVO.player.name, goalTime, arenaDP.isEnemyTeam(vInfoVO.team), False, goalsTimeLine)
+
+            for goalTime in viStatsVO.autoGoalsTimeLine:
+                self.__insertItem(vInfoVO.player.name, goalTime, arenaDP.isEnemyTeam(vInfoVO.team), True, goalsTimeLine)
+
+        return {'goalsTeam1': goals,
+         'goalsTeam2': enemyGoals,
+         'goals': goalsTimeLine}
+
+    def __insertItem(self, playerName, time, isEnemy, isAutogoal, targetList):
+        idx = 0
+        for i, item in enumerate(targetList):
+            if item['time'] > time:
+                break
+            else:
+                idx += 1
+
+        targetList.insert(idx, {'playerName': playerName,
+         'time': time,
+         'isEnemy': isEnemy,
+         'isAutoGoal': isAutogoal})
+
+
+def battleArenaControllerFactory(battleUI, isFalloutBattle = False, isMutlipleTeams = False, isEvent = False):
     if isFalloutBattle:
         if isMutlipleTeams:
             return MultiteamBattleArenaController(battleUI)
         return FalloutBattleArenaController(battleUI)
-    return BattleArenaController(battleUI)
+    elif isEvent:
+        return FootballBattleArenaController(battleUI)
+    else:
+        return BattleArenaController(battleUI)

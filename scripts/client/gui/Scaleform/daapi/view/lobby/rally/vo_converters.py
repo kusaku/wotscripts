@@ -284,7 +284,7 @@ def _getSlotsData(unitIdx, unit, unitState, pInfo, slotsIter, app = None, levels
         else:
             isRequired = falloutBattleType == QUEUE_TYPE.FALLOUT_MULTITEAM
             slotLabel = makeSlotLabel(unitState, slotState, isPlayerCreator, vehCount, checkForVehicles, isRequired=isRequired)
-        if unit.isSquad() or unit.isFalloutSquad():
+        if unit.isSquad() or unit.isFalloutSquad() or unit.isEvent():
             playerStatus = getSquadPlayerStatus(slotState, player)
         else:
             playerStatus = getPlayerStatus(slotState, player)
@@ -347,6 +347,10 @@ def _getSlotsData(unitIdx, unit, unitState, pInfo, slotsIter, app = None, levels
                  'additionalMsg': additionalMsg,
                  'slotNotificationIconTooltip': slotNotificationIconTooltip,
                  'slotNotificationIcon': slotNotificationIcon})
+        if unit.isEvent():
+            eventVehicle = g_eventsCache.getEventVehicles()[0]
+            slot.update({'isVisibleAdtMsg': not playerStatus and player and player.isCurrentPlayer(),
+             'additionalMsg': text_styles.standard(i18n.makeString(MESSENGER.DIALOGS_EVENTSQUAD_SPORTVEHICLE, tankName=eventVehicle.userName))})
         if isFallout:
             vehiclesNotify = [None, None, None]
             selectedVehicles = [None, None, None]

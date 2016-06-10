@@ -5,7 +5,7 @@ import BigWorld
 from ConnectionManager import connectionManager
 from constants import ARENA_PERIOD as _PERIOD, ARENA_GUI_TYPE
 from gui.battle_control import event_dispatcher, arena_info
-from gui.battle_control.arena_info import isFalloutBattle
+from gui.battle_control.arena_info import isFalloutBattle, isEventBattle
 from gui.battle_control.arena_info.interfaces import IArenaPeriodController
 from gui.battle_control.battle_constants import COUNTDOWN_STATE
 from gui.battle_control.view_components import IViewComponentsController
@@ -38,6 +38,9 @@ class ITimersBar(object):
         raise NotImplementedError
 
     def hideCountdown(self, state, speed):
+        raise NotImplementedError
+
+    def populate(self):
         raise NotImplementedError
 
     def setWinConditionText(self, text):
@@ -155,7 +158,8 @@ class ArenaPeriodController(IArenaPeriodController, IViewComponentsController):
             if self._battleTimerUI is not None:
                 self._battleTimerUI.setTotalTime(getTimeLevel(totalTime), totalTime)
             if self._battleEndWarning is not None and self._battleEndWarning.isLoaded():
-                self._battleEndWarning.setCurrentTimeLeft(totalTime)
+                if not (isEventBattle() and self._battleCtx.getArenaDP().getPenaltyPoints() is not None):
+                    self._battleEndWarning.setCurrentTimeLeft(totalTime)
             return
 
     def _hideTotalTime(self):

@@ -856,6 +856,17 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                 replayCtrl.onLockTarget(2)
             self.soundNotifications.play('target_lost')
 
+    def onPreparingFootballPenalty2(self):
+        self.gunRotator.reset()
+        Vehicle.Vehicle.resetPenalty()
+        self.inputHandler.resetDirection(True)
+        self.cell.autoAim(0)
+        self.inputHandler.setAimingMode(False, AIMING_MODE.TARGET_LOCK)
+        self.gunRotator.clientMode = True
+        self.__autoAimVehID = 0
+        TriggersManager.g_manager.deactivateTrigger(TRIGGER_TYPE.AUTO_AIM_AT_VEHICLE)
+        Vehicle.Vehicle.respawnVehicle(self.playerVehicleID, self.getVehicleAttached().publicInfo.compDescr)
+
     def updateVehicleHealth(self, vehicleID, health, deathReasonID, isCrewActive, isRespawn):
         rawHealth = health
         health = max(0, health)
@@ -1223,6 +1234,8 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
 
     def onRoundFinished(self, winnerTeam, reason):
         LOG_DEBUG('onRoundFinished', winnerTeam, reason)
+        if self.arenaGuiType == constants.ARENA_GUI_TYPE.EVENT_BATTLES:
+            WWISE.WW_eventGlobal('ev_football_end_game')
 
     def onKickedFromArena(self, reasonCode):
         LOG_DEBUG('onKickedFromArena', reasonCode)
@@ -1771,6 +1784,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
         BattleReplay.g_replayCtrl.onClientReady()
         self.base.setClientReady()
         if self.arena.period == ARENA_PERIOD.BATTLE:
+            self.__prevArenaPeriod = ARENA_PERIOD.BATTLE
             self.__setIsOnArena(True)
         self.arena.onPeriodChange += self.__onArenaPeriodChange
         self.cell.autoAim(0)
@@ -2015,6 +2029,9 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
             return
 
     def __onArenaPeriodChange(self, period, periodEndTime, periodLength, periodAdditionalInfo):
+        if self.__prevArenaPeriod == ARENA_PERIOD.BATTLE and period == ARENA_PERIOD.PREBATTLE:
+            if not self.isObserver():
+                self.onPreparingFootballPenalty2()
         self.__setIsOnArena(period == ARENA_PERIOD.BATTLE)
         if period == ARENA_PERIOD.PREBATTLE and period > self.__prevArenaPeriod:
             LightManager.GameLights.startTicks()
@@ -2271,7 +2288,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
         self.__physicsMode = newMode
 
     def __isPlayerInSquad(self, vehicleId):
-        return self.arena is not None and self.arena.guiType == constants.ARENA_GUI_TYPE.RANDOM and g_sessionProvider.getArenaDP().isSquadMan(vID=vehicleId)
+        return self.arena is not None and (self.arena.guiType == constants.ARENA_GUI_TYPE.RANDOM or self.arena.guiType == constants.ARENA_GUI_TYPE.EVENT_BATTLES) and g_sessionProvider.getArenaDP().isSquadMan(vID=vehicleId)
 
 
 def preload(alist):

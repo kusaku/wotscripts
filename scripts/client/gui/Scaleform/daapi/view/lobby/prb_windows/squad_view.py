@@ -10,6 +10,7 @@ from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.game_control import getFalloutCtrl
 from gui.shared.formatters import text_styles
 from gui.Scaleform.locale.MESSENGER import MESSENGER
+from gui.Scaleform.locale.MENU import MENU
 from gui.prb_control.context import unit_ctx
 from gui.Scaleform.daapi.view.meta.SquadViewMeta import SquadViewMeta
 from gui.Scaleform.daapi.view.lobby.rally import vo_converters
@@ -17,6 +18,7 @@ from gui.prb_control.settings import CTRL_ENTITY_TYPE, REQUEST_TYPE, FUNCTIONAL_
 from gui.shared import events, EVENT_BUS_SCOPE
 from gui.shared.ItemsCache import g_itemsCache
 from gui.shared.formatters.ranges import toRomanRangeString
+from gui.shared.utils.functions import makeTooltip
 from gui.server_events import g_eventsCache
 from helpers import i18n, int2roman
 from gui.prb_control import settings
@@ -163,7 +165,8 @@ class SquadView(SquadViewMeta):
          'icoXPadding': iconXPadding,
          'icoYPadding': iconYPadding,
          'headerMessageText': headerMessageText,
-         'isVisibleHeaderMessage': isArtVisible}
+         'isVisibleHeaderMessage': isArtVisible,
+         'leaveSquadTooltip': TOOLTIPS.SQUADWINDOW_BUTTONS_LEAVESQUAD}
         self.as_setSimpleTeamSectionDataS(data)
 
     def _updateMembersData(self):
@@ -186,6 +189,29 @@ class SquadView(SquadViewMeta):
     def __handleSetPrebattleCoolDown(self, event):
         if event.requestID is REQUEST_TYPE.SET_PLAYER_STATE:
             self.as_setCoolDownForReadyButtonS(event.coolDown)
+
+
+class EventSquadView(SquadView):
+
+    def _updateHeader(self):
+        if g_eventsCache.isEventEnabled():
+            vehicle = g_eventsCache.getEventVehicles()[0]
+            tooltip = makeTooltip(i18n.makeString(TOOLTIPS.SQUADWINDOW_INFOICON_FOOTBALL_HEADER), i18n.makeString(TOOLTIPS.SQUADWINDOW_INFOICON_FOOTBALL_BODY, tankName=vehicle.userName))
+        else:
+            tooltip = ''
+        headerMessageText = text_styles.main(MESSENGER.DIALOGS_SQUADCHANNEL_BATTLETYPE) + '\n' + text_styles.main(MENU.HEADERBUTTONS_BATTLE_MENU_EVENT)
+        data = {'infoIconTooltip': tooltip,
+         'infoIconTooltipType': TOOLTIPS_CONSTANTS.COMPLEX,
+         'isVisibleInfoIcon': True,
+         'isVisibleHeaderIcon': True,
+         'headerIconSource': RES_ICONS.MAPS_ICONS_BATTLETYPES_64X64_EVENTSQUAD,
+         'icoXPadding': 9,
+         'icoYPadding': 3,
+         'headerMessageText': headerMessageText,
+         'isVisibleHeaderMessage': True,
+         'leaveSquadTooltip': TOOLTIPS.SQUADWINDOW_BUTTONS_LEAVEEVENTSQUAD,
+         'isFootballMode': True}
+        self.as_setSimpleTeamSectionDataS(data)
 
 
 class FalloutSquadView(SquadView):
@@ -222,9 +248,7 @@ class FalloutSquadView(SquadView):
         return
 
     def _updateRallyData(self):
-        functional = self.unitFunctional
-        data = vo_converters.makeUnitVO(functional, unitIdx=functional.getUnitIdx(), app=self.app)
-        self.as_updateRallyS(data)
+        super(FalloutSquadView, self)._updateRallyData()
         battleTypeName = text_styles.standard('#menu:headerButtons/battle/menu/fallout') + '\n' + i18n.makeString('#menu:headerButtons/battle/menu/fallout/%d' % self.__falloutCtrl.getBattleType())
         self.as_updateBattleTypeInfoS('', False)
         self.as_updateBattleTypeS(battleTypeName, True, False)

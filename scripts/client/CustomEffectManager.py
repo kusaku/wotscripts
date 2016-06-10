@@ -4,7 +4,7 @@ import math
 import material_kinds
 from CustomEffect import PixieCache
 from CustomEffect import EffectSettings
-from vehicle_systems.assembly_utility import Component
+from vehicle_systems.assembly_utility import Component, LinkDescriptor
 from vehicle_systems.tankStructure import TankNodeNames
 from AvatarInputHandler import mathUtils
 _ENABLE_VALUE_TRACKER = False
@@ -15,6 +15,7 @@ class CustomEffectManager(Component):
     _LEFT_TRACK = 1
     _RIGHT_TRACK = 2
     _DRAW_ORDER_IDX = 50
+    isNitroLink = LinkDescriptor()
 
     def __init__(self, vehicle, engineState):
         if _ENABLE_VALUE_TRACKER or _ENABLE_VALUE_TRACKER_ENGINE or _ENABLE_PIXIE_TRACKER:
@@ -68,6 +69,7 @@ class CustomEffectManager(Component):
                 self.__vt.addValue2('Pixie Count', PixieCache.pixiesCount)
             if _ENABLE_VALUE_TRACKER or _ENABLE_VALUE_TRACKER_ENGINE or _ENABLE_PIXIE_TRACKER:
                 self.__vt = None
+            self.isNitroLink = None
             return
 
     def enable(self, enable, settingsFlags = EffectSettings.SETTING_DUST):
@@ -122,6 +124,8 @@ class CustomEffectManager(Component):
         self.__variableArgs['engineLoad'] = self.__engineState.mode
         self.__variableArgs['engineStart'] = self.__engineState.starting
         self.__variableArgs['physicLoad'] = self.__engineState.physicLoad
+        if self.isNitroLink is not None:
+            self.__variableArgs['nitro'] = 1.0 if self.isNitroLink() else 0.0
         for effectSelector in self.__selectors:
             effectSelector.update(self.__variableArgs)
 
@@ -153,6 +157,7 @@ class CustomEffectManager(Component):
             self.__vt.addValue2('physicLoad', self.__engineState.physicLoad)
         if _ENABLE_PIXIE_TRACKER and self.__vehicle.isPlayerVehicle:
             self.__vt.addValue2('Pixie Count', PixieCache.pixiesCount)
+        return
 
     @staticmethod
     def __getScrollParams(trackScrolldelta, hasContact, matKindsUnderTrack, direction):

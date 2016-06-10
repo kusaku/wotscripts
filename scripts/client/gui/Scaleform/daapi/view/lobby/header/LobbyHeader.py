@@ -374,8 +374,20 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
             view = container.getView({POP_UP_CRITERIA.VIEW_ALIAS: VIEW_ALIAS.BATTLE_TYPE_SELECT_POPOVER})
         return view
 
+    def __getSquadTypeSelectPopover(self):
+        container = self.app.containerManager.getContainer(ViewTypes.WINDOW)
+        view = None
+        if container:
+            view = container.getView({POP_UP_CRITERIA.VIEW_ALIAS: VIEW_ALIAS.SQUAD_TYPE_SELECT_POPOVER})
+        return view
+
     def __closeBattleTypeSelectPopover(self):
         view = self.__getBattleTypeSelectPopover()
+        if view:
+            view.destroy()
+
+    def __closeSquadTypeSelectPopover(self):
+        view = self.__getSquadTypeSelectPopover()
         if view:
             view.destroy()
 
@@ -383,6 +395,15 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
         view = self.__getBattleTypeSelectPopover()
         if view:
             view.update()
+
+    def __updateSquadTypeSelectPopover(self):
+        view = self.__getSquadTypeSelectPopover()
+        if view:
+            view.update()
+
+    def __getEventTooltipData(self):
+        vehicle = g_eventsCache.getEventVehicles()[0]
+        return {makeTooltip(header=i18n.makeString(MENU.HEADERBUTTONS_FIGHTBTN_TOOLTIP_FOOTBALL_VEHICLENOTSUPPORTED_HEADER), body=i18n.makeString(MENU.HEADERBUTTONS_FIGHTBTN_TOOLTIP_FOOTBALL_VEHICLENOTSUPPORTED_BODY, tankName=vehicle.userName))}
 
     def __getFightBtnTooltipData(self, state):
         falloutCtrl = getFalloutCtrl()
@@ -422,8 +443,10 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
             return
         else:
             items = battle_selector_items.getItems()
+            suadItems = battle_selector_items.getSquadItems()
             state = self.prbDispatcher.getFunctionalState()
             selected = items.update(state)
+            squadSelected = suadItems.update(state)
             canDo, canDoMsg = self.prbDispatcher.canPlayerDoAction()
             playerInfo = self.prbDispatcher.getPlayerInfo()
             if selected.isInSquad(state):
@@ -433,17 +456,24 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
                 self.as_doDisableHeaderButtonS(self.BUTTONS.SQUAD, self.prbDispatcher.getFunctionalCollection().canCreateSquad())
             falloutCtrl = getFalloutCtrl()
             isFallout = falloutCtrl.isSelected()
+            isEvent = g_eventsCache.isEventEnabled()
             if isInSquad:
                 tooltip = TOOLTIPS.HEADER_SQUAD_MEMBER
+            elif isFallout:
+                tooltip = TOOLTIPS.HEADER_DOMINATIONSQUAD
+            elif isEvent:
+                tooltip = TOOLTIPS.HEADER_SQUAD_MEMBER
             else:
-                tooltip = TOOLTIPS.HEADER_DOMINATIONSQUAD if isFallout else TOOLTIPS.HEADER_SQUAD
-            self.as_updateSquadS(isInSquad, tooltip, TOOLTIP_TYPES.COMPLEX)
+                tooltip = TOOLTIPS.HEADER_SQUAD
+            self.as_updateSquadS(isInSquad, tooltip, TOOLTIP_TYPES.COMPLEX, isEvent)
             isFightBtnDisabled = not canDo or selected.isFightButtonForcedDisabled()
             if isFightBtnDisabled and not state.hasLockedState:
                 if state.isInPreQueue(queueType=constants.QUEUE_TYPE.SANDBOX) and canDoMsg == QUEUE_RESTRICTION.LIMIT_LEVEL:
                     self.as_setFightBtnTooltipS(self.__getSandboxTooltipData())
                 elif isFallout:
                     self.as_setFightBtnTooltipS(self.__getFightBtnTooltipData(canDoMsg))
+                elif isEvent and state.isInUnit(constants.PREBATTLE_TYPE.EVENT):
+                    self.as_setFightBtnTooltipS(self.__getEventTooltipData())
                 else:
                     self.as_setFightBtnTooltipS(None)
             else:
@@ -455,6 +485,10 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
                 self.__closeBattleTypeSelectPopover()
             else:
                 self.__updateBattleTypeSelectPopover()
+            if squadSelected.isDisabled():
+                self.__closeSquadTypeSelectPopover()
+            else:
+                self.__updateSquadTypeSelectPopover()
             isNavigationEnabled = not state.isNavigationDisabled()
             self.as_doDisableHeaderButtonS(self.BUTTONS.SILVER, isNavigationEnabled)
             self.as_doDisableHeaderButtonS(self.BUTTONS.GOLD, isNavigationEnabled)

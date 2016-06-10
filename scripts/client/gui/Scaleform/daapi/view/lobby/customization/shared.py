@@ -1,4 +1,5 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/customization/shared.py
+from CurrentVehicle import g_currentVehicle
 from gui.Scaleform.daapi.view.dialogs import I18nConfirmDialogMeta, DIALOG_BUTTON_ID
 from gui.Scaleform.locale.VEHICLE_CUSTOMIZATION import VEHICLE_CUSTOMIZATION
 from gui.shared.formatters import text_styles
@@ -42,4 +43,6 @@ def __formatTypeName(cType, count):
         formatter = '#vehicle_customization:dialog/remove_elements/typeName/{0}'
     else:
         formatter = '#vehicle_customization:dialog/remove_element/typeName/{0}'
+    if g_currentVehicle.isEvent() and cType == CUSTOMIZATION_TYPE.INSCRIPTION:
+        cType = 'footballFlag'
     return text_styles.standard(formatter.format(cType))

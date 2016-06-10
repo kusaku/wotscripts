@@ -11,6 +11,7 @@ from gui.Scaleform.framework import ViewTypes
 from gui.Scaleform.framework.managers.containers import POP_UP_CRITERIA
 from gui.prb_control import prb_getters
 from gui.prb_control.prb_helpers import preQueueFunctionalProperty, prbDispatcherProperty
+from gui.server_events import g_eventsCache
 from gui.shared import events
 from gui.shared.event_bus import EVENT_BUS_SCOPE
 from gui.sounds.ambients import LobbySubViewEnv
@@ -129,10 +130,28 @@ class _FalloutQueueProvider(_QueueProvider):
         self._proxy.as_showStartS(constants.IS_DEVELOPMENT and sum(vClasses) > 1)
 
 
+class _EventQueueProvider(_QueueProvider):
+
+    def processQueueInfo(self, qInfo):
+        info = dict(qInfo)
+        totalPlayers = info.get('players', 0)
+        self._proxy.flashObject.as_setPlayers(makeHtmlString('html_templates:lobby/queue/playersLabel', 'players', {'count': totalPlayers}))
+        if g_eventsCache.isEventEnabled():
+            data = {'title': '#menu:prebattle/typesTitle',
+             'data': []}
+            vClassesData = data['data']
+            for vClass, message in TYPES_ORDERED:
+                vClassesData.append((message, totalPlayers if g_eventsCache.getEventVehicles()[0].type == vClass else 0))
+
+            self._proxy.as_setListByTypeS(data)
+        self._proxy.as_showStartS(constants.IS_DEVELOPMENT and totalPlayers > 1)
+
+
 _PROVIDER_BY_QUEUE_TYPE = {constants.QUEUE_TYPE.RANDOMS: _RandomQueueProvider,
  constants.QUEUE_TYPE.COMPANIES: _CompanyQueueProvider,
  constants.QUEUE_TYPE.FALLOUT_MULTITEAM: _FalloutQueueProvider,
- constants.QUEUE_TYPE.FALLOUT_CLASSIC: _FalloutQueueProvider}
+ constants.QUEUE_TYPE.FALLOUT_CLASSIC: _FalloutQueueProvider,
+ constants.QUEUE_TYPE.EVENT_BATTLES: _EventQueueProvider}
 
 def _providerFactory(proxy, qType):
     return _PROVIDER_BY_QUEUE_TYPE.get(qType, _QueueProvider)(proxy, qType)
@@ -217,8 +236,14 @@ class BattleQueue(BattleQueueMeta, LobbySubView):
         if prb_getters.isCompany():
             qType = constants.QUEUE_TYPE.COMPANIES
         elif self.prbDispatcher is not None and self.prbDispatcher.getFunctionalState().isInUnit():
-            rosterType = self.prbDispatcher.getFunctionalState().rosterType
-            qType, _ = findFirst(lambda (k, v): v == rosterType, FALLOUT_QUEUE_TYPE_TO_ROSTER.iteritems(), (constants.QUEUE_TYPE.RANDOMS, None))
+            funcState = self.prbDispatcher.getFunctionalState()
+            if funcState.entityTypeID == constants.PREBATTLE_TYPE.FALLOUT:
+                rosterType = funcState.rosterType
+                qType, _ = findFirst(lambda (k, v): v == rosterType, FALLOUT_QUEUE_TYPE_TO_ROSTER.iteritems(), (constants.QUEUE_TYPE.RANDOMS, None))
+            elif funcState.entityTypeID == constants.PREBATTLE_TYPE.EVENT:
+                qType = constants.QUEUE_TYPE.EVENT_BATTLES
+            else:
+                qType = constants.QUEUE_TYPE.RANDOMS
         else:
             qType = prb_getters.getQueueType()
         self.__provider = _providerFactory(self, qType)

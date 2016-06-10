@@ -7,6 +7,8 @@ import Math
 import CommandMapping
 import Keys
 from CTFManager import g_ctfManager
+from DetachedTurret import DetachedTurret
+from FootballManager import getFootbalManager
 from constants import REPAIR_POINT_ACTION, RESOURCE_POINT_STATE, FLAG_STATE, AOI, VISIBILITY
 from gui.battle_control.avatar_getter import getSoundNotifications, isVehicleAlive
 from gui.shared import g_eventBus, EVENT_BUS_SCOPE
@@ -18,7 +20,7 @@ from shared_utils import findFirst
 from gui.battle_control import g_sessionProvider
 from gui.battle_control import avatar_getter, minimap_utils, matrix_factory
 from gui.battle_control.battle_constants import PLAYER_GUI_PROPS, FEEDBACK_EVENT_ID, NEUTRAL_TEAM
-from gui.battle_control.arena_info import isLowLevelBattle, hasFlags, hasRepairPoints, hasResourcePoints, isFalloutMultiTeam, hasGasAttack
+from gui.battle_control.arena_info import isLowLevelBattle, hasFlags, hasRepairPoints, hasResourcePoints, isFalloutMultiTeam, hasGasAttack, isEventBattle
 import SoundGroups
 from gui import GUI_SETTINGS, g_repeatKeyHandlers
 from helpers.gui_utils import *
@@ -79,6 +81,54 @@ _CAPTURE_STATE_BY_TEAMS = {True: RESOURCE_POINT_TYPE.OWN_MINING,
 _CAPTURE_FROZEN_STATE_BY_TEAMS = {True: RESOURCE_POINT_TYPE.OWN_MINING,
  False: RESOURCE_POINT_TYPE.ENEMY_MINING}
 
+class _EventBall(object):
+
+    def __init__(self, ownUI, zIndexMgr):
+        self.__ballEntityId = None
+        self.__ownUI = ownUI
+        self.__zIndexMgr = zIndexMgr
+        footballManager = getFootbalManager()
+        footballManager.onDestroyBall += self.__onBallDestroyed
+        footballManager.onRespwnBall += self.__onRespwnBall
+        footballManager.onBallInited += self.__onBallInited
+        self.__addBall()
+        return
+
+    def destroy(self):
+        footballManager = getFootbalManager()
+        footballManager.onDestroyBall -= self.__onBallDestroyed
+        footballManager.onRespwnBall -= self.__onRespwnBall
+        footballManager.onBallInited -= self.__onBallInited
+        self.__ownUI = None
+        self.__zIndexMgr = None
+        return
+
+    def __onBallInited(self):
+        self.__addBall()
+
+    def __onBallDestroyed(self):
+        self.__delBall()
+
+    def __onRespwnBall(self):
+        self.__addBall()
+
+    def __addBall(self):
+        turrets = DetachedTurret.allTurrets
+        if len(turrets) and self.__ballEntityId is None:
+            m = Math.WGTranslationOnlyMP()
+            ball = turrets[0]
+            m.source = ball.matrix
+            self.__ballEntityId = self.__ownUI.addEntry(m, self.__zIndexMgr.getDeadVehicleIndex(ball.id))
+            self.__ownUI.entryInvoke(self.__ballEntityId, ('init', ['football', 'football']))
+        return
+
+    def __delBall(self):
+        if self.__ballEntityId:
+            self.__ownUI.delEntry(self.__ballEntityId)
+        self.__ballEntityId = None
+        return
+
+
 class Minimap(object):
     __MINIMAP_SIZE = (210, 210)
 
@@ -92,7 +142,10 @@ class Minimap(object):
         self.__playerVehicleID = player.playerVehicleID
         self.__isTeamPlayer = self.__playerTeam in arenaType.squadTeamNumbers if isFalloutMultiTeam() else True
         self.__cfg['texture'] = arenaType.minimap
-        self.__cfg['teamBasePositions'] = arenaType.teamBasePositions
+        if isEventBattle(arena):
+            self.__cfg['teamBasePositions'] = ({}, {})
+        else:
+            self.__cfg['teamBasePositions'] = arenaType.teamBasePositions
         if isLowLevelBattle() and self.__playerTeam - 1 in arenaType.teamLowLevelSpawnPoints and len(arenaType.teamLowLevelSpawnPoints[self.__playerTeam - 1]):
             self.__cfg['teamSpawnPoints'] = arenaType.teamLowLevelSpawnPoints
         else:
@@ -139,6 +192,7 @@ class Minimap(object):
         self.__showDirectionLine = False
         self.__showSectorLine = False
         self.__showViewRange = False
+        self.__eventBall = None
         return
 
     def __del__(self):
@@ -260,6 +314,8 @@ class Minimap(object):
         self.setupMinimapSettings()
         self.setTeamPoints()
         g_repeatKeyHandlers.add(self.handleRepeatKeyEvent)
+        if isEventBattle():
+            self.__eventBall = _EventBall(self.__ownUI, self.zIndexManager)
         return
 
     def __showSector(self):
@@ -540,6 +596,9 @@ class Minimap(object):
             self.__parentUI = None
             g_repeatKeyHandlers.remove(self.handleRepeatKeyEvent)
             self.__ownUI = None
+            if self.__eventBall:
+                self.__eventBall.destroy()
+                self.__eventBall = None
             return
 
     def prerequisites(self):

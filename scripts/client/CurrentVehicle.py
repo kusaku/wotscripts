@@ -228,6 +228,9 @@ class _CurrentVehicle(_CachedVehicle):
     def isOnlyForEventBattles(self):
         return self.item.isOnlyForEventBattles
 
+    def isEvent(self):
+        return self.item.isEvent
+
     def isAlive(self):
         return self.isPresent() and self.item.isAlive
 

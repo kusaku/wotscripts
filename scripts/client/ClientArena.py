@@ -37,7 +37,8 @@ class ClientArena(object):
      ARENA_UPDATE.DISAPPEAR_BEFORE_RESPAWN: '_ClientArena__onDisappearVehicleBeforeRespawn',
      ARENA_UPDATE.RESOURCE_POINT_STATE_CHANGED: '_ClientArena__onResourcePointStateChanged',
      ARENA_UPDATE.OWN_VEHICLE_INSIDE_RP: '_ClientArena__onOwnVehicleInsideRP',
-     ARENA_UPDATE.OWN_VEHICLE_LOCKED_FOR_RP: '_ClientArena__onOwnVehicleLockedForRP'}
+     ARENA_UPDATE.OWN_VEHICLE_LOCKED_FOR_RP: '_ClientArena__onOwnVehicleLockedForRP',
+     ARENA_UPDATE.FOOTBALL_PENALTY_POINTS: '_ClientArena__onFootballPenaltyPoints'}
 
     def __init__(self, arenaUniqueID, arenaTypeID, arenaBonusType, arenaGuiType, arenaExtraData, weatherPresetID):
         self.__vehicles = {}
@@ -69,6 +70,7 @@ class ClientArena(object):
         self.onRespawnResurrected = Event.Event(em)
         self.onInteractiveStats = Event.Event(em)
         self.onVehicleWillRespawn = Event.Event(em)
+        self.onFootballPenaltyPoints = Event.Event(em)
         self.arenaUniqueID = arenaUniqueID
         self.arenaType = ArenaType.g_cache.get(arenaTypeID, None)
         if self.arenaType is None:
@@ -237,6 +239,17 @@ class ClientArena(object):
         data = cPickle.loads(argStr)
         LOG_DEBUG('[FLAGS] flag teams', data)
         g_ctfManager.onFlagTeamsReceived(data)
+
+    def __onFootballPenaltyPoints(self, argStr):
+        """
+        Data possession points handler for Football Event
+        :param argStr: Pickled dict -{
+            'ballPossession': ball possessions in main time,
+            'penaltyPoints': penalty points in overtime period
+        }
+        """
+        data = cPickle.loads(zlib.decompress(argStr))
+        self.onFootballPenaltyPoints(data)
 
     def __onFlagStateChanged(self, argStr):
         data = cPickle.loads(argStr)

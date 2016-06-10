@@ -1,5 +1,6 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/battle/score_panel.py
 import itertools
+from debug_utils import LOG_DEBUG
 import win_points
 from gui.shared import events, EVENT_BUS_SCOPE
 from collections import defaultdict
@@ -79,7 +80,7 @@ class _FragCorrelationPanel(_IScorePanel):
         getTeamName = g_sessionProvider.getCtx().getTeamName
         _alliedTeamName = getTeamName(enemy=False)
         _enemyTeamName = getTeamName(enemy=True)
-        self.__callFlash('setTeamNames', [_alliedTeamName, _enemyTeamName])
+        self._callFlash('setTeamNames', [_alliedTeamName, _enemyTeamName])
         self.showVehiclesCounter(g_settingsCore.getSetting('showVehiclesCounter'))
         self.updateScore()
         for isEnemy, team in arenaDP.getTeamIDsIterator():
@@ -109,15 +110,8 @@ class _FragCorrelationPanel(_IScorePanel):
 
     def updateScore(self):
         if len(self.__teamsDeaths):
-            isTeamEnemy = g_sessionProvider.getArenaDP().isEnemyTeam
-            ally, enemy = (0, 0)
-            for teamIdx, score in self.__teamsDeaths.iteritems():
-                if isTeamEnemy(teamIdx):
-                    ally += score
-                else:
-                    enemy += score
-
-            self.__callFlash('updateFrags', [ally, enemy])
+            ally, enemy = self._calcScore()
+            self._callFlash('updateFrags', [ally, enemy])
             self.__score = (ally, enemy)
             g_eventBus.handleEvent(events.ScoreEvent(events.ScoreEvent.FRAGS_UPDATED, ctx={'ally': ally,
              'enemy': enemy}), EVENT_BUS_SCOPE.BATTLE)
@@ -136,15 +130,69 @@ class _FragCorrelationPanel(_IScorePanel):
 
         result = list(itertools.chain(*sorted(result, cmp=_markerComparator)))
         if isEnemy:
-            self.__callFlash('updateEnemyTeam', result)
+            self._callFlash('updateEnemyTeam', result)
         else:
-            self.__callFlash('updatePlayerTeam', result)
+            self._callFlash('updatePlayerTeam', result)
 
     def showVehiclesCounter(self, isShown):
-        self.__callFlash('showVehiclesCounter', [isShown])
+        self._callFlash('showVehiclesCounter', [isShown])
 
-    def __callFlash(self, funcName, args):
+    def _calcScore(self):
+        ally, enemy = (0, 0)
+        for teamIdx, score in self.__teamsDeaths.iteritems():
+            if g_sessionProvider.getArenaDP().isEnemyTeam(teamIdx):
+                ally += score
+            else:
+                enemy += score
+
+        return (ally, enemy)
+
+    def _callFlash(self, funcName, args):
         self.__ui.call('battle.fragCorrelationBar.' + funcName, args)
+
+
+class _FootballEventScorePanel(_FragCorrelationPanel):
+
+    def __init__(self, parentUI):
+        super(_FootballEventScorePanel, self).__init__(parentUI)
+        self.__lastScore = (0, 0)
+        self.__isScoreInited = False
+
+    def updateScore(self):
+        super(_FootballEventScorePanel, self).updateScore()
+        curr_score = self.getCurrentScore()
+        if self.__isScoreInited:
+            if self.__lastScore != curr_score:
+                self.__lastScore = curr_score
+                goalMsgType = self._getGoalMsgType(g_sessionProvider.getArenaDP())
+                self._callFlash('showGoalMessage', [goalMsgType])
+        else:
+            self.__isScoreInited = True
+            self.__lastScore = curr_score
+
+    @staticmethod
+    def _getGoalMsgType(footballArenaDP):
+        """
+        :param footballArenaDP: FootballArenaDataProvider
+        :return: str, there are 3 types of msg available: 'enemyTeamGoal', 'myTeamGoal', 'myAutoGoal'
+        """
+        result = None
+        last_goal = footballArenaDP.getLastGoal()
+        if last_goal:
+            author, receiver = last_goal
+            if footballArenaDP.isEnemyTeam(author):
+                if author != receiver:
+                    result = 'enemyTeamGoal'
+                else:
+                    result = 'myTeamGoal'
+            elif author != receiver:
+                result = 'myTeamGoal'
+            else:
+                result = 'myAutoGoal'
+        return result
+
+    def _calcScore(self):
+        return g_sessionProvider.getArenaDP().getScores()
 
 
 class _FalloutScorePanel(FalloutScorePanelMeta, _IScorePanel):
@@ -271,9 +319,11 @@ class _MultiteamFalloutPanel(_FalloutScorePanel):
         self.as_stopScoreHighlightAnim()
 
 
-def scorePanelFactory(parentUI, isFallout = False, isMutlipleTeams = False):
+def scorePanelFactory(parentUI, isFallout = False, isMutlipleTeams = False, isEvent = False):
     if isFallout:
         if isMutlipleTeams:
             return _MultiteamFalloutPanel(parentUI, 'multi')
         return _FalloutScorePanel(parentUI, 'single')
+    if isEvent:
+        return _FootballEventScorePanel(parentUI)
     return _FragCorrelationPanel(parentUI)

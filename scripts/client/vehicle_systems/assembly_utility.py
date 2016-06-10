@@ -23,8 +23,9 @@ class TypedProperty(AutoProperty):
         self.allowedType = allowedType
 
     def __set__(self, instance, value):
-        raise isinstance(value, self.allowedType) or AssertionError
+        raise isinstance(value, self.allowedType) or value is None or AssertionError
         setattr(instance, self.fieldName, value)
+        return
 
 
 class LinkDescriptor(AutoProperty):
@@ -33,8 +34,9 @@ class LinkDescriptor(AutoProperty):
         AutoProperty.__init__(self, fieldName)
 
     def __set__(self, instance, value):
-        raise hasattr(value, '__call__') or AssertionError
+        raise hasattr(value, '__call__') or value is None or AssertionError
         setattr(instance, self.fieldName, value)
+        return
 
     def __call__(self, *args, **kwargs):
         raise False or AssertionError

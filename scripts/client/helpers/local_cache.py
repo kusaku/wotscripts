@@ -192,7 +192,8 @@ class PickleIO(RedirectIO):
             return cPickle.loads(src)
         except cPickle.PickleError as error:
             LOG_WARNING('Can not unpickle cache', error)
-            return None
+        except EOFError as error:
+            LOG_ERROR('Can not unpickle cache file "%s" :' % src, error)
 
         return None
 

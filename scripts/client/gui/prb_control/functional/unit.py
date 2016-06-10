@@ -130,6 +130,12 @@ class SquadEntry(UnitEntry):
         unitMgr.createSquad()
 
 
+class EventSquadEntry(SquadEntry):
+
+    def _doCreate(self, unitMgr, ctx):
+        unitMgr.createEventSquad()
+
+
 class FalloutSquadEntry(UnitEntry):
 
     def __init__(self, queueType, accountsToInvite = None):
@@ -285,7 +291,7 @@ class _UnitFunctional(ListenersCollection, interfaces.IUnitFunctional):
                 inSlots = unit.getPlayerSlots()
                 if dbID in inSlots:
                     isPlayerReady = unit.isPlayerReadyInSlot(inSlots[dbID])
-            if self.getEntityType() in (PREBATTLE_TYPE.SQUAD, PREBATTLE_TYPE.FALLOUT):
+            if self.getEntityType() in PREBATTLE_TYPE.SQUAD_PREBATTLES:
                 return permissions.SquadPermissions(roles, unit._flags, pDbID == dbID, isPlayerReady)
             else:
                 return permissions.UnitPermissions(roles, unit._flags, pDbID == dbID, isPlayerReady)
@@ -805,6 +811,8 @@ class UnitFunctional(_UnitFunctional):
     def createActionHandler(self, prbType):
         if prbType == PREBATTLE_TYPE.SQUAD:
             actionHandler = action_handlers.SquadActionsHandler(self)
+        elif prbType == PREBATTLE_TYPE.EVENT:
+            actionHandler = action_handlers.EventSquadActionsHandler(self)
         elif prbType == PREBATTLE_TYPE.FALLOUT:
             actionHandler = action_handlers.FalloutSquadActionsHandler(self)
         else:
@@ -852,7 +860,7 @@ class UnitFunctional(_UnitFunctional):
         result = True
         if unit.isSortie():
             result = not self.getPlayerInfo().isLegionary()
-        elif unit.isSquad() or unit.isFalloutSquad():
+        elif unit.isSquad() or unit.isFalloutSquad() or unit.isEvent():
             result = False
         return result
 
@@ -1239,6 +1247,9 @@ class UnitFunctional(_UnitFunctional):
         result = False
         name = action.actionName
         if name == PREBATTLE_ACTION_NAME.SQUAD and self._prbType in (PREBATTLE_TYPE.SQUAD, PREBATTLE_TYPE.FALLOUT):
+            g_eventDispatcher.showUnitWindow(self._prbType)
+            result = True
+        if name == PREBATTLE_ACTION_NAME.EVENT_SQUAD and self._prbType in (PREBATTLE_TYPE.EVENT,):
             g_eventDispatcher.showUnitWindow(self._prbType)
             result = True
         if name == PREBATTLE_ACTION_NAME.FORT and self._prbType in (PREBATTLE_TYPE.SORTIE, PREBATTLE_TYPE.FORT_BATTLE):

@@ -70,8 +70,10 @@ def readQueueTrigger(xmlCtx, section, _, triggerID):
 
 
 def init():
-    sub_parsers.setEntitiesParsers({'hint': readHintSection})
+    sub_parsers.setEntitiesParsers({'hint': readHintSection,
+     'tutorial-setting': lobby.readTutorialSettingSection})
     sub_parsers.setEffectsParsers({'switch-to-random': lobby.readSwitchToRandomSection,
+     'save-account-setting': lobby.readSaveAccountSettingSection,
      'show-unlocked-chapter': readShowUnlockedChapterSection})
     sub_parsers.setTriggersParsers({'simpleDialog': _readSimpleDialogTriggerSection,
      'unlocked': lobby.readItemUnlockedTriggerSection,
