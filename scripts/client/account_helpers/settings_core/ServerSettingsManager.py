@@ -481,6 +481,7 @@ class ServerSettingsManager(object):
          'graphicsData': {},
          'marksOnGun': {},
          'fallout': {},
+         'carousel_filter': {},
          'clear': {}}
         yield migrateToVersion(currentVersion, self._core, data)
         self._setSettingsSections(data)
@@ -524,6 +525,9 @@ class ServerSettingsManager(object):
         fallout = data.get('fallout', {})
         if fallout:
             settings[SETTINGS_SECTIONS.FALLOUT] = self._buildSectionSettings(SETTINGS_SECTIONS.FALLOUT, fallout)
+        carousel_filter = data.get('carousel_filter', {})
+        if carousel_filter:
+            settings[SETTINGS_SECTIONS.CAROUSEL_FILTER_2] = self._buildSectionSettings(SETTINGS_SECTIONS.CAROUSEL_FILTER_2, carousel_filter)
         version = data.get(VERSION)
         if version is not None:
             settings[VERSION] = version

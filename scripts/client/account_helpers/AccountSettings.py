@@ -338,7 +338,7 @@ def _unpack(value):
 
 class AccountSettings(object):
     onSettingsChanging = Event.Event()
-    version = 22
+    version = 23
     __cache = {'login': None,
      'section': None}
     __isFirstRun = True
@@ -609,6 +609,10 @@ class AccountSettings(object):
                             newFormatItems[cType][vehicleID][itemID] = False
 
                     accSettings.write('customization', _pack(newFormatItems))
+
+            if currVersion < 23:
+                for key, section in _filterAccountSection(ads):
+                    AccountSettings.__readSection(section, KEY_SETTINGS).deleteSection('FootballVehSelectedOnce')
 
             ads.writeInt('version', AccountSettings.version)
         return

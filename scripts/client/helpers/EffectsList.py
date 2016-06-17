@@ -642,6 +642,8 @@ class _SoundEffectDesc(_EffectDesc, object):
 
     def delete(self, elem, reason):
         if elem.has_key('sound') and elem['sound'] is not None:
+            if reason == 1 or self._stopSyncVisual:
+                elem['sound'].stopAll()
             elem['sound'] = None
         if elem.has_key('node'):
             elem['node'] = None
