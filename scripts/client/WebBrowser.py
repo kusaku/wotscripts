@@ -27,7 +27,7 @@ class WebBrowser(object):
     updateInterval = 0.01
     isSuccessfulLoad = property(lambda self: self.__successfulLoad)
 
-    def __init__(self, browserID, uiObj, texName, size, url = 'about:blank', useWhitelisting = True, isFocused = False):
+    def __init__(self, browserID, uiObj, texName, size, url = 'about:blank', useWhitelisting = False, isFocused = False):
         self.__browserID = browserID
         self.__cbID = None
         self.__baseUrl = url
@@ -439,11 +439,6 @@ class EventListener():
         :param url: The URL that the frame wants to navigate to.
         :return: True to block a navigation. Return False to let it continue.
         """
-        from gui import GUI_SETTINGS
-        if url == GUI_SETTINGS.footballPromoURL:
-            from gui.shared import g_eventBus, events
-            g_eventBus.handleEvent(events.OpenLinkEvent(events.OpenLinkEvent.FOOTBALL_PROMO))
-            return True
         return False
 
     def onWhitelistMiss(self, isMainFrame, failedURL):

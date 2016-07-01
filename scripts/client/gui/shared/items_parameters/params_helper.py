@@ -1,6 +1,8 @@
 # Embedded file name: scripts/client/gui/shared/items_parameters/params_helper.py
 from collections import namedtuple
 import copy
+from datetime import time
+import time
 from debug_utils import LOG_CURRENT_EXCEPTION, LOG_DEBUG, LOG_ERROR
 from gui.shared.items_parameters import params
 from gui.shared.items_parameters.comparator import VehiclesComparator, ItemsComparator
@@ -117,3 +119,24 @@ def vehiclesComparator(comparableVehicle, vehicle):
 
 def itemsComparator(currentItem, otherItem, vehicleDescr = None):
     return ItemsComparator(getParameters(currentItem, vehicleDescr), getParameters(otherItem, vehicleDescr))
+
+
+def camouflageComparator(vehicle, camouflage):
+    """
+    :param vehicle: instance of  gui.shared.gui_items.Vehicle.Vehicle
+    :param camouflage: instance of  gui.customization.elements.Camouflage
+    :return: instance of VehiclesComparator
+    """
+    vDescr = vehicle.descriptor
+    currParams = params.VehicleParams(vehicle).getParamsDict()
+    camouflageID = camouflage.getID()
+    camouflageInfo = vehicles.g_cache.customization(vDescr.type.customizationNationID)['camouflages'].get(camouflageID)
+    if camouflageInfo is not None:
+        pos = camouflageInfo['kind']
+        oldCamouflageData = vDescr.camouflages[pos]
+        vDescr.setCamouflage(pos, camouflageID, int(time.time()), 0)
+        newParams = params.VehicleParams(vehicle).getParamsDict()
+        vDescr.setCamouflage(pos, *oldCamouflageData)
+    else:
+        newParams = currParams.copy()
+    return VehiclesComparator(newParams, currParams)

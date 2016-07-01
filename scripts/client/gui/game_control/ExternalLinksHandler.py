@@ -23,8 +23,7 @@ _LISTENERS = {OpenLinkEvent.SPECIFIED: '_handleSpecifiedURL',
  OpenLinkEvent.GLOBAL_MAP_SUMMARY: '_handleGmSummaryURL',
  OpenLinkEvent.GLOBAL_MAP_PROMO_SUMMARY: '_handleGmPromoSummaryURL',
  OpenLinkEvent.GLOBAL_MAP_CAP: '_handleGmCapURL',
- OpenLinkEvent.GLOBAL_MAP_PROMO: '_handleGmPromoURL',
- OpenLinkEvent.FOOTBALL_PROMO: '_handleFootballPromoURL'}
+ OpenLinkEvent.GLOBAL_MAP_PROMO: '_handleGmPromoURL'}
 
 class ExternalLinksHandler(Controller):
 
@@ -133,6 +132,3 @@ class ExternalLinksHandler(Controller):
 
     def _handleGmPromoURL(self, _):
         self.__openParsedUrl('globalMapPromo')
-
-    def _handleFootballPromoURL(self, _):
-        self.__openParsedUrl('footballPromoURL')

@@ -142,7 +142,9 @@ class CombatEquipmentManager(object):
             area.destroy()
         self.__selectedAreas[areaUID] = self.createEquipmentSelectedArea(pos, dir, eq)
         self.__callbackDelayer.delayCallback(timer, functools.partial(self.__delayedAreaDestroy, areaUID))
-        g_sessionProvider.getEquipmentsCtrl().showMarker(eq, pos, dir, timer)
+        ctrl = g_sessionProvider.shared.equipments
+        if ctrl is not None:
+            ctrl.showMarker(eq, pos, dir, timer)
         return
 
     @staticmethod

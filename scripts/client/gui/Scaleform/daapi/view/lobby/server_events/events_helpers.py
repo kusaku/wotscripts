@@ -700,7 +700,8 @@ def getTutorialQuestsBoosters():
                     goodies = bonus.getValues().get('goodies', {})
                     boosterBonus = getTutorialBonusObj('goodies', goodies)
                     for booster, count in boosterBonus.getBoosters().iteritems():
-                        result[chapter].append((booster, count))
+                        if booster.enabled:
+                            result[chapter].append((booster, count))
 
     return result
 

@@ -252,7 +252,7 @@ class BoosterBonus(SimpleBonus):
             _getBooster = g_goodiesCache.getBooster
             for boosterID, info in self._value.iteritems():
                 booster = _getBooster(int(boosterID))
-                if booster is not None:
+                if booster is not None and booster.enabled:
                     boosters[booster] = info.get('count', 1)
 
         return boosters

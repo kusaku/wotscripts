@@ -26,6 +26,8 @@ from gui.shared.gui_items.serializers import packTankman, packVehicle
 from gui.shared.gui_items.processors.tankman import TankmanDismiss, TankmanUnload, TankmanRetraining, TankmanAddSkill, TankmanChangePassport
 from gui.shared.utils.requesters import REQ_CRITERIA
 from gui.shared import EVENT_BUS_SCOPE, events, g_itemsCache
+from gui.shared.tooltips.formatters import packActionTooltipData
+from gui.shared.money import Money
 from account_helpers.settings_core.settings_constants import TUTORIAL
 
 class PersonalCase(PersonalCaseMeta, GlobalListener):
@@ -317,7 +319,7 @@ class PersonalCaseDataProvider(object):
                     break
 
         shopPrices, action = items.shop.getTankmanCostWithDefaults()
-        callback({'money': (items.stats.credits, items.stats.gold),
+        callback({'money': items.stats.money,
          'tankmanCost': shopPrices,
          'action': action,
          'vehicles': result})
@@ -340,13 +342,8 @@ class PersonalCaseDataProvider(object):
             defaultPrice = items.shop.defaults.passportChangeCost
         action = None
         if shopPrice != defaultPrice:
-            action = {'type': ACTION_TOOLTIPS_TYPE.ECONOMICS,
-             'key': 'passportChangeCost',
-             'isBuying': True,
-             'state': (0, ACTION_TOOLTIPS_STATE.DISCOUNT),
-             'newPrice': (0, shopPrice),
-             'oldPrice': (0, defaultPrice)}
-        callback({'money': (items.stats.credits, items.stats.gold),
+            action = packActionTooltipData(ACTION_TOOLTIPS_TYPE.ECONOMICS, 'passportChangeCost', True, Money(gold=shopPrice), Money(gold=defaultPrice))
+        callback({'money': items.stats.money,
          'passportChangeCost': shopPrice,
          'action': action,
          'firstnames': self.__getDocGroupValues(tankman, config, 'firstNames'),

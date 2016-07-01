@@ -79,6 +79,7 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
     rpm = property(lambda self: self.__rpm)
     gear = property(lambda self: self.__gear)
     trackScrollController = property(lambda self: self.__trackScroll)
+    gunLength = property(lambda self: self.__gunLength)
     detailedEngineState = ComponentDescriptor()
     engineAudition = ComponentDescriptor()
     trackCrashAudition = ComponentDescriptor()
@@ -144,6 +145,7 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
         self.__exhaustEffects = None
         self.__trailEffects = None
         self.__trackScroll = TrackScrollController(self)
+        self.__gunLength = 0.0
         return
 
     def prerequisites(self, vehicle):
@@ -174,6 +176,8 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
         return out
 
     def destroy(self):
+        if self.__vehicle.isPlayerVehicle:
+            BigWorld.setSpeedTreeCollisionBody(None)
         if self.__trackScroll is not None:
             self.__trackScroll.destroy()
             self.__trackScroll = None
@@ -493,6 +497,7 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
                 self.exhaustEffects.destroy()
             self.__attachStickers(items.vehicles.g_cache.commonConfig['miscParams']['damageStickerAlpha'], True)
         self.__chassisShadowForwardDecal.attach(vehicle, self.__compoundModel)
+        _, self.__gunLength = self.__computeVehicleHeight()
         self.onModelChanged()
         if 'observer' in vehicle.typeDescriptor.type.tags:
             self.__compoundModel.visible = False
@@ -501,6 +506,8 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
         if MAX_DISTANCE > 0:
             transform = vehicle.typeDescriptor.chassis['AODecals'][0]
             self.__attachSplodge(BigWorld.Splodge(transform, MAX_DISTANCE, vehicle.typeDescriptor.chassis['hullPosition'].y))
+        if self.__vehicle.isPlayerVehicle:
+            BigWorld.setSpeedTreeCollisionBody(vehicle.model.bounds)
 
     def __reattachComponents(self):
         self.__boundEffects.reattachTo(self.__compoundModel)
@@ -567,7 +574,19 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
                  5: {'black': 56,
                      'gold': 54,
                      'red': 55,
-                     'silver': 57}}
+                     'silver': 57},
+                 6: {'black': 133,
+                     'gold': 134,
+                     'red': 135,
+                     'silver': 136},
+                 7: {'black': 141,
+                     'gold': 142,
+                     'red': 143,
+                     'silver': 144},
+                 8: {'black': 154,
+                     'gold': 155,
+                     'red': 156,
+                     'silver': 157}}
                 camouflIds = camouflIdsByNation.get(vDesc.type.customizationNationID)
                 if camouflIds is not None:
                     ret = camouflIds.get(camouflagePseudoname)
@@ -853,7 +872,7 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
         hullTopY = desc.chassis['hullPosition'][1] + hullBBox[1][1]
         turretTopY = desc.chassis['hullPosition'][1] + desc.hull['turretPositions'][0][1] + turretBBox[1][1]
         gunTopY = desc.chassis['hullPosition'][1] + desc.hull['turretPositions'][0][1] + desc.turret['gunPosition'][1] + gunBBox[1][1]
-        return max(hullTopY, max(turretTopY, gunTopY))
+        return (max(hullTopY, max(turretTopY, gunTopY)), math.fabs(gunBBox[1][2] - gunBBox[0][2]))
 
     def setupGunMatrixTargets(self, target = None):
         if target is None:
