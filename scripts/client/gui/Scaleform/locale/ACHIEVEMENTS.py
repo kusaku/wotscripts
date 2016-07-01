@@ -485,6 +485,12 @@ class ACHIEVEMENTS(object):
     WFC2014 = '#achievements:WFC2014'
     WFC2014_DESCR = '#achievements:WFC2014_descr'
     WFC2014_CONDITION = '#achievements:WFC2014_condition'
+    EFC2016 = '#achievements:EFC2016'
+    EFC2016_DESCR = '#achievements:EFC2016_descr'
+    EFC2016_CONDITION = '#achievements:EFC2016_condition'
+    EFC2016GOLEADOR = '#achievements:EFC2016Goleador'
+    EFC2016GOLEADOR_DESCR = '#achievements:EFC2016Goleador_descr'
+    EFC2016GOLEADOR_CONDITION = '#achievements:EFC2016Goleador_condition'
     DEATHTRACK = '#achievements:deathTrack'
     DEATHTRACK_DESCR = '#achievements:deathTrack_descr'
     DEATHTRACK_CONDITION = '#achievements:deathTrack_condition'
@@ -1083,6 +1089,12 @@ class ACHIEVEMENTS(object):
      WFC2014,
      WFC2014_DESCR,
      WFC2014_CONDITION,
+     EFC2016,
+     EFC2016_DESCR,
+     EFC2016_CONDITION,
+     EFC2016GOLEADOR,
+     EFC2016GOLEADOR_DESCR,
+     EFC2016GOLEADOR_CONDITION,
      DEATHTRACK,
      DEATHTRACK_DESCR,
      DEATHTRACK_CONDITION,

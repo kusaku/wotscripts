@@ -176,8 +176,6 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
         return out
 
     def destroy(self):
-        if self.__vehicle.isPlayerVehicle:
-            BigWorld.setSpeedTreeCollisionBody(None)
         if self.__trackScroll is not None:
             self.__trackScroll.destroy()
             self.__trackScroll = None
@@ -322,9 +320,12 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
 
     def changeDrawPassVisibility(self, visibilityMask):
         colorPassEnabled = visibilityMask & BigWorld.ColorPassBit != 0
+        self.compoundModel.visible = visibilityMask
         self.compoundModel.skipColorPass = not colorPassEnabled
         self.showStickers(colorPassEnabled)
-        self.__crashedTracksCtrl.setVisible(visibilityMask)
+        if self.__crashedTracksCtrl is not None:
+            self.__crashedTracksCtrl.setVisible(visibilityMask)
+        return
 
     def onVehicleHealthChanged(self):
         vehicle = self.__vehicle
@@ -506,8 +507,6 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
         if MAX_DISTANCE > 0:
             transform = vehicle.typeDescriptor.chassis['AODecals'][0]
             self.__attachSplodge(BigWorld.Splodge(transform, MAX_DISTANCE, vehicle.typeDescriptor.chassis['hullPosition'].y))
-        if self.__vehicle.isPlayerVehicle:
-            BigWorld.setSpeedTreeCollisionBody(vehicle.model.bounds)
 
     def __reattachComponents(self):
         self.__boundEffects.reattachTo(self.__compoundModel)

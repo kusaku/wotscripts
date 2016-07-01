@@ -52,11 +52,14 @@ class PersonalCase(PersonalCaseMeta, GlobalListener):
                     return self.destroy()
             if self.tmanInvID in inventory[GUI_ITEM_TYPE.TANKMAN].get('vehicle', {}):
                 isTankmanChanged = True
+        isVehsLockExist = 'vehsLock' in cache
         isMoneyChanged = 'credits' in stats or 'gold' in stats or 'mayConsumeWalletResources' in cache
-        isVehicleChanged = 'unlocks' in stats or 'vehsLock' in cache or GUI_ITEM_TYPE.VEHICLE in inventory
+        isVehicleChanged = 'unlocks' in stats or isVehsLockExist or GUI_ITEM_TYPE.VEHICLE in inventory
         isFreeXpChanged = 'freeXP' in stats
         if isVehicleChanged:
             tankman = g_itemsCache.items.getTankman(self.tmanInvID)
+            if isVehsLockExist:
+                return self.destroy()
             if tankman.isInTank:
                 vehicle = g_itemsCache.items.getVehicle(tankman.vehicleInvID)
                 if vehicle.isLocked:

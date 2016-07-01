@@ -2987,7 +2987,8 @@ def _readShot(xmlCtx, section, nationID, projectileSpeedFactor):
      'piercingPower': _xml.readVector2(xmlCtx, section, 'piercingPower'),
      'speed': _xml.readPositiveFloat(xmlCtx, section, 'speed') * projectileSpeedFactor,
      'gravity': _xml.readNonNegativeFloat(xmlCtx, section, 'gravity') * projectileSpeedFactor ** 2,
-     'maxDistance': _xml.readPositiveFloat(xmlCtx, section, 'maxDistance')}
+     'maxDistance': _xml.readPositiveFloat(xmlCtx, section, 'maxDistance'),
+     'maxHeight': section.readFloat('maxHeight', 1000000.0)}
     return res
 
 
@@ -3599,7 +3600,8 @@ def _readCommonConfig(xmlCtx, section):
      'maxSignals': _xml.readInt(xmlCtx, section, 'miscParams/hornCooldown/maxSignals', 1)}
     res['miscParams'] = {'projectileSpeedFactor': _xml.readPositiveFloat(xmlCtx, section, 'miscParams/projectileSpeedFactor'),
      'hornCooldown': hornCooldownParams,
-     'minFireStartingDamage': _xml.readNonNegativeFloat(xmlCtx, section, 'miscParams/minFireStartingDamage')}
+     'minFireStartingDamage': _xml.readNonNegativeFloat(xmlCtx, section, 'miscParams/minFireStartingDamage'),
+     'allowMortarShooting': _xml.readBool(xmlCtx, section, 'miscParams/allowMortarShooting')}
     if IS_CLIENT:
         v = {}
         for lodName in _xml.getSubsection(xmlCtx, section, 'lodLevels').keys():

@@ -90,6 +90,6 @@ class BattleRibbonsPanel(RibbonsPanelMeta):
 
     def __onSettingsChanged(self, diff):
         key = GAME.SHOW_BATTLE_EFFICIENCY_RIBBONS
-        if key in diff and self.__flashObject:
+        if key in diff:
             self.__enabled = bool(diff[key])
             self.as_setupS(self.__enabled, _RIBBON_SOUNDS_ENABLED)

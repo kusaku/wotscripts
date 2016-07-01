@@ -58,6 +58,7 @@ _SETTING_CONVERTERS = {'loginRssFeed': _convertToNamedTuple,
  'browser': _convertToNamedTuple,
  'postBattleExchange': _convertToNamedTuple}
 _DEFAULT_SETTINGS = {'registrationURL': '',
+ 'registrationProxyURL': '',
  'recoveryPswdURL': '',
  'paymentURL': '',
  'securitySettingsURL': '',

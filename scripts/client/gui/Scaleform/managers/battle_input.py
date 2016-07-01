@@ -4,18 +4,26 @@ from avatar_helpers.aim_global_binding import CTRL_MODE_NAME
 from gui.battle_control import avatar_getter
 from gui.battle_control import event_dispatcher
 
+class BattleGUIKeyHandler(object):
+
+    def handleEscKey(self, isDown):
+        return False
+
+
 class BattleGameInputMgr(object):
-    __slots__ = ('__consumers',)
+    __slots__ = ('__consumers', '__keyHandlers')
 
     def __init__(self):
         super(BattleGameInputMgr, self).__init__()
         self.__consumers = []
+        self.__keyHandlers = []
 
     def start(self):
         pass
 
     def stop(self):
-        self.__consumers = []
+        del self.__consumers[:]
+        del self.__keyHandlers[:]
 
     def enterGuiControlMode(self, consumerID, cursorVisible = True):
         if consumerID not in self.__consumers:
@@ -29,12 +37,34 @@ class BattleGameInputMgr(object):
             if not self.__consumers:
                 avatar_getter.setForcedGuiControlMode(False)
 
+    def hasGuiControlModeConsumers(self, *consumersIDs):
+        for consumerID in consumersIDs:
+            if consumerID in self.__consumers:
+                return True
+
+        return False
+
+    def registerGuiKeyHandler(self, handler):
+        if not isinstance(handler, BattleGUIKeyHandler):
+            raise AssertionError
+            handler not in self.__keyHandlers and self.__keyHandlers.append(handler)
+
+    def unregisterGuiKeyHandler(self, handler):
+        if handler in self.__keyHandlers:
+            self.__keyHandlers.remove(handler)
+
     def handleKey(self, isDown, key, mods):
-        if key == Keys.KEY_ESCAPE and isDown:
-            handler = avatar_getter.getInputHandler()
-            if handler is not None and handler.ctrlModeName != CTRL_MODE_NAME.MAP_CASE:
-                event_dispatcher.showIngameMenu()
-                event_dispatcher.toggleFullStats(False)
+        if key == Keys.KEY_ESCAPE:
+            if self.__keyHandlers:
+                for handler in self.__keyHandlers[:]:
+                    if handler.handleEscKey(isDown):
+                        return True
+
+            if isDown:
+                handler = avatar_getter.getInputHandler()
+                if handler is not None and handler.ctrlModeName != CTRL_MODE_NAME.MAP_CASE:
+                    event_dispatcher.showIngameMenu()
+                    event_dispatcher.toggleFullStats(False)
             return True
         elif key in (Keys.KEY_LCONTROL, Keys.KEY_RCONTROL):
             if not self.__consumers:

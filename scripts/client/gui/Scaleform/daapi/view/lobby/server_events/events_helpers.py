@@ -326,7 +326,7 @@ class _QuestInfo(_EventInfo):
 
         if len(result):
             return formatters.todict(result)
-        return []
+        return formatters.todict([formatters.packTextBlock(text_styles.alert('#quests:bonuses/notAvailable'))])
 
     def _getBonusCount(self, pCur = None):
         if not self.event.isCompleted(progress=pCur):
@@ -623,6 +623,13 @@ class _MotiveQuestInfo(_QuestInfo):
          'title': text_styles.highTitle(self.event.getUserName()),
          'infoList': infoList,
          'awards': self._getBonuses(svrEvents, useIconFormat=False)}
+
+    def getPostBattleInfo(self, svrEvents, pCur, pPrev, isProgressReset, isCompleted):
+        filterFunc = lambda quest: quest.getType() == EVENT_TYPE.MOTIVE_QUEST and not quest.isCompleted()
+        motiveQuests = filter(filterFunc, svrEvents.values())
+        info = super(_MotiveQuestInfo, self).getPostBattleInfo(svrEvents, pCur, pPrev, isProgressReset, isCompleted)
+        info.update({'isLinkBtnVisible': len(motiveQuests) > 0})
+        return info
 
     def _getTopConditions(self, svrEvents):
         result = []

@@ -232,7 +232,7 @@ class Goodies(object):
             if defined.isTimeLimited():
                 if defined.isExpired():
                     toRemove.append(goodieID)
-                elif goodie.isExpired():
+                elif goodie.isActive() and goodie.isExpired():
                     toUpdate.append(goodieID)
 
         for goodieID in toUpdate:

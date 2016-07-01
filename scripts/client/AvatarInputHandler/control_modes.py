@@ -1549,19 +1549,20 @@ class _SPGFlashGunMarker(Flash):
         self.component.wg_setRelaxTime(0.1)
         self.component.wg_setPointsBaseScale(g_settingsCore.interfaceScale.get())
         g_settingsCore.interfaceScale.onScaleChanged += self.onScaleChanged
+        g_settingsCore.onSettingsChanged += self.__onSettingsChanged
         self.active(True)
         self.__reload = {'start_time': 0.0,
          'duration': 0.0,
          'isReloading': False}
         self.onRecreateDevice()
-        if self.__applyFilter and constants.HAS_DEV_RESOURCES and useServerAim():
-            self._displayRoot.setFilter()
+        self.__setServerGunMarkerDebugMode()
 
     def destroy(self):
         from account_helpers.settings_core.SettingsCore import g_settingsCore
         self.active(False)
         self.__curShotInfoFunc = None
         g_settingsCore.interfaceScale.onScaleChanged -= self.onScaleChanged
+        g_settingsCore.onSettingsChanged -= self.__onSettingsChanged
         return
 
     def enable(self, state):
@@ -1649,6 +1650,14 @@ class _SPGFlashGunMarker(Flash):
 
     def outsideConstraint(self, idealAngle):
         pass
+
+    def __setServerGunMarkerDebugMode(self):
+        if self.__applyFilter and constants.HAS_DEV_RESOURCES and useServerAim():
+            self._displayRoot.setFilter()
+
+    def __onSettingsChanged(self, diff):
+        if 'useServerAim' in diff:
+            self.__setServerGunMarkerDebugMode()
 
 
 class SizeFilter(object):
@@ -1757,6 +1766,8 @@ class _FlashGunMarker(Flash):
 
         if self.mode in diff:
             self.setAimSettings(self.mode)
+        elif 'useServerAim' in diff:
+            self.__setServerGunMarkerDebugMode()
         if 'isColorBlind' in diff:
             mode = 'color_blind' if diff['isColorBlind'] else 'default'
             self._curColors = self._colorsByPiercing[mode]
@@ -1778,8 +1789,7 @@ class _FlashGunMarker(Flash):
             startTime = self.__reload.get('startTime', 0.0)
             duration = self.__reload.get('duration', 0.0)
             self.setReloading(duration, startTime, isReloading, switched=True)
-        if self.__applyFilter and constants.HAS_DEV_RESOURCES and useServerAim():
-            self._displayRoot.setFilter()
+        self.__setServerGunMarkerDebugMode()
         return
 
     def destroy(self):
@@ -1960,6 +1970,10 @@ class _FlashGunMarker(Flash):
              cStartTime,
              True,
              currentPosition * 100.0]
+
+    def __setServerGunMarkerDebugMode(self):
+        if self.__applyFilter and constants.HAS_DEV_RESOURCES and useServerAim():
+            self._displayRoot.setFilter()
 
 
 class _MouseVehicleRotator():

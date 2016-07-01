@@ -240,7 +240,7 @@ class VehicleParams(_ParameterBase):
     def chassisRotationSpeed(self):
         allTrfs = self.__factors['chassis/terrainResistance']
         avgTrf = sum(allTrfs) / len(allTrfs)
-        return round(math.degrees(getChassisRotationSpeed(self._itemDescr, self.__factors)) / avgTrf)
+        return math.degrees(getChassisRotationSpeed(self._itemDescr, self.__factors)) / avgTrf
 
     @property
     def hullArmor(self):

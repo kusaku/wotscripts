@@ -5,6 +5,7 @@ from constants import CHAT_MESSAGE_MAX_LENGTH_IN_BATTLE
 from debug_utils import LOG_ERROR, LOG_DEBUG
 from gui import makeHtmlString
 from gui.Scaleform.daapi.view.meta.BattleMessengerMeta import BattleMessengerMeta
+from gui.Scaleform.genConsts.BATTLE_VIEW_ALIASES import BATTLE_VIEW_ALIASES
 from gui.shared import events, EVENT_BUS_SCOPE
 from gui.shared.events import ChannelManagementEvent
 from messenger import g_settings
@@ -14,6 +15,7 @@ from messenger.gui.interfaces import IBattleChannelView
 from messenger.m_constants import BATTLE_CHANNEL
 _UNKNOWN_RECEIVER_LABEL = 'N/A'
 _UNKNOWN_RECEIVER_ORDER = 100
+_CONSUMERS_LOCK_ENTER = (BATTLE_VIEW_ALIASES.RADIAL_MENU,)
 
 def _getToolTipText():
     settings = g_settings.battle
@@ -97,7 +99,7 @@ class BattleMessengerView(BattleMessengerMeta, IBattleChannelView):
         self.__isFocused = False
 
     def handleEnterPressed(self):
-        if self.app.containerManager.isModalViewsIsExists():
+        if self.app.isModalViewShown() or self.app.hasGuiControlModeConsumers(*_CONSUMERS_LOCK_ENTER):
             return False
         if not self.__isFocused:
             self.__findReceiverIndexByModifiers()

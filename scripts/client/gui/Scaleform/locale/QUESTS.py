@@ -50,6 +50,7 @@ class QUESTS(object):
     BONUSES_ITEM_ADDITIONBONUS = '#quests:bonuses/item/additionBonus'
     BONUSES_ITEM_TANKMEN_NO_SKILLS = '#quests:bonuses/item/tankmen/no_skills'
     BONUSES_ITEM_TANKMEN_WITH_SKILLS = '#quests:bonuses/item/tankmen/with_skills'
+    BONUSES_NOTAVAILABLE = '#quests:bonuses/notAvailable'
     QUESTS_TITLE = '#quests:quests/title'
     QUESTS_TITLE_MANEUVERSQUESTS = '#quests:quests/title/maneuversQuests'
     QUESTS_TITLE_UNGOUPEDQUESTS = '#quests:quests/title/ungoupedQuests'

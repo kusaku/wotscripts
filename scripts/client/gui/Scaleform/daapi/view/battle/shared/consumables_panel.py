@@ -7,6 +7,7 @@ import SoundGroups
 from constants import EQUIPMENT_STAGES
 from debug_utils import LOG_ERROR
 from gui.Scaleform.daapi.view.meta.ConsumablesPanelMeta import ConsumablesPanelMeta
+from gui.Scaleform.managers.battle_input import BattleGUIKeyHandler
 from gui.battle_control import g_sessionProvider
 from gui.battle_control.battle_constants import VEHICLE_DEVICE_IN_COMPLEX_ITEM, GUN_RELOADING_VALUE_TYPE
 from gui.battle_control.battle_constants import VEHICLE_VIEW_STATE
@@ -40,7 +41,7 @@ EMPTY_ORDERS_SLICE = [0] * (ORDERS_START_IDX - ORDERS_END_IDX + 1)
 EMPTY_EQUIPMENT_TOOLTIP = i18n.makeString('#ingame_gui:consumables_panel/equipment/tooltip/empty')
 TOOLTIP_FORMAT = '{{HEADER}}{0:>s}{{/HEADER}}\n/{{BODY}}{1:>s}{{/BODY}}'
 
-class ConsumablesPanel(ConsumablesPanelMeta):
+class ConsumablesPanel(ConsumablesPanelMeta, BattleGUIKeyHandler):
 
     def __init__(self):
         super(ConsumablesPanel, self).__init__()
@@ -65,6 +66,13 @@ class ConsumablesPanel(ConsumablesPanelMeta):
         if ctrl is not None:
             ctrl.onVehicleStateUpdated -= self.__onVehicleStateUpdated
         return
+
+    def handleEscKey(self, isDown):
+        if isDown:
+            self.__collapseEquipmentSlot()
+            return True
+        else:
+            return False
 
     def _populate(self):
         super(ConsumablesPanel, self)._populate()
@@ -219,7 +227,7 @@ class ConsumablesPanel(ConsumablesPanelMeta):
                 if ctrl is not None:
                     ctrl.showVehicleError(error.key, error.ctx)
             else:
-                self.as_collapseEquipmentSlotS()
+                self.__collapseEquipmentSlot()
             return
 
     def __handleEquipmentExpanded(self, intCD):
@@ -250,7 +258,7 @@ class ConsumablesPanel(ConsumablesPanelMeta):
                  'entityName': itemName,
                  'entityState': entityState})
 
-            self.as_expandEquipmentSlotS(self.__cds.index(intCD), slots)
+            self.__expandEquipmentSlot(self.__cds.index(intCD), slots)
             self.__keys.clear()
             self.__keys = keys
             ctrl = g_sessionProvider.shared.vehicleState
@@ -426,6 +434,14 @@ class ConsumablesPanel(ConsumablesPanelMeta):
                     bwKey, _ = self.__genKey(idx)
                     self.__keys[bwKey] = partial(self.__handleEquipmentPressed, self.__cds[idx], deviceName)
             return
+
+    def __expandEquipmentSlot(self, index, slots):
+        self.as_expandEquipmentSlotS(index, slots)
+        self.app.registerGuiKeyHandler(self)
+
+    def __collapseEquipmentSlot(self):
+        self.as_collapseEquipmentSlotS()
+        self.app.unregisterGuiKeyHandler(self)
 
     def __fillShells(self, ctrl):
         forEach(lambda args: self.__onShellsAdded(*args), ctrl.getOrderedShellsLayout())

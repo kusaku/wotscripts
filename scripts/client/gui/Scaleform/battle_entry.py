@@ -101,6 +101,15 @@ class BattleEntry(SFApplication):
     def leaveGuiControlMode(self, consumerID):
         self.__input.leaveGuiControlMode(consumerID)
 
+    def hasGuiControlModeConsumers(self, *consumersIDs):
+        return self.__input.hasGuiControlModeConsumers(*consumersIDs)
+
+    def registerGuiKeyHandler(self, handler):
+        self.__input.registerGuiKeyHandler(handler)
+
+    def unregisterGuiKeyHandler(self, handler):
+        self.__input.unregisterGuiKeyHandler(handler)
+
     def _createLoaderManager(self):
         return LoaderManager(weakref.proxy(self))
 

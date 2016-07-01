@@ -1,7 +1,6 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/customization/tooltips/element.py
 import BigWorld
 from CurrentVehicle import g_currentVehicle
-from debug_utils import LOG_DEBUG
 from gui.Scaleform.locale.MENU import MENU
 import nations
 from constants import IGR_TYPE
@@ -141,7 +140,7 @@ class ElementTooltip(BlocksTooltipData):
         blocks.append(formatters.packImageTextBlockData(title=text_styles.concatStylesWithSpace(bonusTitleLocal), desc=text_styles.main(data['bonus_desc']), img=data['bonus_icon'], imgPadding={'left': 11,
          'top': 3}, txtGap=-4, txtOffset=70, padding={'top': -1,
          'left': 7}))
-        if vehicle is not None:
+        if vehicle is not None and self._cType == CUSTOMIZATION_TYPE.CAMOUFLAGE:
             stockVehicle = g_itemsCache.items.getStockVehicle(vehicle.intCD)
             comparator = params_helper.camouflageComparator(vehicle, self._item)
             stockParams = params_helper.getParameters(stockVehicle)

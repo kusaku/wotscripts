@@ -3,11 +3,12 @@ from collections import namedtuple
 import copy
 from datetime import time
 import time
-from debug_utils import LOG_CURRENT_EXCEPTION, LOG_DEBUG, LOG_ERROR
+from debug_utils import LOG_CURRENT_EXCEPTION, LOG_ERROR
 from gui.shared.items_parameters import params
 from gui.shared.items_parameters.comparator import VehiclesComparator, ItemsComparator
 from gui.shared.items_parameters.params_cache import g_paramsCache
 from items import vehicles, ITEM_TYPES
+from shared_utils import findFirst
 _ITEM_TYPE_HANDLERS = {ITEM_TYPES.vehicleRadio: params.RadioParams,
  ITEM_TYPES.vehicleEngine: params.EngineParams,
  ITEM_TYPES.vehicleChassis: params.ChassisParams,
@@ -61,22 +62,15 @@ def itemOnVehicleComparator(vehicle, item):
     withItemParams = vehicleParams
     mayInstall, reason = vehicle.descriptor.mayInstallComponent(item.intCD)
     if item.itemTypeID == ITEM_TYPES.vehicleTurret:
+        mayInstall, reason = vehicle.descriptor.mayInstallTurret(item.intCD, vehicle.gun.intCD)
         if not mayInstall:
-            isInstalledDefault = False
-            for gun in item.descriptor['guns']:
-                mayInstall, _ = vehicle.descriptor.mayInstallComponent(gun['compactDescr'])
-                if mayInstall:
-                    gunCD = gun['compactDescr']
-                    removedGun = vehicle.descriptor.installComponent(gunCD)
-                    removedTurret = vehicle.descriptor.installTurret(item.intCD, gunCD)
-                    withItemParams = params.VehicleParams(vehicle).getParamsDict()
-                    vehicle.descriptor.installTurret(*removedTurret)
-                    vehicle.descriptor.installComponent(removedGun[0])
-                    isInstalledDefault = True
-                    break
-
-            if not isInstalledDefault:
-                LOG_ERROR('not possible to install turret', item)
+            properGun = findFirst(lambda gun: vehicle.descriptor.mayInstallComponent(gun['compactDescr'])[0], item.descriptor['guns'])
+            if properGun is not None:
+                removedModules = vehicle.descriptor.installTurret(item.intCD, properGun['compactDescr'])
+                withItemParams = params.VehicleParams(vehicle).getParamsDict()
+                vehicle.descriptor.installTurret(*removedModules)
+            else:
+                LOG_ERROR('not possible to install turret', item, reason)
         else:
             removedModules = vehicle.descriptor.installTurret(item.intCD, vehicle.gun.intCD)
             withItemParams = params.VehicleParams(vehicle).getParamsDict()

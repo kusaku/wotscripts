@@ -1,6 +1,6 @@
 # Embedded file name: scripts/common/goodies/goodie_helpers.py
-from collections import namedtuple
 from copy import deepcopy
+from collections import namedtuple
 from debug_utils import LOG_ERROR
 from Goodies import GoodieException
 from GoodieConditions import MaxVehicleLevel
@@ -124,3 +124,15 @@ def calcDefaultPrice(default, actual):
             result[goodieID] = (changedCredits, changedGold)
 
     return result
+
+
+def wipe(goodies, pdata, leaveGold):
+    if leaveGold:
+        for goodieID in pdata['goodies'].keys():
+            price = goodies['prices'].get(goodieID, None)
+            if price is not None and price[0] != 0:
+                del pdata['goodies'][goodieID]
+
+    else:
+        pdata['goodies'].clear()
+    return

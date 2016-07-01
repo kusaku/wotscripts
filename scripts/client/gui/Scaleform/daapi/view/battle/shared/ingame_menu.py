@@ -1,4 +1,5 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/battle/shared/ingame_menu.py
+import BattleReplay
 import constants
 from ConnectionManager import connectionManager
 from adisp import process
@@ -45,10 +46,19 @@ class IngameMenu(IngameMenuMeta):
         self.__setServerStats()
 
     def __setServerSettings(self):
-        tooltipBody = i18n.makeString(TOOLTIPS.HEADER_INFO_PLAYERS_ONLINE_FULL_BODY)
-        tooltipFullData = makeTooltip(TOOLTIPS.HEADER_INFO_PLAYERS_ONLINE_FULL_HEADER, tooltipBody % {'servername': connectionManager.serverUserName})
-        serverName = makeHtmlString('html_templates:lobby/serverStats', 'serverName', {'name': connectionManager.serverUserName})
-        self.as_setServerSettingS(serverName, tooltipFullData, INTERFACE_STATES.SHOW_ALL)
+        if BattleReplay.g_replayCtrl.isPlaying:
+            serverName = ''
+            tooltipFullData = ''
+            state = INTERFACE_STATES.HIDE_ALL_SERVER_INFO
+        else:
+            tooltipBody = i18n.makeString(TOOLTIPS.HEADER_INFO_PLAYERS_ONLINE_FULL_BODY)
+            tooltipFullData = makeTooltip(TOOLTIPS.HEADER_INFO_PLAYERS_ONLINE_FULL_HEADER, tooltipBody % {'servername': connectionManager.serverUserName})
+            serverName = makeHtmlString('html_templates:lobby/serverStats', 'serverName', {'name': connectionManager.serverUserName})
+            if constants.IS_SHOW_SERVER_STATS:
+                state = INTERFACE_STATES.SHOW_ALL
+            else:
+                state = INTERFACE_STATES.HIDE_SERVER_STATS
+        self.as_setServerSettingS(serverName, tooltipFullData, state)
 
     def __setServerStats(self):
         if constants.IS_SHOW_SERVER_STATS:

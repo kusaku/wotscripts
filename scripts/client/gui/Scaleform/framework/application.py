@@ -152,6 +152,18 @@ class SFApplication(Flash, ApplicationMeta):
     def ctrlModeFlags(self):
         return self.__guiCtrlModeFlags
 
+    def isModalViewShown(self):
+        """ Is any modal window shown.
+        For example, this routine is needed to avoid key handling in battle UI if modal window is shown.
+        :return: return True if some modal window is shown.
+        """
+        manager = self._containerMgr
+        if manager is not None:
+            result = manager.isModalViewsIsExists()
+        else:
+            result = False
+        return result
+
     def toggleEditor(self):
         from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
         from gui.shared.events import LoadViewEvent, GUIEditorEvent

@@ -71,7 +71,7 @@ class TeamScopeNumberingFinder(_SquadFinder):
 
     def __init__(self, teams):
         super(TeamScopeNumberingFinder, self).__init__(teams)
-        self._teamsSquadIndices = dict.fromkeys(teams, {})
+        self._teamsSquadIndices = {team:{} for team in teams}
 
     def clear(self):
         for indices in self._teamsSquadIndices.itervalues():

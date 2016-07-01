@@ -210,9 +210,9 @@ class DestroyTimersPanel(DestroyTimersPanelMeta):
 
     def __setFireInVehicle(self, isInFire):
         if isInFire:
-            self.as_showS(_TIMER_STATES.FIRE, _TIMER_STATES.WARNING_VIEW)
+            self.__timers.addTimer(_TIMER_STATES.FIRE, _TIMER_STATES.WARNING_VIEW, 0)
         else:
-            self.as_hideS(_TIMER_STATES.FIRE)
+            self.__hideTimer(_TIMER_STATES.FIRE)
 
     def __showTimer(self, typeID, totalTime, level):
         if typeID is not None:

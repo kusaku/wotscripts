@@ -1853,7 +1853,8 @@ def __updateFromAccountDossier100(compDescr):
      'globalMapCommonCut',
      'fallout',
      'maxFallout',
-     'falloutCut']
+     'falloutCut',
+     'falloutAchievements']
     updateCtx = {'dossierCompDescr': compDescr,
      'blockSizeFormat': 'H',
      'versionFormat': 'H',

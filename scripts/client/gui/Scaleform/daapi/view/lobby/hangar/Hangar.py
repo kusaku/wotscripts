@@ -56,7 +56,8 @@ class Hangar(LobbySubView, HangarMeta, GlobalListener):
         g_clientUpdateManager.addCallbacks({'stats.credits': self.onMoneyUpdate,
          'stats.gold': self.onMoneyUpdate,
          'stats.vehicleSellsLeft': self.onFittingUpdate,
-         'stats.slots': self.onFittingUpdate})
+         'stats.slots': self.onFittingUpdate,
+         'goodies': self.onFittingUpdate})
         self.startGlobalListening()
         self.__onIgrTypeChanged()
         if IS_SHOW_SERVER_STATS:

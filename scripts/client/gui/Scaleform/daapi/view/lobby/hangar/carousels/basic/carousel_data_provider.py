@@ -248,7 +248,8 @@ class CarouselDataProvider(SortableDAAPIDataProvider):
          'slotPrice': slotPrice,
          'icon': RES_ICONS.MAPS_ICONS_LIBRARY_TANKITEM_BUY_SLOT,
          'showInfoText': True,
-         'infoText': _getStatusString('buySlot', Vehicle.VEHICLE_STATE_LEVEL.INFO)}
+         'infoText': _getStatusString('buySlot', Vehicle.VEHICLE_STATE_LEVEL.INFO),
+         'hasSale': sale is not None}
         if sale is not None:
             buySlotVO.update({'slotPriceActionData': sale})
         self._supplyItems.append(buySlotVO)

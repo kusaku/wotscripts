@@ -131,3 +131,5 @@ class ARENAS(object):
     C_112_EIFFEL_TOWER_DESCRIPTION = '#arenas:112_eiffel_tower/description'
     C_114_CZECH_NAME = '#arenas:114_czech/name'
     C_114_CZECH_DESCRIPTION = '#arenas:114_czech/description'
+    C_112_EIFFEL_TOWER_CTF_NAME = '#arenas:112_eiffel_tower_ctf/name'
+    C_112_EIFFEL_TOWER_CTF_DESCRIPTION = '#arenas:112_eiffel_tower_ctf/description'

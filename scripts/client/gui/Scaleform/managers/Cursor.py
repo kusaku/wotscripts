@@ -57,6 +57,7 @@ class Cursor(CursorMeta, View):
             BigWorld.setCursor(None)
             self.__isActivated = False
         self.hide()
+        BigWorld.callback(0.0, self.__restoreDeviceMousePosition)
         return
 
     def syncCursor(self, flags = _CTRL_FLAG.GUI_ENABLED):
@@ -75,7 +76,6 @@ class Cursor(CursorMeta, View):
         return
 
     def hide(self):
-        self.__restoreDeviceMousePosition()
         if self.flashObject is not None:
             self.as_hideCursorS()
             self.fireEvent(GameEvent(GameEvent.HIDE_CURSOR), scope=EVENT_BUS_SCOPE.GLOBAL)

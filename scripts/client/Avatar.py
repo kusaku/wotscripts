@@ -1187,8 +1187,9 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
             return
 
     def stopTracer(self, shotID, endPoint):
-        if self.userSeesWorld():
+        if self.userSeesWorld() and self.__projectileMover is not None:
             self.__projectileMover.hide(shotID, endPoint)
+        return
 
     def explodeProjectile(self, shotID, effectsIndex, effectMaterialIndex, endPoint, velocityDir, damagedDestructibles):
         if self.userSeesWorld():
@@ -1839,6 +1840,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                 vehicle.drawEdge()
             else:
                 vehicle.removeEdge()
+            CombatEquipmentManager.setGUIVisible(self, flag)
             self.inputHandler.setGUIVisible(flag)
             return
 
