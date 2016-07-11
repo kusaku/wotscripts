@@ -3,6 +3,7 @@ import math
 from collections import defaultdict
 from functools import partial
 import BigWorld
+import Math
 from account_helpers.settings_core import g_settingsCore, settings_constants
 from constants import VISIBILITY, AOI
 from debug_utils import LOG_WARNING, LOG_ERROR, LOG_DEBUG
@@ -10,7 +11,7 @@ from gui import GUI_SETTINGS
 from gui.Scaleform.daapi.view.battle.shared.minimap import common
 from gui.Scaleform.daapi.view.battle.shared.minimap import entries
 from gui.Scaleform.daapi.view.battle.shared.minimap import settings
-from gui.battle_control import g_sessionProvider, minimap_utils, matrix_factory
+from gui.battle_control import g_sessionProvider, avatar_getter, minimap_utils, matrix_factory
 from gui.battle_control.arena_info.interfaces import IVehiclesAndPositionsController
 from gui.battle_control.arena_info.settings import INVALIDATE_OP
 from gui.battle_control.battle_constants import FEEDBACK_EVENT_ID, VEHICLE_LOCATION
@@ -507,6 +508,8 @@ class ArenaVehiclesPlugin(common.EntriesPlugin, IVehiclesAndPositionsController)
                 animation = entry.getSpottedAnimation(self._entries.itervalues())
             else:
                 animation = ''
+            if animation:
+                self.__playSpottedSound(entry)
             self._invoke(entry.getID(), 'setVehicleInfo', vehicleID, classTag, name, guiProps.name(), animation)
         return
 
@@ -559,6 +562,7 @@ class ArenaVehiclesPlugin(common.EntriesPlugin, IVehiclesAndPositionsController)
             if not self.__isObserver:
                 animation = entry.getSpottedAnimation(self._entries.itervalues())
                 if animation:
+                    self.__playSpottedSound(entry)
                     self._invoke(entry.getID(), 'setAnimation', animation)
             return
 
@@ -587,8 +591,15 @@ class ArenaVehiclesPlugin(common.EntriesPlugin, IVehiclesAndPositionsController)
     def __showFeatures(self, flag):
         self._parentObj.as_showVehiclesNameS(flag)
         for entry in self._entries.itervalues():
-            if entry.wasSpotted():
+            if entry.wasSpotted() and entry.isAlive():
                 self.__setActive(entry, flag)
+
+    @staticmethod
+    def __playSpottedSound(entry):
+        nots = avatar_getter.getSoundNotifications()
+        if nots is not None:
+            nots.play('enemy_sighted_for_team', None, None, Math.Matrix(entry.getMatrix()).translation)
+        return
 
     def __clearDestroyCallback(self, vehicleID):
         callbackID = self.__destroyCallbacksIDs.pop(vehicleID, None)

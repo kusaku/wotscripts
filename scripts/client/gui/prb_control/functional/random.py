@@ -24,6 +24,7 @@ class _RandomEventsSubscriber(prequeue.PlayersEventsSubscriber):
         g_playerEvents.onEnqueueRandomFailure += functional.onEnqueueError
         g_playerEvents.onKickedFromRandomQueue += functional.onKickedFromQueue
         g_playerEvents.onKickedFromArena += functional.onKickedFromArena
+        g_playerEvents.onArenaJoinFailure += functional.onArenaJoinFailure
 
     def unsubscribe(self, functional):
         g_playerEvents.onEnqueuedRandom -= functional.onEnqueued
@@ -31,6 +32,7 @@ class _RandomEventsSubscriber(prequeue.PlayersEventsSubscriber):
         g_playerEvents.onEnqueueRandomFailure -= functional.onEnqueueError
         g_playerEvents.onKickedFromRandomQueue -= functional.onKickedFromQueue
         g_playerEvents.onKickedFromArena -= functional.onKickedFromArena
+        g_playerEvents.onArenaJoinFailure -= functional.onArenaJoinFailure
 
 
 class RandomQueueFunctional(prequeue.AccountQueueFunctional):

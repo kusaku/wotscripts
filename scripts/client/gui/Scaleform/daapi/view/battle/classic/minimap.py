@@ -52,7 +52,7 @@ class GlobalSettingsPlugin(common.SimplePlugin):
             self.__sizeIndex = newSize
             self._parentObj.as_setSizeS(self.__sizeIndex)
         value = int(g_settingsCore.getSetting(settings_constants.GAME.MINIMAP_ALPHA))
-        if not value:
+        if value:
             self._parentObj.as_setAlphaS(1 - value / 100.0)
 
     def updateSettings(self, diff):

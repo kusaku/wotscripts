@@ -68,6 +68,7 @@ class _SandboxEventsSubscriber(prequeue.PlayersEventsSubscriber):
         g_playerEvents.onEnqueuedSandboxFailure += functional.onEnqueueError
         g_playerEvents.onKickedFromSandboxQueue += functional.onKickedFromQueue
         g_playerEvents.onKickedFromArena += functional.onKickedFromArena
+        g_playerEvents.onArenaJoinFailure += functional.onArenaJoinFailure
 
     def unsubscribe(self, functional):
         g_playerEvents.onEnqueuedSandbox -= functional.onEnqueued
@@ -75,6 +76,7 @@ class _SandboxEventsSubscriber(prequeue.PlayersEventsSubscriber):
         g_playerEvents.onEnqueuedSandboxFailure -= functional.onEnqueueError
         g_playerEvents.onKickedFromSandboxQueue -= functional.onKickedFromQueue
         g_playerEvents.onKickedFromArena -= functional.onKickedFromArena
+        g_playerEvents.onArenaJoinFailure -= functional.onArenaJoinFailure
 
 
 class SandboxQueueFunctional(prequeue.AccountQueueFunctional):

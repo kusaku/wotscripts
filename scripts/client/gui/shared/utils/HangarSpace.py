@@ -206,7 +206,7 @@ class _HangarSpace(object):
         self.onSpaceCreate()
         Waiting.hide('loadHangarSpace')
         g_statistics.noteHangarLoadingState(HANGAR_LOADING_STATE.FINISH_LOADING_SPACE)
-        g_statistics.noteHangarLoadingState(HANGAR_LOADING_STATE.HANGAR_READY)
+        g_statistics.noteHangarLoadingState(HANGAR_LOADING_STATE.HANGAR_READY, showSummaryNow=True)
 
     def __changeDone(self):
         Waiting.hide('loadHangarSpaceVehicle')

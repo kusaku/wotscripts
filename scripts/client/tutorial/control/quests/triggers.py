@@ -289,7 +289,10 @@ class TutorialAccountSettingsTrigger(TriggerWithValidateVar):
         self.toggle(isOn=self.isOn())
 
     def isOn(self):
-        return AccountSettings.getSettings(self.getVar())
+        var = self.getVar()
+        if var:
+            return var['value'] == AccountSettings.getSettings(var['key'])
+        return False
 
     def clear(self):
         AccountSettings.onSettingsChanging -= self.__onSettingsChanged
@@ -297,7 +300,7 @@ class TutorialAccountSettingsTrigger(TriggerWithValidateVar):
         self.isRunning = False
 
     def __onSettingsChanged(self, key, value):
-        if self.getVar() == key:
+        if key in self.getVar():
             self.toggle(isOn=self.isOn())
 
 

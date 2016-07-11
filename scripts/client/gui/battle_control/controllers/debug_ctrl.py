@@ -7,7 +7,7 @@ from gui.battle_control.battle_constants import BATTLE_CTRL_ID
 from gui.battle_control.view_components import IViewComponentsController
 from gui.shared.utils.TimeInterval import TimeInterval
 from helpers.statistics import g_statistics
-_UPDATE_INTERVAL = 0.05
+_UPDATE_INTERVAL = 0.2
 _LATENCY_UNAVAILABLE = (0, 0, 0, 0)
 
 class IDebugPanel(object):

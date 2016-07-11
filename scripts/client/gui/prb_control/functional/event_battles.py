@@ -16,6 +16,7 @@ class EventBattlesEventsSubscriber(prequeue.PlayersEventsSubscriber):
         g_playerEvents.onEnqueueEventBattlesFailure += functional.onEnqueueError
         g_playerEvents.onKickedFromEventBattles += functional.onKickedFromQueue
         g_playerEvents.onKickedFromArena += functional.onKickedFromArena
+        g_playerEvents.onArenaJoinFailure += functional.onArenaJoinFailure
 
     def unsubscribe(self, functional):
         g_playerEvents.onEnqueuedEventBattles -= functional.onEnqueued
@@ -23,6 +24,7 @@ class EventBattlesEventsSubscriber(prequeue.PlayersEventsSubscriber):
         g_playerEvents.onEnqueueEventBattlesFailure -= functional.onEnqueueError
         g_playerEvents.onKickedFromEventBattles -= functional.onKickedFromQueue
         g_playerEvents.onKickedFromArena -= functional.onKickedFromArena
+        g_playerEvents.onArenaJoinFailure -= functional.onArenaJoinFailure
 
 
 class EventBattlesQueueFunctional(prequeue.AccountQueueFunctional):

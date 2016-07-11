@@ -12,6 +12,7 @@ from gui.Scaleform.daapi.view.meta.IngameMenuMeta import IngameMenuMeta
 from gui.Scaleform.genConsts.GLOBAL_VARS_MGR_CONSTS import GLOBAL_VARS_MGR_CONSTS
 from gui.Scaleform.genConsts.INTERFACE_STATES import INTERFACE_STATES
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
+from gui.Scaleform.managers.battle_input import BattleGUIKeyHandler
 from gui.battle_control import g_sessionProvider
 from gui.battle_control import event_dispatcher as battle_event_dispatcher
 from gui.shared import event_dispatcher as shared_event_dispatcher
@@ -19,10 +20,13 @@ from gui.shared import events
 from gui.shared.utils.functions import makeTooltip
 from helpers import i18n
 
-class IngameMenu(IngameMenuMeta):
+class IngameMenu(IngameMenuMeta, BattleGUIKeyHandler):
 
     def onWindowClose(self):
         self.destroy()
+
+    def handleEscKey(self, isDown):
+        return isDown
 
     def quitBattleClick(self):
         if self.app.varsManager.isTutorialRunning(GLOBAL_VARS_MGR_CONSTS.BATTLE):
@@ -42,8 +46,17 @@ class IngameMenu(IngameMenuMeta):
 
     def _populate(self):
         super(IngameMenu, self)._populate()
+        if self.app is not None:
+            self.app.registerGuiKeyHandler(self)
         self.__setServerSettings()
         self.__setServerStats()
+        return
+
+    def _dispose(self):
+        if self.app is not None:
+            self.app.unregisterGuiKeyHandler(self)
+        super(IngameMenu, self)._dispose()
+        return
 
     def __setServerSettings(self):
         if BattleReplay.g_replayCtrl.isPlaying:

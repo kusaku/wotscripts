@@ -88,9 +88,13 @@ class SfLobbyProxy(GUIProxy):
         self.effects.stopAll()
 
     def lock(self):
+        from helpers.statistics import g_statistics, HANGAR_LOADING_STATE
+        g_statistics.noteHangarLoadingState(HANGAR_LOADING_STATE.START_LOADING_TUTORIAL)
         self.showWaiting('update-scene', isSingle=True)
 
     def release(self):
+        from helpers.statistics import g_statistics, HANGAR_LOADING_STATE
+        g_statistics.noteHangarLoadingState(HANGAR_LOADING_STATE.FINISH_LOADING_TUTORIAL, showSummaryNow=True)
         self.hideWaiting('update-scene')
 
     def loadConfig(self, filePath):

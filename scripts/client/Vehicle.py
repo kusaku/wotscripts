@@ -32,12 +32,47 @@ LOW_ENERGY_COLLISION_D = 0.3
 HIGH_ENERGY_COLLISION_D = 0.6
 _g_waitingVehicle = dict()
 
+class _Vector4Provider(object):
+    __slots__ = ('_v',)
+
+    @property
+    def value(self):
+        return self._v
+
+    def __int__(self):
+        self._v = Math.Vector4(0.0, 0.0, 0.0, 0.0)
+
+
+class _VehicleSpeedProvider(object):
+    __slots__ = ('__value',)
+
+    @property
+    def value(self):
+        return self.__value.value
+
+    def __init__(self):
+        self.__value = _Vector4Provider()
+
+    def set(self, val):
+        self.__value = val
+
+    def reset(self):
+        self.__value = _Vector4Provider()
+
+
 class Vehicle(BigWorld.Entity):
     hornMode = property(lambda self: self.__hornMode)
     isEnteringWorld = property(lambda self: self.__isEnteringWorld)
     isTurretDetached = property(lambda self: constants.SPECIAL_VEHICLE_HEALTH.IS_TURRET_DETACHED(self.health) and self.__turretDetachmentConfirmed)
     isTurretMarkedForDetachment = property(lambda self: constants.SPECIAL_VEHICLE_HEALTH.IS_TURRET_DETACHED(self.health))
     isTurretDetachmentConfirmationNeeded = property(lambda self: not self.__turretDetachmentConfirmed)
+
+    @property
+    def speedInfo(self):
+        return self.__speedInfo
+
+    def getSpeed(self):
+        return self.__speedInfo.value[0]
 
     def __init__(self):
         global _g_waitingVehicle
@@ -53,6 +88,7 @@ class Vehicle(BigWorld.Entity):
         self.__stopHornSoundCallback = None
         self.__isEnteringWorld = False
         self.__turretDetachmentConfirmed = False
+        self.__speedInfo = _VehicleSpeedProvider()
         self.assembler = None
         _g_waitingVehicle[self.id] = weakref.ref(self)
         self.respawnCompactDescr = None
@@ -408,9 +444,6 @@ class Vehicle(BigWorld.Entity):
     def isAlive(self):
         return self.isCrewActive and self.health > 0
 
-    def getSpeed(self):
-        return self.filter.speedInfo.value[0]
-
     def startVisual(self):
         if not not self.isStarted:
             raise AssertionError
@@ -532,10 +565,11 @@ class Vehicle(BigWorld.Entity):
             physics.visibilityMask = ArenaType.getVisibilityMask(BigWorld.player().arenaTypeID >> 16)
             yaw, pitch = decodeGunAngles(self.gunAnglesPacked, typeDescr.gun['pitchLimits']['absolute'])
             self.filter.syncGunAngles(yaw, pitch)
+            self.__speedInfo.set(self.filter.speedInfo)
             return
 
     def __stopWGPhysics(self):
-        pass
+        self.__speedInfo.reset()
 
     def __stopExtras(self):
         extraTypes = self.typeDescriptor.extras

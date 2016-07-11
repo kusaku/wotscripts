@@ -32,8 +32,10 @@ class HANGAR_LOADING_STATE:
     FINISH_LOADING_VEHICLE = 7
     FINISH_LOADING_SPACE = 8
     HANGAR_READY = 9
-    DISCONNECTED = 10
-    COUNT = 11
+    START_LOADING_TUTORIAL = 10
+    FINISH_LOADING_TUTORIAL = 11
+    DISCONNECTED = 12
+    COUNT = 13
 
 
 _HANGAR_LOADING_STATES_PREFIX = 'HANGAR LOADING STATE'
@@ -47,8 +49,13 @@ _HANGAR_LOADING_STATES = ['LOGIN',
  'VEHICLE LOADING END',
  'SPACE LOADING END',
  'HANGAR READY',
+ 'TUTORIAL LOADING START',
+ 'TUTORIAL LOADING END',
  'DISCONNECTED']
-_HANGAR_LOADING_STATES_IDS = [HANGAR_LOADING_STATE.FINISH_LOADING_VEHICLE, HANGAR_LOADING_STATE.FINISH_LOADING_SPACE, HANGAR_LOADING_STATE.HANGAR_READY]
+_HANGAR_LOADING_STATES_IDS = [HANGAR_LOADING_STATE.FINISH_LOADING_VEHICLE,
+ HANGAR_LOADING_STATE.FINISH_LOADING_SPACE,
+ HANGAR_LOADING_STATE.FINISH_LOADING_TUTORIAL,
+ HANGAR_LOADING_STATE.HANGAR_READY]
 
 class StatisticsCollector:
     avrPing = property(lambda self: (0 if self.__framesTotal is 0 else self.__avrPing / self.__framesTotal))
@@ -184,7 +191,7 @@ class StatisticsCollector:
     def __onDRRChanged(self):
         self.__invalidStats |= INVALID_CLIENT_STATS.CLIENT_DRR_SCALE_CHANGED
 
-    def noteHangarLoadingState(self, state, initialState = False):
+    def noteHangarLoadingState(self, state, initialState = False, showSummaryNow = False):
         if state < 0 or state > HANGAR_LOADING_STATE.COUNT:
             LOG_DEBUG('Unknown hangar loading state: {0}'.format(state))
             return
@@ -198,17 +205,13 @@ class StatisticsCollector:
         LOG_NOTE('{0} - {1}'.format(stateName, exactTime))
         self.__loadingStates[state] = exactTime
         BigWorld.addUPLMessage(stateName)
-        if 0.0 not in self.__loadingStates[self.__loadingInitialState:-1] and state in _HANGAR_LOADING_STATES_IDS:
-            reportHeader = _HANGAR_LOADING_STATES_PREFIX + ' SUMMARY'
-            report = ': '
-            for i in xrange(self.__loadingInitialState + 1, HANGAR_LOADING_STATE.COUNT - 1):
-                delta = self.__loadingStates[i] - self.__loadingStates[i - 1]
-                report += str(delta if delta > 0.0 else 0.0)
-                if i < HANGAR_LOADING_STATE.COUNT - 2:
-                    report += ' | '
-
-            self.__hangarLoadingTime = self.__loadingStates[HANGAR_LOADING_STATE.HANGAR_READY] - self.__loadingStates[self.__loadingInitialState]
-            LOG_NOTE(reportHeader + report)
+        if showSummaryNow:
+            reportHeader = _HANGAR_LOADING_STATES_PREFIX + ': SUMMARY'
+            stopWatch = HANGAR_LOADING_STATE.HANGAR_READY
+            if self.__loadingStates[HANGAR_LOADING_STATE.FINISH_LOADING_TUTORIAL] != 0.0:
+                stopWatch = HANGAR_LOADING_STATE.FINISH_LOADING_TUTORIAL
+                reportHeader += ' (With Tutorial stage) '
+            self.__hangarLoadingTime = self.__loadingStates[stopWatch] - self.__loadingStates[self.__loadingInitialState]
             LOG_NOTE(reportHeader + ' TOTAL = ' + str(self.__hangarLoadingTime))
 
 

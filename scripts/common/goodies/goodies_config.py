@@ -57,7 +57,7 @@ def _readPrice(reader, subsectionName):
     if reader.getSubsection(priceSectionName) is None:
         return
     else:
-        if reader.getSubsection(priceSectionName + '/gold'):
+        if reader.getSubsection(priceSectionName + '/gold') is not None:
             isGold = True
         else:
             isGold = False

@@ -187,6 +187,10 @@ class PreQueueFunctional(NoPreQueueFunctional):
         self._invokeListeners('onKickedFromArena', self._queueType, *args)
         self._exitFromQueueUI()
 
+    def onArenaJoinFailure(self, *args):
+        self._invokeListeners('onArenaJoinFailure', self._queueType, *args)
+        self._exitFromQueueUI()
+
     def _goToQueueUI(self):
         return FUNCTIONAL_FLAG.UNDEFINED
 
@@ -284,6 +288,10 @@ class AccountQueueFunctional(PreQueueFunctional):
     def onKickedFromArena(self, *args):
         self._requestCtx.stopProcessing(True)
         super(AccountQueueFunctional, self).onKickedFromArena(*args)
+
+    def onArenaJoinFailure(self, *args):
+        self._requestCtx.stopProcessing(True)
+        super(AccountQueueFunctional, self).onArenaJoinFailure(*args)
 
     def _doQueue(self, ctx):
         raise NotImplementedError('Routine _doQueue must be overridden')

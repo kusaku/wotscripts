@@ -1578,7 +1578,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
         if vehicle is None or not vehicle.isStarted:
             return self.__lastVehicleSpeeds
         else:
-            speedInfo = vehicle.filter.speedInfo.value
+            speedInfo = vehicle.speedInfo.value
             if getInstantaneous:
                 speed = speedInfo[2]
                 rspeed = speedInfo[3]

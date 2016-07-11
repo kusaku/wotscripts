@@ -162,7 +162,7 @@ class _RpmStateHandler(_StateHandler):
         :param vehicle: A reference to Vehicle(BW entity) object.
         """
         try:
-            vehicleSpeed = vehicle.filter.speedInfo.value[0]
+            vehicleSpeed = vehicle.speedInfo.value[0]
             speedRangePerGear = (self.__speedLimits[0] + self.__speedLimits[1]) / 3.0
         except (AttributeError, IndexError, ValueError):
             LOG_CURRENT_EXCEPTION()
@@ -312,7 +312,7 @@ class _SpeedStateHandler(_StateHandler):
             speed, _ = player.getOwnVehicleSpeeds()
         else:
             try:
-                speed = vehicle.filter.speedInfo.value[0]
+                speed = vehicle.speedInfo.value[0]
             except (AttributeError, IndexError, ValueError):
                 LOG_CURRENT_EXCEPTION()
                 return ()

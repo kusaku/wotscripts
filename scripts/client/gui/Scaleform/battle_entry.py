@@ -96,19 +96,31 @@ class BattleEntry(SFApplication):
             return
 
     def enterGuiControlMode(self, consumerID, cursorVisible = True):
-        self.__input.enterGuiControlMode(consumerID, cursorVisible=cursorVisible)
+        if self.__input is not None:
+            self.__input.enterGuiControlMode(consumerID, cursorVisible=cursorVisible)
+        return
 
     def leaveGuiControlMode(self, consumerID):
-        self.__input.leaveGuiControlMode(consumerID)
+        if self.__input is not None:
+            self.__input.leaveGuiControlMode(consumerID)
+        return
 
     def hasGuiControlModeConsumers(self, *consumersIDs):
-        return self.__input.hasGuiControlModeConsumers(*consumersIDs)
+        if self.__input is not None:
+            return self.__input.hasGuiControlModeConsumers(*consumersIDs)
+        else:
+            return False
+            return
 
     def registerGuiKeyHandler(self, handler):
-        self.__input.registerGuiKeyHandler(handler)
+        if self.__input is not None:
+            self.__input.registerGuiKeyHandler(handler)
+        return
 
     def unregisterGuiKeyHandler(self, handler):
-        self.__input.unregisterGuiKeyHandler(handler)
+        if self.__input is not None:
+            self.__input.unregisterGuiKeyHandler(handler)
+        return
 
     def _createLoaderManager(self):
         return LoaderManager(weakref.proxy(self))

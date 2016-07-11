@@ -310,7 +310,7 @@ class VehicleParams(_ParameterBase):
 
     @property
     def aimingTime(self):
-        return round(getGunAimingTime(self._itemDescr, self.__factors), 1)
+        return getGunAimingTime(self._itemDescr, self.__factors)
 
     @property
     def shotDispersionAngle(self):

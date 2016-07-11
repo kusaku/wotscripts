@@ -78,6 +78,7 @@ class VehicleBuyWindow(VehicleBuyWindowMeta):
             tankmenLabel = i18n.makeString(DIALOGS.BUYVEHICLEDIALOG_TANKMENLABEL, count=text_styles.titleFont(i18n.makeString(DIALOGS.BUYVEHICLEDIALOG_TANKMEN) + ' ' + str(tankMenCount)))
             initData = {'expanded': windowExpanded,
              'name': vehicle.userName,
+             'shortName': vehicle.shortUserName,
              'longName': vehicle.longUserName,
              'description': vehicle.fullDescription,
              'type': vehicle.type,

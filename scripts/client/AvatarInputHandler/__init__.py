@@ -446,8 +446,6 @@ class AvatarInputHandler(CallbackDelayer):
                         BigWorld.player().enableOwnVehicleAutorotation(self.__isAutorotation)
                     self.__prevModeAutorotation = None
             self.__targeting.onRecreateDevice()
-            if not self.__isDetached:
-                GUI.mcursor().position = self.__aimOffset
             self.__curCtrl.setGUIVisible(self.__isGUIVisible)
             vehicle = player.getVehicleAttached()
             if isObserverMode:
@@ -455,6 +453,7 @@ class AvatarInputHandler(CallbackDelayer):
             else:
                 self.__curCtrl.enable(ctrlState=ctrlState, **args)
             self.onCameraChanged(eMode, vehicle.id if isObserverMode else None)
+            self.__curCtrl.handleMouseEvent(0.0, 0.0, 0.0)
             return
 
     def getTargeting(self):

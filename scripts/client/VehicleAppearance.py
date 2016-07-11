@@ -869,7 +869,7 @@ class VehicleAppearance(CallbackDelayer, ComponentSystem):
             if self.__isPillbox or self.__vehicle is None:
                 return
             vehicle = self.__vehicle
-            self.__speedInfo = vehicle.filter.speedInfo.value
+            self.__speedInfo = vehicle.speedInfo.value
             if not self.__vehicle.isPlayerVehicle:
                 self.detailedEngineState.refresh(_PERIODIC_TIME)
             try:

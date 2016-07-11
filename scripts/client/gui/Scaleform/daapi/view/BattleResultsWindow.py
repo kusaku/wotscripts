@@ -400,12 +400,14 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
         iVId = item['vehicleId']
         iAccountDBID = self.dataProvider.getAccountDBID(iVId)
         iVehsData = self.dataProvider.getVehiclesData(iAccountDBID)
-        iVehItem = iVehsData[0]
         oVId = other['vehicleId']
         oAccountDBID = self.dataProvider.getAccountDBID(oVId)
         oVehsData = self.dataProvider.getVehiclesData(oAccountDBID)
-        oVehItem = oVehsData[0]
-        return self.__vehiclesComparator(iVehItem, oVehItem)
+        if len(oVehsData) and len(iVehsData):
+            return self.__vehiclesComparator(iVehsData[0], oVehsData[0])
+        if len(iVehsData):
+            return -1
+        return 1
 
     def __vehiclesComparator(self, iVehItem, oVehItem):
         cd = iVehItem.get('typeCompDescr')

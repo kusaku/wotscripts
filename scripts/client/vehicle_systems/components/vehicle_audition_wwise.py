@@ -214,7 +214,8 @@ class EngineAuditionWWISE(EngineAudition):
             if vehicleAttached is None:
                 return
             cameraUnit = vehicleAttached.id == self.__vehicleId
-            speed = self.vehicleFilter.speedInfo.value[0]
+            speedInfo = vehicleAttached.speedInfo.value
+            speed = speedInfo[0]
             soundEngine.setRTPC('RTPC_ext_rpm', clamp(0.0, 100.0, self.detailedEngineState.rpm))
             soundTrack.setRTPC('RTPC_ext_rpm', clamp(0.0, 100.0, self.detailedEngineState.rpm))
             soundEngine.setRTPC('RTPC_ext_engine_load', self.detailedEngineState.engineLoad)
@@ -269,7 +270,7 @@ class EngineAuditionWWISE(EngineAudition):
             self.__prevTime = BigWorld.time()
             soundEngine.setRTPC('RTPC_ext_acc_abs', accelerationAbs)
             soundTrack.setRTPC('RTPC_ext_acc_abs', accelerationAbs)
-            moveValue = 100 if math.fabs(self.vehicleFilter.speedInfo.value[0]) > 1.0 else 0
+            moveValue = 100 if math.fabs(speed) > 1.0 else 0
             soundTrack.setRTPC('RTPC_ext_move', moveValue)
             soundEngine.setRTPC('RTPC_ext_move', moveValue)
             soundEngine.setRTPC('RTPC_ext_physic_load', self.detailedEngineState.physicLoad)
@@ -277,7 +278,7 @@ class EngineAuditionWWISE(EngineAudition):
             if cameraUnit:
                 WWISE.WW_setRTCPGlobal('RTPC_ext_physic_load_global', self.detailedEngineState.physicLoad)
                 WWISE.WW_setRTCPGlobal('RTPC_ext_speed_rel_global', clamp(-1.0, 1.0, self.detailedEngineState.relativeSpeed))
-                WWISE.WW_setRTCPGlobal('RTPC_ext_speed_abs_global', self.vehicleFilter.speedInfo.value[0])
+                WWISE.WW_setRTCPGlobal('RTPC_ext_speed_abs_global', speed)
             soundTrack.setRTPC('RTPC_ext_flying', self.isFlyingLink())
             if not cameraUnit:
                 return
@@ -324,7 +325,7 @@ class EngineAuditionWWISE(EngineAudition):
             soundEngine.setRTPC('RTPC_ext_roughness2', roughnessValue)
             soundTrack.setRTPC('RTPC_ext_roughness_eng', roughnessValue)
             soundEngine.setRTPC('RTPC_ext_roughness_eng', roughnessValue)
-            rotationSpeed = self.vehicleFilter.speedInfo.value[1]
+            rotationSpeed = speedInfo[1]
             roatationRelSpeed = rotationSpeed / self.__typeDesc.physics['rotationSpeedLimit']
             RTPC_ext_treads_sum_affect = math.fabs(roatationRelSpeed * 0.33) + math.fabs(roughnessValue * 0.33) + (clamp(0.5, 1.0, self.detailedEngineState.physicLoad) - 0.5) * 0.66
             soundTrack.setRTPC('RTPC_ext_treads_sum_affect', RTPC_ext_treads_sum_affect)

@@ -375,6 +375,12 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
 
     def onArenaJoinFailure(self, errorCode, errorStr):
         LOG_DEBUG('onArenaJoinFailure', errorCode, errorStr)
+        self.isInRandomQueue = False
+        self.isInTutorialQueue = False
+        self.isInEventBattles = False
+        self.isInFalloutClassic = False
+        self.isInFalloutMultiteam = False
+        self.isInSandboxQueue = False
         events.isPlayerEntityChanging = False
         events.onPlayerEntityChangeCanceled()
         events.onArenaJoinFailure(errorCode, errorStr)
