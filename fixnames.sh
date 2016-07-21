@@ -2,39 +2,53 @@
 
 # bash script for filename case conversion
 # decompiled files have prefix:
-# Embedded file name: ./scripts/[original_pathname_here]
+# Embedded file name: [type]/scripts/[original_pathname_here]
 #
 # it tries to extract original names and rename
-# files moved from ./script_in to ./script directory
-# extensions also are changed to .py
+# files moved from in~/[type]/script_in
+# to [type]/script directory
+# extensions are changed to .py also
 
 
-find ./scripts~/ -name '*.pyc' -delete
+fixname ()
+{
+    local TYPE=$1
+    local OLDFILE=$2
 
-find ./scripts~/ -name '*.pyc_dis*' | while IFS=$'\n' read -r FILE; do
-
-    # read original filename
-    NEWFILE=$(head -n 1 $FILE | sed -e 's/# Embedded file name: /.\//g')
+    # make new filename
+    local NEWFILE=$(head -n 1 $OLDFILE | sed -e "s/# Embedded file name: /$TYPE\//g")
 
     # detect if it is correct
-    if [[ ! $NEWFILE =~ ^./scripts/ ]];
+    if [[ ! $NEWFILE =~ ^$TYPE/scripts/ ]];
     then
-        # fallback to default, just move ./script_in -> ./script
-        NEWFILE=$(echo "${FILE%.*}.py" | sed -e 's/\.\/scripts_in/\.\/scripts/g')
-        echo "Bad header in $FILE, using $NEWFILE"
+        # fallback to default, just move in~/ -> .
+        NEWFILE=$(echo "${OLDFILE%.*}.py" | sed -e "s/in~\///g")
+        echo "Bad header in $OLDFILE, using $NEWFILE"
     fi
 
-    if [[ $NEWFILE != $FILE ]];
+    if [[ $NEWFILE != $OLDFILE ]];
     then
-        echo "$FILE -> $NEWFILE"
+        echo "$OLDFILE -> $NEWFILE"
         DIR=$(dirname $NEWFILE)
         # make proper dir if necessary
         [ -d $DIR ] || mkdir -p $DIR
-        mv $FILE $NEWFILE
+        mv $OLDFILE $NEWFILE
     else
-        echo "$FILE -> no change"
+        echo "$OLDFILE -> no change"
     fi
+}
 
+
+find in~/ -name '*.pyc' -delete
+
+find in~/res -name '*.pyc_dis*' | while IFS=$'\n' read -r FILE;
+do
+    fixname res $FILE
+done
+
+find in~/res_bw -name '*.pyc_dis*' | while IFS=$'\n' read -r FILE;
+do
+    fixname res_bw $FILE
 done
 
 # wow!
