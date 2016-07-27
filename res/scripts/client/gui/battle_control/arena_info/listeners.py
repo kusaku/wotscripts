@@ -290,14 +290,14 @@ class PersonalInvitationsListener(_Listener):
     def __updateInvitationsStatuses(self):
         update = self._arenaDP.updateInvitationStatus
         vos = []
-        for invites in self.prbInvites.getInvites(incoming=True):
-            accountDBID, include = self.__filter.addReceivedInvite(invites)
+        for invite in self.prbInvites.getInvites(incoming=True):
+            accountDBID, include = self.__filter.addReceivedInvite(invite)
             flags, vo = update(accountDBID, include=include)
             if vo is not None and flags != INVALIDATE_OP.NONE:
                 vos.append(vo)
 
-        for invites in self.prbInvites.getInvites(incoming=False):
-            accountDBID, include = self.__filter.addSentInvite(invites)
+        for invite in self.prbInvites.getInvites(incoming=False):
+            accountDBID, include = self.__filter.addSentInvite(invite)
             flags, vo = update(accountDBID, include=include)
             if vo is not None and flags != INVALIDATE_OP.NONE:
                 vos.append(vo)

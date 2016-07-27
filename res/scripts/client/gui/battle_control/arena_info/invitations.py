@@ -45,22 +45,24 @@ class SquadInvitationsFilter(object):
                 self.__isSendingProhibited = True
 
     def addReceivedInvite(self, invite):
-        if not self.__isInviteValid(invite):
+        if invite is None:
             return (0, _STATUS.NONE)
-        self.__received[invite.creatorDBID] = invite.clientID
-        include = _STATUS.RECEIVED_FROM
-        if not self.__isInviteValid(invite):
-            include |= _STATUS.RECEIVED_INACTIVE
-        return (invite.creatorDBID, include)
+        else:
+            self.__received[invite.creatorDBID] = invite.clientID
+            include = _STATUS.RECEIVED_FROM
+            if not self.__isInviteValid(invite):
+                include |= _STATUS.RECEIVED_INACTIVE
+            return (invite.creatorDBID, include)
 
     def addSentInvite(self, invite):
-        if not self.__isInviteValid(invite):
+        if invite is None:
             return (0, _STATUS.NONE)
-        self.__sent[invite.receiverDBID] = invite.clientID
-        include = _STATUS.SENT_TO
-        if not self.__isInviteValid(invite):
-            include |= _STATUS.SENT_INACTIVE
-        return (invite.receiverDBID, include)
+        else:
+            self.__sent[invite.receiverDBID] = invite.clientID
+            include = _STATUS.SENT_TO
+            if not self.__isInviteValid(invite):
+                include |= _STATUS.SENT_INACTIVE
+            return (invite.receiverDBID, include)
 
     def filterReceivedInvites(self, getter, added, changed, deleted):
         """Filters received invites.
@@ -77,7 +79,7 @@ class SquadInvitationsFilter(object):
             if not self.__isInviteValid(invite):
                 continue
             self.__received[invite.creatorDBID] = invite.clientID
-            yield (invite.creatorDBID, _STATUS.RECEIVED_FROM, _STATUS.NONE)
+            yield (invite.creatorDBID, _STATUS.RECEIVED_FROM, _STATUS.RECEIVED_INACTIVE)
 
         for clientID in changed:
             invite = getter(clientID)
@@ -113,7 +115,7 @@ class SquadInvitationsFilter(object):
             if not self.__isInviteValid(invite):
                 continue
             self.__sent[invite.receiverDBID] = invite.clientID
-            yield (invite.receiverDBID, _STATUS.SENT_TO, _STATUS.NONE)
+            yield (invite.receiverDBID, _STATUS.SENT_TO, _STATUS.SENT_INACTIVE)
 
         for clientID in changed:
             invite = getter(clientID)

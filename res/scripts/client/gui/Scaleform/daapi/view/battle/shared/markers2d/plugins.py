@@ -38,7 +38,7 @@ def createPlugins(manager):
         if visitor.hasResourcePoints():
             setup['resources'] = ResourceMarkerPlugin
         setup['safe_zone'] = visitor.hasGasAttack() and GasAttackSafeZonePlugin
-    plugins = MarkerPlugins(manager)
+    plugins = PluginsCollection(manager)
     plugins.addPlugins(setup)
     return plugins
 
@@ -59,12 +59,6 @@ class IMarkersManager(object):
 
     def destroyMarker(self, handle):
         raise NotImplementedError
-
-
-class MarkerPlugins(PluginsCollection):
-
-    def setTeamKiller(self, vID):
-        self._invoke('setTeamKiller', vID)
 
 
 class MarkerPlugin(IPlugin):
@@ -212,9 +206,6 @@ class VehicleMarkerPlugin(MarkerPlugin, IArenaVehiclesController):
             ctrl.onVehicleMarkerAdded += self.__onVehicleMarkerAdded
             ctrl.onVehicleMarkerRemoved += self.__onVehicleMarkerRemoved
             ctrl.onVehicleFeedbackReceived += self.__onVehicleFeedbackReceived
-        functional = g_sessionProvider.dynamic.dynSquads
-        if functional is not None:
-            functional.onPlayerBecomeSquadman += self.__onPlayerBecomeSquadman
         g_messengerEvents.voip.onPlayerSpeaking += self.__onPlayerSpeaking
         return
 
@@ -224,9 +215,6 @@ class VehicleMarkerPlugin(MarkerPlugin, IArenaVehiclesController):
             ctrl.onVehicleMarkerAdded -= self.__onVehicleMarkerAdded
             ctrl.onVehicleMarkerRemoved -= self.__onVehicleMarkerRemoved
             ctrl.onVehicleFeedbackReceived -= self.__onVehicleFeedbackReceived
-        functional = g_sessionProvider.dynamic.dynSquads
-        if functional is not None:
-            functional.onPlayerBecomeSquadman -= self.__onPlayerBecomeSquadman
         g_messengerEvents.voip.onPlayerSpeaking -= self.__onPlayerSpeaking
         super(VehicleMarkerPlugin, self).fini()
         return
@@ -264,6 +252,13 @@ class VehicleMarkerPlugin(MarkerPlugin, IArenaVehiclesController):
             if vehicle:
                 guiProps = g_sessionProvider.getCtx().getPlayerGuiProps(vehicleID, vInfo.team)
                 self.__addOrUpdateVehicleMarker(vehicle.proxy, vInfo, guiProps, active)
+
+    def updateVehiclesInfo(self, updated, arenaDP):
+        for _, vInfo in updated:
+            self.__setEntityName(vInfo, arenaDP)
+
+    def invalidatePlayerStatus(self, flags, vInfo, arenaDP):
+        self.__setEntityName(vInfo, arenaDP)
 
     def _updateFlagbearerState(self, vehID, newState):
         if vehID in self.__vehiclesMarkers:
@@ -345,6 +340,13 @@ class VehicleMarkerPlugin(MarkerPlugin, IArenaVehiclesController):
             self._invokeMarker(handle, 'updateFlagBearerState', [flagBearer])
         self._invokeMarker(handle, 'setHealth', [health])
 
+    def __setEntityName(self, vInfo, arenaDP):
+        vehicleID = vInfo.vehicleID
+        if vehicleID not in self.__vehiclesMarkers:
+            return
+        handle = self.__vehiclesMarkers[vehicleID].getMarkerID()
+        self._invokeMarker(handle, 'setEntityName', [arenaDP.getPlayerGuiProps(vehicleID, vInfo.team).name()])
+
     def __onVehicleMarkerAdded(self, vProxy, vInfo, guiProps):
         self.__addOrUpdateVehicleMarker(vProxy, vInfo, guiProps)
 
@@ -380,12 +382,6 @@ class VehicleMarkerPlugin(MarkerPlugin, IArenaVehiclesController):
             self._invokeMarker(handle, 'setHealth', [newHealth])
         else:
             self._invokeMarker(handle, 'updateHealth', [newHealth, self.__getVehicleDamageType(aInfo), constants.ATTACK_REASONS[attackReasonID]])
-
-    def __onPlayerBecomeSquadman(self, vehicleID, guiProps):
-        if vehicleID not in self.__vehiclesMarkers:
-            return
-        handle = self.__vehiclesMarkers[vehicleID].getMarkerID()
-        self._invokeMarker(handle, 'setEntityName', [guiProps.name()])
 
     def __onPlayerSpeaking(self, accountDBID, flag):
         """

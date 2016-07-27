@@ -64,9 +64,6 @@ class MarkersManager(Flash, VehicleMarkersManagerMeta, plugins.IMarkersManager):
         if self.__canvas:
             self.__canvas.delMarker(handle)
 
-    def setTeamKiller(self, vID):
-        self.__plugins.setTeamKiller(vID)
-
     def invokeMarker(self, handle, function, args = None):
         if handle == -1:
             return
