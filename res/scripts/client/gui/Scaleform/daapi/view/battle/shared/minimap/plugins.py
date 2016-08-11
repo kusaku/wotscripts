@@ -79,7 +79,7 @@ class PersonalEntriesPlugin(common.SimplePlugin):
             for entryID, name, active in iterator:
                 self.__cameraIDs[name] = entryID
                 if not (active and not self.__cameraID):
-                    raise AssertionError('One camera is active at one time')
+                    raise AssertionError('One camera is activated at one time')
                     self.__cameraID = entryID
 
             self.__createViewPointEntry(avatar)
@@ -220,7 +220,7 @@ class PersonalEntriesPlugin(common.SimplePlugin):
                 matrix = None
                 active = False
             name = _S_NAME.STRATEGIC_CAMERA
-            entryID = add(name, container, matrix=matrix, active=active)
+            entryID = add(name, container, matrix=matrix, active=active, transformProps=settings.TRANSFORM_FLAG.FULL)
             if entryID:
                 yield (entryID, name, active)
         if 'video' in modes:
@@ -239,13 +239,13 @@ class PersonalEntriesPlugin(common.SimplePlugin):
     def __createViewPointEntry(self, avatar):
         ownMatrix = avatar.getOwnVehicleMatrix()
         self.__viewPointID = self._addEntry(_S_NAME.VIEW_POINT, _C_NAME.PERSONAL, matrix=ownMatrix, active=self.__isAlive)
-        transformProps = settings.TRANSFORM_FLAG.FULL
+        transformProps = settings.TRANSFORM_FLAG.DEFAULT
         transformProps ^= settings.TRANSFORM_FLAG.NO_ROTATION
         self.__animationID = self._addEntry(_S_NAME.ANIMATION, _C_NAME.PERSONAL, matrix=ownMatrix, active=self.__isAlive, transformProps=transformProps)
 
     def __createViewRangeCircle(self, avatar):
         ownMatrix = avatar.getOwnVehicleMatrix()
-        transformProps = settings.TRANSFORM_FLAG.FULL
+        transformProps = settings.TRANSFORM_FLAG.DEFAULT
         transformProps ^= settings.TRANSFORM_FLAG.NO_ROTATION
         self.__circlesVisibilityState = 0
         self.__circlesID = self._addEntry(_S_NAME.VIEW_RANGE_CIRCLES, _C_NAME.PERSONAL, matrix=ownMatrix, active=self.__isAlive, transformProps=transformProps)

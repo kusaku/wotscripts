@@ -13,7 +13,7 @@ _IMAGE_PATH_FORMATTER = 'img://{}'
 
 class IMinimapComponent(object):
 
-    def addEntry(self, symbol, container, matrix = None, active = False, transformProps = settings.TRANSFORM_FLAG.FULL):
+    def addEntry(self, symbol, container, matrix = None, active = False, transformProps = settings.TRANSFORM_FLAG.DEFAULT):
         raise NotImplementedError
 
     def delEntry(self, entryID):
@@ -47,7 +47,7 @@ class MinimapComponent(MinimapMeta, IMinimapComponent):
     def setAttentionToCell(self, x, y, isRightClick):
         self.__plugins.setAttentionToCell(x, y, isRightClick)
 
-    def addEntry(self, symbol, container, matrix = None, active = False, transformProps = settings.TRANSFORM_FLAG.FULL):
+    def addEntry(self, symbol, container, matrix = None, active = False, transformProps = settings.TRANSFORM_FLAG.DEFAULT):
         entryID = self.__component.addEntry(symbol, container, matrix, active, transformProps)
         if entryID:
             self.__ids.add(entryID)
