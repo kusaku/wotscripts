@@ -1464,6 +1464,7 @@ class MENU(object):
     AWARDWINDOW_TELECOMAWARD_DESCRIPTION = '#menu:awardWindow/telecomAward/description'
     AWARDWINDOW_TELECOMAWARD_DESCRIPTION_WITHBROTHERHOOD = '#menu:awardWindow/telecomAward/description/withBrotherhood'
     AWARDWINDOW_TELECOMAWARD_DESCRIPTION_WITHOUTCREW = '#menu:awardWindow/telecomAward/description/withoutCrew'
+    AWARDWINDOW_TELECOMAWARD_DESCRIPTION_PREM = '#menu:awardWindow/telecomAward/description/prem'
     AWARDWINDOW_TELECOMAWARD_VEHICLES = '#menu:awardWindow/telecomAward/vehicles'
     AWARDWINDOW_TELECOMAWARD_SUBDESCRIPTION = '#menu:awardWindow/telecomAward/subdescription'
     AWARDWINDOW_TELECOMAWARD_BUTTON_LABEL = '#menu:awardWindow/telecomAward/button/label'
