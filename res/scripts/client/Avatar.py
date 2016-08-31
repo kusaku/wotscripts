@@ -49,7 +49,7 @@ from PlayerEvents import g_playerEvents
 from ClientChat import ClientChat
 from CombatEquipmentManager import CombatEquipmentManager
 from ChatManager import chatManager
-from VehicleAppearance import StippleManager
+from VehicleUtils import StippleManager
 from helpers import bound_effects
 from helpers import DecalMap
 from gui import PlayerBonusesPanel
@@ -524,6 +524,9 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                     if key == Keys.KEY_Q:
                         self.base.setDevelopmentFeature('teleportToShotPoint', 0, '')
                         return True
+                    if key == Keys.KEY_V:
+                        self.base.setDevelopmentFeature('setSignal', 3, '')
+                        return True
                 if constants.HAS_DEV_RESOURCES and cmdMap.isFired(CommandMapping.CMD_SWITCH_SERVER_MARKER, key) and isDown:
                     self.gunRotator.showServerMarker = not self.gunRotator.showServerMarker
                     return True
@@ -593,6 +596,8 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                  CommandMapping.CMD_MOVE_BACKWARD,
                  CommandMapping.CMD_ROTATE_LEFT,
                  CommandMapping.CMD_ROTATE_RIGHT), key) or handbrakeFired:
+                    vehicle = self.getVehicleAttached()
+                    vehicle.appearance.engineAudition.onKeyTriggered(isDown, key, vehicle)
                     if self.__stopUntilFire and isDown and not isGuiEnabled:
                         self.__stopUntilFire = False
                         self.__updateCruiseControlPanel()
@@ -609,7 +614,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                  CommandMapping.CMD_CHAT_SHORTCUT_POSITIVE,
                  CommandMapping.CMD_CHAT_SHORTCUT_NEGATIVE,
                  CommandMapping.CMD_CHAT_SHORTCUT_HELPME,
-                 CommandMapping.CMD_CHAT_SHORTCUT_RELOAD), key) and self.__isVehicleAlive:
+                 CommandMapping.CMD_CHAT_SHORTCUT_RELOAD), key) and isDown and self.__isVehicleAlive:
                     g_sessionProvider.handleShortcutChatCommand(key)
                     return True
                 if cmdMap.isFired(CommandMapping.CMD_VOICECHAT_ENABLE, key) and not isDown:
@@ -956,6 +961,19 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                 g_sessionProvider.useLoaderIntuition()
             elif code == STATUS.HORN_BANNED:
                 self.__hornCooldown.ban(floatArg)
+            elif code == STATUS.BONUS_ON or code == STATUS.BONUS_OFF:
+                vehicle = BigWorld.entity(vehicleID)
+                if vehicle is not None and 'wheeledVehicle' in vehicle.typeDescriptor.type.tags:
+                    vehExtras = vehicle.typeDescriptor.extras
+                    if intArg < len(vehExtras):
+                        extraName = vehExtras[intArg].name
+                        if extraName == 'ingameammoBigGun':
+                            vehicle.appearance.engineAudition.setBigGunSwitch(code == STATUS.BONUS_ON)
+                bonusCtrl = g_sessionProvider.dynamic.mark1Bonus
+                if bonusCtrl is not None:
+                    bonusCtrl.bonusChangedFromAvatar(vehicleID, code, intArg)
+            elif code == STATUS.NEAR_EXPLOSION:
+                LOG_DEBUG('[STUB] updateVehicleMiscStatus', intArg, floatArg)
             return
 
     def updateVehicleSetting(self, code, value):
@@ -1166,14 +1184,17 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
         LOG_DEBUG('syncVehicleAttrs', attrs)
         g_sessionProvider.shared.feedback.setVehicleAttrs(self.playerVehicleID, attrs)
 
-    def showTracer(self, shooterID, shotID, isRicochet, effectsIndex, refStartPoint, velocity, gravity, maxShotDist):
+    def showTracer(self, shooterID, shotID, isRicochet, effectsIndex, refStartPoint, velocity, gravity, maxShotDist, gunIndex):
         if not self.userSeesWorld() or not self.__isOnArena:
             return
         else:
             startPoint = refStartPoint
             shooter = BigWorld.entity(shooterID)
             if not isRicochet and shooter is not None and shooter.isStarted:
-                gunMatrix = Math.Matrix(shooter.appearance.compoundModel.node('HP_gunFire'))
+                gunFireNodeName = 'HP_gunFire'
+                if gunIndex > 0:
+                    gunFireNodeName = 'HP_gunFire_02'
+                gunMatrix = Math.Matrix(shooter.appearance.compoundModel.node(gunFireNodeName))
                 gunFirePos = gunMatrix.translation
                 if cameras.isPointOnScreen(gunFirePos):
                     startPoint = gunFirePos
@@ -1665,6 +1686,17 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
             vehA.showVehicleCollisionEffect(hitPt, vehSpeedSum)
             self.inputHandler.onVehicleCollision(vehA, vehSpeedSum)
             self.inputHandler.onVehicleCollision(vehB, vehSpeedSum)
+            for veh in [vehA, vehB]:
+                if 'wheeledVehicle' not in veh.typeDescriptor.type.tags:
+                    continue
+                compMatrix = Math.Matrix(veh.appearance.compoundModel.node('chassis'))
+                invCompMatrix = compMatrix
+                invCompMatrix.invert()
+                collisionPoint = Math.Matrix()
+                collisionPoint.setTranslate(hitPt)
+                collisionPoint.postMultiply(invCompMatrix)
+                veh.appearance.storeHitPoint(collisionPoint.translation)
+
             return
 
     def getVehicleAttached(self):
@@ -1995,6 +2027,9 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                 self.__frags.add(targetID)
                 g_sessionProvider.shared.feedback.setPlayerKillResult(targetID)
             g_sessionProvider.shared.messages.showVehicleKilledMessage(self, targetID, attackerID, equipmentID, reason)
+            bonusCtrl = g_sessionProvider.dynamic.mark1Bonus
+            if bonusCtrl is not None:
+                bonusCtrl.showVehicleKilledMessage(targetID)
             return
 
     def __onArenaPeriodChange(self, period, periodEndTime, periodLength, periodAdditionalInfo):
@@ -2043,7 +2078,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                         burstCount = totalShots
                     if gunDescr['clip'][0] > 1 and burstCount > shotsInClip > 0:
                         burstCount = shotsInClip
-                vehicle.showShooting(burstCount, True)
+                vehicle.showShooting(burstCount, 0, True)
         except Exception:
             LOG_CURRENT_EXCEPTION()
 

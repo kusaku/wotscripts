@@ -24,7 +24,7 @@ class StaticSceneBoundEffects(object):
     def addNew(self, position, effectsList, keyPoints, callbackOnStop, **args):
         model = helpers.newFakeModel()
         model.position = position
-        BigWorld.addModel(model)
+        BigWorld.addModel(model, BigWorld.player().spaceID)
         dir = args.get('dir', None)
         if dir is not None:
             model.rotate(dir.yaw, (0.0, 1.0, 0.0))
@@ -36,6 +36,9 @@ class StaticSceneBoundEffects(object):
         desc['effectsPlayer'].play(model, None, partial(self.__callbackBeforeDestroy, effectID, callbackOnStop))
         self._models[effectID] = desc
         return effectID
+
+    def findEffect(self, effectID):
+        return self._models.get(effectID, None)
 
     def stop(self, effectID):
         if self._models.has_key(effectID):

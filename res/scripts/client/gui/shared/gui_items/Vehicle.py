@@ -70,6 +70,8 @@ class VEHICLE_TAGS(CONST_CONTAINER):
     EXCLUDED_FROM_SANDBOX = 'excluded_from_sandbox'
     TELECOM = 'telecom'
     FALLOUT = 'fallout'
+    WHEEL_BASE = 'wheeledVehicle'
+    MARK1 = 'markI'
 
 
 class Vehicle(FittingItem, HasStrCD):
@@ -433,6 +435,10 @@ class Vehicle(FittingItem, HasStrCD):
         return getTypeUserName(self.type, self.isElite)
 
     @property
+    def hasWheelBase(self):
+        return _checkForTags(self.tags, VEHICLE_TAGS.WHEEL_BASE)
+
+    @property
     def hasTurrets(self):
         vDescr = self.descriptor
         return len(vDescr.hull['fakeTurrets']['lobby']) != len(vDescr.turrets)
@@ -465,6 +471,11 @@ class Vehicle(FittingItem, HasStrCD):
         if self.repairCost > 0 and self.health == 0:
             return Vehicle.VEHICLE_STATE.DESTROYED
         return Vehicle.VEHICLE_STATE.UNDAMAGED
+
+    def getDeviceTypeNames(self):
+        if self.hasWheelBase:
+            return vehicles.WHEEL_VEHICLE_DEVICE_TYPE_NAMES
+        return vehicles.VEHICLE_DEVICE_TYPE_NAMES
 
     def getState(self, isCurrnentPlayer = True):
         ms = self.modelState
@@ -607,6 +618,10 @@ class Vehicle(FittingItem, HasStrCD):
     @property
     def isEvent(self):
         return self.isOnlyForEventBattles and self in Vehicle.__getEventVehicles()
+
+    @property
+    def isMark1(self):
+        return _checkForTags(self.tags, VEHICLE_TAGS.MARK1)
 
     @property
     def isFalloutSelected(self):

@@ -41,3 +41,6 @@ class BATTLE_VIEW_ALIASES(object):
     FALLOUT_SCORE_PANEL = 'falloutScorePanel'
     BATTLE_END_WARNING_PANEL = 'battleEndWarningPanel'
     CROSSHAIR_PANEL = 'crosshairPanel'
+    EVENT_NOTIFICATION_PANEL = 'eventNotificationPanel'
+    EVENT_PROGRESS_PANEL = 'eventProgressPanel'
+    EVENT_CONSUMABLES_PANEL = 'eventConsumablesPanel'

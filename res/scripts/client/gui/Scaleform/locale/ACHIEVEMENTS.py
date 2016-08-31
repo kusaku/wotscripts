@@ -557,6 +557,18 @@ class ACHIEVEMENTS(object):
     SAURONEYE = '#achievements:sauronEye'
     SAURONEYE_DESCR = '#achievements:sauronEye_descr'
     SAURONEYE_CONDITION = '#achievements:sauronEye_condition'
+    MARKIPROTECTOR = '#achievements:markIProtector'
+    MARKIPROTECTOR_DESCR = '#achievements:markIProtector_descr'
+    MARKIPROTECTOR_CONDITION = '#achievements:markIProtector_condition'
+    MARKIBASEPROTECTOR = '#achievements:markIBaseProtector'
+    MARKIBASEPROTECTOR_DESCR = '#achievements:markIBaseProtector_descr'
+    MARKIBASEPROTECTOR_CONDITION = '#achievements:markIBaseProtector_condition'
+    MARKIBOMBERMAN = '#achievements:markIBomberman'
+    MARKIBOMBERMAN_DESCR = '#achievements:markIBomberman_descr'
+    MARKIBOMBERMAN_CONDITION = '#achievements:markIBomberman_condition'
+    MARKIREPAIRER = '#achievements:markIRepairer'
+    MARKIREPAIRER_DESCR = '#achievements:markIRepairer_descr'
+    MARKIREPAIRER_CONDITION = '#achievements:markIRepairer_condition'
     HISTBATTLE1_HISTORYLESSONS = '#achievements:histBattle1_historyLessons'
     HISTBATTLE1_HISTORYLESSONS_DESCR = '#achievements:histBattle1_historyLessons_descr'
     HISTBATTLE1_HISTORYLESSONS_CONDITION = '#achievements:histBattle1_historyLessons_condition'
@@ -1161,6 +1173,18 @@ class ACHIEVEMENTS(object):
      SAURONEYE,
      SAURONEYE_DESCR,
      SAURONEYE_CONDITION,
+     MARKIPROTECTOR,
+     MARKIPROTECTOR_DESCR,
+     MARKIPROTECTOR_CONDITION,
+     MARKIBASEPROTECTOR,
+     MARKIBASEPROTECTOR_DESCR,
+     MARKIBASEPROTECTOR_CONDITION,
+     MARKIBOMBERMAN,
+     MARKIBOMBERMAN_DESCR,
+     MARKIBOMBERMAN_CONDITION,
+     MARKIREPAIRER,
+     MARKIREPAIRER_DESCR,
+     MARKIREPAIRER_CONDITION,
      HISTBATTLE1_HISTORYLESSONS,
      HISTBATTLE1_HISTORYLESSONS_DESCR,
      HISTBATTLE1_HISTORYLESSONS_CONDITION,

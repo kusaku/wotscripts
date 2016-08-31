@@ -186,10 +186,10 @@ class _GunControlMode(IControlMode):
     def resetAimingMode(self):
         self._aimingMode = 0
 
-    def getDesiredShotPoint(self):
+    def getDesiredShotPoint(self, FORCED = False):
         if not self._isEnabled:
             raise AssertionError
-            return self._aimingMode == 0 and self._cam is not None and self._cam.aimingSystem.getDesiredShotPoint()
+            return (FORCED or self._aimingMode == 0 and self._cam is not None) and self._cam.aimingSystem.getDesiredShotPoint()
         else:
             return None
 
@@ -214,6 +214,50 @@ class _GunControlMode(IControlMode):
         self._gunMarker = _SuperGunMarker(mode, isStrategic)
         self._aih.onSetReloading += self._gunMarker.setReloading
         self._aih.onSetReloadingPercents += self._gunMarker.setReloadingInPercent
+
+    def autoAimFindEnemy(self):
+        maxDist = 100.0
+        minRadius = 2.0
+        maxRadius = 3.5
+        camPos = Math.Vector3(BigWorld.camera().position)
+        targetPt = Math.Vector3(self.getDesiredShotPoint(True))
+        targetDist = camPos.distTo(targetPt)
+        if targetDist > maxDist:
+            return
+        else:
+            scaleSphereFactor = targetDist / maxDist
+            vehicles = []
+            for vehicleID in BigWorld.player().arena.vehicles.iterkeys():
+                vehicle = BigWorld.entity(vehicleID)
+                if vehicle is None or not vehicle.isStarted:
+                    continue
+                vehicles.append(vehicle)
+
+            collided = []
+            for veh in vehicles:
+                center = veh.position
+                radius = minRadius + (maxRadius - minRadius) * scaleSphereFactor
+                sc = Math.Vector3(center - camPos)
+                dir = Math.Vector3((targetPt - camPos) / targetDist)
+                dotProd = dir.dot(sc)
+                ort = Math.Vector3(sc - dir * dotProd)
+                if ort.length > radius * radius:
+                    continue
+                if dotProd < -radius or dotProd > targetDist + radius:
+                    continue
+                collided.append(veh)
+
+            pickedVehicle = None
+            minDistance = 10000.0
+            for veh in collided:
+                if veh.publicInfo['team'] == BigWorld.player().team:
+                    continue
+                distance = camPos.distTo(veh.position)
+                if distance < minDistance:
+                    minDistance = distance
+                    pickedVehicle = veh
+
+            return pickedVehicle
 
 
 class CameraLocationPoint(object):
@@ -544,6 +588,8 @@ class ArcadeControlMode(_GunControlMode):
                 self.setAimingMode(isDown, AIMING_MODE.USER_DISABLED)
             if isFiredLockTarget:
                 BigWorld.player().autoAim(BigWorld.target())
+                if BigWorld.target() is None and 'wheeledVehicle' in BigWorld.player().vehicle.typeDescriptor.type.tags:
+                    BigWorld.player().autoAim(self.autoAimFindEnemy())
         if cmdMap.isFired(CommandMapping.CMD_CM_SHOOT, key) and isDown:
             BigWorld.player().shoot()
             return True
@@ -857,6 +903,8 @@ class SniperControlMode(_GunControlMode):
                     self.setAimingMode(isDown, AIMING_MODE.USER_DISABLED)
                 if isFiredLockTarget:
                     BigWorld.player().autoAim(BigWorld.target())
+                    if BigWorld.target() is None and 'wheeledVehicle' in BigWorld.player().vehicle.typeDescriptor.type.tags:
+                        BigWorld.player().autoAim(self.autoAimFindEnemy())
             cmdMap.isFired(CommandMapping.CMD_CM_SHOOT, key) and isDown and BigWorld.player().shoot()
             return True
         elif cmdMap.isFired(CommandMapping.CMD_CM_LOCK_TARGET_OFF, key) and isDown:

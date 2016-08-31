@@ -5,6 +5,7 @@ from gui.battle_control.controllers.repositories import DynamicControllersLocato
 from gui.battle_control.controllers.repositories import ClassicControllersRepository
 from gui.battle_control.controllers.repositories import FalloutControllersRepository
 from gui.battle_control.controllers.repositories import SharedControllersRepository
+from gui.battle_control.controllers.repositories import EventMark1ControllerRepository
 __all__ = ('createShared', 'createDynamic', 'BattleSessionSetup', 'SharedControllersLocator', 'DynamicControllersLocator')
 
 def createShared(setup):
@@ -17,6 +18,8 @@ def createDynamic(setup):
         raise AssertionError
         guiVisitor = setup.arenaVisitor.gui
         repository = guiVisitor.isFalloutBattle() and FalloutControllersRepository.create(setup)
+    elif guiVisitor.isEventBattle():
+        repository = EventMark1ControllerRepository.create(setup)
     elif not guiVisitor.isTutorialBattle():
         repository = ClassicControllersRepository.create(setup)
     else:

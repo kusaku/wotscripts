@@ -100,6 +100,7 @@ class TOOLTIPS_CONSTANTS(object):
     VEHICLE_PARAMETERS = 'vehicleParameters'
     VEHICLE_PREVIEW_PARAMETERS = 'vehiclePreviewParameters'
     VEHICLE_PREVIEW_CREW_MEMBER = 'vehiclePreviewCrewMember'
+    MARK_PREVIEW = 'markPreview'
     BLOCKS_DEFAULT_UI = 'ToolTipInblocksDefaultUI'
     TANKMEN_UI = 'ToolTipTankmenUI'
     TANKMEN_SKILL_UI = 'ToolTipSkillUI'
@@ -161,3 +162,4 @@ class TOOLTIPS_CONSTANTS(object):
     BOOSTERS_BOOSTER_INFO_UI = 'ToolTipInblocksDefaultUI'
     VEHICLE_PARAMETERS_UI = 'ToolTipInblocksDefaultUI'
     VEHICLE_PREVIEW_CREW_MEMBER_UI = 'ToolTipInblocksDefaultUI'
+    MARK_MODULE_TOOLTIP_UI = 'MarkModuleTooltipUI'

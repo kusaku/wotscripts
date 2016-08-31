@@ -97,7 +97,10 @@ class BattleSessionProvider(object):
         ctrl = self.__dynamicRepo.respawn
         if ctrl is not None:
             ctrl.spawnVehicle(vID)
-        g_tankActiveCamouflage[vDesc.type.compactDescr] = self.__arenaVisitor.type.getVehicleCamouflageKind()
+        if self.__arenaVisitor.gui.isEventBattle():
+            g_tankActiveCamouflage[vDesc.type.compactDescr] = self.__arenaDP.getNumberOfTeam()
+        else:
+            g_tankActiveCamouflage[vDesc.type.compactDescr] = self.__arenaVisitor.type.getVehicleCamouflageKind()
         return
 
     def getArenaDP(self):
@@ -173,7 +176,7 @@ class BattleSessionProvider(object):
             vInfo = self.__arenaDP.getVehicleInfo()
             vStats = self.__arenaDP.getVehicleStats()
             if self.__arenaVisitor.gui.isEventBattle():
-                isDeserter = False
+                isDeserter = True
             elif self.__arenaVisitor.hasRespawns():
                 isDeserter = not vStats.stopRespawn
             else:
@@ -199,7 +202,7 @@ class BattleSessionProvider(object):
         self.__arenaVisitor = arena_visitor.createByAvatar(avatar=setup.avatar)
         setup.sessionProvider = weakref.proxy(self)
         self.__arenaDP = ArenaDataProvider(setup)
-        self.__ctx.start(self.__arenaDP)
+        self.__ctx.start(self.__arenaDP, setup.sessionProvider)
         self.__arenaListeners = ListenersCollection()
         self.__arenaListeners.start(setup)
         self.__viewComponentsBridge = createComponentsBridge()
