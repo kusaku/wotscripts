@@ -50,16 +50,11 @@ def getMark1FlagType(flagType, isAlly = True):
         return MARK1_FLAG_ENEMY[flagType]
 
 
-def getMarkers2DAbsorbState(isBearer, teamNumber):
-    if teamNumber == MARK1_TEAM_NUMBER:
-        if isBearer:
-            result = _MARKER2D_ABSORPTION_STATE.TARGET
-        elif isRepairKitInGame():
-            result = _MARKER2D_ABSORPTION_STATE.ALERT
-        else:
-            result = _MARKER2D_ABSORPTION_STATE.ABSENT
-    elif isBearer:
+def getMarkers2DAbsorbState(isBearer):
+    if isBearer:
         result = _MARKER2D_ABSORPTION_STATE.TARGET
+    elif isRepairKitInGame():
+        result = _MARKER2D_ABSORPTION_STATE.ALERT
     else:
         result = _MARKER2D_ABSORPTION_STATE.ABSENT
     return result

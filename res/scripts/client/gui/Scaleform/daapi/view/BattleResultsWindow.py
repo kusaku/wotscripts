@@ -19,7 +19,7 @@ from gui.shared.event_dispatcher import showResearchView, showPersonalCase, show
 from gui.shared.utils.functions import getArenaSubTypeName
 import nations
 import potapov_quests
-from account_helpers.AccountSettings import AccountSettings
+from account_helpers.AccountSettings import AccountSettings, STATS_SORTING_EVENT
 from account_helpers import getAccountDatabaseID
 from account_shared import getFairPlayViolationName
 from debug_utils import LOG_DEBUG
@@ -363,8 +363,17 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
         return quests_events.showEventsWindow(eID, eventType)
 
     def saveSorting(self, iconType, sortDirection, bonusType):
-        AccountSettings.setSettings('statsSorting' if bonusType != ARENA_BONUS_TYPE.SORTIE else 'statsSortingSortie', {'iconType': iconType,
+        AccountSettings.setSettings(self.__getStatsSortingKeyByBonus(bonusType), {'iconType': iconType,
          'sortDirection': sortDirection})
+
+    @staticmethod
+    def __getStatsSortingKeyByBonus(bonusType):
+        if bonusType == ARENA_BONUS_TYPE.SORTIE:
+            return 'statsSortingSortie'
+        elif bonusType == ARENA_BONUS_TYPE.EVENT_BATTLES:
+            return STATS_SORTING_EVENT
+        else:
+            return 'statsSorting'
 
     def __getPlayerName(self, playerDBID, bots, vID = None, isMark1 = False):
         playerNameRes = self.__playersNameCache.get(playerDBID)
@@ -1835,7 +1844,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
             isFFA = isMultiTeamMode and findFirst(lambda prbID: prbID > 0, teams.itervalues()) is None
             isResource = self.__arenaVisitor.hasResourcePoints()
             isFlags = self.__arenaVisitor.hasFlags()
-            statsSorting = AccountSettings.getSettings('statsSorting' if bonusType != ARENA_BONUS_TYPE.SORTIE else 'statsSortingSortie')
+            statsSorting = AccountSettings.getSettings(self.__getStatsSortingKeyByBonus(bonusType))
             if self.__isFallout:
                 commonDataOutput['iconType'] = 'victoryScore'
                 commonDataOutput['sortDirection'] = 'descending'

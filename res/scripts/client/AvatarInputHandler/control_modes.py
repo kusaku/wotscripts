@@ -132,6 +132,7 @@ class _GunControlMode(IControlMode):
         self._cam = None
         self._aimingMode = 0
         self._canShot = False
+        self._lockedDown = False
         return
 
     def prerequisites(self):
@@ -216,34 +217,39 @@ class _GunControlMode(IControlMode):
         self._aih.onSetReloadingPercents += self._gunMarker.setReloadingInPercent
 
     def autoAimFindEnemy(self):
-        maxDist = 100.0
-        minRadius = 2.0
-        maxRadius = 3.5
-        camPos = Math.Vector3(BigWorld.camera().position)
-        targetPt = Math.Vector3(self.getDesiredShotPoint(True))
-        targetDist = camPos.distTo(targetPt)
-        if targetDist > maxDist:
+        if self._lockedDown:
+            self._lockedDown = False
             return
         else:
-            scaleSphereFactor = targetDist / maxDist
+            maxDist = 100.0
+            minRadius = 2.0
+            maxRadius = 3.5
+            camPos = Math.Vector3(BigWorld.camera().position)
+            targetPt = Math.Vector3(self.getDesiredShotPoint(True))
             vehicles = []
             for vehicleID in BigWorld.player().arena.vehicles.iterkeys():
                 vehicle = BigWorld.entity(vehicleID)
-                if vehicle is None or not vehicle.isStarted:
+                if vehicle is None or not vehicle.isStarted or vehicle.publicInfo['team'] == BigWorld.player().team:
                     continue
                 vehicles.append(vehicle)
 
             collided = []
             for veh in vehicles:
+                targetDist = camPos.distTo(veh.position)
+                if targetDist > maxDist:
+                    continue
+                scaleSphereFactor = targetDist / maxDist
+                dir = Math.Vector3(targetPt - camPos)
+                dist = dir.length
+                dir /= dist
                 center = veh.position
                 radius = minRadius + (maxRadius - minRadius) * scaleSphereFactor
                 sc = Math.Vector3(center - camPos)
-                dir = Math.Vector3((targetPt - camPos) / targetDist)
                 dotProd = dir.dot(sc)
                 ort = Math.Vector3(sc - dir * dotProd)
-                if ort.length > radius * radius:
+                if ort.lengthSquared > radius * radius:
                     continue
-                if dotProd < -radius or dotProd > targetDist + radius:
+                if dotProd < -radius or dotProd > dist + radius:
                     continue
                 collided.append(veh)
 
@@ -257,6 +263,8 @@ class _GunControlMode(IControlMode):
                     minDistance = distance
                     pickedVehicle = veh
 
+            if pickedVehicle:
+                self._lockedDown = True
             return pickedVehicle
 
 

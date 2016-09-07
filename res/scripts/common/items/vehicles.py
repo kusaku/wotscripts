@@ -2481,18 +2481,18 @@ def _xphysicsParse_chassis(ctx, sec):
     res['angVelocityFactor0'] = sec.readFloat('angVelocityFactor0', 1.0)
     axleCount = sec.readInt('axleCount', -1)
     if axleCount != -1:
-        numberOfAxes = axleCount
-        res['axleCount'] = axleCount
         subsec = sec['wheels']
-        res['wheels'] = {'steeringLockAngle': 0.7,
-         'steeringSpeed': 0.2}
-        res['wheels']['steeringLockAngle'] = subsec.readFloat('steeringLockAngle', 0.7)
-        res['wheels']['steeringSpeed'] = subsec.readFloat('steeringSpeed', 0.2)
+        if subsec is not None:
+            res['wheels'] = {'steeringLockAngle': 0.7,
+             'steeringSpeed': 0.2}
+            res['wheels']['steeringLockAngle'] = subsec.readFloat('steeringLockAngle', 0.7)
+            res['wheels']['steeringSpeed'] = subsec.readFloat('steeringSpeed', 0.2)
     else:
-        numberOfAxes = 5
+        axleCount = 5
+    res['axleCount'] = axleCount
     floatArrParamsCommon = (('hullCOM', 3),
-     ('roadWheelPositions', numberOfAxes),
-     ('stiffnessFactors', numberOfAxes),
+     ('roadWheelPositions', axleCount),
+     ('stiffnessFactors', axleCount),
      ('hullInertiaFactors', 3))
     res.update(_parseFloatArrList(ctx, sec, floatArrParamsCommon))
     floatParamsDetailed = ('centerRotationFwdSpeed', 'rotationByLockChoker', 'fwLagRatio', 'bkLagRatio')

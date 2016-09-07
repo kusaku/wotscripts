@@ -244,4 +244,5 @@ class ExplosiveInfo(EntityExtra):
         self.areaVisual = 'content/Interface/TargetPoint/TargetPoint_red.visual'
         self.areaColor = None
         self.areaMarker = None
+        self.maxDamage = dataSection.readInt('maxDamage', 0)
         return

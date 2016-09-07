@@ -482,6 +482,7 @@ class INGAME_GUI(object):
     MARK1_BONUS_BIGSIZE_MACHINEGUN = '#ingame_gui:mark1/bonus/bigSize/machineGun'
     MARK1_PROGRESSPANEL_WIN = '#ingame_gui:mark1/progressPanel/win'
     MARK1_PROGRESSPANEL_LOSE = '#ingame_gui:mark1/progressPanel/lose'
+    MARK1_DEAD = '#ingame_gui:mark1/dead'
     CHAT_EXAMPLE_ENUM = (CHAT_EXAMPLE_SUPPORT_ME_WITH_FIRE,
      CHAT_EXAMPLE_RELOADING_GUN,
      CHAT_EXAMPLE_RELOADING_CASSETTE,

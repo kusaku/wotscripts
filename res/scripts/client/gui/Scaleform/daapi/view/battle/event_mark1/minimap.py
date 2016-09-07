@@ -100,14 +100,13 @@ class Mark1ArenaVehiclesPlugin(plugins.ArenaVehiclesPlugin):
         if vTypeInfoVO.isMark1:
             if flagBearer:
                 result = common.MINIMAP_ENTRY_STATE_ABSORPTION
+            elif common.isRepairKitInGame():
+                result = common.MINIMAP_ENTRY_STATE_ALERT
             else:
                 battleCtx = g_sessionProvider.getCtx()
                 isAlly = battleCtx.isAlly(vehicleID)
                 if isAlly:
-                    if common.isRepairKitInGame():
-                        result = common.MINIMAP_ENTRY_STATE_ALERT
-                    else:
-                        result = common.MINIMAP_ENTRY_STATE_MARK1_ALLY
+                    result = common.MINIMAP_ENTRY_STATE_MARK1_ALLY
                 else:
                     result = common.MINIMAP_ENTRY_STATE_MARK1_ENEMY
         else:
@@ -213,7 +212,8 @@ class Mark1FlagsAndVehiclesPlugin(Mark1ArenaVehiclesPlugin):
         self.__addOrUpdateFlag(flagID, flagPos, state)
 
     def __onFlagAbsorbed(self, flagID, flagTeam, vehicleID, respawnTime):
-        self.__updateVehicleFlagState(vehicleID)
+        if common.isFlagNeedsUpdate(flagID):
+            self.__updateVehicleFlagState(vehicleID)
         self.__setFlagVisible(flagID, False)
 
     def __onFlagRemoved(self, flagID, _, vehicleID):
@@ -243,7 +243,12 @@ class Mark1FlagsAndVehiclesPlugin(Mark1ArenaVehiclesPlugin):
 
     def __addOrUpdateFlag(self, flagID, flagPos, state, isVisible = True):
         if flagID not in self.__flagEntries:
-            self.__addFlagEntryMarker(_C_NAME.FLAGS, common.MINIMAP_MARK1_FLAG, flagID, flagPos, isVisible)
+            flagType = g_ctfManager.getFlagType(flagID)
+            if flagType == FLAG_TYPES.OTHER:
+                cName = _C_NAME.TEAM_POINTS
+            else:
+                cName = _C_NAME.FLAGS
+            self.__addFlagEntryMarker(cName, common.MINIMAP_MARK1_FLAG, flagID, flagPos, isVisible)
             self.__updateFlagState(flagID, state)
         else:
             self.__updateFlagState(flagID, state)

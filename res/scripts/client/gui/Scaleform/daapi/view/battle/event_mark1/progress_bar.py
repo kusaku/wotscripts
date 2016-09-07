@@ -16,6 +16,7 @@ from account_helpers.settings_core import g_settingsCore
 from debug_utils import LOG_WARNING
 _UPDATE_INTERVAL = 3
 _START_POINT = Vector3(339.77, 0, -275.338)
+_END_POINT_OFFSET = 35
 _BATTLE_END_WARNING_DISTANCE_THRESHOLD = 70
 
 class _MARK1_STATES(object):
@@ -60,6 +61,7 @@ class Mark1ProgressBarPanel(EventProgressPanelMeta, IVehiclesPositionsTeamBasesC
         bonusCtrl = g_sessionProvider.dynamic.mark1Bonus
         if bonusCtrl is not None:
             bonusCtrl.onBombExploded += self.__onBombExploded
+            bonusCtrl.onMark1Killed += self.__onMark1Killed
         feedbackCtrl = g_sessionProvider.shared.feedback
         if feedbackCtrl is not None:
             feedbackCtrl.onVehicleFeedbackReceived += self.__onVehicleFeedbackReceived
@@ -72,6 +74,7 @@ class Mark1ProgressBarPanel(EventProgressPanelMeta, IVehiclesPositionsTeamBasesC
         bonusCtrl = g_sessionProvider.dynamic.mark1Bonus
         if bonusCtrl is not None:
             bonusCtrl.onBombExploded -= self.__onBombExploded
+            bonusCtrl.onMark1Killed -= self.__onMark1Killed
         feedbackCtrl = g_sessionProvider.shared.feedback
         if feedbackCtrl is not None:
             feedbackCtrl.onVehicleFeedbackReceived -= self.__onVehicleFeedbackReceived
@@ -86,7 +89,7 @@ class Mark1ProgressBarPanel(EventProgressPanelMeta, IVehiclesPositionsTeamBasesC
         basePositions = g_sessionProvider.arenaVisitor.type.getTeamBasePositionsIterator()
         _, position, _ = basePositions.next()
         self.__endPoint = Vector3(position)
-        self.__totalDistance = _START_POINT.distTo(self.__endPoint)
+        self.__totalDistance = _START_POINT.distTo(self.__endPoint) - _END_POINT_OFFSET
         isAllyMark = MARK1_TEAM_NUMBER == teamNumber
         self.__currentHealth, self.__currentProgress = self.__getHealthAndProgress(vTypeInfoVO.maxHealth, self.__currentProgress)
         state = self.__getMark1InitialState()
@@ -114,6 +117,9 @@ class Mark1ProgressBarPanel(EventProgressPanelMeta, IVehiclesPositionsTeamBasesC
 
     def __onBombExploded(self):
         self.as_updateStateS(_MARK1_STATES.STOPPED)
+
+    def __onMark1Killed(self):
+        self.__updateHealth(0)
 
     def __onVehicleFeedbackReceived(self, eventID, vehicleID, value):
         if eventID == FEEDBACK_EVENT_ID.VEHICLE_HEALTH:
@@ -146,8 +152,10 @@ class Mark1ProgressBarPanel(EventProgressPanelMeta, IVehiclesPositionsTeamBasesC
 
     def __calculateProgress(self, mark1Position):
         if self.__totalDistance != 0:
-            distToTarget = self.__endPoint.distTo(mark1Position)
+            distToTarget = self.__endPoint.distTo(mark1Position) - _END_POINT_OFFSET
             progress = int((1 - distToTarget / self.__totalDistance) * 100)
+            if progress > 100:
+                progress = 100
         else:
             progress = 0
             LOG_WARNING('Something went wrong... total distance is 0.')

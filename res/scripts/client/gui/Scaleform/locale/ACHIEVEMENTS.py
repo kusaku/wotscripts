@@ -87,6 +87,8 @@ class ACHIEVEMENTS(object):
     STRATEGICOPERATIONS = '#achievements:strategicOperations'
     STRATEGICOPERATIONS_DESCR = '#achievements:strategicOperations_descr'
     STRATEGICOPERATIONS_CONDITION = '#achievements:strategicOperations_condition'
+    MARKI100YEARS = '#achievements:markI100Years'
+    MARKI100YEARS_DESCR = '#achievements:markI100Years_descr'
     MEDALCRUCIALCONTRIBUTION = '#achievements:medalCrucialContribution'
     MEDALCRUCIALCONTRIBUTION_DESCR = '#achievements:medalCrucialContribution_descr'
     MEDALCRUCIALCONTRIBUTION_CONDITION = '#achievements:medalCrucialContribution_condition'
@@ -703,6 +705,8 @@ class ACHIEVEMENTS(object):
      STRATEGICOPERATIONS,
      STRATEGICOPERATIONS_DESCR,
      STRATEGICOPERATIONS_CONDITION,
+     MARKI100YEARS,
+     MARKI100YEARS_DESCR,
      MEDALCRUCIALCONTRIBUTION,
      MEDALCRUCIALCONTRIBUTION_DESCR,
      MEDALCRUCIALCONTRIBUTION_CONDITION,

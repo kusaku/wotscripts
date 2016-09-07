@@ -462,6 +462,7 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
                     self.__wreckedWheels = []
                 self.__wreckedWheels.append((isLeft, isLeading))
                 self.__crashedTracksCtrl.addWheel(isLeft, isLeading)
+                self.__damageApplicationPoint = None
             return
 
     def addCrashedTrack(self, isLeft):
@@ -480,7 +481,6 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
             self.__crashedTracksCtrl.addTrack(isLeft)
             if not self.__vehicle.isEnteringWorld and self.trackCrashAudition:
                 self.trackCrashAudition.playCrashSound(isLeft, False, 'wheeledVehicle' in self.__vehicle.typeDescriptor.type.tags)
-            self.__damageApplicationPoint = None
             return
 
     def delCrashedTrack(self, isLeft):

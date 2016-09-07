@@ -433,7 +433,7 @@ class Mark1VehicleAndFlagsMarkerPlugin(Mark1RespawnableVehicleMarkerPlugin):
 
     def __updateMark1AbsorbState(self):
         flagID = g_ctfManager.getVehicleCarriedFlagID(self._playerVehicleID)
-        state = common.getMarkers2DAbsorbState(flagID is not None, self.__playerTeam)
+        state = common.getMarkers2DAbsorbState(flagID is not None)
         for markerID in self._mark1Markers.itervalues():
             self._invokeMarker(markerID, 'showAnimation', [state])
 

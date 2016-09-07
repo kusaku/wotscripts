@@ -76,11 +76,14 @@ class Mark1ConsumablesPanel(EventConsumablesPanelMeta):
 
     def __onBonusBigGunTaken(self, vehicleID):
         if vehicleID == self.__playerVehicleID:
-            self.as_updateBonusNotificationS(True, makeString(INGAME_GUI.MARK1_BONUS_BIGSIZE_BIGGUN), _AMMO_BIG_GUN_ICON, self.__bigGunTooltip)
+            self.as_updateBonusNotificationS(True, self.__getBonusString(INGAME_GUI.MARK1_BONUS_BIGSIZE_BIGGUN), _AMMO_BIG_GUN_ICON, self.__bigGunTooltip)
 
     def __onBonusMachineGunTaken(self, vehicleID):
         if vehicleID == self.__playerVehicleID:
-            self.as_updateBonusNotificationS(True, makeString(INGAME_GUI.MARK1_BONUS_BIGSIZE_MACHINEGUN), _AMMO_MACHINE_GUN_ICON, self.__firstTooltip)
+            self.as_updateBonusNotificationS(True, self.__getBonusString(INGAME_GUI.MARK1_BONUS_BIGSIZE_MACHINEGUN), _AMMO_MACHINE_GUN_ICON, self.__firstTooltip)
+
+    def __getBonusString(self, strId):
+        return '<font size="14">' + makeString(INGAME_GUI.MARK1_BONUS_HEADER) + '</font><br/><font size="18">' + makeString(strId) + '</font>'
 
     def __onBonusEnded(self, vehicleID):
         if vehicleID == self.__playerVehicleID:

@@ -10,6 +10,7 @@ class BATTLE_VIEW_ALIASES(object):
     """
     TEAM_BASES_PANEL = 'teamBasesPanel'
     VEHICLE_MESSAGES = 'battleVehicleMessages'
+    EVENT_VEHICLE_MESSAGES = 'eventBattleVehicleMessages'
     VEHICLE_ERROR_MESSAGES = 'battleVehicleErrorMessages'
     PLAYER_MESSAGES = 'battlePlayerMessages'
     DAMAGE_PANEL = 'damagePanel'

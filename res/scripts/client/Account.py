@@ -900,6 +900,7 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
 
     def _update(self, triggerEvents, diff):
         LOG_DEBUG_DEV('_update', diff if triggerEvents else 'full sync')
+        LOG_ERROR('_update', diff if triggerEvents else 'full sync')
         isFullSync = diff.get('prevRev', None) is None
         if not self.syncData.updatePersistentCache(diff, isFullSync):
             return False

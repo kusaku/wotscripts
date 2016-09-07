@@ -7,7 +7,6 @@ from gui.battle_control.arena_info.interfaces import IArenaVehiclesController
 from gui.battle_control import g_sessionProvider
 from CTFManager import g_ctfManager
 from constants import FLAG_TYPES
-from debug_utils import LOG_WARNING
 _UPDATE_INTERVAL = 0.1
 
 class DeliveryDirection(IArenaVehiclesController):
@@ -15,7 +14,7 @@ class DeliveryDirection(IArenaVehiclesController):
     This components shows direction and distance to Mark1 Vehicle,
     when the user captures RepairKit or Bomb.
     """
-    __slots__ = ('__indicator', '__updateTimer', '__mark1VehicleID', '__playerVehicleID')
+    __slots__ = ('__indicator', '__updateTimer', '__mark1VehicleID', '__playerVehicleID', '__previousMark1Position')
 
     def __init__(self):
         self.__indicator = indicators.createDirectIndicator()
@@ -25,6 +24,7 @@ class DeliveryDirection(IArenaVehiclesController):
         self.__updateTimer = None
         self.__mark1VehicleID = None
         self.__playerVehicleID = g_sessionProvider.getCtx().getArenaDP().getPlayerVehicleID()
+        self.__previousMark1Position = Vector3()
         self.__addListeners()
         return
 
@@ -34,6 +34,7 @@ class DeliveryDirection(IArenaVehiclesController):
         self.__indicator = None
         self.__removeListeners()
         self.__mark1VehicleID = None
+        self.__previousMark1Position = None
         return
 
     def invalidateArenaInfo(self):
@@ -80,15 +81,15 @@ class DeliveryDirection(IArenaVehiclesController):
         vehicle = BigWorld.entities.get(self.__mark1VehicleID)
         if vehicle is not None:
             vPosition = vehicle.position
+            self.__previousMark1Position = vPosition
         else:
             positions = g_sessionProvider.arenaVisitor.getArenaPositions()
             if self.__mark1VehicleID in positions:
                 vPosition = positions[self.__mark1VehicleID]
+                self.__previousMark1Position = vPosition
             else:
-                LOG_WARNING('Mark1 position is unknown.')
-                vPosition = Vector3()
-        vector = vPosition - BigWorld.camera().position
-        return (vPosition, vector.length)
+                vPosition = self.__previousMark1Position
+        return (vPosition, BigWorld.camera().position.distTo(vPosition))
 
     def __addListeners(self):
         g_sessionProvider.addArenaCtrl(self)

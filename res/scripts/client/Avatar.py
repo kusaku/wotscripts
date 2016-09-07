@@ -967,8 +967,9 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                     vehExtras = vehicle.typeDescriptor.extras
                     if intArg < len(vehExtras):
                         extraName = vehExtras[intArg].name
-                        if extraName == 'ingameammoBigGun':
-                            vehicle.appearance.engineAudition.setBigGunSwitch(code == STATUS.BONUS_ON)
+                        from gui.battle_control.controllers.event_mark1.bonus_ctrl import EXTRA_BIG_GUN
+                        if extraName == EXTRA_BIG_GUN and code == STATUS.BONUS_ON:
+                            vehicle.appearance.engineAudition.setBigGunSwitch(True)
                 bonusCtrl = g_sessionProvider.dynamic.mark1Bonus
                 if bonusCtrl is not None:
                     bonusCtrl.bonusChangedFromAvatar(vehicleID, code, intArg)

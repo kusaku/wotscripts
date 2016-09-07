@@ -20,6 +20,7 @@ def getViewSettings():
     from gui.Scaleform.daapi.view.battle.classic import players_panel
     from gui.Scaleform.daapi.view.battle.event_mark1 import stats_exchange
     from gui.Scaleform.daapi.view.battle.event_mark1 import consumables_panel
+    from gui.Scaleform.daapi.view.battle.event_mark1 import vehicle_messages
     from gui.Scaleform.daapi.view.battle.event_mark1 import minimap
     from gui.Scaleform.daapi.view.battle.event_mark1 import flag_nots
     from gui.Scaleform.daapi.view.battle.event_mark1 import event_nots
@@ -32,6 +33,7 @@ def getViewSettings():
      ViewSettings(BATTLE_VIEW_ALIASES.FRAG_CORRELATION_BAR, frag_correlation_bar.FragCorrelationBar, None, ViewTypes.COMPONENT, None, ScopeTemplates.DEFAULT_SCOPE),
      ViewSettings(BATTLE_VIEW_ALIASES.FULL_STATS, full_stats.FullStatsComponent, None, ViewTypes.COMPONENT, None, ScopeTemplates.DEFAULT_SCOPE),
      ViewSettings(BATTLE_VIEW_ALIASES.EVENT_CONSUMABLES_PANEL, consumables_panel.Mark1ConsumablesPanel, None, ViewTypes.COMPONENT, None, ScopeTemplates.DEFAULT_SCOPE),
+     ViewSettings(BATTLE_VIEW_ALIASES.EVENT_VEHICLE_MESSAGES, vehicle_messages.Mark1VehicleMessages, None, ViewTypes.COMPONENT, None, ScopeTemplates.DEFAULT_SCOPE),
      ViewSettings(BATTLE_VIEW_ALIASES.PLAYERS_PANEL, players_panel.PlayersPanel, None, ViewTypes.COMPONENT, None, ScopeTemplates.DEFAULT_SCOPE),
      ViewSettings(BATTLE_VIEW_ALIASES.FLAG_NOTIFICATION, flag_nots.EventMark1FlagNotification, None, ViewTypes.COMPONENT, None, ScopeTemplates.DEFAULT_SCOPE),
      ViewSettings(BATTLE_VIEW_ALIASES.MINIMAP, minimap.Mark1MinimapComponent, None, ViewTypes.COMPONENT, None, ScopeTemplates.DEFAULT_SCOPE),

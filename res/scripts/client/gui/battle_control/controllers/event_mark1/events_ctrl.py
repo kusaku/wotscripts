@@ -61,6 +61,7 @@ class Mark1EventNotificationController(SoundViewComponentsController):
         g_ctfManager.onFlagAbsorbed += self.__onFlagAbsorbed
         if self.__bonusCtrl is not None:
             self.__bonusCtrl.onBombExploded += self.__onBombExploded
+            self.__bonusCtrl.onLastBombPlanted += self.__onLastBombPlanted
         if self.__ui is not None:
             self.__ui.onStateHidden += self.__onNotificationHidden
         return
@@ -71,6 +72,7 @@ class Mark1EventNotificationController(SoundViewComponentsController):
         g_ctfManager.onFlagAbsorbed -= self.__onFlagAbsorbed
         if self.__bonusCtrl is not None:
             self.__bonusCtrl.onBombExploded -= self.__onBombExploded
+            self.__bonusCtrl.onLastBombPlanted -= self.__onLastBombPlanted
         if self.__ui is not None:
             self.__ui.onStateHidden -= self.__onNotificationHidden
         self.__notificationQueue.clear()
@@ -105,6 +107,9 @@ class Mark1EventNotificationController(SoundViewComponentsController):
         if self.__ui is not None:
             self.__updateByConditions(self.__onBonusCtrlBombExploded)
         return
+
+    def __onLastBombPlanted(self):
+        self.clearViewComponents()
 
     def __showEventsOnStart(self):
         for flagID, flagInfo in g_ctfManager.getFlags():

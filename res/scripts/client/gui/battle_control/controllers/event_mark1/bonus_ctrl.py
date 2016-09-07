@@ -8,6 +8,7 @@ from constants import VEHICLE_MISC_STATUS, FLAG_TYPES, MARK1_TEAM_NUMBER
 from CTFManager import g_ctfManager
 from gui.shared.utils.TimeInterval import TimeInterval
 from debug_utils import LOG_DEBUG, LOG_WARNING
+from items import vehicles
 
 class STATES(object):
     ATTACK_REPAIR_TAKEN = 'attackRepairTaken'
@@ -69,6 +70,7 @@ class Mark1BonusController(SoundViewComponentsController):
         self.onBombPlanted = Event.Event(self.__eManager)
         self.onBombExploded = Event.Event(self.__eManager)
         self.onMark1Killed = Event.Event(self.__eManager)
+        self.onLastBombPlanted = Event.Event(self.__eManager)
         self.__eventHandler = {(EXTRA_BIG_GUN, VEHICLE_MISC_STATUS.BONUS_ON): self.__onBonusBigGunTaken,
          (EXTRA_BIG_GUN, VEHICLE_MISC_STATUS.BONUS_OFF): self.__onBonusEnded,
          (EXTRA_MACHINE_GUN, VEHICLE_MISC_STATUS.BONUS_ON): self.__onBonusMachineGunTaken,
@@ -128,7 +130,7 @@ class Mark1BonusController(SoundViewComponentsController):
                 vTypeInfoVO = self.__arenaDP.getVehicleInfo(vehicleID).vehicleType
                 if vTypeInfoVO.isMark1:
                     timeLeft = endTime - BigWorld.serverTime()
-                    self.__bonusChangedForMark1(miscCode, round(timeLeft))
+                    self.__bonusChangedForMark1(miscCode, round(timeLeft), vehicleID)
                 else:
                     self.__bonusChanged(vehicleID, miscCode, extraIndex)
 
@@ -235,7 +237,7 @@ class Mark1BonusController(SoundViewComponentsController):
         else:
             LOG_DEBUG('Bonus event is not found for key', eventKey)
 
-    def __bonusChangedForMark1(self, miscCode, timeLeft):
+    def __bonusChangedForMark1(self, miscCode, timeLeft, mark1VehicleID):
         if miscCode == VEHICLE_MISC_STATUS.BONUS_ON and timeLeft <= 0:
             if self.__bombTimer is None:
                 self.__onBombExploded()
@@ -245,6 +247,11 @@ class Mark1BonusController(SoundViewComponentsController):
             self.__destroyBombTimer()
         else:
             self.__createBombTimer(timeLeft)
+            vehicle = BigWorld.entities.get(mark1VehicleID)
+            if vehicle is not None:
+                explosiveInfo = vehicles.g_cache.commonConfig['extrasDict']['explosive']
+                if explosiveInfo.maxDamage >= vehicle.health:
+                    self.onLastBombPlanted()
         return
 
     def __onFlagCapturedByVehicle(self, flagID, flagTeam, vehicleID):

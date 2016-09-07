@@ -145,7 +145,7 @@ class CrashedTrackController:
                 self.__flags |= self.__HIDING_FLAGS.LEFT
             else:
                 self.__flags |= self.__HIDING_FLAGS.RIGHT
-            if self.__model is None and not flying:
+            if self.__model is None and (not flying or 'wheeledVehicle' in self.__vehicleDesc.type.tags):
                 if not self.__loading:
                     BigWorld.loadResourceListBG((self.__setupTrackAssembler(),), self.__onModelLoaded)
                     self.__loading = True

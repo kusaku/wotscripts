@@ -145,6 +145,7 @@ _ACHIEVEMENTS_BY_NAME = {(_AB.TOTAL, 'tankExpert'): _NationAchieveFactory.get(_a
  (_AB.TOTAL, 'EFC2016Goleador'): _AchieveFactory.get(_abstract_achievements.QuestAchievement),
  (_AB.TOTAL, 'markIBomberman'): _AchieveFactory.get(_abstract_achievements.QuestAchievement),
  (_AB.TOTAL, 'markIRepairer'): _AchieveFactory.get(_abstract_achievements.QuestAchievement),
+ (_AB.TOTAL, 'markI100Years'): _CustomAchieveFactory.get(_as.MarkI100Years),
  (_AB.CLAN, 'medalRotmistrov'): _CustomAchieveFactory.get(_as.MedalRotmistrovAchievement),
  (_AB.RATED_7X7, 'strategicOperations'): _CustomAchieveFactory.get(_as.StrategicOperationsAchievement),
  (_AB.FORT, 'fireAndSword'): _CustomAchieveFactory.get(_as.FireAndSwordAchievement),
