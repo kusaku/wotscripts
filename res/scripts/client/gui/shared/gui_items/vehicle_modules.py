@@ -1,7 +1,6 @@
 # Embedded file name: scripts/client/gui/shared/gui_items/vehicle_modules.py
 import BigWorld
 from constants import SHELL_TYPES
-from shared_utils import CONST_CONTAINER
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.shared.items_parameters.params_cache import g_paramsCache
 import nations
@@ -17,11 +16,6 @@ SHELL_TYPES_ORDER = (SHELL_TYPES.ARMOR_PIERCING,
  SHELL_TYPES.HOLLOW_CHARGE,
  SHELL_TYPES.HIGH_EXPLOSIVE)
 SHELL_TYPES_ORDER_INDICES = dict(((n, i) for i, n in enumerate(SHELL_TYPES_ORDER)))
-
-class CHASSIS_SUB_TYPE_NAMES(CONST_CONTAINER):
-    TRACK = 'vehicleChassis'
-    WHEEL = 'vehicleWheeledChassis'
-
 
 class VehicleModule(FittingItem):
     """
@@ -73,19 +67,8 @@ class VehicleChassis(VehicleModule):
         return result
 
     @property
-    def isWheelBase(self):
-        return 'wheeledVehicle' in self.descriptor['tags']
-
-    @property
     def icon(self):
-        if self.isWheelBase:
-            return RES_ICONS.MAPS_ICONS_MODULES_WHEEL_CHASSIS
         return RES_ICONS.MAPS_ICONS_MODULES_CHASSIS
-
-    def getGUIEmblemID(self):
-        if self.isWheelBase:
-            return CHASSIS_SUB_TYPE_NAMES.WHEEL
-        return CHASSIS_SUB_TYPE_NAMES.TRACK
 
 
 class VehicleTurret(VehicleModule):

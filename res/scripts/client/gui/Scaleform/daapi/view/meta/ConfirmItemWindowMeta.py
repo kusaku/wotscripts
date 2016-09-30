@@ -7,29 +7,18 @@ class ConfirmItemWindowMeta(AbstractWindowView):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends AbstractWindowView
-    null
     """
 
     def submit(self, count, currency):
-        """
-        :param count:
-        :param currency:
-        :return :
-        """
         self._printOverrideError('submit')
 
     def as_setDataS(self, value):
-        """
-        :param value:
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_setData(value)
 
     def as_setSettingsS(self, data):
         """
-        :param data:
-        :return :
+        :param data: Represented by DialogSettingsVO (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_setSettings(data)

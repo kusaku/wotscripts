@@ -1,6 +1,5 @@
 # Embedded file name: scripts/client/gui/battle_control/controllers/arena_load_ctrl.py
 import BigWorld
-from gui import game_control
 from gui.app_loader import g_appLoader
 from gui.battle_control.arena_info.interfaces import IArenaLoadController
 from gui.battle_control.battle_constants import BATTLE_CTRL_ID
@@ -23,6 +22,7 @@ class ArenaLoadController(IArenaLoadController):
         return
 
     def spaceLoadStarted(self):
+        from gui import game_control
         game_control.g_instance.gameSession.incBattlesCounter()
         g_appLoader.showBattleLoading(arenaGuiType=self.__arenaVisitor.getArenaGuiType())
         BigWorld.wg_setReducedFpsMode(True)

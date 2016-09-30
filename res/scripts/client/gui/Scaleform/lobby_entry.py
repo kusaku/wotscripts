@@ -67,7 +67,7 @@ class LobbyEntry(SFApplication):
         return ColorSchemeManager()
 
     def _createEventLogMgr(self):
-        return EventLogManager()
+        return EventLogManager(False)
 
     def _createContextMenuManager(self):
         return ContextMenuManager(self.proxy)
@@ -105,7 +105,7 @@ class LobbyEntry(SFApplication):
         self._containerMgr.load(VIEW_ALIAS.WAITING)
 
     def _getRequiredLibraries(self):
-        return ('windows.swf', 'animations.swf', 'common_i18n.swf')
+        return ('windows.swf', 'animations.swf', 'common_i18n.swf', 'guiControlsLogin.swf', 'guiControlsLoginBattleDynamic.swf')
 
     def __getCursorFromContainer(self):
         if self._containerMgr is not None:

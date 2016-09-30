@@ -14,13 +14,10 @@ def prepareFashions(vDesc, isCurrentModelDamaged, camouflageId = None, newPhysic
          None]
     else:
         drivenJoints = vDesc.gun.get('drivenJoints', None)
-        fashions = [BigWorld.WGVehicleFashion(False, 1.0, newPhysic, 'wheeledVehicle' in vDesc.type.tags),
+        fashions = [BigWorld.WGVehicleFashion(False, 1.0, newPhysic),
          None,
          None,
          BigWorld.WGGunRecoil('G', drivenJoints)]
-        if 'markI' in vDesc.type.tags:
-            oneMoreRecoil = BigWorld.WGGunRecoil('G', drivenJoints)
-            fashions.extend((None, oneMoreRecoil))
     camouflagePresent = False
     texture = ''
     customization = items.vehicles.g_cache.customization(vDesc.type.customizationNationID)
@@ -32,7 +29,7 @@ def prepareFashions(vDesc, isCurrentModelDamaged, camouflageId = None, newPhysic
     useCamouflage = camouflagePresent and texture
     for fashionIdx, descId in enumerate(TankPartNames.ALL):
         fashion = fashions[fashionIdx]
-        forceFashion = fashion is None and (useCamouflage or hasattr(vDesc.type, 'repaintParameters'))
+        forceFashion = not isCurrentModelDamaged and fashion is None and (useCamouflage or hasattr(vDesc.type, 'repaintParameters'))
         if forceFashion:
             fashions[fashionIdx] = BigWorld.WGBaseFashion()
 

@@ -6,7 +6,6 @@ class BATTLE_MESSAGES_CONSTS(object):
     DO NOT MODIFY!
     Generated with yaml.
     __author__ = 'yaml_processor'
-    null
     """
     LIST_DIRECTION_UP = 'up'
     LIST_DIRECTION_DOWN = 'down'
@@ -20,3 +19,5 @@ class BATTLE_MESSAGES_CONSTS(object):
     GREEN_MESSAGE_RENDERER = 'PlayerGreenMessageLeftRenderer'
     BLACK_MESSAGE_RENDERER = 'PlayerBlackMessageLeftRenderer'
     SELF_MESSAGE_RENDERER = 'PlayerSelfMessageLeftRenderer'
+    ADD_IN_BLACKLIST = 0
+    REMOVE_FROM_BLACKLIST = 1

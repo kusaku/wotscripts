@@ -7,19 +7,12 @@ class SixthSenseMeta(BaseDAAPIComponent):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends BaseDAAPIComponent
-    null
     """
 
     def as_showS(self):
-        """
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_show()
 
     def as_hideS(self):
-        """
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_hide()

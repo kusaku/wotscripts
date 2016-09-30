@@ -6,14 +6,29 @@ from gui.battle_control import g_sessionProvider
 from gui.shared.events import GameEvent
 from helpers import i18n
 from items import vehicles
+_VEHICLE_TYPE_FORMATTER = ' <img src="img://gui/maps/icons/vehicleTypes/{0}.png" vspace="-4"/>'
+_VEHICLE_STYLE_FORMATTER = '<font size="%(fontSize)s" face="%(fontFace)s" color="%(fontColor)s">{0}</font>'
 
 class VehicleMessages(fading_messages.FadingMessages):
 
     def __init__(self):
         super(VehicleMessages, self).__init__('VehicleMessagesPanel', 'vehicle_messages_panel.xml')
+        self.__styleFormatter = None
+        return
 
     def __del__(self):
         LOG_DEBUG('VehicleMessages panel is deleted')
+
+    def _populate(self):
+        super(VehicleMessages, self)._populate()
+        styles = self.getStyles()
+        raise 'entityStyle' in styles or AssertionError('Entity styles for messages under Ammo panel are not defined!')
+        self.__styleFormatter = _VEHICLE_STYLE_FORMATTER % styles['entityStyle']
+
+    def _dispose(self):
+        self.__styleFormatter = None
+        super(VehicleMessages, self)._dispose()
+        return
 
     def _addGameListeners(self):
         super(VehicleMessages, self)._addGameListeners()
@@ -55,7 +70,7 @@ class VehicleMessages(fading_messages.FadingMessages):
         if extra is not None:
             names['device'] = extra.deviceUserString
         if entityID:
-            names['entity'] = g_sessionProvider.getCtx().getPlayerFullName(entityID)
+            names['entity'] = self.__formatEntity(entityID)
         if equipmentID:
             equipment = vehicles.g_cache.equipments().get(equipmentID)
             if equipment is not None:
@@ -65,3 +80,12 @@ class VehicleMessages(fading_messages.FadingMessages):
 
     def __onShowVehicleMessageByKey(self, key, args = None, extra = None):
         self.showMessage(key, args, extra)
+
+    def __formatEntity(self, entityID):
+        ctx = g_sessionProvider.getCtx()
+        vTypeInfoVO = ctx.getArenaDP().getVehicleInfo(entityID).vehicleType
+        playerName = ctx.getPlayerFullName(entityID, showVehShortName=False)
+        iconTag = _VEHICLE_TYPE_FORMATTER.format(vTypeInfoVO.classTag)
+        playerInfo = '%s%s%s' % (playerName, iconTag, vTypeInfoVO.shortNameWithPrefix)
+        entityInfo = self.__styleFormatter.format(playerInfo)
+        return entityInfo

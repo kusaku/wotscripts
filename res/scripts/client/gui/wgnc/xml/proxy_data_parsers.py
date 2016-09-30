@@ -74,6 +74,24 @@ class _ClanInviteDeclinedParser(_ClanInviteActionParser):
         return proxy_data.ClanInviteDeclinedItem(account_id, invite_id)
 
 
+class _EncyclopediaContentParser(SectionParser):
+
+    def getTagName(self):
+        return 'encyclopedia_content_received'
+
+    def parse(self, section):
+        return proxy_data.EncyclopediaContentItem(section.readInt('content_id'))
+
+
+class _PlaySoundParser(SectionParser):
+
+    def getTagName(self):
+        return 'play_sound'
+
+    def parse(self, section):
+        return proxy_data.PlaySoundItem(self._readString('event_id', section))
+
+
 class _ProxyDataItemsParser(ParsersCollection):
 
     def getTagName(self):
@@ -95,4 +113,6 @@ class ProxyDataItemParser_v2(_ProxyDataItemsParser):
          _ClanAppDeclinedParser(),
          _ClanAppAcceptedParser(),
          _ClanInviteDeclinedParser(),
-         _ClanInviteAcceptedParser()))
+         _ClanInviteAcceptedParser(),
+         _EncyclopediaContentParser(),
+         _PlaySoundParser()))

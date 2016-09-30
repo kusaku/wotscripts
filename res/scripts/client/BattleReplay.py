@@ -52,6 +52,7 @@ class BattleReplay():
     isTimeWarpInProgress = property(lambda self: self.__replayCtrl.isTimeWarpInProgress or self.__timeWarpCleanupCb is not None)
     isServerAim = property(lambda self: self.__replayCtrl.isServerAim)
     playerVehicleID = property(lambda self: self.__replayCtrl.playerVehicleID)
+    isLoading = property(lambda self: self.__replayCtrl.getAutoStartFileName() is not None and self.__replayCtrl.getAutoStartFileName() != '')
     fps = property(lambda self: self.__replayCtrl.fps)
     ping = property(lambda self: self.__replayCtrl.ping)
     compressed = property(lambda self: self.__replayCtrl.isFileCompressed())
@@ -74,7 +75,6 @@ class BattleReplay():
         self.__fileName = None
         self.__replayCtrl = BigWorld.WGReplayController()
         self.__replayCtrl.replayFinishedCallback = self.onReplayFinished
-        self.__replayCtrl.timeWarpFinishedCallback = self.__onTimeWarpFinished
         self.__replayCtrl.controlModeChangedCallback = self.onControlModeChanged
         self.__replayCtrl.ammoButtonPressedCallback = self.__onAmmoButtonPressed
         self.__replayCtrl.playerVehicleIDChangedCallback = self.onPlayerVehicleIDChanged
@@ -121,6 +121,12 @@ class BattleReplay():
         self.onCommandReceived = Event.Event()
         self.onAmmoSettingChanged = Event.Event()
         self.onStopped = Event.Event()
+        if IS_DEVELOPMENT:
+            try:
+                import development.replay_override
+            except:
+                pass
+
         return
 
     def destroy(self):
@@ -136,7 +142,6 @@ class BattleReplay():
         g_settingsCore.onSettingsChanged -= self.__onSettingsChanging
         self.enableAutoRecordingBattles(False)
         self.__replayCtrl.replayFinishedCallback = None
-        self.__replayCtrl.timeWarpFinishedCallback = None
         self.__replayCtrl.controlModeChangedCallback = None
         self.__replayCtrl.clientVersionDiffersCallback = None
         self.__replayCtrl.playerVehicleIDChangedCallback = None
@@ -859,9 +864,6 @@ class BattleReplay():
             g_replayEvents.onTimeWarpFinish()
         return
 
-    def __onTimeWarpFinished(self):
-        self.__cleanupAfterTimeWarp()
-
     def __enableInGameEffects(self, enable):
         AreaDestructibles.g_destructiblesManager.forceNoAnimation = not enable
 
@@ -878,6 +880,9 @@ class BattleReplay():
             return self.__isFinished
         else:
             return False
+
+    def isFinishedNoPlayCheck(self):
+        return self.__isFinished
 
     def onSetCruiseMode(self, mode):
         from gui.battle_control import g_sessionProvider
@@ -967,3 +972,11 @@ def _JSON_Encode(obj):
 
 def isPlaying():
     return g_replayCtrl.isPlaying or g_replayCtrl.isTimeWarpInProgress
+
+
+def isLoading():
+    return g_replayCtrl.isLoading
+
+
+def isFinished():
+    return g_replayCtrl.isFinishedNoPlayCheck()

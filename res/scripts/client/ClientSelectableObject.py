@@ -16,14 +16,14 @@ class ClientSelectableObject(BigWorld.Entity):
         self.__bspModel = BigWorld.WGBspCollisionModel()
         self.__enabled = True
         self.__edged = False
-        self.__sounds = dict(click=[self.clickSoundName, None], release=[self.releaseSoundName, None])
+        self.__clickSound = None
         return
 
     def prerequisites(self):
         return [self.modelName]
 
     def onEnterWorld(self, prereqs):
-        if self.modelName != '' and self.modelName not in prereqs.failedIDs:
+        if self.modelName not in prereqs.failedIDs:
             model = prereqs[self.modelName]
             self.model = model
             self.filter = BigWorld.DumbFilter()
@@ -32,13 +32,11 @@ class ClientSelectableObject(BigWorld.Entity):
                 LOG_ERROR('ClientSelectableObject failed to setModel', self.modelName)
 
     def onLeaveWorld(self):
-        for sound in self.__sounds.itervalues():
-            if sound[1] is not None:
-                if sound[1].isPlaying:
-                    sound[1].stop()
-                sound[1].releaseMatrix()
-                sound[1] = None
-
+        if self.__clickSound is not None:
+            if self.__clickSound.isPlaying:
+                self.__clickSound.stop()
+            self.__clickSound.releaseMatrix()
+            self.__clickSound = None
         self.highlight(False)
         return
 
@@ -66,28 +64,20 @@ class ClientSelectableObject(BigWorld.Entity):
     def highlight(self, show):
         if show:
             if not self.__edged and self.__enabled:
-                BigWorld.wgAddEdgeDetectEntity(self, 0, 0)
+                BigWorld.wgAddEdgeDetectEntity(self, 0, 2, True)
                 self.__edged = True
         elif self.__edged:
             BigWorld.wgDelEdgeDetectEntity(self)
             self.__edged = False
 
     def onClicked(self):
-        self.__playSound('click')
-
-    def onReleased(self):
-        self.__playSound('release')
-
-    def __playSound(self, action):
-        if action not in self.__sounds:
-            return
+        if self.__clickSound is None:
+            if len(self.clickSoundName) > 0:
+                self.__clickSound = SoundGroups.g_instance.getSound3D(self.model.root, self.clickSoundName)
+                self.__clickSound.play()
+                return
+        elif self.__clickSound.isPlaying:
+            self.__clickSound.stop()
         else:
-            sound = self.__sounds.get(action)
-            if sound[1] is None:
-                if len(sound[0]) > 0:
-                    sound[1] = SoundGroups.g_instance.getSound3D(self.model.root, sound[0])
-                    sound[1].play()
-                    return
-            elif not sound[1].isPlaying:
-                sound[1].play()
-            return
+            self.__clickSound.play()
+        return

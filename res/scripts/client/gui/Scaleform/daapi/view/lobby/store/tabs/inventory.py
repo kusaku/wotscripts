@@ -2,7 +2,6 @@
 from constants import IS_RENTALS_ENABLED
 from gui.Scaleform.daapi.view.lobby.store.tabs import StoreItemsTab, StoreModuleTab, StoreVehicleTab, StoreShellTab, StoreArtefactTab, StoreOptionalDeviceTab, StoreEquipmentTab
 from gui.Scaleform.locale.MENU import MENU
-from gui.shared.ItemsCache import g_itemsCache
 from gui.shared.gui_items import GUI_ITEM_TYPE
 from gui.shared.gui_items.Vehicle import Vehicle
 from gui.shared.tooltips.formatters import packItemActionTooltipData
@@ -13,9 +12,6 @@ class InventoryItemsTab(StoreItemsTab):
 
     def _getItemPrice(self, item):
         return item.sellPrice
-
-    def _getCurrency(self, item):
-        return item.sellPrice.getCurrency()
 
     def _getItemActionData(self, item):
         if item.sellPrice != item.defaultSellPrice and not item.isRented:
@@ -49,11 +45,11 @@ class InventoryModuleTab(InventoryItemsTab, StoreModuleTab):
 
     def _getRequestCriteria(self, invVehicles):
         requestCriteria = super(InventoryModuleTab, self)._getRequestCriteria(invVehicles)
-        extra = self.filterData['extra']
-        fitsType = self.filterData['fitsType']
-        requestTypeIds = self.filterData['requestTypeIds']
+        extra = self._filterData['extra']
+        fitsType = self._filterData['fitsType']
+        requestTypeIds = self._getItemTypeID()
         if fitsType == 'myVehicle':
-            vehicle = g_itemsCache.items.getItemByCD(int(self.filterData['vehicleCD']))
+            vehicle = self._items.getItemByCD(int(self._filterData['vehicleCD']))
             requestCriteria |= REQ_CRITERIA.VEHICLE.SUITABLE([vehicle], requestTypeIds)
             if not vehicle.hasTurrets:
                 requestCriteria |= ~REQ_CRITERIA.IN_CD_LIST([vehicle.turret.intCD])
@@ -75,11 +71,10 @@ class InventoryVehicleTab(InventoryItemsTab, StoreVehicleTab):
     def _getRequestCriteria(self, invVehicles):
         requestCriteria = super(InventoryVehicleTab, self)._getRequestCriteria(invVehicles)
         requestCriteria |= REQ_CRITERIA.INVENTORY
-        requestType = self.filterData['requestType']
-        extra = self.filterData['extra']
-        if 'all' not in requestType:
-            requestType = map(lambda x: x.lower(), requestType)
-            requestCriteria |= REQ_CRITERIA.CUSTOM(lambda item: item.type.lower() in requestType)
+        vehicleType = self._filterData['vehicleType']
+        extra = self._filterData['extra']
+        if vehicleType != 'all':
+            requestCriteria |= REQ_CRITERIA.CUSTOM(lambda item: item.type.lower() == vehicleType.lower())
         return self._getExtraCriteria(extra, requestCriteria, invVehicles)
 
     def _getExtraCriteria(self, extra, requestCriteria, invVehicles):
@@ -113,15 +108,15 @@ class InventoryShellTab(InventoryItemsTab, StoreShellTab):
     def _getRequestCriteria(self, invVehicles):
         requestCriteria = super(InventoryShellTab, self)._getRequestCriteria(invVehicles)
         requestCriteria |= REQ_CRITERIA.INVENTORY
-        requestCriteria |= REQ_CRITERIA.CUSTOM(lambda item: item.type in self.filterData['requestType'])
-        fitsType = self.filterData['fitsType']
+        requestCriteria |= REQ_CRITERIA.CUSTOM(lambda item: item.type in self._filterData['itemTypes'])
+        fitsType = self._filterData['fitsType']
         if fitsType == 'myVehicleGun':
-            vehicle = g_itemsCache.items.getItemByCD(int(self.filterData['vehicleCD']))
+            vehicle = self._items.getItemByCD(int(self._filterData['vehicleCD']))
             shellsList = map(lambda x: x.intCD, vehicle.gun.defaultAmmo)
             requestCriteria |= REQ_CRITERIA.IN_CD_LIST(shellsList)
         elif fitsType == 'myVehiclesInventoryGuns':
             shellsList = set()
-            myGuns = g_itemsCache.items.getItems(GUI_ITEM_TYPE.GUN, REQ_CRITERIA.INVENTORY).values()
+            myGuns = self._items.getItems(GUI_ITEM_TYPE.GUN, REQ_CRITERIA.INVENTORY).values()
             for gun in myGuns:
                 shellsList.update(map(lambda x: x.intCD, gun.defaultAmmo))
 
@@ -131,7 +126,7 @@ class InventoryShellTab(InventoryItemsTab, StoreShellTab):
             requestCriteria |= REQ_CRITERIA.IN_CD_LIST(shellsList)
         else:
             shellsList = set()
-            myGuns = g_itemsCache.items.getItems(GUI_ITEM_TYPE.GUN, REQ_CRITERIA.INVENTORY).values()
+            myGuns = self._items.getItems(GUI_ITEM_TYPE.GUN, REQ_CRITERIA.INVENTORY).values()
             for gun in myGuns:
                 shellsList.update(map(lambda x: x.intCD, gun.defaultAmmo))
 
@@ -146,16 +141,16 @@ class InventoryArtefactTab(InventoryItemsTab, StoreArtefactTab):
 
     def _getRequestCriteria(self, invVehicles):
         requestCriteria = super(InventoryArtefactTab, self)._getRequestCriteria(invVehicles)
-        fitsType = self.filterData['fitsType']
+        fitsType = self._filterData['fitsType']
         itemTypeID = self._getItemTypeID()
         if fitsType == 'myVehicle':
-            vehicle = g_itemsCache.items.getItemByCD(int(self.filterData['vehicleCD']))
+            vehicle = self._items.getItemByCD(int(self._filterData['vehicleCD']))
             requestCriteria |= REQ_CRITERIA.VEHICLE.SUITABLE([vehicle], [itemTypeID])
         elif fitsType == 'myVehicles':
             requestCriteria |= REQ_CRITERIA.VEHICLE.SUITABLE(invVehicles, [itemTypeID])
         else:
             requestCriteria |= ~REQ_CRITERIA.VEHICLE.SUITABLE(invVehicles, [itemTypeID])
-        return self._getExtraCriteria(self.filterData['extra'], requestCriteria, invVehicles)
+        return self._getExtraCriteria(self._filterData['extra'], requestCriteria, invVehicles)
 
 
 class InventoryOptionalDeviceTab(InventoryArtefactTab, StoreOptionalDeviceTab):

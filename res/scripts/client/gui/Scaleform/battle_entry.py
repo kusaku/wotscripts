@@ -95,9 +95,9 @@ class BattleEntry(SFApplication):
             return False
             return
 
-    def enterGuiControlMode(self, consumerID, cursorVisible = True):
+    def enterGuiControlMode(self, consumerID, cursorVisible = True, enableAiming = True):
         if self.__input is not None:
-            self.__input.enterGuiControlMode(consumerID, cursorVisible=cursorVisible)
+            self.__input.enterGuiControlMode(consumerID, cursorVisible=cursorVisible, enableAiming=enableAiming)
         return
 
     def leaveGuiControlMode(self, consumerID):
@@ -163,7 +163,7 @@ class BattleEntry(SFApplication):
         pass
 
     def _getRequiredLibraries(self):
-        return ('windows.swf', 'common_i18n.swf', 'tooltipsLoginBattle.swf', 'tooltipsLobbyBattle.swf', 'guiControlsLobbyBattleDynamic.swf', 'battleMessages.swf')
+        return ('windows.swf', 'common_i18n.swf', 'guiControlsLobbyBattleDynamic.swf', 'guiControlsLoginBattleDynamic.swf', 'battleMessages.swf')
 
     def __getCursorFromContainer(self):
         if self._containerMgr is not None:

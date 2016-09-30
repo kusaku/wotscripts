@@ -1,19 +1,19 @@
 # Embedded file name: scripts/client/gui/shared/gui_items/Vehicle.py
 from itertools import izip
-import BigWorld
 from operator import itemgetter
+import BigWorld
 import constants
 from AccountCommands import LOCK_REASON, VEHICLE_SETTINGS_FLAG
 from constants import WIN_XP_FACTOR_MODE
 from gui.prb_control import prb_getters
 from shared_utils import findFirst, CONST_CONTAINER
 from gui import makeHtmlString
-from gui.shared.economics import calcRentPackages, getActionPrc
+from gui.shared.economics import calcRentPackages, getActionPrc, calcVehicleRestorePrice
 from helpers import i18n, time_utils
 from items import vehicles, tankmen, getTypeInfoByName
 from account_shared import LayoutIterator, getCustomizedVehCompDescr
 from gui.prb_control.settings import PREBATTLE_SETTING_NAME
-from gui.shared.money import ZERO_MONEY
+from gui.shared.money import ZERO_MONEY, Currency
 from gui.shared.gui_items import CLAN_LOCK, HasStrCD, FittingItem, GUI_ITEM_TYPE, getItemIconName, RentalInfoProvider
 from gui.shared.gui_items.vehicle_modules import Shell, VehicleChassis, VehicleEngine, VehicleRadio, VehicleFuelTank, VehicleTurret, VehicleGun
 from gui.shared.gui_items.artefacts import Equipment, OptionalDevice
@@ -70,8 +70,7 @@ class VEHICLE_TAGS(CONST_CONTAINER):
     EXCLUDED_FROM_SANDBOX = 'excluded_from_sandbox'
     TELECOM = 'telecom'
     FALLOUT = 'fallout'
-    WHEEL_BASE = 'wheeledVehicle'
-    MARK1 = 'markI'
+    UNRECOVERABLE = 'unrecoverable'
 
 
 class Vehicle(FittingItem, HasStrCD):
@@ -152,8 +151,9 @@ class Vehicle(FittingItem, HasStrCD):
         self.isDisabledForBuy = False
         self.isSelected = False
         self.igrCustomizationsLayout = {}
+        self.restorePrice = None
         invData = dict()
-        if proxy is not None and proxy.inventory.isSynced() and proxy.stats.isSynced() and proxy.shop.isSynced():
+        if proxy is not None and proxy.inventory.isSynced() and proxy.stats.isSynced() and proxy.shop.isSynced() and proxy.recycleBin.isSynced():
             invDataTmp = proxy.inventory.getItems(GUI_ITEM_TYPE.VEHICLE, inventoryID)
             if invDataTmp is not None:
                 invData = invDataTmp
@@ -169,6 +169,9 @@ class Vehicle(FittingItem, HasStrCD):
             self.hasRentPackages = bool(proxy.shop.getVehicleRentPrices().get(self.intCD, {}))
             self.isSelected = bool(self.invID in proxy.stats.oldVehInvIDs)
             self.igrCustomizationsLayout = proxy.inventory.getIgrCustomizationsLayout().get(self.inventoryID, {})
+            restoreConfig = proxy.shop.vehiclesRestoreConfig
+            self.restorePrice = calcVehicleRestorePrice(self.defaultPrice, proxy.shop)
+            self.restoreInfo = proxy.recycleBin.getVehicleRestoreInfo(self.intCD, restoreConfig.restoreDuration, restoreConfig.restoreCooldown)
         self.inventoryCount = 1 if len(invData.keys()) else 0
         data = invData.get('rent')
         if data is not None:
@@ -206,7 +209,8 @@ class Vehicle(FittingItem, HasStrCD):
     def buyPrice(self):
         if self.isRented and not self.rentalIsOver:
             return self._buyPrice - self.rentCompensation
-        return self._buyPrice
+        else:
+            return self._buyPrice
 
     def getUnlockDescrByIntCD(self, intCD):
         for unlockIdx, data in enumerate(self.descriptor.type.unlocksDescrs):
@@ -299,7 +303,7 @@ class Vehicle(FittingItem, HasStrCD):
 
     def _parseCompDescr(self, compactDescr):
         nId, innID = vehicles.parseVehicleCompactDescr(compactDescr)
-        return (vehicles._VEHICLE, nId, innID)
+        return (GUI_ITEM_TYPE.VEHICLE, nId, innID)
 
     def _parseShells(self, layoutList, defaultLayoutList, proxy):
         shellsDict = dict(((cd, count) for cd, count, _ in LayoutIterator(layoutList)))
@@ -435,10 +439,6 @@ class Vehicle(FittingItem, HasStrCD):
         return getTypeUserName(self.type, self.isElite)
 
     @property
-    def hasWheelBase(self):
-        return _checkForTags(self.tags, VEHICLE_TAGS.WHEEL_BASE)
-
-    @property
     def hasTurrets(self):
         vDescr = self.descriptor
         return len(vDescr.hull['fakeTurrets']['lobby']) != len(vDescr.turrets)
@@ -471,11 +471,6 @@ class Vehicle(FittingItem, HasStrCD):
         if self.repairCost > 0 and self.health == 0:
             return Vehicle.VEHICLE_STATE.DESTROYED
         return Vehicle.VEHICLE_STATE.UNDAMAGED
-
-    def getDeviceTypeNames(self):
-        if self.hasWheelBase:
-            return vehicles.WHEEL_VEHICLE_DEVICE_TYPE_NAMES
-        return vehicles.VEHICLE_DEVICE_TYPE_NAMES
 
     def getState(self, isCurrnentPlayer = True):
         ms = self.modelState
@@ -620,10 +615,6 @@ class Vehicle(FittingItem, HasStrCD):
         return self.isOnlyForEventBattles and self in Vehicle.__getEventVehicles()
 
     @property
-    def isMark1(self):
-        return _checkForTags(self.tags, VEHICLE_TAGS.MARK1)
-
-    @property
     def isFalloutSelected(self):
         return self.invID in self.__getFalloutSelectedVehInvIDs()
 
@@ -638,6 +629,10 @@ class Vehicle(FittingItem, HasStrCD):
 
     def canNotBeSold(self):
         return _checkForTags(self.tags, VEHICLE_TAGS.CANNOT_BE_SOLD)
+
+    @property
+    def isUnrecoverable(self):
+        return _checkForTags(self.tags, VEHICLE_TAGS.UNRECOVERABLE)
 
     @property
     def isDisabledInPremIGR(self):
@@ -819,20 +814,53 @@ class Vehicle(FittingItem, HasStrCD):
             return (False, 'premiumIGR')
         return super(Vehicle, self).mayPurchase(money)
 
-    def mayRentOrBuy(self, money):
-        if self.isDisabledForBuy and not self.isRentable:
+    def mayRent(self, money):
+        if getattr(BigWorld.player(), 'isLongDisconnectedFromCenter', False):
+            return (False, 'center_unavailable')
+        elif self.isDisabledForBuy and not self.isRentable:
             return (False, 'rental_disabled')
-        if self.isRentable and not self.isRentAvailable:
-            mayPurchase, reason = self.mayPurchase(money)
-            if not mayPurchase:
-                return (False, 'rental_time_exceeded')
-        if self.minRentPrice:
+        elif self.isRentable and not self.isRentAvailable:
+            return (False, 'rental_time_exceeded')
+        elif self.minRentPrice:
             shortage = money.getShortage(self.minRentPrice)
             if shortage:
                 currency, _ = shortage.pop()
-                return (False, '%s_rent_error' % currency)
+                return (False, '%s_error' % currency)
             return (True, '')
-        return self.mayPurchase(money)
+        else:
+            return (False, 'no_rent_price')
+
+    def mayRestore(self, money):
+        """
+        Check if vehicle may restore for money
+        :param money:<Money>
+        :return: tuple(mayRestore:<bool>, errorReason:<str>
+        """
+        if getattr(BigWorld.player(), 'isLongDisconnectedFromCenter', False):
+            return (False, 'center_unavailable')
+        if not self.isRestoreAvailable() or constants.IS_CHINA and self.rentalIsActive:
+            return (False, 'restore_disabled')
+        shortage = money.getShortage(self.restorePrice)
+        if shortage:
+            currency, _ = shortage.pop()
+            return (False, '%s_error' % currency)
+        return (True, '')
+
+    def mayRestoreWithExchange(self, money, exchangeRate):
+        """
+        Check if vehicle may restore with money exchange
+        :param money:<Money>
+        :param exchangeRate: <int> gold for credits exchange rate
+        :return:
+        """
+        mayRestore, reason = self.mayRestore(money)
+        if mayRestore:
+            return mayRestore
+        elif reason == 'credits_error':
+            money = money.exchange(Currency.GOLD, Currency.CREDITS, exchangeRate)
+            return self.restorePrice <= money
+        else:
+            return False
 
     def getRentPackage(self, days = None):
         """
@@ -882,13 +910,26 @@ class Vehicle(FittingItem, HasStrCD):
         return (data[0], data[1], set(data[2:]))
 
     def getPerfectCrew(self):
+        return self.getCrewBySkillLevels(100)
+
+    def getCrewBySkillLevels(self, *skillLevels):
+        """
+        Generate sorted list of tankmans with provided skills levels
+        :param skillLevels: desired skills levels (list of integers)
+        :return: list of tuples [(role, gui_items.Tankman), (role, gui_items.Tankman), ...] sorted by tankmans roles
+        """
         crewItems = list()
         crewRoles = self.descriptor.type.crewRoles
         nationID, vehicleTypeID = self.descriptor.type.id
         passport = tankmen.generatePassport(nationID)
+        skillLvlsCount = len(skillLevels)
         for idx, tankmanID in enumerate(crewRoles):
             role = self.descriptor.type.crewRoles[idx][0]
-            tankman = Tankman(tankmen.generateCompactDescr(passport, vehicleTypeID, role, 100), vehicle=self)
+            roleLevel = skillLevels[idx] if idx < skillLvlsCount else skillLevels[skillLvlsCount - 1]
+            if roleLevel is not None:
+                tankman = Tankman(tankmen.generateCompactDescr(passport, vehicleTypeID, role, roleLevel), vehicle=self)
+            else:
+                tankman = None
             crewItems.append((idx, tankman))
 
         return _sortCrew(crewItems, crewRoles)
@@ -907,6 +948,49 @@ class Vehicle(FittingItem, HasStrCD):
         else:
             return self.descriptor
             return
+
+    def isRestorePossible(self):
+        """
+        Check the possibility of vehicle restore, right now or in future
+        :return: <bool>
+        """
+        from gui.LobbyContext import g_lobbyContext
+        if g_lobbyContext.getServerSettings().isVehicleRestoreEnabled() and not self.isUnrecoverable:
+            if self.restoreInfo is not None and not self.isPurchased:
+                return self.restoreInfo.isRestorePossible()
+        return False
+
+    def isRestoreAvailable(self):
+        """
+        Check if vehicle restore is available right now
+        restore can be limited or unlimitid in time
+        :return: <bool>
+        """
+        return self.isRestorePossible() and not self.restoreInfo.isInCooldown()
+
+    def hasLimitedRestore(self):
+        """
+        Check if vehicle has limited in time restore and restore left time is not finished
+        :return: <bool>
+        """
+        return self.isRestorePossible() and self.restoreInfo.isLimited() and self.restoreInfo.getRestoreTimeLeft() > 0
+
+    def hasRestoreCooldown(self):
+        """
+        Check if vehicle restore is in cooldown
+        :return: <bool>
+        """
+        return self.isRestorePossible() and self.restoreInfo.isInCooldown()
+
+    def isRecentlyRestored(self):
+        """
+        Check if vehicle was already restored and restore cooldown is not finished
+        :return: <bool>
+        """
+        if self.restoreInfo is not None:
+            return self.isPurchased and self.restoreInfo.isInCooldown()
+        else:
+            return False
 
     def __eq__(self, other):
         if other is None:
@@ -982,8 +1066,19 @@ def getTypeIconName(vehicleType):
     return '%s.png' % vehicleType
 
 
+def getTypeEliteIconName(vehicleType, isElite):
+    if isElite:
+        return '%s_elite.png' % vehicleType
+    else:
+        return getTypeIconName(vehicleType)
+
+
 def getTypeSmallIconPath(vehicleType):
     return '../maps/icons/vehicleTypes/%s' % getTypeIconName(vehicleType)
+
+
+def getTypeBigIconPath(vehicleType, isElite):
+    return '../maps/icons/vehicleTypes/big/%s' % getTypeEliteIconName(vehicleType, isElite)
 
 
 def getUserName(vehicleType, textPrefix = False):

@@ -7,143 +7,101 @@ class BattleMessengerMeta(BaseDAAPIComponent):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends BaseDAAPIComponent
-    null
     """
 
     def sendMessageToChannel(self, cid, message):
-        """
-        :param cid:
-        :param message:
-        :return Boolean:
-        """
         self._printOverrideError('sendMessageToChannel')
 
     def focusReceived(self):
-        """
-        :return :
-        """
         self._printOverrideError('focusReceived')
 
     def focusLost(self):
-        """
-        :return :
-        """
         self._printOverrideError('focusLost')
 
-    def as_showGreenMessageS(self, message):
-        """
-        :param message:
-        :return :
-        """
-        if self._isDAAPIInited():
-            return self.flashObject.as_showGreenMessage(message)
+    def getToxicStatus(self, messageID):
+        self._printOverrideError('getToxicStatus')
 
-    def as_showRedMessageS(self, message):
-        """
-        :param message:
-        :return :
-        """
-        if self._isDAAPIInited():
-            return self.flashObject.as_showRedMessage(message)
+    def onToxicButtonClicked(self, messageID, actionID):
+        self._printOverrideError('onToxicButtonClicked')
 
-    def as_showBlackMessageS(self, message):
-        """
-        :param message:
-        :return :
-        """
-        if self._isDAAPIInited():
-            return self.flashObject.as_showBlackMessage(message)
+    def onToxicPanelClosed(self, messageID):
+        self._printOverrideError('onToxicPanelClosed')
 
-    def as_showSelfMessageS(self, message):
-        """
-        :param message:
-        :return :
-        """
+    def as_enableToxicPanelS(self):
         if self._isDAAPIInited():
-            return self.flashObject.as_showSelfMessage(message)
+            return self.flashObject.as_enableToxicPanel()
+
+    def as_updateMessagesS(self, messageID, value):
+        if self._isDAAPIInited():
+            return self.flashObject.as_updateMessages(messageID, value)
+
+    def as_showGreenMessageS(self, message, messageID):
+        if self._isDAAPIInited():
+            return self.flashObject.as_showGreenMessage(message, messageID)
+
+    def as_showRedMessageS(self, message, messageID):
+        if self._isDAAPIInited():
+            return self.flashObject.as_showRedMessage(message, messageID)
+
+    def as_showBlackMessageS(self, message, messageID):
+        if self._isDAAPIInited():
+            return self.flashObject.as_showBlackMessage(message, messageID)
+
+    def as_showSelfMessageS(self, message, messageID):
+        if self._isDAAPIInited():
+            return self.flashObject.as_showSelfMessage(message, messageID)
 
     def as_setupListS(self, data):
         """
-        :param data:
-        :return :
+        :param data: Represented by BattleMessengerSettingsVO (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_setupList(data)
 
     def as_setReceiverS(self, data, isResetReceivers):
-        """
-        :param data:
-        :param isResetReceivers:
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_setReceiver(data, isResetReceivers)
 
     def as_changeReceiverS(self, receiver):
-        """
-        :param receiver:
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_changeReceiver(receiver)
 
     def as_setActiveS(self, isActive):
-        """
-        :param isActive:
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_setActive(isActive)
 
     def as_setFocusS(self):
-        """
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_setFocus()
 
     def as_unSetFocusS(self):
-        """
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_unSetFocus()
 
     def as_setUserPreferencesS(self, tooltipStr):
-        """
-        :param tooltipStr:
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_setUserPreferences(tooltipStr)
 
     def as_setReceiversS(self, receivers):
-        """
-        :param receivers:
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_setReceivers(receivers)
 
     def as_enableToSendMessageS(self):
-        """
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_enableToSendMessage()
 
     def as_toggleCtrlPressFlagS(self, isCtrlPressed):
-        """
-        :param isCtrlPressed:
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_toggleCtrlPressFlag(isCtrlPressed)
 
     def as_enterPressedS(self, index):
-        """
-        :param index:
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_enterPressed(index)
+
+    def as_updateToxicPanelS(self, messageID, value):
+        if self._isDAAPIInited():
+            return self.flashObject.as_updateToxicPanel(messageID, value)
+
+    def as_restoreMessagesS(self, messageID):
+        if self._isDAAPIInited():
+            return self.flashObject.as_restoreMessages(messageID)

@@ -1,13 +1,16 @@
 # Embedded file name: scripts/client/vehicle_extras.py
+import BigWorld
+import Math
 import random
 from functools import partial
 import weakref
-import BigWorld
-import Math
 from helpers.EffectsList import EffectsListPlayer
+from AvatarInputHandler import ShakeReason
 from debug_utils import LOG_CODEPOINT_WARNING, LOG_CURRENT_EXCEPTION
 from helpers import i18n
 from helpers.EntityExtra import EntityExtra
+from items import vehicles
+from operator import xor
 
 def reload():
     modNames = (reload.__module__,)
@@ -28,33 +31,14 @@ class NoneExtra(EntityExtra):
 
 class ShowShooting(EntityExtra):
 
-    class __ModelNodeReplacer(object):
-
-        def __init__(self, compoundModel, nodeToReplace, nodeReplacement):
-            setattr(self, 'compoundModel', compoundModel)
-            setattr(self, 'nodeToReplace', nodeToReplace)
-            setattr(self, 'nodeReplacement', nodeReplacement)
-
-        def node(self, nodeName):
-            if nodeName == self.nodeToReplace:
-                nodeName = self.nodeReplacement
-            return self.compoundModel.node(nodeName)
-
-        def __getattr__(self, item):
-            return getattr(self.compoundModel, item)
-
-    def _start(self, data, args):
-        burstCount, gunFireNodeName = args
+    def _start(self, data, burstCount):
         vehicle = data['entity']
         gunDescr = vehicle.typeDescriptor.gun
         stages, effects, _ = gunDescr['effects']
         data['entity_id'] = vehicle.id
         data['_effectsListPlayer'] = EffectsListPlayer(effects, stages, **data)
         data['_burst'] = (burstCount, gunDescr['burst'][1])
-        modelAdapter = vehicle.appearance.compoundModel
-        if gunFireNodeName != 'HP_gunFire':
-            modelAdapter = ShowShooting.__ModelNodeReplacer(modelAdapter, 'HP_gunFire', gunFireNodeName)
-        data['_gunModel'] = modelAdapter
+        data['_gunModel'] = vehicle.appearance.compoundModel
         self.__doShot(data)
 
     def _cleanup(self, data):
@@ -104,7 +88,7 @@ class ShowShooting(EntityExtra):
 
     def __doRecoil(self, vehicle, gunModel):
         appearance = vehicle.appearance
-        appearance.recoil(self)
+        appearance.recoil()
 
     def __doGroundWaveEffect(self, vehicle, groundWaveEff, gunModel):
         node = gunModel.node('HP_gunFire')
@@ -136,13 +120,10 @@ class DamageMarker(EntityExtra):
         self.deviceUserString = i18n.makeString(self.deviceUserString)
         soundSection = dataSection['sounds']
         self.sounds = {}
-        for state in self._getSoundTags():
+        for state in ('critical', 'destroyed', 'functional', 'fixed'):
             sound = soundSection.readString(state)
             if sound:
                 self.sounds[state] = sound
-
-    def _getSoundTags(cls):
-        return ('critical', 'destroyed', 'functional', 'fixed')
 
 
 class TrackHealth(DamageMarker):
@@ -150,19 +131,14 @@ class TrackHealth(DamageMarker):
     def _readConfig(self, dataSection, containerName):
         DamageMarker._readConfig(self, dataSection, containerName)
         self.__isLeft = dataSection.readBool('isLeft')
-
-    def _getSoundTags(self):
-        return super(TrackHealth, self)._getSoundTags() + ('functionalCanMove',)
+        functionalCanMoveState = 'functionalCanMove'
+        self.sounds[functionalCanMoveState] = dataSection.readString('sounds/' + functionalCanMoveState)
 
     def _start(self, data, args):
         data['entity'].appearance.addCrashedTrack(self.__isLeft)
 
     def _cleanup(self, data):
         data['entity'].appearance.delCrashedTrack(self.__isLeft)
-
-
-class WheelHealth(TrackHealth):
-    pass
 
 
 class Fire(EntityExtra):
@@ -232,17 +208,4 @@ class Fire(EntityExtra):
         if not isVehicleUnderwater and wasUnderwater:
             self.__playEffect(data)
         data['wasUnderwater'] = isVehicleUnderwater
-        return
-
-
-class ExplosiveInfo(EntityExtra):
-
-    def _readConfig(self, dataSection, containerName):
-        damageRadius = dataSection.readInt('noDamageMinRange', 0)
-        self.areaLength = damageRadius * 2
-        self.areaWidth = damageRadius * 2
-        self.areaVisual = 'content/Interface/TargetPoint/TargetPoint_red.visual'
-        self.areaColor = None
-        self.areaMarker = None
-        self.maxDamage = dataSection.readInt('maxDamage', 0)
         return
