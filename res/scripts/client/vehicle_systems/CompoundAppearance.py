@@ -164,6 +164,7 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
         self.__isTurretDetached = False
         self.__trackFashionSet = False
         self.__periodicTimerID = None
+        self.__wasDeactivated = False
         return
 
     def prerequisites(self, typeDescriptor, vID, health, isCrewActive, isTurretDetached):
@@ -257,6 +258,12 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
             self.__activated = True
             if 'observer' in self.__vehicle.typeDescriptor.type.tags:
                 self.__compoundModel.visible = False
+            if self.__currentDamageState.isCurrentModelDamaged:
+                if not self.__wasDeactivated:
+                    if not self.__vehicle.isPlayerVehicle:
+                        self.setupGunMatrixTargets()
+                    else:
+                        self.setupGunMatrixTargets(self.__vehicle.filter)
             return
 
     def deactivate(self, stopEffects = True):
@@ -264,6 +271,7 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
             return
         else:
             self.__activated = False
+            self.__wasDeactivated = True
             self.__stopSystems()
             super(CompoundAppearance, self).deactivate()
             self.__chassisOcclusionDecal.detach()
@@ -273,6 +281,10 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
                 BigWorld.setSpeedTreeCollisionBody(None)
             BigWorld.player().inputHandler.removeVehicleFromCameraCollider(self.__vehicle)
             self.__vehicle.filter.enableLagDetection(False)
+            self.turretMatrix.setStaticTransform(self.turretMatrix)
+            self.turretMatrix.target = None
+            self.gunMatrix.setStaticTransform(self.gunMatrix)
+            self.gunMatrix.target = None
             self.__vehicle.filter = self.__originalFilter
             self.__filter = None
             self.__originalFilter = None
@@ -631,6 +643,10 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
             self.setVehicle(vehicle)
             self.activate()
             self.__reattachComponents(self.__compoundModel)
+            lodLink = DataLinks.createFloatLink(self.lodCalculator, 'lodDistance')
+            if not self.damageState.isCurrentModelDamaged:
+                model_assembler.assembleRecoil(self, lodLink)
+            model_assembler.setupTurretRotations(self)
             return
 
     def __setupModels(self):
