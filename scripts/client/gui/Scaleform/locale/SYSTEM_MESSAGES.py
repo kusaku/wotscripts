@@ -264,6 +264,11 @@ class SYSTEM_MESSAGES(object):
     ACTIONACHIEVEMENTS_TITLE = '#system_messages:actionAchievements/title'
     TRAINING_ERROR_SWAPTEAMS = '#system_messages:training/error/swapTeams'
     TRAINING_ERROR_DOACTION = '#system_messages:training/error/doAction'
+    TRAINING_ERROR_SELECTOBSERVER = '#system_messages:training/error/selectObserver'
+    TRAINING_ERROR_ADDPLAYER = '#system_messages:training/error/AddPlayer'
+    BATTLESESSION_ERROR_ADDPLAYER = '#system_messages:battlesession/error/AddPlayer'
+    BATTLESESSION_ERROR_ADDOBSERVER = '#system_messages:battlesession/error/AddObserver'
+    BATTLESESSION_ERROR_LIMITS = '#system_messages:battlesession/error/Limits'
     GAMESESSIONCONTROL_KOREA_SESSIONTIME = '#system_messages:gameSessionControl/korea/sessionTime'
     GAMESESSIONCONTROL_KOREA_TIMETILLMIDNIGHT = '#system_messages:gameSessionControl/korea/timeTillMidnight'
     GAMESESSIONCONTROL_KOREA_PLAYTIMELEFT = '#system_messages:gameSessionControl/korea/playTimeLeft'
@@ -1083,6 +1088,7 @@ class SYSTEM_MESSAGES(object):
     TELECOM_NOTIFICATIONS_VEHICLEREMOVED_COMMENT = '#system_messages:telecom/notifications/vehicleRemoved/comment'
     TELECOM_NOTIFICATIONS_VEHICLEREMOVED_SUBCOMMENT = '#system_messages:telecom/notifications/vehicleRemoved/subcomment'
     VEHICLECOMPARE_DISABLED = '#system_messages:vehicleCompare/disabled'
+    VEHICLECOMPARE_PREVIEWNOTALLOWED = '#system_messages:vehicleCompare/previewNotAllowed'
     PRMP_NOTIFICATION_NEWENCYCLOPEDIARECOMMENDATION = '#system_messages:prmp/notification/newEncyclopediaRecommendation'
     RESTORECONTROLLER_HASLIMITEDRESTOREVEHICLES = '#system_messages:restoreController/hasLimitedRestoreVehicles'
     UNIT_NOTIFICATION_DIVISIONTYPE_ENUM = (UNIT_NOTIFICATION_DIVISIONTYPE_MIDDLE, UNIT_NOTIFICATION_DIVISIONTYPE_CHAMPION, UNIT_NOTIFICATION_DIVISIONTYPE_ABSOLUTE)
@@ -1567,6 +1573,11 @@ class SYSTEM_MESSAGES(object):
      ACTIONACHIEVEMENTS_TITLE,
      TRAINING_ERROR_SWAPTEAMS,
      TRAINING_ERROR_DOACTION,
+     TRAINING_ERROR_SELECTOBSERVER,
+     TRAINING_ERROR_ADDPLAYER,
+     BATTLESESSION_ERROR_ADDPLAYER,
+     BATTLESESSION_ERROR_ADDOBSERVER,
+     BATTLESESSION_ERROR_LIMITS,
      GAMESESSIONCONTROL_KOREA_SESSIONTIME,
      GAMESESSIONCONTROL_KOREA_TIMETILLMIDNIGHT,
      GAMESESSIONCONTROL_KOREA_PLAYTIMELEFT,
@@ -2386,6 +2397,7 @@ class SYSTEM_MESSAGES(object):
      TELECOM_NOTIFICATIONS_VEHICLEREMOVED_COMMENT,
      TELECOM_NOTIFICATIONS_VEHICLEREMOVED_SUBCOMMENT,
      VEHICLECOMPARE_DISABLED,
+     VEHICLECOMPARE_PREVIEWNOTALLOWED,
      PRMP_NOTIFICATION_NEWENCYCLOPEDIARECOMMENDATION,
      RESTORECONTROLLER_HASLIMITEDRESTOREVEHICLES)
 

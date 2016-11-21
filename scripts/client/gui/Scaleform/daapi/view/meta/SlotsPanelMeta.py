@@ -20,9 +20,15 @@ class SlotsPanelMeta(BaseDAAPIComponent):
             return self.flashObject.as_setPanelProps(data)
 
     def as_setSlotsS(self, orders):
+        """
+        :param orders: Represented by Vector.<SlotVO> (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_setSlots(orders)
 
     def as_updateSlotS(self, data):
+        """
+        :param data: Represented by SlotVO (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_updateSlot(data)

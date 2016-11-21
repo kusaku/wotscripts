@@ -1,5 +1,4 @@
 # Embedded file name: scripts/client/gui/DebugView.py
-import BigWorld
 import GUI
 from gui import g_guiResetters
 

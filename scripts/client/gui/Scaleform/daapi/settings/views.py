@@ -79,6 +79,7 @@ class VIEW_ALIAS(COMMON_VIEW_ALIAS):
     BATTLE_TYPE_SELECT_POPOVER = 'battleTypeSelectPopover'
     SQUAD_TYPE_SELECT_POPOVER = 'squadTypeSelectPopover'
     ACCOUNT_POPOVER = 'accountPopover'
+    ACOUSTIC_POPOVER = 'acousticPopover'
     DISMISS_TANKMAN_DIALOG = 'dismissTankmanDialog'
     RESTORE_TANKMAN_DIALOG = 'restoreTankmanDialog'
     AWARD_WINDOW = 'awardWindow'
@@ -89,13 +90,13 @@ class VIEW_ALIAS(COMMON_VIEW_ALIAS):
     FITTING_SELECT_POPOVER = 'fittingSelectPopover'
     SHOP_TABLE = 'shopTable'
     MINIMAP_LOBBY = 'minimapLobby'
+    MINIMAP_ON_BATTLE_LOADING = 'minimapOnBattleLoading'
     QUESTS_CONTROL = 'questsControl'
     SWITCH_MODE_PANEL = 'switchModePanel'
     TICKER = 'ticker'
     CALENDAR = 'calendar'
     CHANNEL_CAROUSEL = 'channelCarousel'
     G_E_INSPECT_WINDOW = 'GEInspectWindow'
-    G_E_DESIGNER_WINDOW = 'GEDesignerWindow'
     FREE_X_P_INFO_WINDOW = 'FreeXPInfoWindow'
     RSS_NEWS_FEED = 'rssNewsFeed'
     SERVERS_STATS = 'serverStats'
@@ -121,6 +122,7 @@ class VIEW_ALIAS(COMMON_VIEW_ALIAS):
     FALLOUT_CLASSIC_PAGE = 'falloutClassicPage'
     FALLOUT_MULTITEAM_PAGE = 'falloutMultiteamPage'
     DEV_BATTLE_PAGE = 'devBattlePage'
+    EVENT_BATTLE_PAGE = 'classicBattlePage'
     MISSION_AWARD_WINDOW = 'missionAwardWindow'
     INGAME_MENU = 'ingameMenu'
     INGAME_HELP = 'ingameHelp'
@@ -131,4 +133,5 @@ class VIEW_ALIAS(COMMON_VIEW_ALIAS):
      TUTORIAL_BATTLE_PAGE,
      FALLOUT_CLASSIC_PAGE,
      FALLOUT_MULTITEAM_PAGE,
-     DEV_BATTLE_PAGE)
+     DEV_BATTLE_PAGE,
+     EVENT_BATTLE_PAGE)

@@ -1,17 +1,19 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/hangar/hangar_header.py
 import constants
 from CurrentVehicle import g_currentVehicle
-from gui.server_events import g_eventsCache
+from gui.Scaleform.daapi.view.lobby.server_events import events_helpers
+from gui.Scaleform.daapi.view.meta.HangarHeaderMeta import HangarHeaderMeta
+from gui.Scaleform.locale.MENU import MENU
+from gui.Scaleform.locale.QUESTS import QUESTS
+from gui.Scaleform.locale.RES_ICONS import RES_ICONS
+from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.server_events.events_dispatcher import showEventsWindow
 from gui.shared.formatters import text_styles
 from gui.shared.utils.functions import makeTooltip
-from gui.Scaleform.daapi.view.meta.HangarHeaderMeta import HangarHeaderMeta
-from gui.Scaleform.daapi.view.lobby.server_events import events_helpers
-from gui.Scaleform.locale.MENU import MENU
-from gui.Scaleform.locale.RES_ICONS import RES_ICONS
-from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
+from helpers import dependency
 from helpers.i18n import makeString as _ms
 from shared_utils import first
+from skeletons.gui.server_events import IEventsCache
 
 class WIDGET_PQ_STATE(object):
     """ State of the personal quests overall relatively to current vehicle.
@@ -121,11 +123,11 @@ class HangarHeader(HangarHeaderMeta):
     """ This class is responsible for displaying current vehicle information
     and battle/personal quests widgets (those two flags on top of hangar).
     """
+    _eventsCache = dependency.descriptor(IEventsCache)
 
     def __init__(self):
         super(HangarHeader, self).__init__()
         self._currentVehicle = None
-        self._eventsCache = None
         self._personalQuestID = None
         self._battleQuestId = None
         return
@@ -155,7 +157,6 @@ class HangarHeader(HangarHeaderMeta):
     def _populate(self):
         super(HangarHeader, self)._populate()
         self._currentVehicle = g_currentVehicle
-        self._eventsCache = g_eventsCache
         self._eventsCache.onSyncCompleted += self.update
         self._eventsCache.onProgressUpdated += self.update
 
@@ -163,7 +164,6 @@ class HangarHeader(HangarHeaderMeta):
         self._eventsCache.onSyncCompleted -= self.update
         self._eventsCache.onProgressUpdated -= self.update
         self._currentVehicle = None
-        self._eventsCache = None
         self._personalQuestID = None
         super(HangarHeader, self)._dispose()
         return
@@ -207,7 +207,7 @@ class HangarHeader(HangarHeaderMeta):
             self._personalQuestID = quest.getID()
             chainType = tile.getChainMajorTag(quest.getChainID())
             ctx.update({'questName': quest.getUserName(),
-             'description': quest.getUserMainCondition(),
+             'description': '{}\n{}\n\n{}\n{}'.format(text_styles.standard(_ms(QUESTS.QUESTTASKDETAILSVIEW_MAINCONDITIONS)), quest.getUserMainCondition(), text_styles.standard(_ms(QUESTS.QUESTTASKDETAILSVIEW_ADDITIONALCONDITIONS)), quest.getUserAddCondition()),
              'current': len(filter(lambda q: q.isCompleted(), chain.itervalues())),
              'total': len(chain),
              'tileName': tile.getUserName(),

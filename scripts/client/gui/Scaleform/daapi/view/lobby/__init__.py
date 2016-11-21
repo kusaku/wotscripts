@@ -19,8 +19,6 @@ def getContextMenuHandlers():
 def getViewSettings():
     from gui.Scaleform.daapi.view.lobby.SandboxQueueDialog import SandboxQueueDialog
     from gui.Scaleform.daapi.view.BattleResultsWindow import BattleResultsWindow
-    from gui.Scaleform.daapi.view.battle_loading import BattleLoading
-    from gui.Scaleform.daapi.view.battle_loading import FalloutMultiTeamBattleLoading
     from gui.Scaleform.daapi.view.dialogs.CheckBoxDialog import CheckBoxDialog
     from gui.Scaleform.daapi.view.dialogs.ConfirmModuleDialog import ConfirmModuleDialog
     from gui.Scaleform.daapi.view.dialogs.ConfirmBoosterDialog import ConfirmBoosterDialog
@@ -67,9 +65,6 @@ def getViewSettings():
     from gui.Scaleform.daapi.view.lobby.vehicle_compare.cmp_view import VehicleCompareView
     from gui.Scaleform.daapi.view.meta.MiniClientComponentMeta import MiniClientComponentMeta
     return (ViewSettings(VIEW_ALIAS.LOBBY, LobbyView, 'lobbyPage.swf', ViewTypes.DEFAULT, None, ScopeTemplates.DEFAULT_SCOPE),
-     ViewSettings(VIEW_ALIAS.BATTLE_LOADING, BattleLoading, 'battleLoading.swf', ViewTypes.DEFAULT, VIEW_ALIAS.BATTLE_LOADING, ScopeTemplates.DEFAULT_SCOPE),
-     ViewSettings(VIEW_ALIAS.FALLOUT_MULTI_TEAM_BATTLE_LOADING, FalloutMultiTeamBattleLoading, 'falloutMultiTeamBattleLoading.swf', ViewTypes.DEFAULT, VIEW_ALIAS.FALLOUT_MULTI_TEAM_BATTLE_LOADING, ScopeTemplates.DEFAULT_SCOPE),
-     ViewSettings(VIEW_ALIAS.TUTORIAL_LOADING, BattleLoading, 'tutorialLoading.swf', ViewTypes.DEFAULT, VIEW_ALIAS.TUTORIAL_LOADING, ScopeTemplates.DEFAULT_SCOPE),
      ViewSettings(VIEW_ALIAS.BATTLE_QUEUE, BattleQueue, 'battleQueue.swf', ViewTypes.LOBBY_SUB, VIEW_ALIAS.BATTLE_QUEUE, ScopeTemplates.DEFAULT_SCOPE),
      ViewSettings(VIEW_ALIAS.LOBBY_CUSTOMIZATION, CustomizationMainView, 'customizationMainView.swf', ViewTypes.LOBBY_SUB, VIEW_ALIAS.LOBBY_CUSTOMIZATION, ScopeTemplates.LOBBY_SUB_SCOPE),
      ViewSettings(VIEW_ALIAS.VEHICLE_PREVIEW, VehiclePreview, 'vehiclePreview.swf', ViewTypes.LOBBY_SUB, VIEW_ALIAS.VEHICLE_PREVIEW, ScopeTemplates.LOBBY_SUB_SCOPE),
@@ -129,13 +124,11 @@ class LobbyPackageBusinessHandler(PackageBusinessHandler):
     def __init__(self):
         listeners = ((FALLOUT_ALIASES.FALLOUT_BATTLE_SELECTOR_WINDOW, self.loadViewByCtxEvent),
          (VIEW_ALIAS.AWARD_WINDOW, self.loadViewByCtxEvent),
-         (VIEW_ALIAS.BATTLE_LOADING, self.loadViewByCtxEvent),
          (VIEW_ALIAS.BATTLE_QUEUE, self.loadViewByCtxEvent),
          (VIEW_ALIAS.BATTLE_RESULTS, self.loadViewByCtxEvent),
          (VIEW_ALIAS.BROWSER_WINDOW, self.loadViewByCtxEvent),
          (VIEW_ALIAS.DEMONSTRATOR_WINDOW, self.loadViewByCtxEvent),
          (VIEW_ALIAS.ELITE_WINDOW, self.loadViewByCtxEvent),
-         (VIEW_ALIAS.FALLOUT_MULTI_TEAM_BATTLE_LOADING, self.loadViewByCtxEvent),
          (VIEW_ALIAS.GOLD_FISH_WINDOW, self.loadViewByCtxEvent),
          (VIEW_ALIAS.GET_PREMIUM_POPOVER, self.loadViewByCtxEvent),
          (VIEW_ALIAS.LOBBY, self.loadViewByCtxEvent),
@@ -153,13 +146,13 @@ class LobbyPackageBusinessHandler(PackageBusinessHandler):
          (VIEW_ALIAS.REFERRAL_REFERRER_INTRO_WINDOW, self.loadViewByCtxEvent),
          (VIEW_ALIAS.ROLE_CHANGE, self.loadViewByCtxEvent),
          (VIEW_ALIAS.TANKMAN_SKILLS_DROP_WINDOW, self.loadViewByCtxEvent),
-         (VIEW_ALIAS.TUTORIAL_LOADING, self.loadViewByCtxEvent),
          (VIEW_ALIAS.VEHICLE_BUY_WINDOW, self.loadViewByCtxEvent),
          (VIEW_ALIAS.VEHICLE_RESTORE_WINDOW, self.loadViewByCtxEvent),
          (VIEW_ALIAS.VEHICLE_SELL_DIALOG, self.loadViewByCtxEvent),
          (VIEW_ALIAS.VEHICLE_INFO_WINDOW, self.loadViewByCtxEvent),
          (VIEW_ALIAS.SANDBOX_QUEUE_DIALOG, self.loadViewBySharedEvent),
-         (VIEW_ALIAS.MISSION_AWARD_WINDOW, self.loadViewByCtxEvent))
+         (VIEW_ALIAS.MISSION_AWARD_WINDOW, self.loadViewByCtxEvent),
+         (VIEW_ALIAS.ACOUSTIC_POPOVER, self.loadViewByCtxEvent))
         super(LobbyPackageBusinessHandler, self).__init__(listeners, APP_NAME_SPACE.SF_LOBBY, EVENT_BUS_SCOPE.LOBBY)
 
 

@@ -1,11 +1,11 @@
 # Embedded file name: scripts/client/gui/game_control/ServerStats.py
 import BigWorld
-import constants
 import Event
+import constants
 from PlayerEvents import g_playerEvents
-from gui.shared.formatters import text_styles
-from gui.game_control.controllers import Controller
 from gui.Scaleform.locale.MENU import MENU
+from gui.shared.formatters import text_styles
+from skeletons.gui.game_control import IServerStatsController
 _STATS_REQUEST_TIMEOUT = 5.0
 
 class STATS_TYPE(object):
@@ -14,10 +14,10 @@ class STATS_TYPE(object):
     FULL = 'regionCCU/clusterCCU'
 
 
-class ServerStats(Controller):
+class ServerStats(IServerStatsController):
 
-    def __init__(self, proxy):
-        super(ServerStats, self).__init__(proxy)
+    def __init__(self):
+        super(ServerStats, self).__init__()
         self.__statsCallbackID = None
         self.__stats = {}
         self.onStatsReceived = Event.Event()
@@ -39,6 +39,8 @@ class ServerStats(Controller):
         clusterUsers, regionUsers, tooltipType = self.getStats()
         if tooltipType == STATS_TYPE.CLUSTER:
             statsStr = clusterUsers
+        elif tooltipType == STATS_TYPE.UNAVAILABLE:
+            statsStr = text_styles.main(MENU.ONLINECOUNTER_UNAVAILABLE)
         else:
             statsStr = text_styles.concatStylesToSingleLine(text_styles.stats(clusterUsers), text_styles.main(MENU.ONLINECOUNTER_DELIMITER), text_styles.main(regionUsers))
         return (statsStr, tooltipType)

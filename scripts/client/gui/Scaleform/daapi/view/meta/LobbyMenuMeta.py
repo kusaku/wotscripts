@@ -40,3 +40,7 @@ class LobbyMenuMeta(AbstractWindowView):
     def as_setSettingsBtnCounterS(self, value):
         if self._isDAAPIInited():
             return self.flashObject.as_setSettingsBtnCounter(value)
+
+    def as_removeSettingsBtnCounterS(self):
+        if self._isDAAPIInited():
+            return self.flashObject.as_removeSettingsBtnCounter()

@@ -15,15 +15,25 @@ class FalloutRespawnViewMeta(BaseDAAPIComponent):
     def onPostmortemBtnClick(self):
         self._printOverrideError('onPostmortemBtnClick')
 
-    def as_initializeS(self, mainData, slotsData):
+    def as_initializeComponentS(self, mainData, slotsData):
+        """
+        :param mainData: Represented by FalloutRespawnViewVO (AS)
+        :param slotsData: Represented by Vector.<VehicleSlotVO> (AS)
+        """
         if self._isDAAPIInited():
-            return self.flashObject.as_initialize(mainData, slotsData)
+            return self.flashObject.as_initializeComponent(mainData, slotsData)
 
     def as_updateTimerS(self, mainTimer, slotsStateData):
+        """
+        :param slotsStateData: Represented by Vector.<VehicleStateVO> (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_updateTimer(mainTimer, slotsStateData)
 
     def as_updateS(self, selectedVehicleName, slotsStateData):
+        """
+        :param slotsStateData: Represented by Vector.<VehicleStateVO> (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_update(selectedVehicleName, slotsStateData)
 

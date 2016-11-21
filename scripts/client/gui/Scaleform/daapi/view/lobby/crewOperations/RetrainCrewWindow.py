@@ -81,7 +81,7 @@ class RetrainCrewWindow(RetrainCrewWindowMeta):
 
         result = yield TankmanCrewRetraining(crewInvIDs, vehicle, operationId).request()
         if len(result.userMsg):
-            SystemMessages.g_instance.pushI18nMessage(result.userMsg, type=result.sysMsgType)
+            SystemMessages.pushI18nMessage(result.userMsg, type=result.sysMsgType)
         return
 
     def onWindowClose(self):

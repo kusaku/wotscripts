@@ -3,7 +3,6 @@ from debug_utils import LOG_DEBUG, LOG_ERROR
 from gui.Scaleform.framework.entities.abstract.AbstractViewMeta import AbstractViewMeta
 from gui.doc_loaders import hints_layout
 from gui.shared.events import FocusEvent
-__author__ = 'd_trofimov'
 
 class View(AbstractViewMeta):
 
@@ -15,11 +14,11 @@ class View(AbstractViewMeta):
         self.__scope = ScopeTemplates.DEFAULT_SCOPE
         return
 
-    def onFocusIn(self, alias):
-        self.fireEvent(FocusEvent(FocusEvent.COMPONENT_FOCUSED))
-
     def __del__(self):
         LOG_DEBUG('View deleted:', self)
+
+    def onFocusIn(self, alias):
+        self.fireEvent(FocusEvent(FocusEvent.COMPONENT_FOCUSED))
 
     def getSubContainerType(self):
         """

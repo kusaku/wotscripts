@@ -1,24 +1,25 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/vehicle_compare/cmp_modules_window.py
 from adisp import process
-from debug_utils import LOG_WARNING, LOG_DEBUG, LOG_ERROR
-from gui.game_control import getVehicleComparisonBasketCtrl
-from gui.game_control.veh_comparison_basket import MODULES_TYPES, getSuitableChassis, getInstalledModulesCDs
-from gui.shared.gui_items import GUI_ITEM_TYPE
 from constants import IS_DEVELOPMENT
+from debug_utils import LOG_WARNING, LOG_DEBUG, LOG_ERROR
 from gui.Scaleform.daapi.view.lobby.techtree import dumpers
 from gui.Scaleform.daapi.view.lobby.techtree.data import ResearchItemsData
 from gui.Scaleform.daapi.view.lobby.techtree.settings import USE_XML_DUMPING
 from gui.Scaleform.daapi.view.meta.VehicleModulesWindowMeta import VehicleModulesWindowMeta
+from gui.Scaleform.genConsts.NODE_STATE_FLAGS import NODE_STATE_FLAGS
 from gui.Scaleform.locale.VEH_COMPARE import VEH_COMPARE
+from gui.game_control.veh_comparison_basket import MODULES_TYPES, getSuitableChassis, getInstalledModulesCDs
 from gui.shared.ItemsCache import g_itemsCache
 from gui.shared.formatters import text_styles
+from gui.shared.gui_items import GUI_ITEM_TYPE
 from gui.shared.gui_items.Vehicle import Vehicle
 from gui.shared.gui_items.processors.module import getPreviewInstallerProcessor
 from gui.shared.items_parameters.params_cache import g_paramsCache
+from helpers import dependency
 from helpers.i18n import makeString as _ms
 from items import getTypeOfCompactDescr
 from nations import AVAILABLE_NAMES
-from gui.Scaleform.genConsts.NODE_STATE_FLAGS import NODE_STATE_FLAGS
+from skeletons.gui.game_control import IVehicleComparisonBasket
 _MODULES_INSTALL_ORDER = (GUI_ITEM_TYPE.CHASSIS,
  GUI_ITEM_TYPE.TURRET,
  GUI_ITEM_TYPE.GUN,
@@ -186,6 +187,7 @@ class _PreviewItemsData(ResearchItemsData):
 
 
 class VehicleModulesWindow(VehicleModulesWindowMeta):
+    comparisonBasket = dependency.descriptor(IVehicleComparisonBasket)
 
     def __init__(self, ctx = None):
         super(VehicleModulesWindow, self).__init__()
@@ -199,12 +201,12 @@ class VehicleModulesWindow(VehicleModulesWindowMeta):
 
     def _populate(self):
         super(VehicleModulesWindow, self)._populate()
-        basketVehicle = getVehicleComparisonBasketCtrl().getVehicleAt(self.__vehIndex)
+        basketVehicle = self.comparisonBasket.getVehicleAt(self.__vehIndex)
         self.__initialize(basketVehicle.getVehicleStrCD(), basketVehicle.getModulesType())
         self.as_setAttentionVisibleS(basketVehicle.isInInventory() and not basketVehicle.isActualModules())
         stockVehicle = Vehicle(basketVehicle.getStockVehStrCD())
         self.__modulesInstaller = _ModulesInstaller(getInstalledModulesCDs(stockVehicle))
-        getVehicleComparisonBasketCtrl().onSwitchChange += self.onWindowClose
+        self.comparisonBasket.onSwitchChange += self.onWindowClose
         self.as_setInitDataS({'windowTitle': _ms(VEH_COMPARE.MODULESVIEW_WINDOWTITLE, vehName=stockVehicle.userName),
          'description': text_styles.main(_ms(VEH_COMPARE.MODULESVIEW_DESCRIPTION)),
          'resetBtnLabel': VEH_COMPARE.MODULESVIEW_RESETBTNLABEL,
@@ -215,7 +217,7 @@ class VehicleModulesWindow(VehicleModulesWindowMeta):
          'compareBtnTooltip': VEH_COMPARE.MODULESVIEW_COMPAREBTNLABEL_TOOLTIP})
 
     def _dispose(self):
-        getVehicleComparisonBasketCtrl().onSwitchChange -= self.onWindowClose
+        self.comparisonBasket.onSwitchChange -= self.onWindowClose
         self.__vehicle = None
         self.__modulesInstaller.dispose()
         self.__modulesInstaller = None
@@ -236,7 +238,7 @@ class VehicleModulesWindow(VehicleModulesWindowMeta):
         def __logModuleError():
             LOG_ERROR('Attempt to apply unsupported modules type: {}'.format(self.__currentModulesType))
 
-        basketVehicle = getVehicleComparisonBasketCtrl().getVehicleAt(self.__vehIndex)
+        basketVehicle = self.comparisonBasket.getVehicleAt(self.__vehIndex)
         if basketVehicle.isInInventory():
             if self.__currentModulesType == MODULES_TYPES.CUSTOM or self.__currentModulesType == MODULES_TYPES.BASIC:
                 self.__initialize(basketVehicle.getInvVehStrCD(), MODULES_TYPES.CURRENT)
@@ -252,7 +254,7 @@ class VehicleModulesWindow(VehicleModulesWindowMeta):
             __logModuleError()
 
     def onCompareBtnClick(self):
-        getVehicleComparisonBasketCtrl().applyModulesFromVehicle(self.__vehIndex, self.__vehicle)
+        self.comparisonBasket.applyModulesFromVehicle(self.__vehIndex, self.__vehicle)
         self.destroy()
 
     def onModuleHover(self, moduleId):
@@ -300,7 +302,7 @@ class VehicleModulesWindow(VehicleModulesWindowMeta):
         if not isMainFit:
             yield getPreviewInstallerProcessor(self.__vehicle, newComponentItem).request()
         self.__updateChangedSlots()
-        self.__updateModulesType(getVehicleComparisonBasketCtrl().getVehicleAt(self.__vehIndex).getModulesType(strCD=self.__vehicle.descriptor.makeCompactDescr()))
+        self.__updateModulesType(self.comparisonBasket.getVehicleAt(self.__vehIndex).getModulesType(strCD=self.__vehicle.descriptor.makeCompactDescr()))
 
     def __initialize(self, strCD, modulesType):
         self.__vehicle = Vehicle(strCD)
@@ -339,7 +341,7 @@ class VehicleModulesWindow(VehicleModulesWindowMeta):
 
     def __updateModulesType(self, modulesType):
         self.__currentModulesType = modulesType
-        basketVehicle = getVehicleComparisonBasketCtrl().getVehicleAt(self.__vehIndex)
+        basketVehicle = self.comparisonBasket.getVehicleAt(self.__vehIndex)
         if basketVehicle.isInInventory():
             btnEnabled = modulesType != MODULES_TYPES.CURRENT
         else:

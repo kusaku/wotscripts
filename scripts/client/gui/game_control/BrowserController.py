@@ -1,27 +1,26 @@
 # Embedded file name: scripts/client/gui/game_control/BrowserController.py
-import urlparse
 import Event
 from WebBrowser import WebBrowser
-from debug_utils import LOG_WARNING, LOG_DEBUG
-from gui.app_loader import g_appLoader
-from gui.game_control.controllers import Controller
-from gui.game_control.gc_constants import BROWSER
-from ids_generators import SequenceIDGenerator
 from adisp import async, process
+from debug_utils import LOG_WARNING
 from gui import GUI_SETTINGS
-from gui.game_control.links import URLMarcos
-from gui.game_control.browser_filters import getFilters as _getGlobalFilters
-from gui.shared import EVENT_BUS_SCOPE, g_eventBus
-from gui.shared.events import LoadViewEvent, BrowserEvent, OpenLinkEvent
-from gui.shared.utils.functions import getViewName
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
+from gui.app_loader import g_appLoader
+from gui.game_control.browser_filters import getFilters as _getGlobalFilters
+from gui.game_control.gc_constants import BROWSER
+from gui.game_control.links import URLMarcos
+from gui.shared import EVENT_BUS_SCOPE, g_eventBus
+from gui.shared.events import LoadViewEvent, BrowserEvent
+from gui.shared.utils.functions import getViewName
+from ids_generators import SequenceIDGenerator
+from skeletons.gui.game_control import IBrowserController
 
-class BrowserController(Controller):
+class BrowserController(IBrowserController):
     _BROWSER_TEXTURE = 'BrowserBg'
     _ALT_BROWSER_TEXTURE = 'AltBrowserBg'
 
-    def __init__(self, proxy):
-        super(BrowserController, self).__init__(proxy)
+    def __init__(self):
+        super(BrowserController, self).__init__()
         self.__browsers = {}
         self.__browsersCallbacks = {}
         self.__browserIDGenerator = SequenceIDGenerator()

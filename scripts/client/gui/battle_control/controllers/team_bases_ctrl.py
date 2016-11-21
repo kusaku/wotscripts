@@ -8,6 +8,7 @@ from debug_utils import LOG_CURRENT_EXCEPTION
 from gui.battle_control.arena_info.interfaces import ITeamsBasesController
 from gui.battle_control.battle_constants import BATTLE_CTRL_ID
 from gui.battle_control.view_components import IViewComponentsController
+from PlayerEvents import g_playerEvents
 _BASE_CAPTURE_SOUND_NAME_ENEMY = 'base_capture_2'
 _BASE_CAPTURE_SOUND_NAME_ALLY = 'base_capture_1'
 _AVAILABLE_TEAMS_NUMBERS = range(1, TEAMS_IN_ARENA.MAX_TEAMS + 1)
@@ -95,9 +96,15 @@ class BattleTeamsBasesController(ITeamsBasesController, IViewComponentsControlle
         """
         self.__battleCtx = battleCtx
         self.__arenaVisitor = arenaVisitor
+        g_playerEvents.onTeamChanged += self.__onTeamChanged
 
     def stopControl(self):
         """Stops to control"""
+        while self.__clientIDs:
+            clientID = self.__clientIDs.pop()
+            if self.__ui is not None:
+                self.__ui.removeTeamBase(clientID)
+
         self.__battleCtx = None
         self.__arenaVisitor = None
         self.__clearUpdateCallbacks()
@@ -107,6 +114,7 @@ class BattleTeamsBasesController(ITeamsBasesController, IViewComponentsControlle
         self.__points.clear()
         self.__sounds.clear()
         self.__snap.clear()
+        g_playerEvents.onTeamChanged -= self.__onTeamChanged
         return
 
     def setViewComponents(self, panel):
@@ -223,9 +231,21 @@ class BattleTeamsBasesController(ITeamsBasesController, IViewComponentsControlle
         """
         Removes all teams base from UI, stop plays sounds.
         """
-        if self.__ui:
+        if not BattleReplay.isPlaying() and self.__ui:
             self.__ui.removeTeamsBases()
         self.__stopCaptureSounds()
+
+    def __onTeamChanged(self, teamID):
+        """
+        Remove the UI, so that it can be re-added next go-round in the correct color
+        """
+        for clientID in self.__clientIDs:
+            self.__clearUpdateCallback(clientID)
+            self.__stopCaptureSound(clientID)
+            if not BattleReplay.isPlaying() and self.__ui:
+                self.__ui.removeTeamBase(clientID)
+
+        self.__clientIDs.clear()
 
     def _getProgressRate(self):
         return 1

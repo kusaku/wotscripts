@@ -1,20 +1,21 @@
 # Embedded file name: scripts/client/AvatarInputHandler/VideoCamera.py
 import math
 import time
-import Math
-from Math import Vector3, Matrix
+import BattleReplay
 import BigWorld
-from AvatarInputHandler import mathUtils, AimingSystems
-from avatar_helpers.aim_global_binding import CTRL_MODE_NAME
-from helpers.CallbackDelayer import CallbackDelayer, TimeDeltaMeter
 import GUI
 import Keys
-from ProjectileMover import collideDynamicAndStatic
-import BattleReplay
-from gui.battle_control import g_sessionProvider
-from gui.battle_control import event_dispatcher as gui_event_dispatcher
-from helpers import isPlayerAvatar
+import Math
+from AvatarInputHandler import mathUtils, AimingSystems
+from AvatarInputHandler.aih_constants import CTRL_MODE_NAME
 from DetachedTurret import DetachedTurret
+from Math import Vector3, Matrix
+from ProjectileMover import collideDynamicAndStatic
+from gui.battle_control import event_dispatcher as gui_event_dispatcher
+from helpers import dependency
+from helpers import isPlayerAvatar
+from helpers.CallbackDelayer import CallbackDelayer, TimeDeltaMeter
+from skeletons.gui.battle_session import IBattleSessionProvider
 
 class KeySensor:
 
@@ -247,6 +248,7 @@ class _VehiclePicker(object):
 
 
 class VideoCamera(CallbackDelayer, TimeDeltaMeter):
+    guiSessionProvider = dependency.descriptor(IBattleSessionProvider)
 
     def __init__(self, configDataSec):
         CallbackDelayer.__init__(self)
@@ -315,7 +317,7 @@ class VideoCamera(CallbackDelayer, TimeDeltaMeter):
         self.__rotateAroundPointEnabled = False
         self.__alignerToLand.disable()
         self.__cam.speedTreeTarget = self.__cam.invViewMatrix
-        if isPlayerAvatar() and g_sessionProvider.getCtx().isPlayerObserver():
+        if isPlayerAvatar() and self.guiSessionProvider.getCtx().isPlayerObserver():
             BigWorld.player().positionControl.moveTo(self.__position)
             BigWorld.player().positionControl.followCamera(True)
         return

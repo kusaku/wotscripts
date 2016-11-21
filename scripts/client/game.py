@@ -3,12 +3,14 @@ import cPickle
 import zlib
 import sys
 import asyncore
+import services_config
 from debug_utils import LOG_CURRENT_EXCEPTION, LOG_DEBUG, LOG_ERROR, LOG_NOTE
 import AreaDestructibles
 import BigWorld
 import constants
 import CommandMapping
 import ResMgr
+from helpers import dependency
 from post_processing import g_postProcessing
 from ConnectionManager import connectionManager
 import GUI
@@ -59,6 +61,7 @@ def init(scriptConfig, engineConfig, userPreferences, loadingScreenGUI = None):
         if constants.IS_DEVELOPMENT:
             autoFlushPythonLog()
         BigWorld.wg_initCustomSettings()
+        g_postProcessing.init()
         Settings.g_instance = Settings.Settings(scriptConfig, engineConfig, userPreferences)
         CommandMapping.g_instance = CommandMapping.CommandMapping()
         from helpers import DecalMap
@@ -79,7 +82,6 @@ def init(scriptConfig, engineConfig, userPreferences, loadingScreenGUI = None):
 
         tutorialLoaderInit()
         BigWorld.callback(0.1, asyncore_call)
-        MessengerEntry.g_instance.init()
         import items
         items.init(True, None if not constants.IS_DEVELOPMENT else {})
         import win_points
@@ -103,12 +105,15 @@ def init(scriptConfig, engineConfig, userPreferences, loadingScreenGUI = None):
         BigWorld.worldDrawEnabled(False)
         import LcdKeyboard
         LcdKeyboard.enableLcdKeyboardSpecificKeys(True)
+        dependency.configure(services_config.getClientServicesConfig)
         gui_personality.init(loadingScreenGUI=loadingScreenGUI)
+        EdgeDetectColorController.g_instance.create()
+        g_replayCtrl.subscribe()
+        MessengerEntry.g_instance.init()
         AreaDestructibles.init()
         MusicControllerWWISE.create()
         TriggersManager.init()
         RSSDownloader.init()
-        g_postProcessing.init()
         SoundGroups.loadLightSoundsDB()
         try:
             from LightFx import LightManager
@@ -266,7 +271,10 @@ def fini():
         if TriggersManager.g_manager is not None:
             TriggersManager.g_manager.destroy()
             TriggersManager.g_manager = None
+        if g_replayCtrl is not None:
+            g_replayCtrl.unsubscribe()
         gui_personality.fini()
+        dependency.clear()
         tutorialLoaderFini()
         import LcdKeyboard
         LcdKeyboard.finalize()
@@ -300,6 +308,16 @@ def fini():
 
 def onChangeEnvironments(inside):
     pass
+
+
+def onBeforeSend():
+    player = BigWorld.player()
+    if type(player).__name__ == 'PlayerAvatar':
+        if player.numOfObservers > 0:
+            vehicle = player.getVehicleAttached()
+            if vehicle is not None:
+                vehicle.transmitCameraData()
+    return
 
 
 def onRecreateDevice():
@@ -461,8 +479,6 @@ _PYTHON_MACROS = {'p': 'BigWorld.player()',
  'unlockAll': 'BigWorld.player().stats.unlockAll(lambda *args:None)',
  'hangar': 'from gui.ClientHangarSpace import g_clientHangarSpaceOverride; g_clientHangarSpaceOverride',
  'cvi': 'from CurrentVehicle import g_currentVehicle; cvi = g_currentVehicle.item; cvi',
- 'sc': 'from account_helpers.settings_core.SettingsCore import g_settingsCore; sc = g_settingsCore; sc',
- 'quests': 'from gui.server_events import g_eventsCache; quests = g_eventsCache; quests',
  'wc': 'from gui.Scaleform.Waiting import Waiting; Waiting.close()',
  'clan': 'from gui.shared.ClanCache import g_clanCache; clan = g_clanCache',
  'camera': 'BigWorld.player().inputHandler.ctrl'}

@@ -41,7 +41,7 @@ def getTotalLevelInvalidTooltip(teamsLimit, restriction):
     return makeTooltip(i18n.makeString('#tooltips:redButton/disabled/{0:>s}/header'.format(restriction)), i18n.makeString('#tooltips:redButton/disabled/{0:>s}/body'.format(restriction), minLevel, maxLevel))
 
 
-def getActionDisabledTooltip(restriction, functional = None):
+def getActionDisabledTooltip(restriction, entity = None):
     if not len(restriction):
         return
     else:
@@ -51,10 +51,10 @@ def getActionDisabledTooltip(restriction, functional = None):
         elif restriction in PREBATTLE_RESTRICTION.VEHICLE_INVALID_STATES:
             tooltip = getVehicleStateInvalidTooltip(restriction)
         else:
-            if functional:
-                teamLimits = functional.getSettings().getTeamLimits(functional.getPlayerTeam())
+            if entity:
+                teamLimits = entity.getSettings().getTeamLimits(entity.getPlayerTeam())
             else:
-                LOG_ERROR('Functional is not defined')
+                LOG_ERROR('Entity is not defined')
                 teamLimits = LIMIT_DEFAULTS
             if PREBATTLE_RESTRICTION.inVehClassLimit(restriction):
                 tooltip = getVehicleClassInvalidTooltip(teamLimits, restriction)

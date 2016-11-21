@@ -1,37 +1,36 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/hangar/Hangar.py
 import BigWorld
+import SoundGroups
 from CurrentVehicle import g_currentVehicle
 from PlayerEvents import g_playerEvents
-import SoundGroups
-from constants import IGR_TYPE, IS_SHOW_SERVER_STATS
+from gui.prb_control.entities.listener import IGlobalListener
+from gui.shared.utils.MethodsRules import MethodsRules
+from gui.ClientUpdateManager import g_clientUpdateManager
+from gui.Scaleform.Waiting import Waiting
+from gui.Scaleform.daapi import LobbySubView
+from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
+from gui.Scaleform.daapi.view.meta.HangarMeta import HangarMeta
+from gui.Scaleform.framework import ViewTypes
+from gui.Scaleform.framework.managers.containers import POP_UP_CRITERIA
+from gui.Scaleform.genConsts.HANGAR_ALIASES import HANGAR_ALIASES
+from gui.Scaleform.genConsts.TOOLTIPS_CONSTANTS import TOOLTIPS_CONSTANTS
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.prb_control.ctrl_events import g_prbCtrlEvents
-from gui.shared.formatters import text_styles
-from gui.shared.utils.HangarSpace import g_hangarSpace
-from gui.shared.utils.MethodsRules import MethodsRules
-from helpers import i18n
-from gui.shared.utils.functions import makeTooltip
-from gui import game_control, makeHtmlString
-from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
-from gui.Scaleform.framework.managers.containers import POP_UP_CRITERIA
-from gui.Scaleform.locale.MENU import MENU
-from gui.prb_control.prb_helpers import GlobalListener
-from gui.ClientUpdateManager import g_clientUpdateManager
-from gui.Scaleform.framework import ViewTypes
-from gui.Scaleform.Waiting import Waiting
-from gui.Scaleform.daapi.view.meta.HangarMeta import HangarMeta
-from gui.Scaleform.daapi import LobbySubView
 from gui.shared import g_itemsCache, events, EVENT_BUS_SCOPE
-from gui.shared.gui_items import GUI_ITEM_TYPE
 from gui.shared.ItemsCache import CACHE_SYNC_REASON
 from gui.shared.events import LobbySimpleEvent
-from ConnectionManager import connectionManager
+from gui.shared.gui_items import GUI_ITEM_TYPE
+from gui.shared.utils.HangarSpace import g_hangarSpace
+from gui.shared.utils.functions import makeTooltip
+from helpers import dependency
 from helpers.i18n import makeString as _ms
-from gui.Scaleform.genConsts.TOOLTIPS_CONSTANTS import TOOLTIPS_CONSTANTS
-from gui.Scaleform.genConsts.HANGAR_ALIASES import HANGAR_ALIASES
+from skeletons.gui.game_control import IFalloutController
+from skeletons.gui.game_control import IIGRController
 
-class Hangar(LobbySubView, HangarMeta, GlobalListener, MethodsRules):
+class Hangar(LobbySubView, HangarMeta, IGlobalListener, MethodsRules):
     __background_alpha__ = 0.0
+    falloutCtrl = dependency.descriptor(IFalloutController)
+    igrCtrl = dependency.descriptor(IIGRController)
 
     def __init__(self, _ = None):
         LobbySubView.__init__(self, 0)
@@ -46,8 +45,8 @@ class Hangar(LobbySubView, HangarMeta, GlobalListener, MethodsRules):
         g_playerEvents.onVehicleBecomeElite += self.__onVehicleBecomeElite
         g_playerEvents.onBattleResultsReceived += self.onFittingUpdate
         g_currentVehicle.onChanged += self.__onCurrentVehicleChanged
-        game_control.g_instance.igr.onIgrTypeChanged += self.__onIgrTypeChanged
-        game_control.g_instance.fallout.onSettingsChanged += self.__switchCarousels
+        self.igrCtrl.onIgrTypeChanged += self.__onIgrTypeChanged
+        self.falloutCtrl.onSettingsChanged += self.__switchCarousels
         g_itemsCache.onSyncCompleted += self.onCacheResync
         g_hangarSpace.onObjectSelected += self.__on3DObjectSelected
         g_hangarSpace.onObjectUnselected += self.__on3DObjectUnSelected
@@ -91,9 +90,6 @@ class Hangar(LobbySubView, HangarMeta, GlobalListener, MethodsRules):
         self.fireEvent(LobbySimpleEvent(LobbySimpleEvent.CLOSE_HELPLAYOUT), scope=EVENT_BUS_SCOPE.LOBBY)
         self.as_closeHelpLayoutS()
 
-    def toggleGUIEditor(self):
-        self.app.toggleEditor()
-
     @MethodsRules.delayable('_populate')
     def _dispose(self):
         """
@@ -108,8 +104,8 @@ class Hangar(LobbySubView, HangarMeta, GlobalListener, MethodsRules):
         g_playerEvents.onVehicleBecomeElite -= self.__onVehicleBecomeElite
         g_playerEvents.onBattleResultsReceived -= self.onFittingUpdate
         g_currentVehicle.onChanged -= self.__onCurrentVehicleChanged
-        game_control.g_instance.igr.onIgrTypeChanged -= self.__onIgrTypeChanged
-        game_control.g_instance.fallout.onSettingsChanged -= self.__switchCarousels
+        self.igrCtrl.onIgrTypeChanged -= self.__onIgrTypeChanged
+        self.falloutCtrl.onSettingsChanged -= self.__switchCarousels
         g_hangarSpace.onObjectSelected -= self.__on3DObjectSelected
         g_hangarSpace.onObjectUnselected -= self.__on3DObjectUnSelected
         g_hangarSpace.onObjectClicked -= self.__on3DObjectClicked
@@ -124,7 +120,7 @@ class Hangar(LobbySubView, HangarMeta, GlobalListener, MethodsRules):
 
     def __switchCarousels(self):
         prevCarouselAlias = self.__currentCarouselAlias
-        if game_control.g_instance.fallout.isSelected():
+        if self.falloutCtrl.isSelected():
             linkage = HANGAR_ALIASES.FALLOUT_TANK_CAROUSEL_UI
             newCarouselAlias = HANGAR_ALIASES.FALLOUT_TANK_CAROUSEL
         else:
@@ -246,32 +242,23 @@ class Hangar(LobbySubView, HangarMeta, GlobalListener, MethodsRules):
                 self.__updateAmmoPanel()
             return
 
-    def onPlayerStateChanged(self, functional, roster, accountInfo):
+    def onPlayerStateChanged(self, entity, roster, accountInfo):
         if accountInfo.isCurrentPlayer():
             self.__updateState()
             self.__updateAmmoPanel()
 
     def onUnitPlayerStateChanged(self, pInfo):
         if pInfo.isCurrentPlayer():
-            self.__onFunctionalChanged()
+            self.__onEntityChanged()
 
-    def onPrbFunctionalInited(self):
-        self.__onFunctionalChanged()
-
-    def onUnitFunctionalInited(self):
-        self.__onFunctionalChanged()
-
-    def onPrbFunctionalFinished(self):
-        self.__onFunctionalChanged()
-
-    def onUnitFunctionalFinished(self):
-        self.__onFunctionalChanged()
+    def onPrbEntitySwitched(self):
+        self.__onEntityChanged()
 
     def onEnqueued(self, queueType, *args):
-        self.__onFunctionalChanged()
+        self.__onEntityChanged()
 
     def onDequeued(self, queueType, *args):
-        self.__onFunctionalChanged()
+        self.__onEntityChanged()
 
     def __onVehicleBecomeElite(self, vehTypeCompDescr):
         self.__updateCarouselVehicles([vehTypeCompDescr])
@@ -327,7 +314,7 @@ class Hangar(LobbySubView, HangarMeta, GlobalListener, MethodsRules):
         state = g_currentVehicle.getViewState()
         self.as_setCarouselEnabledS(not state.isLocked())
 
-    def __onFunctionalChanged(self):
+    def __onEntityChanged(self):
         self.__updateState()
         self.__updateAmmoPanel()
 

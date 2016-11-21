@@ -1,9 +1,10 @@
 # Embedded file name: scripts/client/gui/prb_control/formatters/windows.py
+from gui.LobbyContext import g_lobbyContext
 from gui.Scaleform.locale.PREBATTLE import PREBATTLE
 from gui.shared import actions
-from gui.LobbyContext import g_lobbyContext
-from gui.server_events import g_eventsCache
+from helpers import dependency
 from predefined_hosts import g_preDefinedHosts
+from skeletons.gui.server_events import IEventsCache
 
 class SwitchPeripheryCtx(object):
 
@@ -27,6 +28,7 @@ class SwitchPeripheryCtx(object):
 
 
 class SwitchPeripheryCompanyCtx(SwitchPeripheryCtx):
+    eventsCache = dependency.descriptor(IEventsCache)
 
     def getHeader(self):
         return PREBATTLE.SWITCHPERIPHERYWINDOW_COMPANY_HEADER
@@ -45,7 +47,7 @@ class SwitchPeripheryCompanyCtx(SwitchPeripheryCtx):
 
     def getForbiddenPeripherieIDs(self):
         validPeripheryIDs = set((host.peripheryID for host in g_preDefinedHosts.hosts() if host.peripheryID != 0))
-        return validPeripheryIDs - g_eventsCache.getCompanyBattles().peripheryIDs
+        return validPeripheryIDs - self.eventsCache.getCompanyBattles().peripheryIDs
 
 
 class SwitchPeripheryFortCtx(SwitchPeripheryCtx):

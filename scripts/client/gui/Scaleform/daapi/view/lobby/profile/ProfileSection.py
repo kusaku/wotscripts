@@ -1,6 +1,5 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/profile/ProfileSection.py
 from helpers import i18n
-from gui.clubs.ClubsController import g_clubsCtrl
 from gui.Scaleform.daapi.view.meta.ProfileSectionMeta import ProfileSectionMeta
 from gui.Scaleform.locale.PROFILE import PROFILE
 from gui.LobbyContext import g_lobbyContext

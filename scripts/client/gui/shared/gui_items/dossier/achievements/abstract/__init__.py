@@ -1,4 +1,5 @@
 # Embedded file name: scripts/client/gui/shared/gui_items/dossier/achievements/abstract/__init__.py
+from helpers import dependency
 from mixins import Deprecated
 from mixins import Quest
 from mixins import HasVehiclesList as _HasVehiclesList
@@ -9,6 +10,7 @@ from RareAchievement import RareAchievement
 from RegularAchievement import RegularAchievement
 from SeriesAchievement import SeriesAchievement
 from SimpleProgressAchievement import SimpleProgressAchievement
+from skeletons.gui.server_events import IEventsCache
 
 class DeprecatedAchievement(Deprecated, RegularAchievement):
     pass
@@ -31,13 +33,13 @@ def achievementHasVehiclesList(achievement):
 
 
 def getCompletedPotapovQuestsCount(seasonID, vehClasses):
-    from gui.server_events import g_eventsCache
+    eventsCache = dependency.instance(IEventsCache)
 
     def _filter(quest):
         return quest.isFullCompleted() and len(vehClasses & quest.getVehicleClasses())
 
     result = 0
-    for tile in g_eventsCache.random.getSeasons()[seasonID].getTiles().itervalues():
+    for tile in eventsCache.random.getSeasons()[seasonID].getTiles().itervalues():
         result += len(tile.getQuestsByFilter(_filter))
 
     return result

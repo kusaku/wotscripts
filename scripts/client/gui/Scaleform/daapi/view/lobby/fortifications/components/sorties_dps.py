@@ -10,8 +10,8 @@ from gui.Scaleform.framework.entities.DAAPIDataProvider import DAAPIDataProvider
 from gui.Scaleform.genConsts.FORTIFICATION_ALIASES import FORTIFICATION_ALIASES
 from gui.Scaleform.locale.FORTIFICATIONS import FORTIFICATIONS as I18N_FORTIFICATIONS
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
+from gui.prb_control import prbEntityProperty
 from gui.prb_control.items.sortie_items import getDivisionsOrderData
-from gui.prb_control.prb_helpers import unitFunctionalProperty
 from gui.shared.formatters import icons, text_styles
 from gui.shared.fortifications.fort_seqs import BATTLE_ITEM_TYPE, getDivisionSettings
 from gui.shared.fortifications.fort_listener import FortListener
@@ -99,8 +99,8 @@ class SortiesDataProvider(SortableDAAPIDataProvider):
         self._selectedID = None
         return
 
-    @unitFunctionalProperty
-    def unitFunctional(self):
+    @prbEntityProperty
+    def prbEntity(self):
         return None
 
     @property
@@ -140,10 +140,10 @@ class SortiesDataProvider(SortableDAAPIDataProvider):
         return vo
 
     def getUnitVO(self, clientIdx):
-        return makeSortieShortVO(self.unitFunctional, unitIdx=clientIdx)
+        return makeSortieShortVO(self.prbEntity, unitIdx=clientIdx)
 
     def getUnitMaxLevel(self, clientIdx):
-        return getUnitMaxLevel(self.unitFunctional, unitIdx=clientIdx)
+        return getUnitMaxLevel(self.prbEntity, unitIdx=clientIdx)
 
     def buildList(self, cache):
         self.clear()
@@ -229,8 +229,8 @@ class IntelligenceDataProvider(SortableDAAPIDataProvider, FortListener):
         self.__selectedID = None
         return
 
-    @unitFunctionalProperty
-    def unitFunctional(self):
+    @prbEntityProperty
+    def prbEntity(self):
         return None
 
     @property
@@ -346,8 +346,8 @@ class FortBattlesDataProvider(SortableDAAPIDataProvider):
         self._selectedID = None
         return
 
-    @unitFunctionalProperty
-    def unitFunctional(self):
+    @prbEntityProperty
+    def prbEntity(self):
         return None
 
     @property
@@ -387,10 +387,10 @@ class FortBattlesDataProvider(SortableDAAPIDataProvider):
         return vo
 
     def getUnitVO(self, clientIdx):
-        return makeFortBattleShortVO(self.unitFunctional, unitIdx=clientIdx)
+        return makeFortBattleShortVO(self.prbEntity, unitIdx=clientIdx)
 
     def getUnitMaxLevel(self, clientIdx):
-        return getUnitMaxLevel(self.unitFunctional, unitIdx=clientIdx)
+        return getUnitMaxLevel(self.prbEntity, unitIdx=clientIdx)
 
     def buildList(self, cache):
         self.clear()

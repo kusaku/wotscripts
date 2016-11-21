@@ -134,6 +134,9 @@ class ApplicationMeta(BaseDAAPIModule):
             return self.flashObject.as_registerManagers()
 
     def as_setLibrariesListS(self, list):
+        """
+        :param list: Represented by Vector.<String> (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_setLibrariesList(list)
 

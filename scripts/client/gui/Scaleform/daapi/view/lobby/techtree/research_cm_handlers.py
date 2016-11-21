@@ -6,9 +6,10 @@ from gui.Scaleform.daapi.view.lobby.techtree.techtree_dp import g_techTreeDP
 from gui.Scaleform.framework.entities.EventSystemEntity import EventSystemEntity
 from gui.Scaleform.framework.managers.context_menu import AbstractContextMenuHandler
 from gui.Scaleform.locale.MENU import MENU
-from gui.game_control import getVehicleComparisonBasketCtrl
 from gui.shared import g_itemsCache, event_dispatcher as shared_events
 from gui.shared.gui_items.items_actions import factory as ItemsActionsFactory
+from helpers import dependency
+from skeletons.gui.game_control import IVehicleComparisonBasket
 
 class ResearchItemContextMenuHandler(AbstractContextMenuHandler, EventSystemEntity):
 
@@ -76,6 +77,7 @@ class ResearchItemContextMenuHandler(AbstractContextMenuHandler, EventSystemEnti
 
 
 class ResearchVehicleContextMenuHandler(SimpleVehicleCMHandler):
+    comparisonBasket = dependency.descriptor(IVehicleComparisonBasket)
 
     def __init__(self, cmProxy, ctx = None):
         super(ResearchVehicleContextMenuHandler, self).__init__(cmProxy, ctx, {VEHICLE.INFO: 'showVehicleInfo',
@@ -104,7 +106,7 @@ class ResearchVehicleContextMenuHandler(SimpleVehicleCMHandler):
         shared_events.selectVehicleInHangar(self._nodeCD)
 
     def compareVehicle(self):
-        getVehicleComparisonBasketCtrl().addVehicle(self._nodeCD)
+        self.comparisonBasket.addVehicle(self._nodeCD)
 
     def _initFlashValues(self, ctx):
         self._nodeCD = int(ctx.nodeCD)
@@ -152,6 +154,5 @@ class ResearchVehicleContextMenuHandler(SimpleVehicleCMHandler):
         :param vehicle: instance of gui.shared.gui_items.Vehicle.Vehicle
         :param optionsRef: reference to Context Menu items list
         """
-        comparisonBasket = getVehicleComparisonBasketCtrl()
-        if comparisonBasket.isEnabled():
-            optionsRef.append(self._makeItem(VEHICLE.COMPARE, MENU.contextmenu(VEHICLE.COMPARE), {'enabled': comparisonBasket.isReadyToAdd(vehicle)}))
+        if self.comparisonBasket.isEnabled():
+            optionsRef.append(self._makeItem(VEHICLE.COMPARE, MENU.contextmenu(VEHICLE.COMPARE), {'enabled': self.comparisonBasket.isReadyToAdd(vehicle)}))

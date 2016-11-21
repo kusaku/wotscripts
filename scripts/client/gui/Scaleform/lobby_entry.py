@@ -55,7 +55,9 @@ class LobbyEntry(SFApplication):
         return ContainerManager(self._loaderMgr, DefaultContainer(ViewTypes.DEFAULT), DefaultContainer(ViewTypes.CURSOR), DefaultContainer(ViewTypes.WAITING), PopUpContainer(ViewTypes.WINDOW), PopUpContainer(ViewTypes.BROWSER), PopUpContainer(ViewTypes.TOP_WINDOW), DefaultContainer(ViewTypes.SERVICE_LAYOUT))
 
     def _createToolTipManager(self):
-        return ToolTip(GUI_GLOBAL_SPACE_ID.BATTLE_LOADING)
+        tooltip = ToolTip(GUI_GLOBAL_SPACE_ID.BATTLE_LOADING)
+        tooltip.setEnvironment(self)
+        return tooltip
 
     def _createGlobalVarsManager(self):
         return GlobalVarsManager()
@@ -105,7 +107,7 @@ class LobbyEntry(SFApplication):
         self._containerMgr.load(VIEW_ALIAS.WAITING)
 
     def _getRequiredLibraries(self):
-        return ('windows.swf', 'animations.swf', 'common_i18n.swf', 'guiControlsLogin.swf', 'guiControlsLoginBattleDynamic.swf')
+        return ('windows.swf', 'animations.swf', 'common_i18n.swf', 'popovers.swf', 'guiControlsLogin.swf', 'guiControlsLoginBattleDynamic.swf')
 
     def __getCursorFromContainer(self):
         if self._containerMgr is not None:

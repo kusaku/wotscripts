@@ -36,5 +36,8 @@ class BoostersWindowMeta(AbstractWindowView):
             return self.flashObject.as_setStaticData(data)
 
     def as_setListDataS(self, boosters, scrollToTop):
+        """
+        :param boosters: Represented by DataProvider (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_setListData(boosters, scrollToTop)

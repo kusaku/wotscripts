@@ -1,16 +1,17 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/boosters/BoostersPanelComponent.py
-from gui import game_control
-from gui.Scaleform.genConsts.TOOLTIPS_CONSTANTS import TOOLTIPS_CONSTANTS
 from gui.ClientUpdateManager import g_clientUpdateManager
-from gui.goodies.Booster import MAX_ACTIVE_BOOSTERS_COUNT
-from gui.goodies import g_goodiesCache
-from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
-from gui.Scaleform.genConsts.BOOSTER_CONSTANTS import BOOSTER_CONSTANTS
-from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.Scaleform.daapi.view.meta.SlotsPanelMeta import SlotsPanelMeta
+from gui.Scaleform.genConsts.BOOSTER_CONSTANTS import BOOSTER_CONSTANTS
+from gui.Scaleform.genConsts.TOOLTIPS_CONSTANTS import TOOLTIPS_CONSTANTS
+from gui.Scaleform.locale.RES_ICONS import RES_ICONS
+from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
+from gui.goodies import g_goodiesCache
+from gui.goodies.goodie_items import MAX_ACTIVE_BOOSTERS_COUNT
 from gui.shared.ItemsCache import g_itemsCache
-from gui.shared.utils.requesters.ItemsRequester import REQ_CRITERIA
 from gui.shared.utils.functions import makeTooltip
+from gui.shared.utils.requesters.ItemsRequester import REQ_CRITERIA
+from helpers import dependency
+from skeletons.gui.game_control import IBoostersController
 _GUI_SLOTS_PROPS = {'slotsCount': MAX_ACTIVE_BOOSTERS_COUNT,
  'slotWidth': 50,
  'paddings': 64,
@@ -23,6 +24,7 @@ _ADD_AVAILABLE_BOOSTER_ID = 'addAvailable'
 _EMPTY_BOOSTER_ID = 'empty'
 
 class BoostersPanelComponent(SlotsPanelMeta):
+    boosters = dependency.descriptor(IBoostersController)
 
     def __init__(self):
         super(BoostersPanelComponent, self).__init__()
@@ -53,7 +55,7 @@ class BoostersPanelComponent(SlotsPanelMeta):
     def _populate(self):
         super(BoostersPanelComponent, self)._populate()
         g_clientUpdateManager.addCallbacks({'goodies': self.__onUpdateGoodies})
-        game_control.g_instance.boosters.onBoosterChangeNotify += self.__onUpdateGoodies
+        self.boosters.onBoosterChangeNotify += self.__onUpdateGoodies
         self._buildList()
         self._wasPopulated = True
 
@@ -62,7 +64,7 @@ class BoostersPanelComponent(SlotsPanelMeta):
         self._isPanelInactive = None
         self._wasPopulated = None
         self._slotsMap = None
-        game_control.g_instance.boosters.onBoosterChangeNotify -= self.__onUpdateGoodies
+        self.boosters.onBoosterChangeNotify -= self.__onUpdateGoodies
         g_clientUpdateManager.removeObjectCallbacks(self)
         super(BoostersPanelComponent, self)._dispose()
         return

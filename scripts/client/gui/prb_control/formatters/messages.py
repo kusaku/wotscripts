@@ -96,13 +96,13 @@ _INVALID_TEAM = {PREBATTLE_RESTRICTION.LIMIT_MIN_COUNT: getMinCountLimitMessage4
  PREBATTLE_RESTRICTION.LIMIT_TOTAL_LEVEL: getTotalLevelLimitMessage4Team,
  PREBATTLE_RESTRICTION.LIMIT_LEVEL: getLevelLimitMessage4Team}
 
-def getInvalidTeamMessage(reason, functional = None):
+def getInvalidTeamMessage(reason, entity = None):
     if reason in PREBATTLE_RESTRICTION.SERVER_LIMITS:
         if reason in _INVALID_TEAM:
-            if functional:
-                teamLimits = functional.getSettings().getTeamLimits(functional.getPlayerTeam())
+            if entity:
+                teamLimits = entity.getSettings().getTeamLimits(entity.getPlayerTeam())
             else:
-                LOG_ERROR('Functional is not defined')
+                LOG_ERROR('Entity is not defined')
                 teamLimits = LIMIT_DEFAULTS
             message = _INVALID_TEAM[reason](teamLimits)
         else:
@@ -113,22 +113,22 @@ def getInvalidTeamMessage(reason, functional = None):
     return message
 
 
-def getInvalidTeamServerMessage(errStr, functional = None):
+def getInvalidTeamServerMessage(errStr, entity = None):
     if errStr in ('INVALID_EVENT_TEAM', 'EVENT_DISABLED'):
         return i18n.makeString(SYSTEM_MESSAGES.PREBATTLE_TEAMINVALID_EVENT_BATTLE)
     else:
         return None
 
 
-def getInvalidVehicleMessage(reason, functional = None):
+def getInvalidVehicleMessage(reason, entity = None):
     if reason in _INVALID_VEHICLE_STATE:
         message = _INVALID_VEHICLE_STATE[reason]()
     elif reason in PREBATTLE_RESTRICTION.SERVER_LIMITS:
         if reason in _INVALID_VEHICLE_IN_TEAM:
-            if functional:
-                teamLimits = functional.getSettings().getTeamLimits(functional.getPlayerTeam())
+            if entity:
+                teamLimits = entity.getSettings().getTeamLimits(entity.getPlayerTeam())
             else:
-                LOG_ERROR('Functional is not defined')
+                LOG_ERROR('Entity is not defined')
                 teamLimits = LIMIT_DEFAULTS
             message = _INVALID_VEHICLE_IN_TEAM[reason](teamLimits)
         else:
@@ -200,7 +200,7 @@ def getUnitPlayerNotification(key, pInfo):
 
 
 def makeEntityI18nKey(ctrlType, entityType, prefix):
-    if ctrlType in (CTRL_ENTITY_TYPE.PREBATTLE, CTRL_ENTITY_TYPE.UNIT):
+    if ctrlType in (CTRL_ENTITY_TYPE.LEGACY, CTRL_ENTITY_TYPE.UNIT):
         if entityType in PREBATTLE_TYPE.SQUAD_PREBATTLES:
             name = 'squad'
         else:

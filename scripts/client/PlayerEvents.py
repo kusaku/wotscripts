@@ -90,6 +90,7 @@ class _PlayerEvents(object):
         self.onGuiCacheSyncCompleted = Event.Event()
         self.onPQLocksChanged = Event.Event()
         self.onNotification = Event.Event()
+        self.onTeamChanged = Event.Event()
 
 
 g_playerEvents = _PlayerEvents()

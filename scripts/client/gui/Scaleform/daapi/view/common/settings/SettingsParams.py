@@ -1,12 +1,14 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/common/settings/SettingsParams.py
 import BigWorld
 from account_helpers.settings_core import settings_constants, options
-from account_helpers.settings_core.SettingsCore import g_settingsCore
 from gui.shared.utils import graphics
 from gui.shared.utils.graphics import g_monitorSettings
+from helpers import dependency
+from skeletons.account_helpers.settings_core import ISettingsCore
 _DEFERRED_RENDER_IDX = 0
 
 class SettingsParams(object):
+    settingsCore = dependency.descriptor(ISettingsCore)
 
     def __settingsDiffPreprocessing(self, diff):
         """
@@ -35,7 +37,7 @@ class SettingsParams(object):
         
         :return: [dict(settingName->settingValue)] current game settings values
         """
-        return g_settingsCore.packSettings(settings_constants.GAME.ALL())
+        return self.settingsCore.packSettings(settings_constants.GAME.ALL())
 
     def getSoundSettings(self):
         """
@@ -43,7 +45,7 @@ class SettingsParams(object):
         
         :return: [dict(settingName->settingValue)] current sound settings values
         """
-        return g_settingsCore.packSettings(settings_constants.SOUND.ALL())
+        return self.settingsCore.packSettings(settings_constants.SOUND.ALL())
 
     def getGraphicsSettings(self):
         """
@@ -51,7 +53,7 @@ class SettingsParams(object):
         
         :return: [dict(settingName->settingValue)] current graphics settings values
         """
-        return g_settingsCore.packSettings(settings_constants.GRAPHICS.ALL())
+        return self.settingsCore.packSettings(settings_constants.GRAPHICS.ALL())
 
     def getMarkersSettings(self):
         """
@@ -59,7 +61,7 @@ class SettingsParams(object):
         
         :return: [dict(settingName->settingValue)] current markers settings values
         """
-        return g_settingsCore.packSettings(settings_constants.MARKERS.ALL())
+        return self.settingsCore.packSettings(settings_constants.MARKERS.ALL())
 
     def getFeedbackSettings(self):
         """
@@ -77,7 +79,7 @@ class SettingsParams(object):
         
         :return: [dict(settingName->settingValue)] other settings values
         """
-        return g_settingsCore.packSettings(settings_constants.OTHER.ALL())
+        return self.settingsCore.packSettings(settings_constants.OTHER.ALL())
 
     def getDamageLogSettings(self):
         """
@@ -85,7 +87,7 @@ class SettingsParams(object):
         
         :return: [dict(settingName->settingValue)] damage log settings values
         """
-        return g_settingsCore.packSettings(settings_constants.DAMAGE_LOG.ALL())
+        return self.settingsCore.packSettings(settings_constants.DAMAGE_LOG.ALL())
 
     def getDamageIndicatorSettings(self):
         """
@@ -93,7 +95,7 @@ class SettingsParams(object):
         
         :return: [dict(settingName->settingValue)] damage indicator settings values
         """
-        return g_settingsCore.packSettings(settings_constants.DAMAGE_INDICATOR.ALL())
+        return self.settingsCore.packSettings(settings_constants.DAMAGE_INDICATOR.ALL())
 
     def getBattleEventsSettings(self):
         """
@@ -101,7 +103,7 @@ class SettingsParams(object):
         
         :return: [dict(settingName->settingValue)] damage battle events values
         """
-        return g_settingsCore.packSettings(settings_constants.BATTLE_EVENTS.ALL())
+        return self.settingsCore.packSettings(settings_constants.BATTLE_EVENTS.ALL())
 
     def getAimSettings(self):
         """
@@ -109,7 +111,7 @@ class SettingsParams(object):
         
         :return: [dict(settingName->settingValue)] current aim settings values
         """
-        return g_settingsCore.packSettings(settings_constants.AIM.ALL())
+        return self.settingsCore.packSettings(settings_constants.AIM.ALL())
 
     def getControlsSettings(self):
         """
@@ -117,7 +119,7 @@ class SettingsParams(object):
         
         :return: [dict(settingName->settingValue)] current controls settings values
         """
-        return g_settingsCore.packSettings(settings_constants.CONTROLS.ALL())
+        return self.settingsCore.packSettings(settings_constants.CONTROLS.ALL())
 
     def getMonitorSettings(self):
         """
@@ -125,13 +127,7 @@ class SettingsParams(object):
         
         :return: [dict(settingName->settingValue)] current monitor settings values
         """
-        return g_settingsCore.packSettings((settings_constants.GRAPHICS.MONITOR,
-         settings_constants.GRAPHICS.FULLSCREEN,
-         settings_constants.GRAPHICS.WINDOW_SIZE,
-         settings_constants.GRAPHICS.RESOLUTION,
-         settings_constants.GRAPHICS.REFRESH_RATE,
-         settings_constants.GRAPHICS.DYNAMIC_RENDERER,
-         settings_constants.GRAPHICS.INTERFACE_SCALE))
+        return self.settingsCore.packSettings(BigWorld.getMonitorSettings())
 
     def preview(self, settingName, value):
         """
@@ -146,18 +142,18 @@ class SettingsParams(object):
             renderOptions = graphics.getGraphicsSetting(rppSetting)
             isAdvancedRender = renderOptions.value == _DEFERRED_RENDER_IDX
             if isAdvancedRender:
-                g_settingsCore.previewSetting(settings_constants.GRAPHICS.CUSTOM_AA, value)
+                self.settingsCore.previewSetting(settings_constants.GRAPHICS.CUSTOM_AA, value)
             else:
-                g_settingsCore.previewSetting(settings_constants.GRAPHICS.MULTISAMPLING, value)
+                self.settingsCore.previewSetting(settings_constants.GRAPHICS.MULTISAMPLING, value)
             return
-        g_settingsCore.previewSetting(settingName, value)
+        self.settingsCore.previewSetting(settingName, value)
 
     def revert(self):
         """
         Reverts all available settings to the original values
         """
-        g_settingsCore.revertSettings()
-        g_settingsCore.clearStorages()
+        self.settingsCore.revertSettings()
+        self.settingsCore.clearStorages()
 
     def apply(self, diff, restartApproved):
         """
@@ -169,11 +165,12 @@ class SettingsParams(object):
         """
         diff = self.__settingsDiffPreprocessing(diff)
         applyMethod = self.getApplyMethod(diff)
-        g_settingsCore.applySettings(diff)
-        confirmators = g_settingsCore.applyStorages(restartApproved)
-        g_settingsCore.confirmChanges(confirmators)
+        self.settingsCore.applySettings(diff)
+        confirmators = self.settingsCore.applyStorages(restartApproved)
+        self.settingsCore.confirmChanges(confirmators)
         if len(set(graphics.GRAPHICS_SETTINGS.ALL()) & set(diff.keys())):
             BigWorld.commitPendingGraphicsSettings()
+        self.settingsCore.clearStorages()
         return applyMethod == options.APPLY_METHOD.RESTART
 
     def getApplyMethod(self, diff):
@@ -183,10 +180,12 @@ class SettingsParams(object):
         :param diff: [dict(settingName->settingValue)] settings values
         :return: [options.APPLY_METHOD.*] settings apply method
         """
-        newMonitorIndex = diff.get(settings_constants.GRAPHICS.MONITOR)
-        isFullscreen = g_monitorSettings.isFullscreen or diff.get(settings_constants.GRAPHICS.FULLSCREEN)
-        isMonitorChanged = g_monitorSettings.isMonitorChanged or newMonitorIndex is not None and g_monitorSettings.currentMonitor != int(newMonitorIndex)
-        if isFullscreen and isMonitorChanged:
+        newMonitorIndex = diff.get(settings_constants.GRAPHICS.MONITOR, g_monitorSettings.currentMonitor)
+        currentVideoMode = g_monitorSettings.windowMode
+        nextVideoMode = currentVideoMode
+        if settings_constants.GRAPHICS.VIDEO_MODE in diff:
+            nextVideoMode = diff[settings_constants.GRAPHICS.VIDEO_MODE]
+        requiresRestart = nextVideoMode == BigWorld.WindowModeExclusiveFullscreen and newMonitorIndex != g_monitorSettings.noRestartExclusiveFullscreenMonitorIndex
+        if requiresRestart:
             return options.APPLY_METHOD.RESTART
-        else:
-            return g_settingsCore.getApplyMethod(diff)
+        return self.settingsCore.getApplyMethod(diff)

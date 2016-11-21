@@ -3,12 +3,15 @@ import weakref
 import GUI
 import Math
 import SoundGroups
-from account_helpers.settings_core import g_settingsCore
+from AvatarInputHandler import AvatarInputHandler
 from constants import IS_DEVELOPMENT
 from gui.Scaleform.daapi.view.battle.shared.minimap import settings, plugins
 from gui.Scaleform.daapi.view.meta.MinimapMeta import MinimapMeta
-from gui.battle_control import g_sessionProvider, minimap_utils, avatar_getter
+from gui.battle_control import minimap_utils, avatar_getter
 from gui.shared.utils.plugins import PluginsCollection
+from helpers import dependency
+from skeletons.account_helpers.settings_core import ISettingsCore
+from skeletons.gui.battle_session import IBattleSessionProvider
 _IMAGE_PATH_FORMATTER = 'img://{}'
 
 class IMinimapComponent(object):
@@ -19,7 +22,7 @@ class IMinimapComponent(object):
     def delEntry(self, entryID):
         raise NotImplementedError
 
-    def invoke(self, entryID, name, *args):
+    def invoke(self, entryID, *signature):
         raise NotImplementedError
 
     def move(self, entryID, container):
@@ -59,13 +62,10 @@ class MinimapComponent(MinimapMeta, IMinimapComponent):
     def delEntry(self, entryID):
         raise entryID in self.__ids or AssertionError('Entry is not added by given ID')
         self.__component.delEntry(entryID)
+        self.__ids.discard(entryID)
 
-    def invoke(self, entryID, name, *args):
-        if not entryID in self.__ids:
-            raise AssertionError('Entry is not added by given ID')
-            signature = args and (name, list(args))
-        else:
-            signature = (name,)
+    def invoke(self, entryID, *signature):
+        raise entryID in self.__ids or AssertionError('Entry is not added by given ID')
         self.__component.entryInvoke(entryID, signature)
 
     def move(self, entryID, container):
@@ -99,9 +99,11 @@ class MinimapComponent(MinimapMeta, IMinimapComponent):
 
     def _populate(self):
         super(MinimapComponent, self)._populate()
-        arenaVisitor = g_sessionProvider.arenaVisitor
+        sessionProvider = dependency.instance(IBattleSessionProvider)
+        raise sessionProvider is not None or AssertionError('Session provider can not be None')
+        arenaVisitor = sessionProvider.arenaVisitor
         raise arenaVisitor is not None or AssertionError('Arena visitor can not be None')
-        arenaDP = g_sessionProvider.getArenaDP()
+        arenaDP = sessionProvider.getArenaDP()
         raise arenaDP is not None or AssertionError('ArenaDP can not be None')
         if not self.app is not None:
             raise AssertionError('Application can not be None')
@@ -113,6 +115,9 @@ class MinimapComponent(MinimapMeta, IMinimapComponent):
         return
 
     def _dispose(self):
+        for entryID in self.__ids:
+            self.__component.delEntry(entryID)
+
         if self.__plugins is not None:
             self.__plugins.stop()
             self.__plugins.fini()
@@ -150,12 +155,13 @@ class MinimapComponent(MinimapMeta, IMinimapComponent):
     def __destroyComponent(self):
         app = self.app
         if app is not None:
-            setattr(app.component, 'minimap', None)
+            app.component.delChild(self.__component)
         self.__component = None
         return
 
 
 class MinimapPluginsCollection(PluginsCollection):
+    settingsCore = dependency.descriptor(ISettingsCore)
 
     def init(self, arenaVisitor, arenaDP):
         super(MinimapPluginsCollection, self).init(arenaVisitor, arenaDP)
@@ -164,19 +170,21 @@ class MinimapPluginsCollection(PluginsCollection):
         super(MinimapPluginsCollection, self).start()
         handler = avatar_getter.getInputHandler()
         if handler is not None:
-            handler.onCameraChanged += self.__onCameraChanged
-            handler.onPostmortemVehicleChanged += self.__onPostmortemVehicleChanged
+            if isinstance(handler, AvatarInputHandler):
+                handler.onCameraChanged += self.__onCameraChanged
+                handler.onPostmortemVehicleChanged += self.__onPostmortemVehicleChanged
             self._invoke('initControlMode', handler.ctrlModeName, handler.ctrls.keys())
-        g_settingsCore.onSettingsChanged += self.__onSettingsChanged
+        self.settingsCore.onSettingsChanged += self.__onSettingsChanged
         self._invoke('setSettings')
         return
 
     def stop(self):
         handler = avatar_getter.getInputHandler()
         if handler is not None:
-            handler.onCameraChanged -= self.__onCameraChanged
-            handler.onPostmortemVehicleChanged -= self.__onPostmortemVehicleChanged
-        g_settingsCore.onSettingsChanged -= self.__onSettingsChanged
+            if isinstance(handler, AvatarInputHandler):
+                handler.onCameraChanged -= self.__onCameraChanged
+                handler.onPostmortemVehicleChanged -= self.__onPostmortemVehicleChanged
+        self.settingsCore.onSettingsChanged -= self.__onSettingsChanged
         super(MinimapPluginsCollection, self).stop()
         return
 
@@ -188,7 +196,7 @@ class MinimapPluginsCollection(PluginsCollection):
 
     def __onSettingsChanged(self, diff):
         """
-        Listener of event "g_settingsCore.onSettingsChanged".
+        Listener of event "ISettingsCore.onSettingsChanged".
         :param diff: dict containing pairs key-value that are changed.
         """
         self._invoke('updateSettings', diff)

@@ -13,5 +13,8 @@ class DemonstratorWindowMeta(AbstractWindowView):
         self._printOverrideError('onMapSelected')
 
     def as_setDataS(self, data):
+        """
+        :param data: Represented by DemonstratorVO (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_setData(data)

@@ -18,33 +18,33 @@ class NotificationsListMeta(SmartPopOverView):
     def onGroupChange(self, groupIdx):
         self._printOverrideError('onGroupChange')
 
-    def as_setInitDataS(self, data):
+    def as_setInitDataS(self, value):
         """
-        :param data: Represented by NotificationViewInitVO (AS)
+        :param value: Represented by NotificationViewInitVO (AS)
         """
         if self._isDAAPIInited():
-            return self.flashObject.as_setInitData(data)
+            return self.flashObject.as_setInitData(value)
 
-    def as_setMessagesListS(self, data):
+    def as_setMessagesListS(self, value):
         """
-        :param data: Represented by NotificationMessagesListVO (AS)
+        :param value: Represented by NotificationMessagesListVO (AS)
         """
         if self._isDAAPIInited():
-            return self.flashObject.as_setMessagesList(data)
+            return self.flashObject.as_setMessagesList(value)
 
-    def as_appendMessageS(self, data):
+    def as_appendMessageS(self, messageData):
         """
-        :param data: Represented by NotificationInfoVO (AS)
+        :param messageData: Represented by NotificationInfoVO (AS)
         """
         if self._isDAAPIInited():
-            return self.flashObject.as_appendMessage(data)
+            return self.flashObject.as_appendMessage(messageData)
 
-    def as_updateMessageS(self, data):
+    def as_updateMessageS(self, messageData):
         """
-        :param data: Represented by NotificationInfoVO (AS)
+        :param messageData: Represented by NotificationInfoVO (AS)
         """
         if self._isDAAPIInited():
-            return self.flashObject.as_updateMessage(data)
+            return self.flashObject.as_updateMessage(messageData)
 
     def as_updateCountersS(self, counts):
         if self._isDAAPIInited():

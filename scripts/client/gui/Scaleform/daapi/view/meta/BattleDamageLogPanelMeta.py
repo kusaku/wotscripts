@@ -30,6 +30,9 @@ class BattleDamageLogPanelMeta(BaseDAAPIComponent):
             return self.flashObject.as_updateSummaryAssistValue(value)
 
     def as_detailStatsS(self, isVisible, messages):
+        """
+        :param messages: Represented by Vector.<MessageRenderModel> (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_detailStats(isVisible, messages)
 

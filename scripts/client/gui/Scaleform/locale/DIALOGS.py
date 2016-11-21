@@ -32,6 +32,10 @@ class DIALOGS(object):
     QUITBATTLE_MESSAGE = '#dialogs:quitBattle/message'
     QUITBATTLE_SUBMIT = '#dialogs:quitBattle/submit'
     QUITBATTLE_CANCEL = '#dialogs:quitBattle/cancel'
+    QUITREPLAY_TITLE = '#dialogs:quitReplay/title'
+    QUITREPLAY_MESSAGE = '#dialogs:quitReplay/message'
+    QUITREPLAY_SUBMIT = '#dialogs:quitReplay/submit'
+    QUITREPLAY_CANCEL = '#dialogs:quitReplay/cancel'
     QUITBATTLE_DESERTER_TITLE = '#dialogs:quitBattle/deserter/title'
     QUITBATTLE_DESERTER_MESSAGE = '#dialogs:quitBattle/deserter/message'
     QUITBATTLE_DESERTER_SUBMIT = '#dialogs:quitBattle/deserter/submit'
@@ -300,7 +304,8 @@ class DIALOGS(object):
     RESTORETANKMAN_SUBMIT = '#dialogs:restoreTankman/submit'
     RESTORETANKMAN_CANCEL = '#dialogs:restoreTankman/cancel'
     RESTORETANKMAN_PRICE = '#dialogs:restoreTankman/price'
-    RESTORETANKMNAN_NEWPERIODWARNING = '#dialogs:restoreTankmnan/newPeriodWarning'
+    RESTORETANKMAN_NEWPERIODWARNING = '#dialogs:restoreTankman/newPeriodWarning'
+    RESTORETANKMAN_DISCONNECTEDFROMCENTER = '#dialogs:restoreTankman/disconnectedFromCenter'
     DISMISSEDBUFFEROVERFLAW_TITLE = '#dialogs:dismissedBufferOverFlaw/title'
     DISMISSEDBUFFEROVERFLAW_MESSAGE = '#dialogs:dismissedBufferOverFlaw/message'
     DISMISSEDBUFFEROVERFLAW_SUBMIT = '#dialogs:dismissedBufferOverFlaw/submit'
@@ -882,6 +887,13 @@ class DIALOGS(object):
     FORTDISABLED_TITLE = '#dialogs:fortDisabled/title'
     FORTDISABLED_MESSAGE = '#dialogs:fortDisabled/message'
     FORTDISABLED_CANCEL = '#dialogs:fortDisabled/cancel'
+    CLAN_DATA_NOT_AVAILABLE_TITLE = '#dialogs:clan_data_not_available/title'
+    CLAN_DATA_NOT_AVAILABLE_MESSAGE = '#dialogs:clan_data_not_available/message'
+    CLAN_DATA_NOT_AVAILABLE_CANCEL = '#dialogs:clan_data_not_available/cancel'
+    SOUNDSPEAKERSPRESETDOESNOTMATCH_TITLE = '#dialogs:soundSpeakersPresetDoesNotMatch/title'
+    SOUNDSPEAKERSPRESETDOESNOTMATCH_MESSAGE = '#dialogs:soundSpeakersPresetDoesNotMatch/message'
+    SOUNDSPEAKERSPRESETDOESNOTMATCH_SUBMIT = '#dialogs:soundSpeakersPresetDoesNotMatch/submit'
+    SOUNDSPEAKERSPRESETDOESNOTMATCH_CANCEL = '#dialogs:soundSpeakersPresetDoesNotMatch/cancel'
     RECRUITWINDOW_VEHICLECLASSDROPDOWN_ENUM = (RECRUITWINDOW_VEHICLECLASSDROPDOWN_ALL,
      RECRUITWINDOW_VEHICLECLASSDROPDOWN_LIGHTTANK,
      RECRUITWINDOW_VEHICLECLASSDROPDOWN_MEDIUMTANK,
@@ -915,6 +927,10 @@ class DIALOGS(object):
      QUITBATTLE_MESSAGE,
      QUITBATTLE_SUBMIT,
      QUITBATTLE_CANCEL,
+     QUITREPLAY_TITLE,
+     QUITREPLAY_MESSAGE,
+     QUITREPLAY_SUBMIT,
+     QUITREPLAY_CANCEL,
      QUITBATTLE_DESERTER_TITLE,
      QUITBATTLE_DESERTER_MESSAGE,
      QUITBATTLE_DESERTER_SUBMIT,
@@ -1183,7 +1199,8 @@ class DIALOGS(object):
      RESTORETANKMAN_SUBMIT,
      RESTORETANKMAN_CANCEL,
      RESTORETANKMAN_PRICE,
-     RESTORETANKMNAN_NEWPERIODWARNING,
+     RESTORETANKMAN_NEWPERIODWARNING,
+     RESTORETANKMAN_DISCONNECTEDFROMCENTER,
      DISMISSEDBUFFEROVERFLAW_TITLE,
      DISMISSEDBUFFEROVERFLAW_MESSAGE,
      DISMISSEDBUFFEROVERFLAW_SUBMIT,
@@ -1764,7 +1781,14 @@ class DIALOGS(object):
      CUSTOMIZATION_INSTALL_INVOICE_ITEM_PERMANENT_LAST_CANCEL,
      FORTDISABLED_TITLE,
      FORTDISABLED_MESSAGE,
-     FORTDISABLED_CANCEL)
+     FORTDISABLED_CANCEL,
+     CLAN_DATA_NOT_AVAILABLE_TITLE,
+     CLAN_DATA_NOT_AVAILABLE_MESSAGE,
+     CLAN_DATA_NOT_AVAILABLE_CANCEL,
+     SOUNDSPEAKERSPRESETDOESNOTMATCH_TITLE,
+     SOUNDSPEAKERSPRESETDOESNOTMATCH_MESSAGE,
+     SOUNDSPEAKERSPRESETDOESNOTMATCH_SUBMIT,
+     SOUNDSPEAKERSPRESETDOESNOTMATCH_CANCEL)
 
     @classmethod
     def recruitwindow_vehicleclassdropdown(cls, key0):

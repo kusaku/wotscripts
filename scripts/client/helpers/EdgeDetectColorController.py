@@ -1,21 +1,20 @@
 # Embedded file name: scripts/client/helpers/EdgeDetectColorController.py
 import BigWorld
-import ResMgr
 import Math
 from PlayerEvents import g_playerEvents
 from Account import PlayerAccount
-from account_helpers.settings_core.SettingsCore import g_settingsCore
+from helpers import dependency
+from skeletons.account_helpers.settings_core import ISettingsCore
 g_instance = None
 
 class EdgeDetectColorController:
+    settingsCore = dependency.descriptor(ISettingsCore)
 
     def __init__(self, dataSec):
         self.__colors = {'common': dict(),
          'colorBlind': dict()}
         self.__readColors(self.__colors['common'], 'common', dataSec)
         self.__readColors(self.__colors['colorBlind'], 'colorBlind', dataSec)
-        g_settingsCore.onSettingsChanged += self.__changeColor
-        g_playerEvents.onAccountShowGUI += self.__onAccountShowGUI
 
     def updateColors(self):
         """
@@ -23,10 +22,14 @@ class EdgeDetectColorController:
         :param place: '' for battle, 'hangar' when in hangar
         :return:
         """
-        self.__changeColor({'isColorBlind': g_settingsCore.getSetting('isColorBlind')})
+        self.__changeColor({'isColorBlind': self.settingsCore.getSetting('isColorBlind')})
+
+    def create(self):
+        self.settingsCore.onSettingsChanged += self.__changeColor
+        g_playerEvents.onAccountShowGUI += self.__onAccountShowGUI
 
     def destroy(self):
-        g_settingsCore.onSettingsChanged -= self.__changeColor
+        self.settingsCore.onSettingsChanged -= self.__changeColor
         g_playerEvents.onAccountShowGUI -= self.__onAccountShowGUI
 
     def __readColors(self, out, type, section):

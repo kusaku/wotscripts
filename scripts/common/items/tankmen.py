@@ -315,6 +315,10 @@ class TankmanDescr(object):
         return list(self.__skills)
 
     @property
+    def freeSkills(self):
+        return list(self.__skills[:self.freeSkillsNumber])
+
+    @property
     def lastSkillLevel(self):
         return self.__lastSkillLevel
 

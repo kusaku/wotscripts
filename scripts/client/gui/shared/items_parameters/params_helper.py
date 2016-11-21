@@ -24,7 +24,7 @@ _ITEM_TYPE_HANDLERS = {ITEM_TYPES.vehicleRadio: params.RadioParams,
  ITEM_TYPES.vehicle: params.VehicleParams}
 
 def _getParamsProvider(item, vehicleDescr = None):
-    if isinstance(item.descriptor, vehicles.VehicleDescr):
+    if vehicles.isVehicleDescr(item.descriptor):
         return _ITEM_TYPE_HANDLERS[ITEM_TYPES.vehicle](item)
     else:
         itemTypeIdx, _, _ = vehicles.parseIntCompactDescr(item.descriptor['compactDescr'])
@@ -178,6 +178,8 @@ def hasGroupPenalties(groupName, comparator):
 def getBuffIcon(param, comparator):
     if hasGroupPenalties(param.name, comparator):
         return RES_ICONS.MAPS_ICONS_VEHPARAMS_ICON_DECREASE
+    elif hasGroupBonuses(param.name, comparator):
+        return RES_ICONS.MAPS_ICONS_VEHPARAMS_ICON_INCREASE
     else:
         return ''
 

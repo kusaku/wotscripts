@@ -34,6 +34,11 @@ def __readBonus_bool(bonus, name, section):
     bonus[name] = section.asBool
 
 
+def __readBonus_string_set(bonus, name, section):
+    data = section.asString
+    bonus[name] = data.strip().split()
+
+
 def __readBonus_int(bonus, name, section):
     value = section.asInt
     if value < 0:
@@ -338,6 +343,7 @@ __BONUS_READERS = {'buyAllVehicles': __readBonus_bool,
  'equipGold': __readBonus_bool,
  'ultimateLoginPriority': __readBonus_bool,
  'addTankmanSkills': __readBonus_bool,
+ 'buySpecial': __readBonus_string_set,
  'premiumAmmo': __readBonus_int,
  'gold': __readBonus_int,
  'credits': __readBonus_int,

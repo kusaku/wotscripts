@@ -66,6 +66,9 @@ class VehicleChassis(VehicleModule):
 
         return result
 
+    def isHydraulicChassis(self):
+        return g_paramsCache.isChassisHydraulic(self.intCD)
+
     @property
     def icon(self):
         return RES_ICONS.MAPS_ICONS_MODULES_CHASSIS

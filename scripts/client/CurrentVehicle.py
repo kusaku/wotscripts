@@ -3,17 +3,15 @@ import random
 import BigWorld
 from Event import Event, EventManager
 from adisp import process
-from gui.game_control import getFalloutCtrl
-from gui.prb_control import prb_getters
 from gui.shared.formatters.time_formatters import getTimeLeftStr
-from gui.shared.gui_items.items_actions.actions import processMsg
 from gui.shared.gui_items.processors.module import getPreviewInstallerProcessor
 from gui.vehicle_view_states import createState4CurrentVehicle
+from helpers import dependency
 from items import vehicles
 from helpers import isPlayerAccount, i18n
 from account_helpers.AccountSettings import AccountSettings, CURRENT_VEHICLE
 from gui.ClientUpdateManager import g_clientUpdateManager
-from gui import game_control, g_tankActiveCamouflage
+from gui import g_tankActiveCamouflage
 from gui.shared.utils.requesters import REQ_CRITERIA
 from gui.shared import g_itemsCache
 from gui.shared.formatters import icons
@@ -21,6 +19,7 @@ from gui.shared.gui_items import GUI_ITEM_TYPE
 from gui.shared.gui_items.Vehicle import Vehicle
 from gui.Scaleform.locale.MENU import MENU
 from gui.Scaleform.Waiting import Waiting
+from skeletons.gui.game_control import IIGRController, IRentalsController, IFalloutController
 _MODULES_NAMES = ('turret',
  'chassis',
  'engine',
@@ -103,6 +102,9 @@ class _CachedVehicle(object):
 
 
 class _CurrentVehicle(_CachedVehicle):
+    igrCtrl = dependency.descriptor(IIGRController)
+    rentals = dependency.descriptor(IRentalsController)
+    falloutCtrl = dependency.descriptor(IFalloutController)
 
     def __init__(self):
         super(_CurrentVehicle, self).__init__()
@@ -283,8 +285,7 @@ class _CurrentVehicle(_CachedVehicle):
             else:
                 message = i18n.makeString('#menu:tankCarousel/vehicleStates/inPremiumIgrOnly', icon=icon)
             return (state, message, stateLvl)
-        falloutCtrl = getFalloutCtrl()
-        if falloutCtrl and falloutCtrl.isSelected():
+        if self.falloutCtrl and self.falloutCtrl.isSelected():
             if not self.item.isFalloutAvailable or self.item.getCustomState() == Vehicle.VEHICLE_STATE.UNSUITABLE_TO_QUEUE:
                 message = i18n.makeString('#menu:tankCarousel/vehicleStates/%s' % Vehicle.VEHICLE_STATE.NOT_SUITABLE)
                 return (state, message, Vehicle.VEHICLE_STATE_LEVEL.WARNING)
@@ -297,15 +298,15 @@ class _CurrentVehicle(_CachedVehicle):
     def _addListeners(self):
         super(_CurrentVehicle, self)._addListeners()
         g_clientUpdateManager.addCallbacks({'cache.vehsLock': self.onLocksUpdate})
-        game_control.g_instance.igr.onIgrTypeChanged += self.onIgrTypeChanged
-        game_control.g_instance.rentals.onRentChangeNotify += self.onRentChange
-        game_control.g_instance.fallout.onSettingsChanged += self.__onFalloutChanged
+        self.igrCtrl.onIgrTypeChanged += self.onIgrTypeChanged
+        self.rentals.onRentChangeNotify += self.onRentChange
+        self.falloutCtrl.onSettingsChanged += self.__onFalloutChanged
 
     def _removeListeners(self):
         super(_CurrentVehicle, self)._removeListeners()
-        game_control.g_instance.igr.onIgrTypeChanged -= self.onIgrTypeChanged
-        game_control.g_instance.rentals.onRentChangeNotify -= self.onRentChange
-        game_control.g_instance.fallout.onSettingsChanged -= self.__onFalloutChanged
+        self.igrCtrl.onIgrTypeChanged -= self.onIgrTypeChanged
+        self.rentals.onRentChangeNotify -= self.onRentChange
+        self.falloutCtrl.onSettingsChanged -= self.__onFalloutChanged
 
     def _selectVehicle(self, vehInvID):
         if vehInvID == self.__vehInvID:
@@ -318,6 +319,7 @@ class _CurrentVehicle(_CachedVehicle):
         self._setChangeCallback()
 
     def __checkPrebattleLockedVehicle(self):
+        from gui.prb_control import prb_getters
         clientPrb = prb_getters.getClientPrebattle()
         if clientPrb is not None:
             rosters = prb_getters.getPrebattleRosters(prebattle=clientPrb)
@@ -410,6 +412,7 @@ class _CurrentPreviewVehicle(_CachedVehicle):
         Waiting.show('applyModule')
         conflictedEqs = newComponentItem.getConflictedEquipments(self.item)
         result = yield getPreviewInstallerProcessor(self.item, newComponentItem, conflictedEqs).request()
+        from gui.shared.gui_items.items_actions.actions import processMsg
         processMsg(result)
         Waiting.hide('applyModule')
         if result.success:

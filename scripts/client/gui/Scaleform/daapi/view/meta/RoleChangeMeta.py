@@ -23,6 +23,9 @@ class RoleChangeMeta(AbstractWindowView):
             return self.flashObject.as_setCommonData(data)
 
     def as_setRolesS(self, roles):
+        """
+        :param roles: Represented by Array (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_setRoles(roles)
 

@@ -1,8 +1,11 @@
 # Embedded file name: scripts/client/OcclusionDecal.py
 import BigWorld
+from helpers import dependency
+from skeletons.account_helpers.settings_core import ISettingsCore
 from vehicle_systems.tankStructure import TankPartNames
 
 class OcclusionDecal:
+    settingsCore = dependency.descriptor(ISettingsCore)
 
     @staticmethod
     def isEnabled():
@@ -18,13 +21,11 @@ class OcclusionDecal:
         self.__hullParent = None
         self.__turretDecals = []
         self.__turretParent = None
-        from account_helpers.settings_core.SettingsCore import g_settingsCore
-        g_settingsCore.onSettingsChanged += self.onSettingsChanged
+        self.settingsCore.onSettingsChanged += self.onSettingsChanged
         return
 
     def destroy(self):
-        from account_helpers.settings_core.SettingsCore import g_settingsCore
-        g_settingsCore.onSettingsChanged -= self.onSettingsChanged
+        self.settingsCore.onSettingsChanged -= self.onSettingsChanged
         self.__typeDesc = None
         self.detach()
         return

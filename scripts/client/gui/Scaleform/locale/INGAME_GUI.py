@@ -480,6 +480,11 @@ class INGAME_GUI(object):
     BATTLEMESSENGER_TOXIC_BLACKLIST_CANT_ADD_IN_BLACKLIST_BODY = '#ingame_gui:battleMessenger/toxic/blackList/CANT_ADD_IN_BLACKLIST/body'
     BATTLEMESSENGER_TOXIC_BLACKLIST_REMOVE_FROM_BLACKLIST_HEADER = '#ingame_gui:battleMessenger/toxic/blackList/REMOVE_FROM_BLACKLIST/header'
     BATTLEMESSENGER_TOXIC_BLACKLIST_REMOVE_FROM_BLACKLIST_BODY = '#ingame_gui:battleMessenger/toxic/blackList/REMOVE_FROM_BLACKLIST/body'
+    SIEGEMODE_HINT_FORMODE_0 = '#ingame_gui:siegeMode/hint/forMode/0'
+    SIEGEMODE_HINT_FORMODE_1 = '#ingame_gui:siegeMode/hint/forMode/1'
+    SIEGEMODE_HINT_FORMODE_2 = '#ingame_gui:siegeMode/hint/forMode/2'
+    SIEGEMODE_HINT_FORMODE_3 = '#ingame_gui:siegeMode/hint/forMode/3'
+    SIEGEMODE_HINT_NOBINDING = '#ingame_gui:siegeMode/hint/noBinding'
     CHAT_SHORTCUTS_ENUM = (CHAT_SHORTCUTS_TURN_BACK,
      CHAT_SHORTCUTS_SUPPORT_ME_WITH_FIRE,
      CHAT_SHORTCUTS_RELOADING_GUN,
@@ -525,6 +530,10 @@ class INGAME_GUI(object):
      EFFICIENCYRIBBONS_ASSISTTRACK,
      EFFICIENCYRIBBONS_ASSISTSPOT,
      EFFICIENCYRIBBONS_CRITS)
+    SIEGEMODE_HINT_FORMODE_ENUM = (SIEGEMODE_HINT_FORMODE_0,
+     SIEGEMODE_HINT_FORMODE_1,
+     SIEGEMODE_HINT_FORMODE_2,
+     SIEGEMODE_HINT_FORMODE_3)
 
     @classmethod
     def chat_shortcuts(cls, key0):
@@ -548,6 +557,15 @@ class INGAME_GUI(object):
     def efficiencyribbons(cls, key0):
         outcome = '#ingame_gui:efficiencyRibbons/{}'.format(key0)
         if outcome not in cls.EFFICIENCYRIBBONS_ENUM:
+            LOG_WARNING('Localization key "{}" not found'.format(outcome))
+            return None
+        else:
+            return outcome
+
+    @classmethod
+    def siegeModeHint(cls, mode):
+        outcome = '#ingame_gui:siegeMode/hint/forMode/{}'.format(mode)
+        if outcome not in cls.SIEGEMODE_HINT_FORMODE_ENUM:
             LOG_WARNING('Localization key "{}" not found'.format(outcome))
             return None
         else:

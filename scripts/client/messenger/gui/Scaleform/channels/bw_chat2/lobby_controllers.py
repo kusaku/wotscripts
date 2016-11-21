@@ -1,5 +1,5 @@
 # Embedded file name: scripts/client/messenger/gui/Scaleform/channels/bw_chat2/lobby_controllers.py
-from gui.prb_control.prb_helpers import PrbListener
+from gui.prb_control.entities.base.legacy.listener import ILegacyListener
 from gui.prb_control.settings import PREBATTLE_ROSTER
 from gui.shared import g_eventBus, EVENT_BUS_SCOPE
 from gui.shared.events import MessengerEvent
@@ -80,7 +80,7 @@ class LobbyChannelController(UnitChannelController):
             self._refreshMembersDP()
 
 
-class TrainingChannelController(LobbyChannelController, PrbListener):
+class TrainingChannelController(LobbyChannelController, ILegacyListener):
 
     def __init__(self, channel, mBuilder = None):
         super(TrainingChannelController, self).__init__(channel, mBuilder)
@@ -93,15 +93,15 @@ class TrainingChannelController(LobbyChannelController, PrbListener):
             self._buildMembersList()
         super(TrainingChannelController, self).setView(view)
 
-    def onPlayerAdded(self, functional, pInfo):
+    def onPlayerAdded(self, entity, playerInfo):
         self._channel.addMembers([BWMemberEntity(pInfo.dbID, pInfo.name)])
         self._refreshMembersDP()
 
-    def onPlayerRemoved(self, functional, pInfo):
+    def onPlayerRemoved(self, entity, playerInfo):
         self._channel.clearMembers()
         self._buildMembersList()
 
-    def onPlayerStateChanged(self, functional, roster, pInfo):
+    def onPlayerStateChanged(self, entity, roster, pInfo):
         if pInfo.isOffline():
             self._channel.removeMembers([pInfo.dbID])
             self._refreshMembersDP()
@@ -116,9 +116,9 @@ class TrainingChannelController(LobbyChannelController, PrbListener):
             self.stopPrbListening()
 
     def _buildMembersList(self):
-        if not self.prbFunctional:
+        if not self.prbEntity:
             return
-        rosters = self.prbFunctional.getRosters()
+        rosters = self.prbEntity.getRosters()
 
         def __convert(pInfo):
             return BWMemberEntity(pInfo.dbID, pInfo.name)

@@ -24,6 +24,10 @@ class EquipmentSound(object):
      1275: 'battle_equipment_1275'}
 
     @staticmethod
+    def getSounds():
+        return EquipmentSound._soundMap.values()
+
+    @staticmethod
     def playSound(ID):
         soundName = EquipmentSound._soundMap.get(ID, None)
         if soundName is not None:

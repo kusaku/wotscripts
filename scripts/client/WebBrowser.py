@@ -4,6 +4,7 @@ import urlparse
 from functools import reduce
 import BigWorld
 import Keys
+import helpers
 from gui.Scaleform.managers.Cursor import Cursor
 from Event import Event
 from debug_utils import _doLog, LOG_ERROR, LOG_CURRENT_EXCEPTION, LOG_DEBUG
@@ -64,7 +65,8 @@ class WebBrowser(object):
 
     def create(self):
         LOG_BROWSER('CREATE ', self.__baseUrl, self.__browserID)
-        self.__browser = BigWorld.createBrowser(self.__browserID)
+        clientLanguage = helpers.getClientLanguage()
+        self.__browser = BigWorld.createBrowser(self.__browserID, clientLanguage)
         if self.__browser is None:
             LOG_BROWSER('create() NO BROWSER WAS CREATED', self.__baseUrl)
             return

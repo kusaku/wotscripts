@@ -101,8 +101,10 @@ step changing or generator stop.
 Added stacktrace processing to give more clear error logs.
 ---------------------------------------------------------------------------
 """
+import os
+import types
 from functools import partial
-from debug_utils import LOG_WRAPPED_CURRENT_EXCEPTION
+from debug_utils import LOG_WRAPPED_CURRENT_EXCEPTION, LOG_ERROR
 CLEAR_TRACE = True
 
 class CallbackDispatcher(object):
@@ -165,7 +167,11 @@ else:
 def process(func, stepCallback = lambda stop: None):
 
     def wrapper(*args, **kwargs):
-        doCall(func, partial(CallbackDispatcher, func(*args, **kwargs), stepCallback))
+        generator = func(*args, **kwargs)
+        if not isinstance(generator, types.GeneratorType):
+            LOG_ERROR('Method %s from %s marked as process is not a generator!' % (func.__name__, os.path.relpath(func.func_code.co_filename)))
+            return generator
+        doCall(func, partial(CallbackDispatcher, generator, stepCallback))
 
     return wrapper
 

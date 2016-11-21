@@ -11,7 +11,6 @@ from gui.Scaleform.framework import ViewTypes
 from gui.app_loader import g_appLoader
 from gui.app_loader.decorators import sf_lobby
 from gui.app_loader.settings import GUI_GLOBAL_SPACE_ID as _SPACE_ID
-from gui.battle_control import g_sessionProvider
 from gui.battle_control.arena_info.interfaces import IArenaPeriodController
 from gui.battle_control.battle_constants import WinStatus
 from gui.shared import g_eventBus, events, EVENT_BUS_SCOPE
@@ -20,6 +19,8 @@ from gui.shared.utils.scheduled_notifications import PeriodicNotifier, Notifiabl
 from gui.sounds import filters as snd_filters
 from gui.sounds.sound_constants import SoundFilters, PLAYING_SOUND_CHECK_PERIOD
 from gui.sounds.sound_utils import SOUND_DEBUG
+from helpers import dependency
+from skeletons.gui.battle_session import IBattleSessionProvider
 
 def _getViewSoundEnv(view):
     """Check if view has '__sound_env__' attribute and return it.
@@ -278,20 +279,21 @@ class BattleSpaceEnv(SoundEnv, IArenaPeriodController):
     """Simple battle space sound environment, has logic to stop music event
     only after BEFOREBATTLE period on arena
     """
+    sessionProvider = dependency.descriptor(IBattleSessionProvider)
 
     def __init__(self, soundsCtrl):
         super(BattleSpaceEnv, self).__init__(soundsCtrl, 'battle', music=SoundEvent(_MC.MUSIC_EVENT_COMBAT_LOADING), ambient=SoundEvent(_MC.AMBIENT_EVENT_COMBAT))
 
     def start(self):
         super(BattleSpaceEnv, self).start()
-        g_sessionProvider.addArenaCtrl(self)
-        periodCtrl = g_sessionProvider.shared.arenaPeriod
+        self.sessionProvider.addArenaCtrl(self)
+        periodCtrl = self.sessionProvider.shared.arenaPeriod
         if periodCtrl is not None:
             self._updateBattleAmbient(periodCtrl.getPeriod())
         return
 
     def stop(self):
-        g_sessionProvider.removeArenaCtrl(self)
+        self.sessionProvider.removeArenaCtrl(self)
         super(BattleSpaceEnv, self).stop()
 
     def setPeriodInfo(self, period, endTime, length, additionalInfo, soundID):
@@ -395,13 +397,14 @@ class BattleResultsEnv(SoundEnv):
     _sounds = {WinStatus.WIN: SoundEvent(_MC.MUSIC_EVENT_COMBAT_VICTORY, checkFinish=True),
      WinStatus.DRAW: SoundEvent(_MC.MUSIC_EVENT_COMBAT_DRAW, checkFinish=True),
      WinStatus.LOSE: SoundEvent(_MC.MUSIC_EVENT_COMBAT_LOSE, checkFinish=True)}
+    sessionProvider = dependency.descriptor(IBattleSessionProvider)
 
     def __init__(self, soundsCtrl):
         super(BattleResultsEnv, self).__init__(soundsCtrl, 'battleResults')
 
     def start(self):
         super(BattleResultsEnv, self).start()
-        lastWinStatus = g_sessionProvider.getCtx().extractLastArenaWinStatus()
+        lastWinStatus = self.sessionProvider.getCtx().extractLastArenaWinStatus()
         if lastWinStatus is not None:
             SOUND_DEBUG('There is last arena win status need to be processed', lastWinStatus)
             self._music = self._sounds.get(lastWinStatus.getStatus(), EmptySound())
@@ -462,7 +465,8 @@ class GuiAmbientsCtrl(object):
         return
 
     def start(self):
-        self.app.loaderManager.onViewLoaded += self.__onViewLoaded
+        if self.app and self.app.loaderManager:
+            self.app.loaderManager.onViewLoaded += self.__onViewLoaded
 
     def stop(self, isDisconnected = False):
         if self.app and self.app.loaderManager:

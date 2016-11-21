@@ -1,19 +1,21 @@
 # Embedded file name: scripts/client/gui/Scaleform/managers/ColorSchemeManager.py
 import BigWorld
 import Math
-from gui.battle_control import g_sessionProvider
 from gui.Scaleform.framework.entities.abstract.ColorSchemeManagerMeta import ColorSchemeManagerMeta
 from gui.doc_loaders import GuiColorsLoader
+from helpers import dependency
+from skeletons.account_helpers.settings_core import ISettingsCore
+from skeletons.gui.battle_session import IBattleSessionProvider
 
 class ColorSchemeManager(ColorSchemeManagerMeta):
+    settingsCore = dependency.descriptor(ISettingsCore)
 
     def __init__(self):
         super(ColorSchemeManager, self).__init__()
         self.colors = GuiColorsLoader.load()
 
     def getColorGroup(self):
-        from account_helpers.settings_core.SettingsCore import g_settingsCore
-        if g_settingsCore.getSetting('isColorBlind'):
+        if self.settingsCore.getSetting('isColorBlind'):
             return 'color_blind'
         return 'default'
 
@@ -34,12 +36,10 @@ class ColorSchemeManager(ColorSchemeManagerMeta):
 
     def _populate(self):
         super(ColorSchemeManager, self)._populate()
-        from account_helpers.settings_core.SettingsCore import g_settingsCore
-        g_settingsCore.onSettingsChanged += self.__onAccountSettingsChange
+        self.settingsCore.onSettingsChanged += self.__onAccountSettingsChange
 
     def _dispose(self):
-        from account_helpers.settings_core.SettingsCore import g_settingsCore
-        g_settingsCore.onSettingsChanged -= self.__onAccountSettingsChange
+        self.settingsCore.onSettingsChanged -= self.__onAccountSettingsChange
         super(ColorSchemeManager, self)._dispose()
 
     @classmethod
@@ -60,6 +60,7 @@ class ColorSchemeManager(ColorSchemeManagerMeta):
 
 
 class BattleColorSchemeManager(ColorSchemeManager):
+    sessionProvider = dependency.descriptor(IBattleSessionProvider)
 
     def update(self):
         super(BattleColorSchemeManager, self).update()
@@ -69,9 +70,16 @@ class BattleColorSchemeManager(ColorSchemeManager):
         super(BattleColorSchemeManager, self)._populate()
         self.__set3DFlagsColors()
         self.__set3DFlagsEmblem()
+        from PlayerEvents import g_playerEvents
+        g_playerEvents.onTeamChanged += self.__onTeamChanged
+
+    def _dispose(self):
+        from PlayerEvents import g_playerEvents
+        g_playerEvents.onTeamChanged -= self.__onTeamChanged
+        super(BattleColorSchemeManager, self)._dispose()
 
     def __set3DFlagsColors(self):
-        arenaDP = g_sessionProvider.getArenaDP()
+        arenaDP = self.sessionProvider.getArenaDP()
         teamsOnArena = arenaDP.getTeamsOnArena()
         group = self.getColorGroup()
         allyColor = self.colors.getSubScheme('flag_team_green', group)['rgba']
@@ -81,7 +89,10 @@ class BattleColorSchemeManager(ColorSchemeManager):
             BigWorld.wg_setFlagColor(teamIdx, color / 255)
 
     def __set3DFlagsEmblem(self):
-        arenaDP = g_sessionProvider.getArenaDP()
+        arenaDP = self.sessionProvider.getArenaDP()
         teamsOnArena = arenaDP.getTeamsOnArena()
         for teamIdx in [0] + teamsOnArena:
             BigWorld.wg_setFlagEmblem(teamIdx, 'system/maps/wg_emblem.dds', Math.Vector4(0.0, 0.1, 0.5, 0.9))
+
+    def __onTeamChanged(self, teamID):
+        self.__set3DFlagsColors()

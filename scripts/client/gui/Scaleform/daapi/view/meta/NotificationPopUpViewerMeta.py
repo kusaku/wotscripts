@@ -47,13 +47,6 @@ class NotificationPopUpViewerMeta(BaseDAAPIComponent):
         if self._isDAAPIInited():
             return self.flashObject.as_removeAllMessages()
 
-    def as_layoutInfoS(self, data):
-        """
-        :param data: Represented by LayoutInfoVO (AS)
-        """
-        if self._isDAAPIInited():
-            return self.flashObject.as_layoutInfo(data)
-
     def as_initInfoS(self, maxMessagessCount, padding):
         if self._isDAAPIInited():
             return self.flashObject.as_initInfo(maxMessagessCount, padding)

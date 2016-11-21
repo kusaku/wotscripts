@@ -45,6 +45,9 @@ class CyberSportUnitsListMeta(BaseRallyListView):
             return self.flashObject.as_setDummyVisible(visible)
 
     def as_setSearchResultTextS(self, text, descrText, filterData):
+        """
+        :param filterData: Represented by CheckBoxIconVO (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_setSearchResultText(text, descrText, filterData)
 

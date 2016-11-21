@@ -3,6 +3,7 @@ from collections import namedtuple
 import math
 from AvatarInputHandler import mathUtils
 import BigWorld
+from AvatarInputHandler.aih_constants import CTRL_MODE_NAME
 from CTFManager import g_ctfManager
 import Event
 import MapActivities
@@ -10,7 +11,7 @@ from Math import Vector3
 import Math
 import ResMgr
 import constants
-from constants import ARENA_BONUS_TYPE_CAPS as caps
+from arena_bonus_type_caps import ARENA_BONUS_TYPE_CAPS as caps
 from debug_utils import LOG_DEBUG, LOG_ERROR
 from helpers import EffectsList
 from helpers.CallbackDelayer import CallbackDelayer
@@ -122,7 +123,7 @@ class GasCloud(object):
             d = Flock.DebugGizmo(BigWorld.player().spaceID, 'helpers/models/unit_cube.model')
             d.motor.signal = self.__cloud.cloudMatrixProvider
         ctrlName = BigWorld.player().inputHandler.ctrlModeName
-        self.__cloud.enableEdgeFogEffects = ctrlName != 'postmortem' or BigWorld.player().vehicle is not None
+        self.__cloud.enableEdgeFogEffects = ctrlName != CTRL_MODE_NAME.POSTMORTEM or BigWorld.player().vehicle is not None
         BigWorld.player().inputHandler.onPostmortemVehicleChanged += self.__onPostmortemVehicleChanged
         return
 
@@ -368,7 +369,7 @@ def gasAttackManager():
 
 def initAttackManager(arena):
     global _g_instance
-    visual = caps.get(arena.bonusType) & caps.GAS_ATTACK_MECHANICS > 0 and arena.arenaType.gameplayName in ('fallout', 'fallout2', 'fallout3') and getattr(arena.arenaType, 'gasAttackVisual', None)
+    visual = caps.checkAny(arena.bonusType, caps.GAS_ATTACK_MECHANICS) and arena.arenaType.gameplayName in ('fallout', 'fallout2', 'fallout3') and getattr(arena.arenaType, 'gasAttackVisual', None)
     if not visual is not None:
         raise AssertionError('Gas attack visual should be defined for arena bonus type: %d' % arena.bonusType)
         _g_instance = GasAttackManager(visual)

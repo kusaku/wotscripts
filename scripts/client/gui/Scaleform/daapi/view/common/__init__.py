@@ -12,6 +12,7 @@ def getContextMenuHandlers():
 def getViewSettings():
     from gui.Scaleform.daapi.view.common.report_bug import ReportBugPanel
     from gui.Scaleform.daapi.view.common.settings import SettingsWindow
+    from gui.Scaleform.daapi.view.common.settings.acoustic_popover import AcousticPopover
     from gui.Scaleform.daapi.view.dialogs.SimpleDialog import SimpleDialog
     from gui.Scaleform.framework.WaitingView import WaitingView
     from gui.Scaleform.managers.Cursor import Cursor
@@ -19,7 +20,8 @@ def getViewSettings():
      ViewSettings(VIEW_ALIAS.WAITING, WaitingView, 'waiting.swf', ViewTypes.WAITING, None, ScopeTemplates.GLOBAL_SCOPE),
      ViewSettings(VIEW_ALIAS.REPORT_BUG, ReportBugPanel, None, ViewTypes.COMPONENT, None, ScopeTemplates.DEFAULT_SCOPE),
      GroupedViewSettings(VIEW_ALIAS.SIMPLE_DIALOG, SimpleDialog, 'simpleDialog.swf', ViewTypes.TOP_WINDOW, '', None, ScopeTemplates.DYNAMIC_SCOPE),
-     GroupedViewSettings(VIEW_ALIAS.SETTINGS_WINDOW, SettingsWindow, 'settingsWindow.swf', ViewTypes.TOP_WINDOW, 'settingsWindow', None, ScopeTemplates.DEFAULT_SCOPE))
+     GroupedViewSettings(VIEW_ALIAS.SETTINGS_WINDOW, SettingsWindow, 'settingsWindow.swf', ViewTypes.TOP_WINDOW, 'settingsWindow', None, ScopeTemplates.DEFAULT_SCOPE),
+     GroupedViewSettings(VIEW_ALIAS.ACOUSTIC_POPOVER, AcousticPopover, 'acousticPopover.swf', ViewTypes.TOP_WINDOW, VIEW_ALIAS.ACOUSTIC_POPOVER, VIEW_ALIAS.ACOUSTIC_POPOVER, ScopeTemplates.DEFAULT_SCOPE))
 
 
 def getBusinessHandlers():

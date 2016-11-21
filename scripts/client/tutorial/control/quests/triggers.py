@@ -4,8 +4,9 @@ from account_helpers.AccountSettings import AccountSettings
 from account_helpers.settings_core.ServerSettingsManager import SETTINGS_SECTIONS
 from gui.shared import g_eventBus, events
 from gui.shared.event_bus import EVENT_BUS_SCOPE
+from helpers import dependency
+from skeletons.account_helpers.settings_core import ISettingsCore
 from tutorial import doc_loader
-from account_helpers.settings_core.SettingsCore import g_settingsCore
 from gui.ClientUpdateManager import g_clientUpdateManager
 from gui.Scaleform.daapi.view.lobby.techtree.techtree_dp import g_techTreeDP
 from gui.shared.ItemsCache import g_itemsCache
@@ -258,19 +259,20 @@ class VehicleBattleCountTrigger(TriggerWithValidateVar):
 
 
 class TutorialIntSettingsTrigger(TriggerWithValidateVar):
+    settingsCore = dependency.descriptor(ISettingsCore)
 
     def run(self):
         self.isRunning = True
         if not self.isSubscribed:
             self.isSubscribed = True
-            g_settingsCore.onSettingsChanged += self.__onSettingsChanged
+            self.settingsCore.onSettingsChanged += self.__onSettingsChanged
         self.toggle(isOn=self.isOn())
 
     def isOn(self):
-        return g_settingsCore.serverSettings.getSectionSettings(SETTINGS_SECTIONS.TUTORIAL, self.getVar(), False)
+        return self.settingsCore.serverSettings.getSectionSettings(SETTINGS_SECTIONS.TUTORIAL, self.getVar(), False)
 
     def clear(self):
-        g_settingsCore.onSettingsChanged -= self.__onSettingsChanged
+        self.settingsCore.onSettingsChanged -= self.__onSettingsChanged
         self.isSubscribed = False
         self.isRunning = False
 

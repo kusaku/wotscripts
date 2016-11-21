@@ -3,6 +3,8 @@ import struct
 import weakref
 from debug_utils import LOG_ERROR
 from gui.battle_control.battle_constants import CACHE_RECORDS_IDS
+from helpers import dependency
+from skeletons.gui.battle_session import IBattleSessionProvider
 _IGNORE_LIST_SIZE_FORMAT = '<B'
 _IGNORE_LIST_FORMAT = '{}L'
 _IGNORE_LIST_RECORD_FORMAT = _IGNORE_LIST_SIZE_FORMAT + _IGNORE_LIST_FORMAT
@@ -22,6 +24,7 @@ class AbstractCacheRecord(object):
     
     Note: remember about security and do NOT cache private data!
     """
+    sessionProvider = dependency.descriptor(IBattleSessionProvider)
 
     def __init__(self, cache):
         super(AbstractCacheRecord, self).__init__()
@@ -33,8 +36,7 @@ class AbstractCacheRecord(object):
         Returns instance of cache record.
         :return: AbstractCacheRecord derived instance
         """
-        from gui.battle_control import g_sessionProvider
-        return g_sessionProvider.battleCache.getRecord(cls)
+        return cls.sessionProvider.battleCache.getRecord(cls)
 
     @classmethod
     def getRecordID(cls):

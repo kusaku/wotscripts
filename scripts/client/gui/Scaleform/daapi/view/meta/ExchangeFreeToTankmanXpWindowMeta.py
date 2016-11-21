@@ -19,10 +19,16 @@ class ExchangeFreeToTankmanXpWindowMeta(AbstractWindowView):
         self._printOverrideError('calcValueRequest')
 
     def as_setInitDataS(self, value):
+        """
+        :param value: Represented by ExchangeFreeToTankmanInitVO (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_setInitData(value)
 
     def as_setCalcValueResponseS(self, price, actionPriceData):
+        """
+        :param actionPriceData: Represented by ActionPriceVO (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_setCalcValueResponse(price, actionPriceData)
 

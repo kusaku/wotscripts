@@ -554,9 +554,6 @@ class ACHIEVEMENTS(object):
     BANNERMAN = '#achievements:bannerman'
     BANNERMAN_DESCR = '#achievements:bannerman_descr'
     BANNERMAN_CONDITION = '#achievements:bannerman_condition'
-    SAURONEYE = '#achievements:sauronEye'
-    SAURONEYE_DESCR = '#achievements:sauronEye_descr'
-    SAURONEYE_CONDITION = '#achievements:sauronEye_condition'
     MARKIPROTECTOR = '#achievements:markIProtector'
     MARKIPROTECTOR_DESCR = '#achievements:markIProtector_descr'
     MARKIPROTECTOR_CONDITION = '#achievements:markIProtector_condition'
@@ -1182,9 +1179,6 @@ class ACHIEVEMENTS(object):
      BANNERMAN,
      BANNERMAN_DESCR,
      BANNERMAN_CONDITION,
-     SAURONEYE,
-     SAURONEYE_DESCR,
-     SAURONEYE_CONDITION,
      MARKIPROTECTOR,
      MARKIPROTECTOR_DESCR,
      MARKIPROTECTOR_CONDITION,

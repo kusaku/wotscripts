@@ -51,6 +51,18 @@ class BattleEntry(IGUIEntry):
     def enableRecord(self, enable):
         self.__enableRecord = enable
 
+    def init(self):
+        super(BattleEntry, self).init()
+        addListener = g_eventBus.addListener
+        addListener(ChannelManagementEvent.REGISTER_BATTLE, self.__handleRegisterBattleView, scope=EVENT_BUS_SCOPE.BATTLE)
+        addListener(ChannelManagementEvent.UNREGISTER_BATTLE, self.__handleUnregisterBattleView, scope=EVENT_BUS_SCOPE.BATTLE)
+
+    def clear(self):
+        removeListener = g_eventBus.removeListener
+        removeListener(ChannelManagementEvent.REGISTER_BATTLE, self.__handleRegisterBattleView, scope=EVENT_BUS_SCOPE.BATTLE)
+        removeListener(ChannelManagementEvent.UNREGISTER_BATTLE, self.__handleUnregisterBattleView, scope=EVENT_BUS_SCOPE.BATTLE)
+        super(BattleEntry, self).clear()
+
     def show(self):
         g_messengerEvents.channels.onMessageReceived += self.__me_onMessageReceived
         g_messengerEvents.channels.onCommandReceived += self.__me_onCommandReceived
@@ -63,8 +75,6 @@ class BattleEntry(IGUIEntry):
         self.__focused = False
         addListener = g_eventBus.addListener
         addListener(MessengerEvent.BATTLE_CHANNEL_CTRL_INITED, self.__handleChannelControllerInited, scope=EVENT_BUS_SCOPE.BATTLE)
-        addListener(ChannelManagementEvent.REGISTER_BATTLE, self.__handleRegisterBattleView, scope=EVENT_BUS_SCOPE.BATTLE)
-        addListener(ChannelManagementEvent.UNREGISTER_BATTLE, self.__handleUnregisterBattleView, scope=EVENT_BUS_SCOPE.BATTLE)
         self.__channelsCtrl = channels.BattleControllers()
         self.__channelsCtrl.init()
 
@@ -84,8 +94,6 @@ class BattleEntry(IGUIEntry):
             self.__channelsCtrl = None
         removeListener = g_eventBus.removeListener
         removeListener(MessengerEvent.BATTLE_CHANNEL_CTRL_INITED, self.__handleChannelControllerInited, scope=EVENT_BUS_SCOPE.BATTLE)
-        removeListener(ChannelManagementEvent.REGISTER_BATTLE, self.__handleRegisterBattleView, scope=EVENT_BUS_SCOPE.BATTLE)
-        removeListener(ChannelManagementEvent.UNREGISTER_BATTLE, self.__handleUnregisterBattleView, scope=EVENT_BUS_SCOPE.BATTLE)
         self.__view = lambda : None
         return
 

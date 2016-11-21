@@ -4,8 +4,9 @@ from adisp import async
 from gui.ClientUpdateManager import g_clientUpdateManager
 from gui.shared.utils.requesters.IntSettingsRequester import IntSettingsRequester
 from account_helpers.settings_core.settings_constants import VERSION
+from skeletons.account_helpers.settings_core import ISettingsCache
 
-class _SettingsCache(object):
+class SettingsCache(ISettingsCache):
 
     def __init__(self):
         self.__intSettings = IntSettingsRequester()
@@ -68,6 +69,3 @@ class _SettingsCache(object):
             cbWrapper(dict())
             return
         self.__intSettings.request()(cbWrapper)
-
-
-g_settingsCache = _SettingsCache()

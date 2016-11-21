@@ -22,5 +22,8 @@ class TrainingFormMeta(View):
         self._printOverrideError('onLeave')
 
     def as_setListS(self, data):
+        """
+        :param data: Represented by TrainingFormVO (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_setList(data)

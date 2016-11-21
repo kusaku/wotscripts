@@ -35,7 +35,6 @@ class ProjectileMover(object):
         self.__ballistics = BigWorld.PyBallisticsSimulator(lambda start, end: BigWorld.player().arena.collideWithSpaceBB(start, end), self.__killProjectile, self.__deleteProjectile)
         if self.__ballistics is not None:
             self.__ballistics.setFixedBallisticsParams(self.__PROJECTILE_HIDING_TIME, self.__PROJECTILE_TIME_AFTER_DEATH, self.__AUTO_SCALE_DISTANCE, constants.SERVER_TICK_LENGTH)
-            self.__ballistics.setVariableBallisticsParams(BigWorld.player().spaceID)
         BigWorld.player().inputHandler.onCameraChanged += self.__onCameraChanged
         return
 
@@ -121,6 +120,10 @@ class ProjectileMover(object):
 
     def hold(self, shotID):
         self.__ballistics.holdProjectile(shotID)
+
+    def setSpaceID(self, spaceID):
+        if self.__ballistics:
+            self.__ballistics.setVariableBallisticsParams(spaceID)
 
     def __notifyProjectileHit(self, hitPosition, proj):
         caliber = proj['effectsDescr']['caliber']

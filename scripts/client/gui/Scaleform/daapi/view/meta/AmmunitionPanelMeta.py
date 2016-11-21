@@ -19,6 +19,9 @@ class AmmunitionPanelMeta(ModulesPanelMeta):
         self._printOverrideError('toRentContinue')
 
     def as_setAmmoS(self, shells, stateWarning):
+        """
+        :param shells: Represented by Vector.<ShellButtonVO> (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_setAmmo(shells, stateWarning)
 

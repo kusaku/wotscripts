@@ -313,7 +313,7 @@ DEFAULT_VALUES = {KEY_FILTERS: {STORE_TAB: 0,
                 'nationalVoices': False,
                 'enableVoIP': True,
                 'replayEnabled': 1,
-                'players_panel': {'state': 'medium',
+                'players_panel': {'state': 2,
                                   'showLevels': True,
                                   'showTypes': True},
                 'gameplayMask': gameplay_ctx.getDefaultMask(),
@@ -354,6 +354,7 @@ DEFAULT_VALUES = {KEY_FILTERS: {STORE_TAB: 0,
                 'bulbVoices': 'lightbulb',
                 PREVIEW_INFO_PANEL_IDX: 0,
                 'carouselType': 0,
+                'siegeModeHintCounter': 3,
                 NEW_SETTINGS_COUNTER: {'FeedbackSettings0': True,
                                        'FeedbackSettings1': True,
                                        'FeedbackSettings2': True,
@@ -375,7 +376,7 @@ def _unpack(value):
 
 class AccountSettings(object):
     onSettingsChanging = Event.Event()
-    version = 26
+    version = 27
     __cache = {'login': None,
      'section': None}
     __isFirstRun = True
@@ -679,6 +680,22 @@ class AccountSettings(object):
                 for key, section in _filterAccountSection(ads):
                     AccountSettings.__readSection(section, KEY_SETTINGS).deleteSection('new_customization_items')
                     AccountSettings.__readSection(section, KEY_SETTINGS).deleteSection('statsSortingEvent')
+
+            if currVersion < 27:
+                legacyToNewMode = {'hidden': 0,
+                 'short': 1,
+                 'medium': 2,
+                 'medium2': 3,
+                 'large': 4}
+                for key, section in _filterAccountSection(ads):
+                    settingsSection = AccountSettings.__readSection(section, KEY_SETTINGS)
+                    if 'players_panel' in settingsSection.keys():
+                        panelSettings = _unpack(settingsSection['players_panel'].asString)
+                        if 'state' in panelSettings:
+                            presentMode = panelSettings['state']
+                            if presentMode in legacyToNewMode.keys():
+                                panelSettings['state'] = legacyToNewMode[presentMode]
+                                settingsSection.write('players_panel', _pack(panelSettings))
 
             ads.writeInt('version', AccountSettings.version)
         return

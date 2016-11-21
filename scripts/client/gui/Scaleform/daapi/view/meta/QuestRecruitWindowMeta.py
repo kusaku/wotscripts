@@ -13,5 +13,8 @@ class QuestRecruitWindowMeta(AbstractWindowView):
         self._printOverrideError('onApply')
 
     def as_setInitDataS(self, data):
+        """
+        :param data: Represented by TankmanCardVO (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_setInitData(data)

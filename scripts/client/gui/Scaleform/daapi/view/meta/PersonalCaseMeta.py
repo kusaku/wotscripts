@@ -49,6 +49,9 @@ class PersonalCaseMeta(AbstractWindowView):
         self._printOverrideError('openChangeRoleWindow')
 
     def as_setCommonDataS(self, data):
+        """
+        :param data: Represented by PersonalCaseModel (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_setCommonData(data)
 
@@ -57,6 +60,9 @@ class PersonalCaseMeta(AbstractWindowView):
             return self.flashObject.as_setDossierData(data)
 
     def as_setRetrainingDataS(self, data):
+        """
+        :param data: Represented by PersonalCaseRetrainingModel (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_setRetrainingData(data)
 
@@ -65,5 +71,8 @@ class PersonalCaseMeta(AbstractWindowView):
             return self.flashObject.as_setSkillsData(data)
 
     def as_setDocumentsDataS(self, data):
+        """
+        :param data: Represented by PersonalCaseDocsModel (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_setDocumentsData(data)

@@ -2,5 +2,8 @@
 import pointcuts as _pointcuts
 
 def configure_pointcuts():
-    _pointcuts.DisableAcceptButton()
-    _pointcuts.InvitationText()
+    _pointcuts.PrbDisableAcceptButton()
+    _pointcuts.PrbInvitationText()
+    _pointcuts.ClubDisableAcceptButton()
+    _pointcuts.ClubInvitationText()
+    _pointcuts.ClubInvitationComment()

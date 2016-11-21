@@ -7,10 +7,11 @@ from VOIP.voip_constants import VOIP_SUPPORTED_API
 from debug_utils import LOG_WARNING
 from adisp import async, process
 from gui import GUI_SETTINGS
+from helpers import dependency
 from messenger.proto.events import g_messengerEvents
 from messenger.proto.interfaces import IVOIPChatController
-from account_helpers.settings_core.SettingsCore import g_settingsCore
 from account_helpers.settings_core.settings_constants import SOUND
+from skeletons.account_helpers.settings_core import ISettingsCore
 
 class VOIPChatController(IVOIPChatController):
     """
@@ -20,6 +21,7 @@ class VOIPChatController(IVOIPChatController):
     and allows to request, check or invalidate some states.
     """
     __slots__ = ('__callbacks', '__captureDevicesCallbacks')
+    settingsCore = dependency.descriptor(ISettingsCore)
 
     def __init__(self):
         """
@@ -142,10 +144,11 @@ class VOIPChatController(IVOIPChatController):
             LOG_WARNING('RequestCaptureDevices. Vivox has not been initialized')
             callback([])
             return
+        options = self.settingsCore.options
 
         def resetCapturedDevice(devices, firstTime = firstTime):
             if firstTime:
-                option = g_settingsCore.options.getSetting(SOUND.CAPTURE_DEVICES)
+                option = options.getSetting(SOUND.CAPTURE_DEVICES)
                 option.apply(option.get(), firstTime)
             callback(devices)
 
@@ -175,7 +178,7 @@ class VOIPChatController(IVOIPChatController):
         :param callback: pass callback to get results
         """
         if self.isReady():
-            vOIPSetting = g_settingsCore.options.getSetting('enableVoIP')
+            vOIPSetting = self.settingsCore.options.getSetting('enableVoIP')
             vOIPSetting.initFromPref()
             callback(True)
             return
@@ -186,7 +189,7 @@ class VOIPChatController(IVOIPChatController):
         voipMgr = VOIP.getVOIPManager()
         if voipMgr.isNotInitialized():
             voipMgr.initialize(domain)
-        vOIPSetting = g_settingsCore.options.getSetting('enableVoIP')
+        vOIPSetting = self.settingsCore.options.getSetting('enableVoIP')
         vOIPSetting.initFromPref()
 
     def __initResponse(self, _):

@@ -24,6 +24,9 @@ class BaseContactViewMeta(BaseDAAPIComponent):
             return self.flashObject.as_setOkBtnEnabled(isEnabled)
 
     def as_setInitDataS(self, data):
+        """
+        :param data: Represented by ContactsViewInitDataVO (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_setInitData(data)
 

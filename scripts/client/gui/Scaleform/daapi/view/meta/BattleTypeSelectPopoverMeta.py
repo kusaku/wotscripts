@@ -19,6 +19,9 @@ class BattleTypeSelectPopoverMeta(SmartPopOverView):
         self._printOverrideError('getTooltipData')
 
     def as_updateS(self, items, isShowDemonstrator, demonstratorEnabled):
+        """
+        :param items: Represented by DataProvider (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_update(items, isShowDemonstrator, demonstratorEnabled)
 

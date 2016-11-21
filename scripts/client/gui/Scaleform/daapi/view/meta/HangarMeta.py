@@ -18,9 +18,6 @@ class HangarMeta(View):
     def closeHelpLayout(self):
         self._printOverrideError('closeHelpLayout')
 
-    def toggleGUIEditor(self):
-        self._printOverrideError('toggleGUIEditor')
-
     def as_setCrewEnabledS(self, value):
         if self._isDAAPIInited():
             return self.flashObject.as_setCrewEnabled(value)

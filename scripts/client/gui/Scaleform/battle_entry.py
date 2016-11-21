@@ -3,8 +3,6 @@ import weakref
 import BigWorld
 from gui import DEPTH_OF_Battle
 from gui.Scaleform import SCALEFORM_SWF_PATH_V3
-from gui.Scaleform.daapi.view.battle.shared.crosshair_panel import CrosshairPanel
-from gui.Scaleform.daapi.view.battle.shared.markers2d.manager import MarkersManager
 from gui.Scaleform.framework import ViewTypes
 from gui.Scaleform.framework.ToolTip import ToolTip
 from gui.Scaleform.framework.application import SFApplication, DAAPIRootBridge
@@ -15,11 +13,14 @@ from gui.Scaleform.framework.managers.containers import PopUpContainer
 from gui.Scaleform.framework.managers.context_menu import ContextMenuManager
 from gui.Scaleform.managers.ColorSchemeManager import BattleColorSchemeManager
 from gui.Scaleform.managers.GlobalVarsManager import GlobalVarsManager
+from gui.Scaleform.managers.PopoverManager import PopoverManager
 from gui.Scaleform.managers.SoundManager import SoundManager
+from gui.Scaleform.managers.TweenSystem import TweenManager
 from gui.Scaleform.managers.UtilsManager import UtilsManager
-from gui.Scaleform.managers.voice_chat import BattleVoiceChatManager
 from gui.Scaleform.managers.battle_input import BattleGameInputMgr
+from gui.Scaleform.managers.voice_chat import BattleVoiceChatManager
 from gui.app_loader.settings import GUI_GLOBAL_SPACE_ID
+from gui.shared import EVENT_BUS_SCOPE
 
 class TopWindowContainer(PopUpContainer):
 
@@ -49,8 +50,6 @@ class BattleEntry(SFApplication):
 
     def __init__(self, appNS):
         super(BattleEntry, self).__init__('battle.swf', appNS, DAAPIRootBridge(initCallback='registerBattleTest'))
-        self.__markers2D = None
-        self.__crosshairPanel = None
         self.__input = None
         return
 
@@ -58,30 +57,12 @@ class BattleEntry(SFApplication):
     def cursorMgr(self):
         return self.__getCursorFromContainer()
 
-    @property
-    def markersManager(self):
-        return self.__markers2D
-
-    @property
-    def crosshairPanel(self):
-        return self.__crosshairPanel
-
     def afterCreate(self):
         super(BattleEntry, self).afterCreate()
-        self.__markers2D = MarkersManager(self.proxy)
-        self.__markers2D.active(True)
-        self.__crosshairPanel = CrosshairPanel()
-        self.__crosshairPanel.active(True)
         self.__input = BattleGameInputMgr()
         self.__input.start()
 
     def beforeDelete(self):
-        if self.__markers2D is not None:
-            self.__markers2D.close()
-            self.__markers2D = None
-        if self.__crosshairPanel is not None:
-            self.__crosshairPanel.close()
-            self.__crosshairPanel = None
         if self.__input is not None:
             self.__input.stop()
             self.__input = None
@@ -129,7 +110,9 @@ class BattleEntry(SFApplication):
         return ContainerManager(self._loaderMgr, DefaultContainer(ViewTypes.DEFAULT), DefaultContainer(ViewTypes.CURSOR), PopUpContainer(ViewTypes.WINDOW), TopWindowContainer(ViewTypes.TOP_WINDOW, weakref.proxy(self)))
 
     def _createToolTipManager(self):
-        return ToolTip(GUI_GLOBAL_SPACE_ID.BATTLE_LOADING)
+        tooltip = ToolTip(GUI_GLOBAL_SPACE_ID.BATTLE_LOADING)
+        tooltip.setEnvironment(self)
+        return tooltip
 
     def _createGlobalVarsManager(self):
         return GlobalVarsManager()
@@ -152,6 +135,12 @@ class BattleEntry(SFApplication):
     def _createTutorialManager(self):
         return TutorialManager(None, False, {})
 
+    def _createPopoverManager(self):
+        return PopoverManager(EVENT_BUS_SCOPE.BATTLE)
+
+    def _createTweenManager(self):
+        return TweenManager()
+
     def _setup(self):
         self.component.wg_inputKeyMode = 1
         self.component.position.z = DEPTH_OF_Battle
@@ -163,7 +152,7 @@ class BattleEntry(SFApplication):
         pass
 
     def _getRequiredLibraries(self):
-        return ('windows.swf', 'common_i18n.swf', 'guiControlsLobbyBattleDynamic.swf', 'guiControlsLoginBattleDynamic.swf', 'battleMessages.swf')
+        return ('windows.swf', 'common_i18n.swf', 'popovers.swf', 'guiControlsLobbyBattleDynamic.swf', 'guiControlsLoginBattleDynamic.swf', 'battleMessages.swf')
 
     def __getCursorFromContainer(self):
         if self._containerMgr is not None:

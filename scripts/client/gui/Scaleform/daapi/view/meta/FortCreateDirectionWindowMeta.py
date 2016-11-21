@@ -24,5 +24,8 @@ class FortCreateDirectionWindowMeta(AbstractWindowView):
             return self.flashObject.as_setupButton(enabled, visible, tooltip)
 
     def as_setDirectionsS(self, data):
+        """
+        :param data: Represented by Vector.<DirectionVO> (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_setDirections(data)

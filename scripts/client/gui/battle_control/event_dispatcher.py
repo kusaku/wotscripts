@@ -57,5 +57,9 @@ def toggleCrosshairVisibility():
     g_eventBus.handleEvent(GameEvent(GameEvent.CROSSHAIR_VISIBILITY), scope=_SCOPE)
 
 
+def toggleGunMarkerVisibility():
+    g_eventBus.handleEvent(GameEvent(GameEvent.GUN_MARKER_VISIBILITY), scope=_SCOPE)
+
+
 def overrideCrosshairView(newMode):
     g_eventBus.handleEvent(GameEvent(GameEvent.CROSSHAIR_VIEW, {'ctrlMode': newMode}), scope=_SCOPE)

@@ -16,10 +16,17 @@ class VehicleSelectorPopupMeta(AbstractWindowView):
         self._printOverrideError('onSelectVehicles')
 
     def as_setFiltersDataS(self, data):
+        """
+        :param data: Represented by VehicleSelectorFilterVO (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_setFiltersData(data)
 
     def as_setListDataS(self, listData, selectedItems):
+        """
+        :param listData: Represented by DataProvider (AS)
+        :param selectedItems: Represented by Array (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_setListData(listData, selectedItems)
 

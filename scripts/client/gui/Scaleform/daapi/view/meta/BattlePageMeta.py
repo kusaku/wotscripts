@@ -18,6 +18,10 @@ class BattlePageMeta(View):
             return self.flashObject.as_setPostmortemTipsVisible(value)
 
     def as_setComponentsVisibilityS(self, visible, hidden):
+        """
+        :param visible: Represented by Vector.<String> (AS)
+        :param hidden: Represented by Vector.<String> (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_setComponentsVisibility(visible, hidden)
 

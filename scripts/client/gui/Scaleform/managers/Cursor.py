@@ -23,7 +23,6 @@ class Cursor(CursorMeta, View):
 
     def __init__(self):
         super(Cursor, self).__init__()
-        self.__isActivated = False
         self.__savedMCursorPos = None
         return
 
@@ -40,22 +39,24 @@ class Cursor(CursorMeta, View):
                 self.show()
             else:
                 self.hide()
-            mcursor = self.__isActivated or GUI.mcursor()
-            mcursor.visible = False
+            mcursor = GUI.mcursor()
+            mcursor.visible = mcursor.active or False
             mouseLeft, mouseTop = mcursor.position
             self.__saveDeviceMousePosition(mouseLeft, mouseTop)
             LOG_DEBUG('Cursor is attached')
             BigWorld.setCursor(mcursor)
-            self.__isActivated = True
 
     def detachCursor(self):
         """
         Mouse cursor detach and give control camera.
         """
-        if self.__isActivated:
+        mcursor = GUI.mcursor()
+        if mcursor.active:
             LOG_DEBUG('Cursor is detached')
+            if self.__savedMCursorPos is not None:
+                left, top = self.__savedMCursorPos
+                GUI.syncMousePosition(left, top)
             BigWorld.setCursor(None)
-            self.__isActivated = False
         self.hide()
         BigWorld.callback(0.0, self.__restoreDeviceMousePosition)
         return

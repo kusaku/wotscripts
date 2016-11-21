@@ -16,5 +16,8 @@ class BattleSessionListMeta(AbstractWindowView):
         self._printOverrideError('getClientID')
 
     def as_refreshListS(self, data):
+        """
+        :param data: Represented by DataProvider (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_refreshList(data)

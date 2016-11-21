@@ -23,6 +23,9 @@ class RallyMainWindowWithSearchMeta(BaseRallyMainWindow):
             return self.flashObject.as_autoSearchEnableBtn(value)
 
     def as_changeAutoSearchStateS(self, value):
+        """
+        :param value: Represented by AutoSearchVO (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_changeAutoSearchState(value)
 

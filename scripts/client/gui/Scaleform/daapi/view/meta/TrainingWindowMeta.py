@@ -13,5 +13,8 @@ class TrainingWindowMeta(AbstractWindowView):
         self._printOverrideError('updateTrainingRoom')
 
     def as_setDataS(self, info, mapsData):
+        """
+        :param info: Represented by TrainingWindowVO (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_setData(info, mapsData)

@@ -7,7 +7,6 @@ import constants
 import account_helpers
 import ArenaType
 import BigWorld
-from gui.server_events.EventsCache import g_eventsCache
 import potapov_quests
 from FortifiedRegionBase import FORT_ATTACK_RESULT, NOT_ACTIVATED
 from adisp import async, process
@@ -16,6 +15,7 @@ from club_shared import ladderRating
 from debug_utils import LOG_ERROR, LOG_WARNING, LOG_CURRENT_EXCEPTION, LOG_DEBUG
 from gui.Scaleform.locale.ITEM_TYPES import ITEM_TYPES
 from gui.Scaleform.locale.SYSTEM_MESSAGES import SYSTEM_MESSAGES
+from helpers import dependency
 from shared_utils import BoundMethodWeakref, findFirst
 from gui.goodies import g_goodiesCache
 from gui.shared.formatters import text_styles
@@ -37,7 +37,7 @@ from gui.shared.gui_items.Vehicle import getUserName
 from gui.shared.money import Money, ZERO_MONEY, Currency
 from gui.shared.formatters.currency import getBWFormatter
 from gui.prb_control.formatters import getPrebattleFullDescription
-from gui.prb_control.prb_helpers import prbInvitesProperty
+from gui.prb_control import prbInvitesProperty
 from helpers import i18n, html, getClientLanguage, getLocalizedData
 from helpers import time_utils
 from items import getTypeInfoByIndex, getTypeInfoByName, vehicles as vehicles_core
@@ -51,6 +51,7 @@ from messenger.m_constants import MESSENGER_I18N_FILE
 from predefined_hosts import g_preDefinedHosts
 from constants import INVOICE_ASSET, AUTO_MAINTENANCE_TYPE, PREBATTLE_INVITE_STATE, AUTO_MAINTENANCE_RESULT, PREBATTLE_TYPE, FINISH_REASON, KICK_REASON_NAMES, KICK_REASON, NC_MESSAGE_TYPE, NC_MESSAGE_PRIORITY, SYS_MESSAGE_CLAN_EVENT, SYS_MESSAGE_CLAN_EVENT_NAMES, SYS_MESSAGE_FORT_EVENT, SYS_MESSAGE_FORT_EVENT_NAMES, FORT_BUILDING_TYPE, FORT_ORDER_TYPE, FORT_BUILDING_TYPE_NAMES, ARENA_GUI_TYPE, EVENT_TYPE
 from messenger.formatters import TimeFormatter, NCContextItemFormatter
+from skeletons.gui.server_events import IEventsCache
 
 def _getTimeStamp(message):
     if message.createdAt is not None:
@@ -754,16 +755,24 @@ class InvoiceReceivedFormatter(WaitItemsSyncFormatter):
 
     @classmethod
     def _getGoodiesString(cls, goodies):
+        result = []
         boostersStrings = []
+        discountsStrings = []
         for goodieID, ginfo in goodies.iteritems():
-            booster = g_goodiesCache.getBooster(goodieID)
-            if booster is not None and booster.enabled:
-                boostersStrings.append(booster.userName)
+            if goodieID in g_itemsCache.items.shop.boosters:
+                booster = g_goodiesCache.getBooster(goodieID)
+                if booster is not None and booster.enabled:
+                    boostersStrings.append(booster.userName)
+            else:
+                discount = g_goodiesCache.getDiscount(goodieID)
+                if discount is not None and discount.enabled:
+                    discountsStrings.append(discount.description)
 
-        result = ''
         if len(boostersStrings):
-            result = g_settings.htmlTemplates.format('boostersInvoiceReceived', ctx={'boosters': ', '.join(boostersStrings)})
-        return result
+            result.append(g_settings.htmlTemplates.format('boostersInvoiceReceived', ctx={'boosters': ', '.join(boostersStrings)}))
+        if len(discountsStrings):
+            result.append(g_settings.htmlTemplates.format('discountsInvoiceReceived', ctx={'discounts': ', '.join(discountsStrings)}))
+        return '; '.join(result)
 
     def __getSlotsString(self, slots):
         if slots > 0:
@@ -884,7 +893,7 @@ class InvoiceReceivedFormatter(WaitItemsSyncFormatter):
             berths = dataEx.get('berths')
             if berths:
                 operations.append(self.__getBerthsString(berths))
-            goodies = data.get('goodies', {})
+            goodies = dataEx.get('goodies', {})
             if goodies:
                 strGoodies = self._getGoodiesString(goodies)
                 if strGoodies:
@@ -1989,6 +1998,7 @@ class RefSystemReferralBoughtVehicleFormatter(ServiceChannelFormatter):
 
 
 class RefSystemReferralContributedXPFormatter(WaitItemsSyncFormatter):
+    eventsCache = dependency.descriptor(IEventsCache)
 
     def isNotify(self):
         return True
@@ -1999,7 +2009,7 @@ class RefSystemReferralContributedXPFormatter(WaitItemsSyncFormatter):
         yield lambda callback: callback(True)
         isSynced = yield self._waitForSyncItems()
         if message.data and isSynced:
-            refSystemQuests = g_eventsCache.getHiddenQuests(lambda x: x.getType() == EVENT_TYPE.REF_SYSTEM_QUEST)
+            refSystemQuests = self.eventsCache.getHiddenQuests(lambda x: x.getType() == EVENT_TYPE.REF_SYSTEM_QUEST)
             notCompleted = findFirst(lambda q: not q.isCompleted(), refSystemQuests.values())
             if notCompleted:
                 data = message.data

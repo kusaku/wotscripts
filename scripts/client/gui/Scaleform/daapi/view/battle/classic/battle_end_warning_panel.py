@@ -1,9 +1,10 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/battle/classic/battle_end_warning_panel.py
 import WWISE
-from gui.battle_control import g_sessionProvider
 from gui.Scaleform.daapi.view.meta.BattleEndWarningPanelMeta import BattleEndWarningPanelMeta
+from helpers import dependency
 from helpers.i18n import makeString as _ms
 from helpers.time_utils import ONE_MINUTE
+from skeletons.gui.battle_session import IBattleSessionProvider
 
 class _WWISE_EVENTS:
     APPEAR = 'time_buzzer_01'
@@ -14,11 +15,11 @@ _SWF_FILE_NAME = 'BattleEndWarningPanel.swf'
 _CALLBACK_NAME = 'battle.onLoadEndWarningPanel'
 
 class BattleEndWarningPanel(BattleEndWarningPanelMeta):
+    sessionProvider = dependency.descriptor(IBattleSessionProvider)
 
     def __init__(self):
         super(BattleEndWarningPanel, self).__init__()
-        self.__arenaVisitor = self._getArenaVisitor()
-        arenaType = self.__arenaVisitor.type
+        arenaType = self.sessionProvider.arenaVisitor.type
         self.__duration = arenaType.getBattleEndWarningDuration()
         self.__appearTime = arenaType.getBattleEndWarningAppearTime()
         self.__roundLength = arenaType.getRoundLength()
@@ -44,9 +45,6 @@ class BattleEndWarningPanel(BattleEndWarningPanelMeta):
             self.as_setStateS(False)
             self.__isShown = False
 
-    def _getArenaVisitor(self):
-        return g_sessionProvider.arenaVisitor
-
     def _callWWISE(self, wwiseEventName):
         """
         Method is used to play or stop sounds.
@@ -56,6 +54,6 @@ class BattleEndWarningPanel(BattleEndWarningPanelMeta):
         WWISE.WW_eventGlobal(wwiseEventName)
 
     def __validateWarningTime(self):
-        if self.__appearTime < self.__duration or self.__appearTime <= 0 or self.__duration <= 0 or self.__appearTime > self.__roundLength or self.__duration > self.__roundLength and self.__arenaVisitor.isBattleEndWarningEnabled():
+        if self.__appearTime < self.__duration or self.__appearTime <= 0 or self.__duration <= 0 or self.__appearTime > self.__roundLength or self.__duration > self.__roundLength and self.sessionProvider.arenaVisitor.isBattleEndWarningEnabled():
             return False
         return True

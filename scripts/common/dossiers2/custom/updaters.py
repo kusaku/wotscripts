@@ -1915,8 +1915,8 @@ def __updateFromAccountDossier101(compDescr):
      'maxGlobalMapAbsolute',
      'globalMapCommonCut',
      'fallout',
-     'maxFallout',
      'falloutCut',
+     'maxFallout',
      'falloutAchievements']
     updateCtx = {'dossierCompDescr': compDescr,
      'blockSizeFormat': 'H',

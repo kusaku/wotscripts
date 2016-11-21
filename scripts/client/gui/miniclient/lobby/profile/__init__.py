@@ -3,3 +3,4 @@ import pointcuts as _pointcuts
 
 def configure_pointcuts():
     _pointcuts.MakeClanBtnUnavailable()
+    _pointcuts.MakeClubProfileButtonUnavailable()
