@@ -138,6 +138,7 @@ class EventDispatcher(object):
         self.__handleRemoveRequest(clientID, closeWindow=closeWindow)
 
     def addTrainingToCarousel(self, isList = True):
+        self.removeTrainingFromCarousel(not isList, closeWindow=False)
         if isList:
             clientType = SPECIAL_CLIENT_WINDOWS.TRAINING_LIST
             alias = PREBATTLE_ALIASES.TRAINING_LIST_VIEW_PY

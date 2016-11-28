@@ -167,6 +167,12 @@ class ServerEventAbstract(object):
     def getBonuses(self, bonusName = None):
         return []
 
+    def getParents(self):
+        return []
+
+    def getParentsName(self):
+        return []
+
     def _checkConditions(self):
         return True
 

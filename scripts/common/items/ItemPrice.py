@@ -18,10 +18,10 @@ def getItemPrice(item, gameParams, goodies = None, goodieTarget = None):
     if (actualPrice[0] == 0 or actualPrice[1] == 0) and goodies and goodieTarget:
         personalDiscounts = goodies.test(goodieTarget, {Credits(defaultPrice[0]), Gold(defaultPrice[1])})
         for _, discount in personalDiscounts.iteritems():
-            if isinstance(discount, Gold) and discount.value < actualPrice[1]:
+            if isinstance(discount, Gold) and discount.value <= actualPrice[1]:
                 actualPrice = (0, discount.value)
                 priceType = PRICE_TYPE.PERSONAL
-            elif isinstance(discount, Credits) and discount.value < actualPrice[0]:
+            elif isinstance(discount, Credits) and discount.value <= actualPrice[0]:
                 actualPrice = (discount.value, 0)
                 priceType = PRICE_TYPE.PERSONAL
 

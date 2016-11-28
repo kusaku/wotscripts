@@ -19,7 +19,6 @@ from skeletons.account_helpers.settings_core import ISettingsCore
 from vehicle_systems.tankStructure import TankPartNames
 from helpers import gEffectsDisabled
 _ENABLE_TURRET_ROTATOR_SOUND = True
-_ENABLE_RELATIVE_SHOT_POINT = True
 g__attachToCam = False
 
 class VehicleGunRotator(object):
@@ -27,6 +26,8 @@ class VehicleGunRotator(object):
     __MAX_TIME_DIFF = 0.2
     __ANGLE_EPS = 1e-06
     __ROTATION_TICK_LENGTH = SERVER_TICK_LENGTH
+    __AIMING_PERFECTION_DELAY = 1.0
+    __AIMING_PERFECTION_RANGE = math.radians(5.0)
     USE_LOCK_PREDICTION = True
     soundEffect = property(lambda self: self.__turretRotationSoundEffect)
     settingsCore = dependency.descriptor(ISettingsCore)
@@ -58,6 +59,7 @@ class VehicleGunRotator(object):
         else:
             self.__turretRotationSoundEffect = None
         g__attachToCam = False
+        self.__aimingPerfectionStartTime = None
         return
 
     def destroy(self):
@@ -308,29 +310,65 @@ class VehicleGunRotator(object):
                 timeDiff = self.__MAX_TIME_DIFF
             return timeDiff
 
+    def __calcAngleBetweenShotPointAndMarker(self):
+        if self.__prevSentShotPoint is None:
+            return
+        else:
+            shotStartPos, _ = self.__getCurShotPosition()
+            markerDelta = self.__markerInfo[0] - shotStartPos
+            shotPointDelta = self.__prevSentShotPoint - shotStartPos
+            sine = (markerDelta * shotPointDelta).length
+            cosine = markerDelta.dot(shotPointDelta)
+            return abs(math.atan2(sine, cosine))
+
+    def __trackPointOnServer(self, shotPoint):
+        avatar = self.__avatar
+        vehicle = BigWorld.entity(avatar.playerVehicleID)
+        if vehicle is not None and vehicle is avatar.vehicle:
+            stabilisedVehPos = Math.Matrix(avatar.getOwnVehicleStabilisedMatrix()).translation
+            vehicle.cell.trackRelativePointWithGun(shotPoint - stabilisedVehPos)
+        else:
+            avatar.base.vehicle_trackWorldPointWithGun(shotPoint)
+        self.__prevSentShotPoint = shotPoint
+        return
+
+    def __stopTrackingOnServer(self):
+        self.__avatar.base.vehicle_stopTrackingWithGun(self.__turretYaw, self.__gunPitch)
+        self.__prevSentShotPoint = None
+        return
+
+    def __stopTrackingWithPerfection(self):
+        if self.__aimingPerfectionStartTime is None:
+            angle = self.__calcAngleBetweenShotPointAndMarker()
+            if angle is not None and angle < self.__AIMING_PERFECTION_RANGE:
+                self.__aimingPerfectionStartTime = BigWorld.time()
+            else:
+                self.__stopTrackingOnServer()
+        elif BigWorld.time() - self.__aimingPerfectionStartTime > self.__AIMING_PERFECTION_DELAY:
+            self.__aimingPerfectionStartTime = None
+            self.__stopTrackingOnServer()
+        return
+
     def __updateShotPointOnServer(self, shotPoint):
         if shotPoint == self.__prevSentShotPoint:
             return
         else:
-            self.__prevSentShotPoint = shotPoint
-            avatar = self.__avatar
-            if shotPoint is None:
-                avatar.base.vehicle_stopTrackingWithGun(self.__turretYaw, self.__gunPitch)
-            else:
-                vehicle = BigWorld.entity(avatar.playerVehicleID)
-                if vehicle is not None and vehicle is avatar.vehicle:
-                    if _ENABLE_RELATIVE_SHOT_POINT:
-                        shotPoint = shotPoint - Math.Matrix(avatar.getOwnVehicleStabilisedMatrix()).translation
-                        vehicle.cell.trackRelativePointWithGun(shotPoint)
-                    else:
-                        vehicle.cell.trackWorldPointWithGun(shotPoint)
+            if self.__avatar.vehicleTypeDescriptor.isHullAimingAvailable:
+                if shotPoint is None:
+                    self.__stopTrackingWithPerfection()
                 else:
-                    avatar.base.vehicle_trackWorldPointWithGun(shotPoint)
+                    self.__aimingPerfectionStartTime = None
+                    self.__trackPointOnServer(shotPoint)
+            elif shotPoint is None:
+                self.__stopTrackingOnServer()
+            else:
+                self.__trackPointOnServer(shotPoint)
             return
 
     def __rotate(self, shotPoint, timeDiff):
         self.__turretRotationSpeed = 0.0
-        if shotPoint is None or self.__isLocked:
+        targetPoint = shotPoint if shotPoint is not None else self.__prevSentShotPoint
+        if targetPoint is None or self.__isLocked:
             self.__dispersionAngles = self.__avatar.getOwnVehicleShotDispersionAngle(0.0)
             return
         else:
@@ -340,7 +378,7 @@ class VehicleGunRotator(object):
             maxTurretRotationSpeed = self.__maxTurretRotationSpeed
             prevTurretYaw = self.__turretYaw
             vehicleMatrix = self.__getAvatarOwnVehicleStabilisedMatrix()
-            shotTurretYaw, shotGunPitch = getShotAngles(descr, vehicleMatrix, (prevTurretYaw, self.__gunPitch), shotPoint)
+            shotTurretYaw, shotGunPitch = getShotAngles(descr, vehicleMatrix, (prevTurretYaw, self.__gunPitch), targetPoint)
             self.__turretYaw = turretYaw = self.__getNextTurretYaw(prevTurretYaw, shotTurretYaw, maxTurretRotationSpeed * timeDiff, turretYawLimits)
             if maxTurretRotationSpeed != 0:
                 self.estimatedTurretRotationTime = abs(turretYaw - shotTurretYaw) / maxTurretRotationSpeed

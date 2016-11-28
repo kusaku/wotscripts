@@ -62,6 +62,10 @@ class PixieEffect(BaseNodeEffect):
     def deactivate(self):
         self._enabled = False
         self.__detach()
+        if self.__ttlCallback is not None:
+            BigWorld.cancelCallback(self.__ttlCallback)
+            self.__ttlCallback = None
+        return
 
     def onLoadedCallback(self, pixie, clone):
         if not self._enabled:
@@ -71,6 +75,7 @@ class PixieEffect(BaseNodeEffect):
             if self.__ttl > 0.0:
                 if self.__ttlCallback is not None:
                     BigWorld.cancelCallback(self.__ttlCallback)
+                    self.__ttlCallback = None
                 if clone:
                     pixie = pixie.clone()
                 self.__attachTTL(pixie)

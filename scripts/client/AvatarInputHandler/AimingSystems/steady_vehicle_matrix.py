@@ -25,7 +25,7 @@ class SteadyVehicleMatrixCalculator(Component):
         else:
             typeDescriptor = vehicle.typeDescriptor
             if typeDescriptor.isPitchHullAimingAvailable:
-                self.__outputMProv.rotationSrc = vehicle.filter.groundPlacingMatrix
+                self.__outputMProv.rotationSrc = vehicle.filter.groundPlacingMatrixFiltered
                 self.__outputMProv.translationSrc = vehicle.filter.stabilisedMatrix
             else:
                 self.__outputMProv.rotationSrc = vehicle.filter.stabilisedMatrix

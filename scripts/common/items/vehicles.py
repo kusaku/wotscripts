@@ -190,6 +190,12 @@ class VehicleDescriptor(object):
     isPitchHullAimingAvailable = property(lambda self: self.type.hullAimingParams['pitch']['isAvailable'])
     isYawHullAimingAvailable = property(lambda self: self.type.hullAimingParams['yaw']['isAvailable'])
 
+    def __getIsHullAimingAvailable(self):
+        hap = self.type.hullAimingParams
+        return hap['yaw']['isAvailable'] or hap['pitch']['isAvailable']
+
+    isHullAimingAvailable = property(__getIsHullAimingAvailable)
+
     def onSiegeStateChanged(self, siegeMode):
         pass
 

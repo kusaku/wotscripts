@@ -178,8 +178,6 @@ def hasGroupPenalties(groupName, comparator):
 def getBuffIcon(param, comparator):
     if hasGroupPenalties(param.name, comparator):
         return RES_ICONS.MAPS_ICONS_VEHPARAMS_ICON_DECREASE
-    elif hasGroupBonuses(param.name, comparator):
-        return RES_ICONS.MAPS_ICONS_VEHPARAMS_ICON_INCREASE
     else:
         return ''
 

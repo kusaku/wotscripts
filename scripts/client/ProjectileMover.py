@@ -111,6 +111,8 @@ class ProjectileMover(object):
                 TriggersManager.g_manager.fireTrigger(TRIGGER_TYPE.PLAYER_SHOT_MISSED)
             params = self.__ballistics.explodeProjectile(shotID, endPoint)
             if params is not None:
+                if not proj.has_key('effectMaterial'):
+                    proj['effectMaterial'] = effectMaterial
                 self.__addExplosionEffect(params[0], proj, params[1])
             else:
                 proj['showExplosion'] = True

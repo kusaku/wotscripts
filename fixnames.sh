@@ -21,7 +21,7 @@ fixname ()
     if [[ ! $NEWFILE =~ ^$OUTDIR/scripts/ ]];
     then
         # fallback to default, just move in~/ -> .
-        NEWFILE=$OUTDIR$(echo "${OLDFILE%.*}.py" | sed -e "s/in~\///g")
+        NEWFILE=$OUTDIR/$(echo "${OLDFILE%.*}.py" | sed -e "s/in~\///g")
         echo "Bad header in $OLDFILE, using $NEWFILE"
     fi
 

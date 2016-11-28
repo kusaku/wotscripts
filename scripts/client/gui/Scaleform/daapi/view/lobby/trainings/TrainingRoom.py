@@ -32,7 +32,7 @@ from messenger.proto import proto_getter
 from messenger.proto.events import g_messengerEvents
 from messenger.storage import storage_getter
 from prebattle_shared import decodeRoster
-from constants import PREBATTLE_MAX_OBSERVERS_IN_TEAM, OBSERVERS_BONUS_TYPES, PREBATTLE_ERRORS
+from constants import PREBATTLE_MAX_OBSERVERS_IN_TEAM, OBSERVERS_BONUS_TYPES, PREBATTLE_ERRORS, PREBATTLE_TYPE
 
 class TrainingRoom(LobbySubView, TrainingRoomMeta, ILegacyListener):
     __sound_env__ = LobbySubViewEnv
@@ -50,6 +50,10 @@ class TrainingRoom(LobbySubView, TrainingRoomMeta, ILegacyListener):
 
     def _populate(self):
         super(TrainingRoom, self)._populate()
+        funcState = self.prbDispatcher.getFunctionalState()
+        if not funcState.isInLegacy(PREBATTLE_TYPE.TRAINING):
+            g_eventDispatcher.removeTrainingFromCarousel(False)
+            return
         entity = self.prbEntity
         if entity.getEntityType():
             self.__showSettings(entity)

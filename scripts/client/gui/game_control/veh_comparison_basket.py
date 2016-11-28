@@ -105,9 +105,10 @@ class _VehCmpCache(FileLocalCache):
                 self.__dataSetter(data[1])
         return data
 
-    def dispose(self):
+    def clear(self):
         self.__dataSetter = None
         self.__dataGetter = None
+        super(_VehCmpCache, self).clear()
         return
 
 
@@ -576,6 +577,6 @@ class VehComparisonBasket(IVehicleComparisonBasket):
 
     def __disposeCache(self):
         if self.__cache is not None:
-            self.__cache.dispose()
+            self.__cache.clear()
             self.__cache = None
         return

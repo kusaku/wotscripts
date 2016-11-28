@@ -1,6 +1,7 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/trainings/Trainings.py
 import ArenaType
 from adisp import process
+from constants import PREBATTLE_TYPE
 from gui.LobbyContext import g_lobbyContext
 from gui.Scaleform.Waiting import Waiting
 from gui.Scaleform.daapi import LobbySubView
@@ -32,6 +33,10 @@ class Trainings(LobbySubView, TrainingFormMeta, ILegacyListener):
 
     def _populate(self):
         super(Trainings, self)._populate()
+        funcState = self.prbDispatcher.getFunctionalState()
+        if not funcState.isInLegacy(PREBATTLE_TYPE.TRAINING):
+            g_eventDispatcher.removeTrainingFromCarousel()
+            return
         Waiting.show('Flash')
         self.startPrbListening()
         self.addListener(events.TrainingSettingsEvent.UPDATE_TRAINING_SETTINGS, self.__createTrainingRoom, scope=EVENT_BUS_SCOPE.LOBBY)

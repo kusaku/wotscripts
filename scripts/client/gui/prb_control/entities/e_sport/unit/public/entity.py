@@ -56,7 +56,8 @@ class PublicBrowserEntity(ESportBrowserEntity):
 
     def fini(self, ctx = None, woEvents = False):
         if self.__listReq is not None:
-            self.__listReq.unsubscribe()
+            if not woEvents:
+                self.__listReq.unsubscribe()
             self.__listReq = None
         return super(PublicBrowserEntity, self).fini(ctx=ctx, woEvents=woEvents)
 
