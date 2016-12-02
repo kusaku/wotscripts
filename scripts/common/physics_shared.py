@@ -314,6 +314,14 @@ g_defaultXPhysicsCfg = {'gravity': 9.81,
                         'preciseRestitution': 0.3,
                         'dampingYawDist': 0.03,
                         'preciseYawDist': 0.03}},
+ 'hullCOM': (0.0, 1.0, 0.0),
+ 'stiffnessFactors': (1.0,
+                      1.0,
+                      1.0,
+                      1.0,
+                      1.0),
+ 'hullInertiaFactors': (1.0, 1.0, 1.8),
+ 'engineLoses': (0.5, 0.8),
  'enableSabilization': True}
 if IS_CELLAPP:
 
@@ -485,6 +493,7 @@ def configureXPhysics(physics, baseCfg, typeDesc, useSimplifiedGearbox, gravityF
         sizeZ = bmax[2] - bmin[2]
     hullCenter = (bmin + bmax) * 0.5
     cfg['hullSize'] = Math.Vector3((sizeX, cfg['bodyHeight'], sizeZ))
+    cfg['useComplexForm'] = typeDesc.type.name == 'sweden:S11_Strv_103B'
     cfg['gravity'] = cfg['gravity'] * gravityFactor
     cfg['engineTorque'] = tuple(((arg, val * gravityFactor) for arg, val in cfg['engineTorque']))
     offsZ = hullCenter[2]
@@ -968,6 +977,7 @@ def initVehiclePhysicsFromParams(physics, params):
     typeDesc.turret['hitTester'].bbox = (params['turretHitTesterMin'], params['turretHitTesterMax'], None)
     typeDesc.turret['gunPosition'] = params['gunPosition']
     typeDesc.type = _SimpleObject()
+    typeDesc.type.name = ''
     typeDesc.type.xphysics = {}
     typeDesc.type.xphysics['detailed'] = {'chassis': {'Chassis': typeDesc.chassis}}
     typeDesc.shot = {'gravity': 9.8,
@@ -1013,8 +1023,6 @@ def __deepUpdate(orig_dict, new_dict):
         if isinstance(val, collections.Mapping):
             tmp = __deepUpdate(orig_dict.get(key, {}), val)
             orig_dict[key] = tmp
-        elif isinstance(val, list):
-            orig_dict[key] = tuple(orig_dict[key]) + tuple(val)
         else:
             orig_dict[key] = new_dict[key]
 

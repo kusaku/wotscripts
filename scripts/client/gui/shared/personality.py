@@ -17,6 +17,7 @@ from gui.Scaleform.daapi.view.login.EULADispatcher import EULADispatcher
 from gui.Scaleform.locale.MENU import MENU
 from gui.Scaleform.locale.SYSTEM_MESSAGES import SYSTEM_MESSAGES
 from gui.app_loader import g_appLoader
+from gui.christmas.christmas_controller import g_christmasCtrl
 from gui.battle_results.VehicleProgressCache import g_vehicleProgressCache
 from gui.goodies import g_goodiesCache
 from gui.prb_control.dispatcher import g_prbLoader
@@ -102,6 +103,7 @@ def onAccountShowGUI(ctx):
     ServicesLocator.soundCtrl.start()
     SoundGroups.g_instance.enableLobbySounds(True)
     onCenterIsLongDisconnected(True)
+    g_christmasCtrl.start()
     guiModsSendEvent('onAccountShowGUI', ctx)
     Waiting.hide('enter')
 
@@ -119,6 +121,7 @@ def onAccountBecomeNonPlayer():
 
 @process
 def onAvatarBecomePlayer():
+    g_christmasCtrl.stop()
     yield ServicesLocator.settingsCache.update()
     ServicesLocator.settingsCore.serverSettings.applySettings()
     ServicesLocator.soundCtrl.stop()
@@ -272,6 +275,7 @@ def onConnected():
 
 def onDisconnected():
     g_statistics.noteHangarLoadingState(HANGAR_LOADING_STATE.DISCONNECTED)
+    g_christmasCtrl.stop(clearCache=True)
     guiModsSendEvent('onDisconnected')
     g_prbLoader.onDisconnected()
     g_clanCache.onDisconnected()

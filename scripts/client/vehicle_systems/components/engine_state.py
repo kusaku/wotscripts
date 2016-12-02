@@ -8,6 +8,7 @@ from svarog_script import auto_properties
 from svarog_script.auto_properties import LinkDescriptor
 from Event import Event
 import svarog_script.py_component
+from constants import VEHICLE_SIEGE_STATE
 
 class EngineState:
     _NORMAL = 0
@@ -196,13 +197,16 @@ class DetailedEngineStateWWISE(DetailedEngineState):
         if self._vehicle is None:
             return
         else:
+            state = self._vehicle.siegeState
+            if state in VEHICLE_SIEGE_STATE.SWITCHING:
+                return
             super(DetailedEngineStateWWISE, self).refresh(dt)
             self.calculateRPM()
             self.calculateGear()
             if not self._vehicle.isPlayerVehicle or self._vehicle.physicsMode == VEHICLE_PHYSICS_MODE.STANDARD:
                 speed = self._vehicle.speedInfo.value[0]
                 self.__speed += (speed - self.__speed) * 0.5 * dt
-                speedRange = self._vehicle.typeDescriptor.physics['speedLimits'][0] * 0.27 + self._vehicle.typeDescriptor.physics['speedLimits'][1] * 0.27
+                speedRange = self._vehicle.typeDescriptor.physics['speedLimits'][0] + self._vehicle.typeDescriptor.physics['speedLimits'][1]
                 speedRangeGear = speedRange / 3
                 self._gearNum = math.ceil(math.floor(math.fabs(self.__speed) * 50) / 50 / speedRangeGear)
                 if self.__prevGearNum2 != self._gearNum:

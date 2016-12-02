@@ -627,6 +627,7 @@ class VEHICLE_CUSTOMIZATION(object):
     EMBLEM_GROUP25_SPECIAL_104 = '#vehicle_customization:emblem/group25/special_104'
     EMBLEM_M41_ASIA = '#vehicle_customization:emblem/M41_asia'
     EMBLEM_GROUP9_ASIA_11 = '#vehicle_customization:emblem/group9/asia_11'
+    EMBLEM_GROUP26_SPECIAL_110 = '#vehicle_customization:emblem/group26/special_110'
     INSCRIPTION = '#vehicle_customization:inscription'
     INSCRIPTION_HISTORICAL = '#vehicle_customization:inscription/historical'
     INSCRIPTION_MOTTO = '#vehicle_customization:inscription/motto'

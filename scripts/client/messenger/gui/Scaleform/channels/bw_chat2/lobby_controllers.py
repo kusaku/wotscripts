@@ -93,7 +93,7 @@ class TrainingChannelController(LobbyChannelController, ILegacyListener):
             self._buildMembersList()
         super(TrainingChannelController, self).setView(view)
 
-    def onPlayerAdded(self, entity, playerInfo):
+    def onPlayerAdded(self, entity, pInfo):
         self._channel.addMembers([BWMemberEntity(pInfo.dbID, pInfo.name)])
         self._refreshMembersDP()
 

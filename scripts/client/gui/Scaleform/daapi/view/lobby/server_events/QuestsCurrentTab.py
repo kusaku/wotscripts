@@ -35,6 +35,7 @@ class QuestsCurrentTab(QuestsCurrentTabMeta):
         super(QuestsCurrentTab, self).__init__()
         self.__collapsedGroups = []
         self.__currentVehicle = None
+        self.__selectedQuestID = None
         return
 
     def getSortedTableData(self, tableData):
@@ -46,8 +47,10 @@ class QuestsCurrentTab(QuestsCurrentTabMeta):
             quest = quests.get(questID)
             if self._isAvailableQuestForTab(quest):
                 info = events_helpers.getEventDetails(quest, quests)
+                self.__selectedQuestID = questID
                 self.as_setSelectedQuestS(questID)
                 self.as_updateQuestInfoS(info)
+                quest_settings.visitEventGUI(quest)
         else:
             SystemMessages.pushI18nMessage(SYSTEM_MESSAGES.QUESTS_NOQUESTSWITHGIVENID)
 
@@ -60,9 +63,9 @@ class QuestsCurrentTab(QuestsCurrentTabMeta):
         self.as_showWaitingS(True)
         svrEvents = self._getEvents()
         event = svrEvents.get(eventID)
-        if eventID != self._navInfo.common.questID:
-            self._navInfo.selectCommonQuest(eventID)
-            quest_settings.visitEventGUI(event)
+        self._navInfo.selectCommonQuest(eventID)
+        self.__selectedQuestID = eventID
+        quest_settings.visitEventGUI(event)
         info = None
         if event is not None:
             info = events_helpers.getEventDetails(event, svrEvents)
@@ -85,6 +88,7 @@ class QuestsCurrentTab(QuestsCurrentTabMeta):
         else:
             self.__collapsedGroups.append(groupID)
         self._invalidateEventsData()
+        self.as_setSelectedQuestS(self._navInfo.common.questID)
 
     def _populate(self):
         super(QuestsCurrentTab, self)._populate()
@@ -100,8 +104,12 @@ class QuestsCurrentTab(QuestsCurrentTabMeta):
         self._hideCompleted = False
         self.addListener(events.LobbySimpleEvent.EVENTS_UPDATED, self.__onEventsUpdated)
         self._invalidateEventsData()
-        if self._navInfo.common.questID:
-            self._selectQuest(self._navInfo.common.questID)
+        defaultQuestID = self._getDefaultQuestID()
+        if defaultQuestID:
+            self._selectQuest(defaultQuestID)
+
+    def _getDefaultQuestID(self):
+        return self._navInfo.common.questID
 
     def _invalidateEventsData(self):
         svrEvents = self._getEvents()
@@ -157,6 +165,8 @@ class QuestsCurrentTab(QuestsCurrentTabMeta):
             elif self.__filterType == self.FILTER_TYPE.ALL_EVENTS:
                 statusText = QUESTS.QUESTS_CURRENT_NODATA
             self.as_showNoDataS(statusText)
+            self.__selectedQuestID = None
+            self._navInfo.selectCommonQuest(None)
         else:
             self.as_setQuestsDataS({'quests': result,
              'isSortable': True,
@@ -166,7 +176,11 @@ class QuestsCurrentTab(QuestsCurrentTabMeta):
             if self._navInfo.common.questID not in visibleQuestIDs:
                 self._navInfo.selectCommonQuest(None)
                 self.as_showNoSelectS()
-            self.as_setSelectedQuestS(self._navInfo.common.questID)
+                self.__selectedQuestID = None
+                self.as_setSelectedQuestS(self._navInfo.common.questID)
+            elif self._navInfo.common.questID != self.__selectedQuestID:
+                self.__selectedQuestID = self._navInfo.common.questID
+                self.as_setSelectedQuestS(self._navInfo.common.questID)
         return
 
     def _dispose(self):

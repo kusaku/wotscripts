@@ -6,7 +6,7 @@ from collections import namedtuple
 import Event
 import AccountCommands
 import ClientPrebattle
-from account_helpers import AccountSyncData, Inventory, DossierCache, Shop, Stats, QuestProgress, CustomFilesCache, BattleResultsCache, ClientClubs, ClientGoodies, client_recycle_bin
+from account_helpers import AccountSyncData, Inventory, DossierCache, Shop, Stats, QuestProgress, CustomFilesCache, BattleResultsCache, ClientClubs, ClientGoodies, client_recycle_bin, ClientChristmas
 from account_helpers import ClientInvitations
 from ConnectionManager import connectionManager
 from PlayerEvents import g_playerEvents as events
@@ -69,6 +69,7 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
         self.goodies = g_accountRepository.goodies
         self.recycleBin = g_accountRepository.recycleBin
         self.customFilesCache = g_accountRepository.customFilesCache
+        self.christmas = g_accountRepository.christmas
         self.syncData.setAccount(self)
         self.inventory.setAccount(self)
         self.stats.setAccount(self)
@@ -84,6 +85,7 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
         self.goodies.setAccount(self)
         self.recycleBin.setAccount(self)
         self.isLongDisconnectedFromCenter = False
+        self.christmas.setAccount(self)
         self.prebattle = None
         self.unitBrowser = ClientUnitBrowser(self)
         self.unitMgr = ClientUnitMgr(self)
@@ -123,6 +125,7 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
         self.clubs.onAccountBecomePlayer()
         self.goodies.onAccountBecomePlayer()
         self.recycleBin.onAccountBecomePlayer()
+        self.christmas.onAccountBecomePlayer()
         chatManager.switchPlayerProxy(self)
         events.onAccountBecomePlayer()
         BigWorld.target.source = BigWorld.MouseTargetingMatrix()
@@ -160,8 +163,10 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
         self.clubs.setAccount(None)
         self.goodies.setAccount(None)
         self.recycleBin.setAccount(None)
+        self.christmas.onAccountBecomeNonPlayer()
         self.fort.clear()
         events.onAccountBecomeNonPlayer()
+        self.christmas.setAccount(None)
         del self.inputHandler
         return
 
@@ -337,12 +342,15 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
     def targetFocus(self, entity):
         if isinstance(entity, ClientSelectableObject) and entity.enabled:
             from gui.shared.utils.HangarSpace import g_hangarSpace
+            g_hangarSpace.selectedEntity = entity
             g_hangarSpace.onObjectSelected(entity)
 
     def targetBlur(self, prevEntity):
         if isinstance(prevEntity, ClientSelectableObject):
             from gui.shared.utils.HangarSpace import g_hangarSpace
+            g_hangarSpace.selectedEntity = None
             g_hangarSpace.onObjectUnselected(prevEntity)
+        return
 
     def onKickedFromQueue(self, queueType):
         LOG_DEBUG('onKickedFromQueue', queueType)
@@ -925,6 +933,7 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
             self.__synchronizeCacheDict(self.eventsData, diff, 'eventsData', 'replace', events.onEventsDataChanged)
             self.__synchronizeCacheDict(self.potapovQuestsLock, diff.get('cache', None), 'potapovQuestIDs', 'replace', events.onPQLocksChanged)
             self.__synchronizeCacheSimpleValue('globalRating', diff.get('account', None), 'globalRating', events.onAccountGlobalRatingChanged)
+            self.christmas.synchronize(isFullSync, diff)
             cacheDiff = diff.get('cache', {})
             clanFortState = cacheDiff.get('clanFortState', None)
             if clanFortState is not None:
@@ -1123,6 +1132,7 @@ class _AccountRepository(object):
         self.recycleBin = client_recycle_bin.ClientRecycleBin(self.syncData)
         self.fort = ClientFortMgr()
         self.gMap = ClientGlobalMap()
+        self.christmas = ClientChristmas.ClientChristmas(self.syncData)
         self.onTokenReceived = Event.Event()
         self.requestID = AccountCommands.REQUEST_ID_UNRESERVED_MIN
 

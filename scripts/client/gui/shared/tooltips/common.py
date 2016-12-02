@@ -11,7 +11,7 @@ import ArenaType
 from gui.Scaleform.genConsts.ICON_TEXT_FRAMES import ICON_TEXT_FRAMES
 from gui.goodies.goodies_cache import g_goodiesCache
 from helpers import dependency
-from shared_utils import findFirst
+from shared_utils import findFirst, first
 from gui.Scaleform.daapi.view.lobby.profile.ProfileUtils import ProfileUtils
 from gui.Scaleform.locale.CYBERSPORT import CYBERSPORT
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
@@ -31,7 +31,7 @@ from messenger.gui.Scaleform.data.contacts_vo_converter import ContactConverter,
 from predefined_hosts import g_preDefinedHosts, HOST_AVAILABILITY, PING_STATUSES, PingData
 from ConnectionManager import connectionManager
 from constants import PREBATTLE_TYPE, WG_GAMES, VISIBILITY
-from debug_utils import LOG_WARNING, LOG_ERROR
+from debug_utils import LOG_WARNING, LOG_ERROR, LOG_DEBUG
 from helpers import i18n, time_utils, html, int2roman
 from helpers.i18n import makeString as ms, makeString
 from gui.Scaleform.daapi.view.lobby.fortifications.fort_utils.FortViewHelper import FortViewHelper
@@ -61,6 +61,8 @@ from skeletons.gui.clans import IClanController
 from skeletons.gui.clubs import IClubsController
 from skeletons.gui.game_control import IRefSystemController, IIGRController, IServerStatsController
 from skeletons.gui.server_events import IEventsCache
+from gui.christmas.christmas_controller import g_christmasCtrl
+from gui.Scaleform.locale.CHRISTMAS import CHRISTMAS
 _UNAVAILABLE_DATA_PLACEHOLDER = '--'
 
 class FortOrderParamField(ToolTipParameterField):
@@ -1342,8 +1344,10 @@ def makePriceBlock(price, currencySetting, neededValue = None, oldPrice = None, 
             actionText = text_styles.main(makeString(TOOLTIPS.VEHICLE_ACTION_PRC, actionPrc=text_styles.stats(str(percent) + '%'), oldPrice=oldPriceText))
             text = text_styles.concatStylesToMultiLine(text, actionText)
             newPrice = Money(gold=price) if settings.frame == ICON_TEXT_FRAMES.GOLD else Money(credits=price)
+            oldPrice = Money(gold=oldPrice) if settings.frame == ICON_TEXT_FRAMES.GOLD else Money(credits=oldPrice)
             return formatters.packSaleTextParameterBlockData(name=text, saleData={'newPrice': newPrice,
-             'valuePadding': -8}, actionStyle='alignTop', padding=formatters.packPadding(left=leftPadding))
+             'oldPrice': oldPrice,
+             'valuePadding': -8}, actionStyle='alignTop', padding=formatters.packPadding(left=leftPadding), currency=newPrice.getCurrency())
         return formatters.packTextParameterWithIconBlockData(name=text, value=valueFormatted, icon=settings.frame, valueWidth=valueWidth, padding=formatters.packPadding(left=-5))
         return
 
@@ -1436,3 +1440,91 @@ class SettingKeySwitchMode(BlocksTooltipData):
         tooltipBlocks = super(SettingKeySwitchMode, self)._packBlocks(*args, **kwargs)
         tooltipBlocks.append(formatters.packTitleDescBlock(text_styles.highTitle(TOOLTIPS.SETTINGS_KEYMOVEMENT_TITLE), text_styles.main(TOOLTIPS.SETTINGS_SWITCHMODE_BODY)))
         return tooltipBlocks
+
+
+class XMasTreeTooltipData(BlocksTooltipData):
+    eventsCache = dependency.descriptor(IEventsCache)
+
+    def __init__(self, context):
+        super(XMasTreeTooltipData, self).__init__(context, TOOLTIP_TYPE.CHRISTMAS)
+        self._setContentMargin(top=16, bottom=17)
+        self._setWidth(364)
+
+    def _packBlocks(self, forceShowLevelInfo = False):
+        items = super(XMasTreeTooltipData, self)._packBlocks(forceShowLevelInfo)
+        ratingInfo = g_christmasCtrl.getTempStorage().getTreeLevelInfo()
+        lvl = int2roman(ratingInfo['level'])
+        hasToysOnTree = ratingInfo['rating'] > 0
+        titleBlock = formatters.packTextBlockData(text_styles.highTitle(TOOLTIPS.XMAS_XMASTREE_TITLE))
+        if not forceShowLevelInfo and not hasToysOnTree:
+            descBlock = formatters.packTextBlockData(text_styles.main(TOOLTIPS.XMAS_XMASTREE_DESCRIPTION_NOTOYS))
+        else:
+            rating = ratingInfo['rating']
+            maxRating = ratingInfo['maxRating'] + 1
+            descBlock = formatters.packBlockDataItem(BLOCKS_TOOLTIP_TYPES.TOOLTIP_XMAS_EVENT_PROGRESS_BLOCK_LINKAGE, {'levelText': text_styles.main(ms(TOOLTIPS.XMAS_XMASTREE_DESCRIPTION, lvl=text_styles.stats(lvl))),
+             'progressText': text_styles.main(ms(TOOLTIPS.XMAS_XMASTREE_PROGRESS, current=text_styles.stats(rating), total=maxRating)),
+             'progress': rating / float(maxRating)})
+        items.append(formatters.packBuildUpBlockData([titleBlock, descBlock], gap=-2, padding={'bottom': 4}))
+        if forceShowLevelInfo or hasToysOnTree:
+            intLvl = ratingInfo['level']
+            qPattern = 'christmas_%s' % (intLvl + 1)
+            quest = first(self.eventsCache.getHiddenQuests(filterFunc=lambda q: q.getID().startswith(qPattern)).values())
+            simpleBonusesList = []
+            if quest is not None:
+                bonuses = quest.getBonuses()
+                for b in bonuses:
+                    if b is not None:
+                        if b.isShowInGUI():
+                            simpleBonusesList.extend(b.formattedList())
+
+            nextLvlAward = ', '.join(simpleBonusesList)
+            title = TOOLTIPS.XMAS_XMASTREE_AWARD
+            if intLvl == 10:
+                title = '#tooltips:xmas/award/allReceived'
+            elif quest is not None and quest.isCompleted():
+                nextLvlAward = text_styles.main('#tooltips:xmas/award/alreadyReceived')
+            items.append(formatters.packBuildUpBlockData([formatters.packTitleDescBlock(title=text_styles.middleTitle(title), desc=text_styles.main(nextLvlAward), gap=-1)], gap=4, linkage=BLOCKS_TOOLTIP_TYPES.TOOLTIP_BUILDUP_BLOCK_WHITE_BG_LINKAGE, padding={'top': -2,
+             'bottom': 6}))
+            items.append(formatters.packTextBlockData(text=text_styles.standard(TOOLTIPS.XMAS_XMASTREE_NOTE), padding={'top': -1}))
+        return items
+
+
+class XMasInstructionTooltipData(BlocksTooltipData):
+
+    def __init__(self, context):
+        super(XMasInstructionTooltipData, self).__init__(context, TOOLTIP_TYPE.CHRISTMAS)
+        self._setContentMargin(top=14, left=20, bottom=19)
+        self._setWidth(362)
+
+    def _packBlocks(self, *args, **kwargs):
+        items = super(XMasInstructionTooltipData, self)._packBlocks(*args, **kwargs)
+        title = text_styles.highTitle(TOOLTIPS.XMAS_INSTRUCTION_TITLE)
+        description = text_styles.main(TOOLTIPS.XMAS_INSTRUCTION_DESCRIPTION)
+        items.append(formatters.packBuildUpBlockData([formatters.packTitleDescBlock(title=title, gap=-2, padding={'bottom': 4}), formatters.packImageBlockData(img=RES_ICONS.MAPS_ICONS_CHRISTMAS_INSTRUCTIONIMG)]))
+        items.append(formatters.packTextBlockData(text=description))
+        return items
+
+
+class XMasSlotTooltipData(BlocksTooltipData):
+
+    def __init__(self, context):
+        super(XMasSlotTooltipData, self).__init__(context, TOOLTIP_TYPE.CHRISTMAS)
+        self._setContentMargin(top=13, left=18, bottom=16)
+        self._setWidth(330)
+
+    def _packBlocks(self, *args, **kwargs):
+        items = super(XMasSlotTooltipData, self)._packBlocks(*args, **kwargs)
+        itemID = args[0]
+        item = g_christmasCtrl.getChristmasItemByID(itemID)
+        toyType = ms(CHRISTMAS.TOYTYPE + '/%s' % item.guiType)
+        toyName = ms(CHRISTMAS.TOYNAME + '/%s' % item.id)
+        title = text_styles.highTitle(ms(TOOLTIPS.XMAS_SLOT_TITLE, type=toyType, name=toyName))
+        description = text_styles.main(ms(TOOLTIPS.XMAS_SLOT_DESCRIPTION, lvl=text_styles.stats(int2roman(item.rank))))
+        value = text_styles.bonusLocalText(str(item.ratingValue))
+        items.append(formatters.packTitleDescBlock(title=title, desc=description, gap=-2, padding={'bottom': 4}))
+        items.append(formatters.packBuildUpBlockData([formatters.packTextParameterBlockData(name=text_styles.main(TOOLTIPS.XMAS_SLOT_POINTS), value=value, valueWidth=63, gap=7, vertCentred=True)], gap=4, linkage=BLOCKS_TOOLTIP_TYPES.TOOLTIP_BUILDUP_BLOCK_WHITE_BG_LINKAGE, padding={'top': -2,
+         'bottom': 2}))
+        descriptionKey = '/'.join((CHRISTMAS.TOPTOYDESCRIPTION, str(itemID)))
+        if i18n.doesTextExist(descriptionKey):
+            items.append(formatters.packTextBlockData(text=text_styles.standard(ms(descriptionKey)), padding={'top': -1}))
+        return items

@@ -2,6 +2,7 @@
 import BigWorld
 import Math
 from gui.Scaleform.framework.entities.abstract.ColorSchemeManagerMeta import ColorSchemeManagerMeta
+from gui.battle_control.arena_info.interfaces import IArenaVehiclesController
 from gui.doc_loaders import GuiColorsLoader
 from helpers import dependency
 from skeletons.account_helpers.settings_core import ISettingsCore
@@ -59,21 +60,29 @@ class ColorSchemeManager(ColorSchemeManagerMeta):
             self.update()
 
 
-class BattleColorSchemeManager(ColorSchemeManager):
+class BattleColorSchemeManager(ColorSchemeManager, IArenaVehiclesController):
     sessionProvider = dependency.descriptor(IBattleSessionProvider)
 
     def update(self):
         super(BattleColorSchemeManager, self).update()
         self.__set3DFlagsColors()
 
+    def invalidateArenaInfo(self):
+        """
+        Invalidate arena info listener means that even base info about player
+        could be invalidated: in our case team is important.
+        """
+        self.__set3DFlagsColors()
+
     def _populate(self):
         super(BattleColorSchemeManager, self)._populate()
-        self.__set3DFlagsColors()
         self.__set3DFlagsEmblem()
         from PlayerEvents import g_playerEvents
         g_playerEvents.onTeamChanged += self.__onTeamChanged
+        self.sessionProvider.addArenaCtrl(self)
 
     def _dispose(self):
+        self.sessionProvider.removeArenaCtrl(self)
         from PlayerEvents import g_playerEvents
         g_playerEvents.onTeamChanged -= self.__onTeamChanged
         super(BattleColorSchemeManager, self)._dispose()

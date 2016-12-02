@@ -24,6 +24,12 @@ class AcousticPopover(AcousticPopoverMeta):
     def setItemsPlay(self, speakerIDs):
         self.as_onItemPlayS(speakerIDs)
 
+    def setPauseEnabled(self, isEnabled):
+        self.as_updateBtnEnabledS(ACOUSTICS.ACTION_PAUSE, isEnabled)
+
+    def setPlayEnabled(self, isEnabled):
+        self.as_updateBtnEnabledS(ACOUSTICS.ACTION_PLAY, isEnabled)
+
     def onActionStart(self, actionID):
         if self.__player is not None:
             if actionID == ACOUSTICS.ACTION_PLAY:

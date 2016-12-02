@@ -8,6 +8,7 @@ import Keys
 import Math
 from AvatarInputHandler import mathUtils, AimingSystems
 from AvatarInputHandler.aih_constants import CTRL_MODE_NAME
+from AvatarInputHandler.cameras import ICamera
 from DetachedTurret import DetachedTurret
 from Math import Vector3, Matrix
 from ProjectileMover import collideDynamicAndStatic
@@ -247,7 +248,7 @@ class _VehiclePicker(object):
             return (collData[0], pos)
 
 
-class VideoCamera(CallbackDelayer, TimeDeltaMeter):
+class VideoCamera(ICamera, CallbackDelayer, TimeDeltaMeter):
     guiSessionProvider = dependency.descriptor(IBattleSessionProvider)
 
     def __init__(self, configDataSec):

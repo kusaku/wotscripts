@@ -58,7 +58,8 @@ RENDER_BACKS = {1: RES_ICONS.MAPS_ICONS_QUESTS_EVENTBACKGROUNDS_QUESTS_BACK_EXP,
  5006: RES_ICONS.MAPS_ICONS_QUESTS_EVENTBACKGROUNDS_RANDOM_6,
  DEFAULTS_GROUPS.UNGROUPED_QUESTS: RES_ICONS.MAPS_ICONS_QUESTS_EVENTBACKGROUNDS_OTHER_QUESTS,
  DEFAULTS_GROUPS.UNGROUPED_ACTIONS: RES_ICONS.MAPS_ICONS_QUESTS_EVENTBACKGROUNDS_SALES,
- DEFAULTS_GROUPS.CURRENTLY_AVAILABLE: RES_ICONS.MAPS_ICONS_QUESTS_EVENTBACKGROUNDS_CURRENTLY_AVAILABLE}
+ DEFAULTS_GROUPS.CURRENTLY_AVAILABLE: RES_ICONS.MAPS_ICONS_QUESTS_EVENTBACKGROUNDS_CURRENTLY_AVAILABLE,
+ 5: RES_ICONS.MAPS_ICONS_QUESTS_EVENTBACKGROUNDS_QUESTS_BACK_NY2016}
 
 class EVENT_STATUS(CONST_CONTAINER):
     COMPLETED = 'done'
@@ -348,7 +349,7 @@ class _QuestInfo(_EventInfo):
                     flist = b.formattedList()
                     if flist:
                         vehiclesList.extend(flist)
-                elif b.hasIconFormat() and useIconFormat:
+                elif b.hasIconFormat() and useIconFormat or b.isVisualOnly():
                     iconBonusesList.extend(b.getList())
                 else:
                     flist = b.formattedList()
@@ -853,6 +854,16 @@ def getCarouselAwardVO(bonuses, isReceived = False):
 
     while len(result) % _AWARDS_PER_PAGE != 0 and len(result) > _AWARDS_PER_PAGE:
         result.append({})
+
+    return result
+
+
+def getChristmasCarouselAwardVO(bonuses, isReceived = False):
+    result = []
+    for bonus in bonuses:
+        if not bonus.isShowInGUI():
+            continue
+        result.extend(bonus.getCarouselList(isReceived, True))
 
     return result
 

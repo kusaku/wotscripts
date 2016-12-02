@@ -153,7 +153,7 @@ class VehicleGunRotator(object):
         self.__updateGunMarker(0.001)
 
     def setShotPosition(self, vehicleID, shotPos, shotVec, dispersionAngle):
-        if BigWorld.player().isObserver:
+        if BigWorld.player().isObserver():
             self.__avatar.observedVehicleData[vehicleID].dispAngle = dispersionAngle
         elif self.__clientMode and not self.__showServerMarker:
             return
@@ -176,7 +176,7 @@ class VehicleGunRotator(object):
             replayCtrl.setGunMarkerParams(markerSize, markerPos, markerDir)
         if self.__clientMode and self.__showServerMarker:
             self.__avatar.inputHandler.updateGunMarker2(markerPos, markerDir, (markerSize, idealMarkerSize), SERVER_TICK_LENGTH, collData)
-        if not self.__clientMode or BigWorld.player().isObserver:
+        if not self.__clientMode or BigWorld.player().isObserver():
             self.__lastShotPoint = markerPos
             self.__avatar.inputHandler.updateGunMarker(markerPos, markerDir, (markerSize, idealMarkerSize), SERVER_TICK_LENGTH, collData)
             descr = self.__avatar.getVehicleDescriptor()

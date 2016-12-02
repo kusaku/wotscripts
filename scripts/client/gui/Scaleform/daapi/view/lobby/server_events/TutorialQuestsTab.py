@@ -28,8 +28,6 @@ class TutorialQuestsTab(QuestsCurrentTab):
         g_clientUpdateManager.addCallbacks({'stats.tutorialsCompleted': self.__onEventsUpdated,
          'stats.dossier': self.__onEventsUpdated})
         self._invalidateEventsData()
-        if self._navInfo.tutorial.questID:
-            self._selectQuest(self._navInfo.tutorial.questID)
 
     def _dispose(self):
         g_clientUpdateManager.removeObjectCallbacks(self)
@@ -41,6 +39,9 @@ class TutorialQuestsTab(QuestsCurrentTab):
         super(TutorialQuestsTab, self)._onRegisterFlashComponent(viewPy, alias)
         if alias == QUESTS_ALIASES.TUTORIAL_HANGAR_QUEST_DETAILS_PY_ALIAS:
             self.components.get(alias).setQuestsDescriptor(self.__questsDescriptor)
+
+    def _getDefaultQuestID(self):
+        return self._navInfo.tutorial.questID
 
     def _selectQuest(self, questID):
         motiveQuests = self.eventsCache.getMotiveQuests(filterFunc=self._filterFunc)

@@ -84,7 +84,7 @@ _ENTITY_TO_ANOTHER_PREFIX = {(_C_TYPE.PREQUEUE, _Q_TYPE.RANDOMS): ('', 'goToAnot
  (_C_TYPE.PREQUEUE, _Q_TYPE.FALLOUT_MULTITEAM): ('', 'goToAnother'),
  (_C_TYPE.PREQUEUE, _Q_TYPE.SANDBOX): ('', 'goToAnother'),
  (_C_TYPE.PREQUEUE, _Q_TYPE.TUTORIAL): ('', 'goToBattleTutorial'),
- (_C_TYPE.LEGACY, _P_TYPE.TRAINING): ('', 'goToAnother'),
+ (_C_TYPE.LEGACY, _P_TYPE.TRAINING): ('goToIntro', 'goToAnother'),
  (_C_TYPE.LEGACY, _P_TYPE.COMPANY): ('goToIntro', 'goToAnother'),
  (_C_TYPE.LEGACY, _P_TYPE.CLAN): ('', 'goToAnother'),
  (_C_TYPE.LEGACY, _P_TYPE.TOURNAMENT): ('', 'goToAnother'),
@@ -98,7 +98,7 @@ _DEFAULT_CONFIRM = 'leave'
 
 def _createLeaveRallyMeta(unlockCtx, leftCtrlType, leftEntityType, isSwitching = False):
     key = (unlockCtx.getCtrlType(), unlockCtx.getEntityType())
-    if key in _ENTITY_TO_ANOTHER_PREFIX and unlockCtx.hasFlags(FUNCTIONAL_FLAG.SWITCH):
+    if key in _ENTITY_TO_ANOTHER_PREFIX and (unlockCtx.hasFlags(FUNCTIONAL_FLAG.SWITCH) or isSwitching):
         switch, another = _ENTITY_TO_ANOTHER_PREFIX[key]
         if switch and isSwitching:
             prefix = switch

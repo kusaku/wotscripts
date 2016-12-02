@@ -566,6 +566,18 @@ class ACHIEVEMENTS(object):
     MARKIREPAIRER = '#achievements:markIRepairer'
     MARKIREPAIRER_DESCR = '#achievements:markIRepairer_descr'
     MARKIREPAIRER_CONDITION = '#achievements:markIRepairer_condition'
+    XMASTREEBRONZE = '#achievements:xmasTreeBronze'
+    XMASTREEBRONZE_DESCR = '#achievements:xmasTreeBronze_descr'
+    XMASTREEBRONZE_CONDITION = '#achievements:xmasTreeBronze_condition'
+    XMASTREEBRONZE_NOTIFICATION = '#achievements:xmasTreeBronze_notification'
+    XMASTREESILVER = '#achievements:xmasTreeSilver'
+    XMASTREESILVER_DESCR = '#achievements:xmasTreeSilver_descr'
+    XMASTREESILVER_CONDITION = '#achievements:xmasTreeSilver_condition'
+    XMASTREESILVER_NOTIFICATION = '#achievements:xmasTreeSilver_notification'
+    XMASTREEGOLD = '#achievements:xmasTreeGold'
+    XMASTREEGOLD_DESCR = '#achievements:xmasTreeGold_descr'
+    XMASTREEGOLD_CONDITION = '#achievements:xmasTreeGold_condition'
+    XMASTREEGOLD_NOTIFICATION = '#achievements:xmasTreeGold_notification'
     HISTBATTLE1_HISTORYLESSONS = '#achievements:histBattle1_historyLessons'
     HISTBATTLE1_HISTORYLESSONS_DESCR = '#achievements:histBattle1_historyLessons_descr'
     HISTBATTLE1_HISTORYLESSONS_CONDITION = '#achievements:histBattle1_historyLessons_condition'
@@ -1191,6 +1203,18 @@ class ACHIEVEMENTS(object):
      MARKIREPAIRER,
      MARKIREPAIRER_DESCR,
      MARKIREPAIRER_CONDITION,
+     XMASTREEBRONZE,
+     XMASTREEBRONZE_DESCR,
+     XMASTREEBRONZE_CONDITION,
+     XMASTREEBRONZE_NOTIFICATION,
+     XMASTREESILVER,
+     XMASTREESILVER_DESCR,
+     XMASTREESILVER_CONDITION,
+     XMASTREESILVER_NOTIFICATION,
+     XMASTREEGOLD,
+     XMASTREEGOLD_DESCR,
+     XMASTREEGOLD_CONDITION,
+     XMASTREEGOLD_NOTIFICATION,
      HISTBATTLE1_HISTORYLESSONS,
      HISTBATTLE1_HISTORYLESSONS_DESCR,
      HISTBATTLE1_HISTORYLESSONS_CONDITION,

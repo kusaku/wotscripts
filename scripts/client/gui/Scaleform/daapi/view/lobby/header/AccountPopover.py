@@ -11,6 +11,7 @@ from gui.Scaleform.genConsts.FORTIFICATION_ALIASES import FORTIFICATION_ALIASES
 from gui.Scaleform.locale.MENU import MENU
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
+from gui.christmas.christmas_controller import g_christmasCtrl
 from gui.clans import formatters as clans_fmts
 from gui.clans.clan_helpers import ClanListener
 from gui.clans.restrictions import ClanMemberPermissions
@@ -137,6 +138,8 @@ class AccountPopover(AccountPopoverMeta, IGlobalListener, MyClubListener, ClanLi
         self.startGlobalListening()
         self.startMyClubListening()
         self.startClanListening()
+        g_christmasCtrl.onOpenChestAnimationStarted += self.__updateButtonsStates
+        g_christmasCtrl.onRibbonAnimationFinished += self.__updateButtonsStates
         AccountSettings.setFilter(BOOSTERS, {'wasShown': True})
         g_playerEvents.onCenterIsLongDisconnected += self.__onCenterIsLongDisconnected
 
@@ -181,6 +184,8 @@ class AccountPopover(AccountPopoverMeta, IGlobalListener, MyClubListener, ClanLi
         self.stopMyClubListening()
         self.stopGlobalListening()
         self.stopClanListening()
+        g_christmasCtrl.onOpenChestAnimationStarted -= self.__updateButtonsStates
+        g_christmasCtrl.onRibbonAnimationFinished -= self.__updateButtonsStates
         super(AccountPopover, self)._dispose()
 
     def _onRegisterFlashComponent(self, viewPy, alias):
@@ -331,7 +336,7 @@ class AccountPopover(AccountPopoverMeta, IGlobalListener, MyClubListener, ClanLi
         prbDispatcher = g_prbLoader.getDispatcher()
         if prbDispatcher:
             state = prbDispatcher.getFunctionalState()
-            self.__infoBtnEnabled = not state.isNavigationDisabled()
+            self.__infoBtnEnabled = not state.isNavigationDisabled() and not g_christmasCtrl.isNavigationDisabled()
 
     def __onCenterIsLongDisconnected(self, *args):
         self.__setClanData()

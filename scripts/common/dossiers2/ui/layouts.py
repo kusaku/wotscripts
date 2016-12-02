@@ -44,6 +44,7 @@ POTAPOV_QUESTS_GROUP = [_single('firstMerit'),
  _total('readyForBattleATSPG'),
  _total('readyForBattleALL'),
  _total('tankwomenProgress')]
+CHRISTMAS_QUESTS_GROUP = [_single('xmasTreeBronze'), _single('xmasTreeSilver'), _single('xmasTreeGold')]
 IGNORED_BY_BATTLE_RESULTS = [achievements.MARK_OF_MASTERY_RECORD, _single7x7('victoryMarch')]
 for record in records.RECORD_DB_IDS:
     if record[1] in ('maxXP', 'maxFrags', 'maxDamage', 'maxWinPoints', 'maxCoins'):

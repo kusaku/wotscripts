@@ -111,11 +111,16 @@ class _SiegeComponent(object):
         return
 
     def invalidate(self, totalTime, timeLeft, siegeState, engineState):
-        self.clear()
+        self._clearUpdater()
         self._componentUpdater = self._clazz(self._parentObj, totalTime, timeLeft, siegeState, engineState)
         self._componentUpdater.show()
 
     def clear(self):
+        self._parentObj = None
+        self._clearUpdater()
+        return
+
+    def _clearUpdater(self):
         if self._componentUpdater is not None:
             self._componentUpdater.clear()
         return

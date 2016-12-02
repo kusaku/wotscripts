@@ -33,3 +33,7 @@ class AcousticPopoverMeta(SmartPopOverView):
     def as_setEnableS(self, isEnable):
         if self._isDAAPIInited():
             return self.flashObject.as_setEnable(isEnable)
+
+    def as_updateBtnEnabledS(self, btnId, isEnabled):
+        if self._isDAAPIInited():
+            return self.flashObject.as_updateBtnEnabled(btnId, isEnabled)

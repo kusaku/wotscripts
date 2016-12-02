@@ -10,6 +10,7 @@ from gui.Scaleform.daapi.view.lobby.hangar.carousels.basic.carousel_filter impor
 from gui.Scaleform.daapi.view.meta.TankCarouselMeta import TankCarouselMeta
 from gui.Scaleform.genConsts.STORE_CONSTANTS import STORE_CONSTANTS
 from gui.Scaleform.genConsts.STORE_TYPES import STORE_TYPES
+from gui.christmas.christmas_controller import g_christmasCtrl
 from gui.shared import events, EVENT_BUS_SCOPE, g_itemsCache
 from gui.shared.formatters import text_styles
 from gui.shared.gui_items.processors.vehicle import VehicleSlotBuyer
@@ -58,6 +59,9 @@ class TankCarousel(TankCarouselMeta):
         self._carouselDP = None
         self._itemsCache = None
         return
+
+    def setChristmasBtnData(self, data):
+        self.as_setChristmasBtnDataS(data)
 
     def selectVehicle(self, idx):
         """ This method is called from flash when user clicks on carousel item.
@@ -229,3 +233,9 @@ class TankCarousel(TankCarouselMeta):
             if view.settings.alias == VIEW_ALIAS.TANK_CAROUSEL_FILTER_POPOVER:
                 view.setTankCarousel(self)
         return
+
+    def onChristmasBtnClick(self):
+        alias = VIEW_ALIAS.LOBBY_CHRISTMAS
+        if g_christmasCtrl.getClosedChestsCount():
+            alias = VIEW_ALIAS.CHRISTMAS_CHESTS
+        self.fireEvent(events.LoadViewEvent(alias), EVENT_BUS_SCOPE.LOBBY)

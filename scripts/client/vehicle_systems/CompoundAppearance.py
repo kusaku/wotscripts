@@ -1046,10 +1046,10 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
         if self.suspensionController is not None:
             self.suspensionController.onSiegeStateChanged(newState)
         if self.__suspensionSound is not None:
-            if newState == VEHICLE_SIEGE_STATE.DISABLED:
-                self.__suspensionSound.deactivate()
-            else:
+            if newState == VEHICLE_SIEGE_STATE.ENABLED:
                 self.__suspensionSound.activate()
+            else:
+                self.__suspensionSound.deactivate()
         if self.__siegeEffects is not None:
             self.__siegeEffects.onSiegeStateChanged(newState)
         return

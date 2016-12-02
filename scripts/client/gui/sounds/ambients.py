@@ -8,6 +8,7 @@ from constants import FORT_BUILDING_TYPE as FBT, ARENA_PERIOD as _PERIOD
 from gui.Scaleform.daapi.view.lobby.fortifications.fort_utils.FortViewHelper import FortViewHelper
 from gui.Scaleform.daapi.view.meta.WindowViewMeta import WindowViewMeta
 from gui.Scaleform.framework import ViewTypes
+from gui.Scaleform.framework.managers.containers import POP_UP_CRITERIA
 from gui.app_loader import g_appLoader
 from gui.app_loader.decorators import sf_lobby
 from gui.app_loader.settings import GUI_GLOBAL_SPACE_ID as _SPACE_ID
@@ -455,9 +456,11 @@ class GuiAmbientsCtrl(object):
 
     def init(self):
         g_appLoader.onGUISpaceEntered += self.__onGUISpaceEntered
+        g_appLoader.onGUISpaceLeft += self.__onGUISpaceLeft
 
     def fini(self):
         g_appLoader.onGUISpaceEntered -= self.__onGUISpaceEntered
+        g_appLoader.onGUISpaceLeft -= self.__onGUISpaceLeft
         self.stopAllSounds()
         self._clearSoundEnv(self._spaceEnv)
         self._spaceEnv = None
@@ -540,11 +543,32 @@ class GuiAmbientsCtrl(object):
         return env
 
     def __onGUISpaceEntered(self, spaceID):
-        SOUND_DEBUG('GUI space has been changed', spaceID, spaceID in self._spaces)
+        SOUND_DEBUG('Entering GUI space', spaceID, spaceID in self._spaces)
         if spaceID in self._spaces:
             self._clearSoundEnv(self._spaceEnv)
             self._spaceEnv = self._buildSoundEnv(self._spaces[spaceID])
             self._restartSounds()
+
+    def __onGUISpaceLeft(self, spaceID):
+        """ Explicitly clear custom sound environments when leaving space.
+        
+        We don't have to wait for an actual view disposal since it might be
+        delayed for a significant amount of time.
+        """
+        SOUND_DEBUG('Leaving GUI space', spaceID, spaceID in self._spaces)
+        if self.app is not None and spaceID in self._spaces:
+            customViews = []
+            for vt in (ViewTypes.TOP_WINDOW, ViewTypes.WINDOW, ViewTypes.LOBBY_SUB):
+                container = self.app.containerManager.getContainer(vt)
+                for viewAlias in self._customEnvs[vt].iterkeys():
+                    view = container.getView(criteria={POP_UP_CRITERIA.VIEW_ALIAS: viewAlias})
+                    if view is not None:
+                        customViews.append(view)
+
+            for view in customViews:
+                self.__onViewDisposed(view)
+
+        return
 
     def __onViewLoaded(self, view):
         if view is not None and view.settings is not None:

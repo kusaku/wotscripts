@@ -944,6 +944,11 @@ class SYSTEM_MESSAGES(object):
     INFO_NOAVAILABLE = '#system_messages:info/noAvailable'
     DRR_SCALE_STEP_UP = '#system_messages:drr_scale/step_up'
     DRR_SCALE_STEP_DOWN = '#system_messages:drr_scale/step_down'
+    CHRISTMAS_EVENT_STARTED = '#system_messages:christmas/event/started'
+    CHRISTMAS_EVENT_FINISHED = '#system_messages:christmas/event/finished'
+    CHRISTMAS_EVENT_INPROGRESSAGAIN = '#system_messages:christmas/event/inProgressAgain'
+    CHRISTMAS_EVENT_SUSPENDED = '#system_messages:christmas/event/suspended'
+    CHRISTMAS_ANIMATIONINPROCESS = '#system_messages:christmas/animationInProcess'
     FORTIFICATION_FIXEDPLAYERTOBUILDING = '#system_messages:fortification/fixedPlayerToBuilding'
     FORTIFICATION_MODERNIZATIONBUILDING = '#system_messages:fortification/modernizationBuilding'
     FORTIFICATION_BUILDINGPROCESS = '#system_messages:fortification/buildingProcess'
@@ -1092,6 +1097,18 @@ class SYSTEM_MESSAGES(object):
     VEHICLECOMPARE_PREVIEWNOTALLOWED = '#system_messages:vehicleCompare/previewNotAllowed'
     PRMP_NOTIFICATION_NEWENCYCLOPEDIARECOMMENDATION = '#system_messages:prmp/notification/newEncyclopediaRecommendation'
     RESTORECONTROLLER_HASLIMITEDRESTOREVEHICLES = '#system_messages:restoreController/hasLimitedRestoreVehicles'
+    CHRISTMASITEM_CONVERSION_SUCCESS = '#system_messages:christmasItem/conversion/success'
+    CHRISTMASITEM_CONVERSION_ERRORS_SERVER_ERROR = '#system_messages:christmasItem/conversion/errors/server_error'
+    CHRISTMASITEM_CONVERSION_ERRORS_NOT_ENOUGH_ITEMS = '#system_messages:christmasItem/conversion/errors/NOT_ENOUGH_ITEMS'
+    CHRISTMASITEM_CONVERSION_ERRORS_NOT_ENOUGH_SELECTED = '#system_messages:christmasItem/conversion/errors/NOT_ENOUGH_SELECTED'
+    CHRISTMASITEM_CONVERSION_ERRORS_RANK_LIMIT_EXCEEDED = '#system_messages:christmasItem/conversion/errors/RANK_LIMIT_EXCEEDED'
+    CHRISTMASITEM_CONVERSION_ERRORS_NO_ITEM = '#system_messages:christmasItem/conversion/errors/NO_ITEM'
+    CHRISTMASITEM_CHRISTMASTREEFILL_SUCCESS = '#system_messages:christmasItem/christmasTreeFill/success'
+    CHRISTMASITEM_CHRISTMASTREEFILL_ERRORS_SERVER_ERROR = '#system_messages:christmasItem/christmasTreeFill/errors/server_error'
+    CHRISTMASCHEST_OPEN_ERRORS_NO_CHESTS = '#system_messages:christmasChest/open/errors/NO_CHESTS'
+    CHRISTMASCHEST_OPEN_ERRORS_SERVER_ERROR = '#system_messages:christmasChest/open/errors/server_error'
+    CHRISTMASCHEST_OPEN_SUCCESS = '#system_messages:christmasChest/open/success'
+    CHRISTMAS_COMMON_ERROR = '#system_messages:christmas/common/error'
     UNIT_NOTIFICATION_DIVISIONTYPE_ENUM = (UNIT_NOTIFICATION_DIVISIONTYPE_MIDDLE, UNIT_NOTIFICATION_DIVISIONTYPE_CHAMPION, UNIT_NOTIFICATION_DIVISIONTYPE_ABSOLUTE)
     UNIT_ERRORS_ENUM = (UNIT_ERRORS_ALREADY_JOINED_UNIT,
      UNIT_ERRORS_CANT_CHANGE_DIVISION,
@@ -2255,6 +2272,11 @@ class SYSTEM_MESSAGES(object):
      INFO_NOAVAILABLE,
      DRR_SCALE_STEP_UP,
      DRR_SCALE_STEP_DOWN,
+     CHRISTMAS_EVENT_STARTED,
+     CHRISTMAS_EVENT_FINISHED,
+     CHRISTMAS_EVENT_INPROGRESSAGAIN,
+     CHRISTMAS_EVENT_SUSPENDED,
+     CHRISTMAS_ANIMATIONINPROCESS,
      FORTIFICATION_FIXEDPLAYERTOBUILDING,
      FORTIFICATION_MODERNIZATIONBUILDING,
      FORTIFICATION_BUILDINGPROCESS,
@@ -2402,7 +2424,19 @@ class SYSTEM_MESSAGES(object):
      VEHICLECOMPARE_DISABLED,
      VEHICLECOMPARE_PREVIEWNOTALLOWED,
      PRMP_NOTIFICATION_NEWENCYCLOPEDIARECOMMENDATION,
-     RESTORECONTROLLER_HASLIMITEDRESTOREVEHICLES)
+     RESTORECONTROLLER_HASLIMITEDRESTOREVEHICLES,
+     CHRISTMASITEM_CONVERSION_SUCCESS,
+     CHRISTMASITEM_CONVERSION_ERRORS_SERVER_ERROR,
+     CHRISTMASITEM_CONVERSION_ERRORS_NOT_ENOUGH_ITEMS,
+     CHRISTMASITEM_CONVERSION_ERRORS_NOT_ENOUGH_SELECTED,
+     CHRISTMASITEM_CONVERSION_ERRORS_RANK_LIMIT_EXCEEDED,
+     CHRISTMASITEM_CONVERSION_ERRORS_NO_ITEM,
+     CHRISTMASITEM_CHRISTMASTREEFILL_SUCCESS,
+     CHRISTMASITEM_CHRISTMASTREEFILL_ERRORS_SERVER_ERROR,
+     CHRISTMASCHEST_OPEN_ERRORS_NO_CHESTS,
+     CHRISTMASCHEST_OPEN_ERRORS_SERVER_ERROR,
+     CHRISTMASCHEST_OPEN_SUCCESS,
+     CHRISTMAS_COMMON_ERROR)
 
     @classmethod
     def unit_notification_divisiontype(cls, key0):

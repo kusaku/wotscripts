@@ -236,6 +236,13 @@ class InventoryVehicleTrigger(BuyVehicleTrigger):
         return bool(len(g_itemsCache.items.getVehicles(criteria)))
 
 
+class PermanentVehicleOwnTrigger(BuyVehicleTrigger):
+
+    def isOn(self):
+        vehicle = g_itemsCache.items.getItemByCD(self.getVar()['vehicle'])
+        return vehicle.isPurchased
+
+
 class VehicleBattleCountTrigger(TriggerWithValidateVar):
 
     def run(self):

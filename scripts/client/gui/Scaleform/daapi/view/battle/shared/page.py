@@ -156,6 +156,12 @@ class SharedPage(BattlePageMeta):
         for component in self._external:
             component.active(True)
 
+    def _changeCtrlMode(self, ctrlMode):
+        if ctrlMode == ctrlMode == aih_constants.CTRL_MODE_NAME.VIDEO:
+            self._setComponentsVisibility(hidden={_ALIASES.DAMAGE_PANEL})
+        else:
+            self._setComponentsVisibility(visible={_ALIASES.DAMAGE_PANEL})
+
     def __handleBattleLoading(self, event):
         if event.ctx['isShown']:
             self._onBattleLoadingStart()
@@ -182,10 +188,7 @@ class SharedPage(BattlePageMeta):
     def __onAvatarCtrlModeChanged(self, ctrlMode):
         if not self._isVisible or len(self._fsToggling) > 0 or len(self._blToggling) > 0:
             return
-        if ctrlMode == aih_constants.CTRL_MODE_NAME.VIDEO:
-            self._setComponentsVisibility(hidden={_ALIASES.DAMAGE_PANEL})
-        else:
-            self._setComponentsVisibility(visible={_ALIASES.DAMAGE_PANEL})
+        self._changeCtrlMode(ctrlMode)
 
 
 class BattlePageBusinessHandler(PackageBusinessHandler):

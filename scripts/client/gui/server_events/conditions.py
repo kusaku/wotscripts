@@ -651,7 +651,8 @@ class Token(_Requirement):
         uniqueTokens = set()
         for qID in group.getGroupEvents():
             quest = svrEvents.get(qID)
-            uniqueTokens |= set(quest.getChildren().keys())
+            if quest is not None:
+                uniqueTokens |= set(quest.getChildren().keys())
 
         return len(uniqueTokens)
 

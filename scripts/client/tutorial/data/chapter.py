@@ -1,6 +1,6 @@
 # Embedded file name: scripts/client/tutorial/data/chapter.py
-import types
 import operator
+import types
 from TriggersManager import TRIGGER_TYPE
 from tutorial.data.has_id import HasID, HasTargetID, HasIDAndTarget
 
@@ -194,16 +194,30 @@ class Scene(HasID):
 
 class Bonus(HasID):
 
-    def __init__(self, entityID, message, values):
+    def __init__(self, entityID, message, values, altValues, conditions):
         super(Bonus, self).__init__(entityID=entityID)
         self.__message = message
         self.__values = values
+        self.__altValues = altValues
+        self.__altBonusValuesConditions = conditions
 
     def getMessage(self):
         return self.__message
 
     def getValues(self):
         return self.__values
+
+    def getAltValues(self):
+        return self.__altValues
+
+    def getAltBonusValuesConditions(self):
+        return self.__altBonusValuesConditions
+
+    def clear(self):
+        self.__altBonusValuesConditions.clear()
+        self.__altValues = None
+        self.__values = None
+        return
 
 
 class HasIDConditions(HasID):

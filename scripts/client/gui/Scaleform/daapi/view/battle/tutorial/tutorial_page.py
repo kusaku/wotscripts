@@ -1,11 +1,11 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/battle/tutorial/tutorial_page.py
+from gui.Scaleform.daapi.view.battle.shared import SharedPage
 from gui.Scaleform.daapi.view.battle.shared.crosshair import CrosshairPanelContainer
 from gui.Scaleform.daapi.view.battle.shared.markers2d import MarkersManager, plugins
 from gui.Scaleform.daapi.view.battle.shared.markers2d import settings as _markers2d_settings
-from gui.Scaleform.daapi.view.battle.shared.minimap import component
 from gui.Scaleform.daapi.view.battle.shared.minimap import common
+from gui.Scaleform.daapi.view.battle.shared.minimap import component
 from gui.Scaleform.daapi.view.battle.shared.minimap import settings as _minimap_settings
-from gui.Scaleform.daapi.view.battle.shared import SharedPage
 from gui.Scaleform.daapi.view.meta.BattleTutorialMeta import BattleTutorialMeta
 from gui.Scaleform.genConsts.BATTLE_VIEW_ALIASES import BATTLE_VIEW_ALIASES
 from gui.battle_control import minimap_utils

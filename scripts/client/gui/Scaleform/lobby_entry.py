@@ -45,6 +45,7 @@ class LobbyEntry(SFApplication):
     def beforeDelete(self):
         from gui.Scaleform.Waiting import Waiting
         Waiting.setWainingViewGetter(None)
+        Waiting.close()
         super(LobbyEntry, self).beforeDelete()
         return
 

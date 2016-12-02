@@ -5,7 +5,7 @@ import calendar
 from account_shared import validateCustomizationItem
 from invoices_helpers import checkAccountDossierOperation
 from items import vehicles, tankmen
-from constants import EVENT_TYPE, DOSSIER_TYPE
+from constants import EVENT_TYPE, DOSSIER_TYPE, IS_DEVELOPMENT
 __all__ = ['getBonusReaders', 'readUTC', 'SUPPORTED_BONUSES']
 
 def getBonusReaders(bonusTypes):
@@ -415,7 +415,7 @@ def __readBonusSubSection(bonusReaders, bonusRange, section, isOneOf = False):
         hasOneOf = False
         bonus = {}
         for name, sub in section.items():
-            if isOneOf and name != 'optional':
+            if isOneOf and name != 'optional' and name != 'name':
                 raise Exception('The only possible subsection of oneof is optional')
             elif name in __PROBABILITY_READERS:
                 if __PROBABILITY_READERS[name](bonusReaders, bonusRange, bonus, sub, hasOneOf, isOneOf):
@@ -423,6 +423,13 @@ def __readBonusSubSection(bonusReaders, bonusRange, section, isOneOf = False):
                 continue
             elif name == 'meta':
                 bonus['meta'] = __readMetaSection(sub)
+                continue
+            elif name == 'name':
+                if IS_DEVELOPMENT:
+                    bonus['name'] = sub.readString('', '').strip()
+                continue
+            elif name == 'repeat':
+                bonus['repeat'] = sub.readInt('', 1)
                 continue
             elif name == 'probability':
                 continue

@@ -145,6 +145,7 @@ class ShowDialogEvent(SharedEvent):
     SHOW_EXCHANGE_DIALOG = 'showExchangeDialog'
     SHOW_CHECK_BOX_DIALOG = 'showCheckBoxDialog'
     SHOW_DESERTER_DLG = 'showDeserterDialog'
+    SHOW_CHRISTMAS_CONVERT_DIALOG = 'showChristmasConvertDialog'
 
     def __init__(self, meta, handler):
         super(ShowDialogEvent, self).__init__(meta.getEventType())
@@ -428,6 +429,7 @@ class OpenLinkEvent(SharedEvent):
     GLOBAL_MAP_CAP = 'globalMapCap'
     GLOBAL_MAP_PROMO = 'globalMapPromo'
     PREM_SHOP = 'premShopURL'
+    NY_RULES = 'nyRules'
 
     def __init__(self, eventType, url = '', title = ''):
         super(OpenLinkEvent, self).__init__(eventType)

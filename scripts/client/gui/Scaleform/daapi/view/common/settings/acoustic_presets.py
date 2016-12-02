@@ -46,12 +46,13 @@ class AcousticPresetsPlayer(object):
         self.__stopSound()
         self.__view = None
         self.__cursor = 0
-        del self.__items[:]
+        self.__items = None
         return
 
     def setupInitState(self):
         """Selects firsts item that can be played at first."""
         self.__cursor = 0
+        self.__view.setPauseEnabled(False)
         if len(self.__items):
             self.__view.setItemsSelected(self.__items[0].speakerIDs)
 
@@ -103,12 +104,17 @@ class AcousticPresetsPlayer(object):
 
     def __lockView(self):
         self.__view.setEnabled(False)
+        self.__view.setPlayEnabled(False)
+        self.__view.setPauseEnabled(True)
 
     def __unlockView(self, pause = False):
         self.__view.setEnabled(True)
         self.__view.setItemsPlay(None)
+        self.__view.setPlayEnabled(True)
         if not pause and self.__isPlayRound:
             self.setupInitState()
+        else:
+            self.__view.setPauseEnabled(False)
         return
 
     def __hasNextSound(self):

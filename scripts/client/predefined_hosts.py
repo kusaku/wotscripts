@@ -153,6 +153,10 @@ class _CSISRequestWorker(threading.Thread):
         return url
 
 
+def _getCSISWorker(csisUrl, receiveCsisResponse, peripheries):
+    return _CSISRequestWorker(csisUrl, receiveCsisResponse, peripheries)
+
+
 class _LoginAppUrlIterator(list):
 
     def __init__(self, *args):
@@ -605,7 +609,8 @@ class _PreDefinedHostList(object):
                     allHosts = self.hosts()
                     peripheries = map(lambda host: host.peripheryID, allHosts)
                     LOG_DEBUG('CSIS query sending', peripheries)
-                    _CSISRequestWorker(self.__csisUrl, self.__receiveCsisResponse, peripheries).start()
+                    worker = _getCSISWorker(self.__csisUrl, self.__receiveCsisResponse, peripheries)
+                    worker.start()
                 else:
                     self.__finishCsisQuery()
         else:

@@ -33,6 +33,7 @@ from gui.battle_control import arena_visitor
 from gui.battle_results import formatters as battle_res_fmts
 from gui.battle_results.VehicleProgressCache import g_vehicleProgressCache
 from gui.battle_results.VehicleProgressHelper import VehicleProgressHelper, PROGRESS_ACTION
+from gui.christmas.christmas_controller import g_christmasCtrl
 from gui.clubs import events_dispatcher as club_events
 from gui.clubs.club_helpers import ClubListener
 from gui.clubs.settings import getLeagueByDivision, getDivisionWithinLeague
@@ -361,6 +362,8 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
         prbDispatcher = g_prbLoader.getDispatcher()
         if prbDispatcher and prbDispatcher.getFunctionalState().isNavigationDisabled():
             return SystemMessages.pushI18nMessage('#system_messages:queue/isInQueue', type=SystemMessages.SM_TYPE.Error)
+        if g_christmasCtrl.isNavigationDisabled():
+            return SystemMessages.pushI18nMessage('#system_messages:christmas/animationInProcess', type=SystemMessages.SM_TYPE.Error)
         return quests_events.showEventsWindow(eID, eventType)
 
     def saveSorting(self, iconType, sortDirection, bonusType):
@@ -2087,6 +2090,8 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
         prbDispatcher = g_prbLoader.getDispatcher()
         if prbDispatcher and prbDispatcher.getFunctionalState().isNavigationDisabled():
             return SystemMessages.pushI18nMessage('#system_messages:queue/isInQueue', type=SystemMessages.SM_TYPE.Error)
+        if g_christmasCtrl.isNavigationDisabled():
+            return SystemMessages.pushI18nMessage('#system_messages:christmas/animationInProcess', type=SystemMessages.SM_TYPE.Error)
         if unlockType in (PROGRESS_ACTION.RESEARCH_UNLOCK_TYPE, PROGRESS_ACTION.PURCHASE_UNLOCK_TYPE):
             showResearchView(itemId)
             self.onWindowClose()

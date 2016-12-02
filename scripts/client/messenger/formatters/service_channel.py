@@ -1,5 +1,6 @@
 # Embedded file name: scripts/client/messenger/formatters/service_channel.py
 import time
+from collections import defaultdict
 import types
 import operator
 from Queue import Queue
@@ -137,20 +138,25 @@ class WaitItemsSyncFormatter(ServiceChannelFormatter):
 
     @async
     def _waitForSyncItems(self, callback):
-        if g_itemsCache.isSynced():
+        from gui.christmas.christmas_controller import g_christmasCtrl
+        if g_itemsCache.isSynced() and g_christmasCtrl.isKnownToysReceived():
             callback(True)
         else:
             self.__registerHandler(callback)
 
     def __registerHandler(self, callback):
+        from gui.christmas.christmas_controller import g_christmasCtrl
         if not self.__callbackQueue:
             self.__callbackQueue = Queue()
         self.__callbackQueue.put(callback)
         g_itemsCache.onSyncCompleted += self.__onSyncCompleted
+        g_christmasCtrl.onToysCacheChanged += self.__onSyncCompleted
 
     def __unregisterHandler(self):
+        from gui.christmas.christmas_controller import g_christmasCtrl
         raise self.__callbackQueue.empty() or AssertionError
         self.__callbackQueue = None
+        g_christmasCtrl.onToysCacheChanged -= self.__onSyncCompleted
         g_itemsCache.onSyncCompleted -= self.__onSyncCompleted
         return
 
@@ -203,7 +209,6 @@ class BattleResultsFormatter(WaitItemsSyncFormatter):
     @async
     @process
     def format(self, message, callback):
-        yield lambda callback: callback(True)
         isSynced = yield self._waitForSyncItems()
         if message.data and isSynced:
             battleResults = message.data
@@ -774,6 +779,43 @@ class InvoiceReceivedFormatter(WaitItemsSyncFormatter):
             result.append(g_settings.htmlTemplates.format('discountsInvoiceReceived', ctx={'discounts': ', '.join(discountsStrings)}))
         return '; '.join(result)
 
+    @classmethod
+    def _getChristmasToyString(cls, tokens):
+        accuredToys = defaultdict(lambda : 0)
+        debitedToys = defaultdict(lambda : 0)
+        accruedToysStr = []
+        newToys = {}
+        debitedToysStr = []
+        from gui.christmas.christmas_controller import g_christmasCtrl
+        for tokenID, tInfo in tokens.iteritems():
+            toyID = g_christmasCtrl.getToyID(tokenID)
+            count = tInfo.get('count', 0)
+            christmasItemInfo = g_christmasCtrl.getChristmasItemInfo(toyID, count)
+            if christmasItemInfo is not None:
+                if count > 0:
+                    newToys[toyID] = count
+                    accuredToys[christmasItemInfo.item.guiType] += count
+                else:
+                    debitedToys[christmasItemInfo.item.guiType] += abs(count)
+
+        g_christmasCtrl.addNewToysToAccountSettings(newToys)
+        for guiType, count in accuredToys.iteritems():
+            guiTypeName = i18n.makeString('#christmas:toyType/%s' % guiType)
+            if count > 0:
+                accruedToysStr.append(i18n.makeString('#christmas:bonus/toy', name=guiTypeName, count=count))
+
+        for guiType, count in debitedToys.iteritems():
+            guiTypeName = i18n.makeString('#christmas:toyType/%s' % guiType)
+            if count > 0:
+                debitedToysStr.append(i18n.makeString('#christmas:bonus/toy', name=guiTypeName, count=count))
+
+        result = []
+        if len(accruedToysStr):
+            result.append(g_settings.htmlTemplates.format('toysInvoiceReceived', ctx={'toys': ', '.join(accruedToysStr)}))
+        if len(debitedToysStr):
+            result.append(g_settings.htmlTemplates.format('toysDebitedReceived', ctx={'toys': ', '.join(debitedToysStr)}))
+        return '<br/>'.join(result)
+
     def __getSlotsString(self, slots):
         if slots > 0:
             template = 'slotsAccruedInvoiceReceived'
@@ -901,6 +943,11 @@ class InvoiceReceivedFormatter(WaitItemsSyncFormatter):
             dossier = dataEx.get('dossier', {})
             if dossier:
                 operations.append(self.__getDossierString())
+            tokens = dataEx.get('tokens', {})
+            if tokens is not None and len(tokens) > 0:
+                toysString = self._getChristmasToyString(tokens)
+                if toysString:
+                    operations.append(toysString)
             _extendCustomizationData(dataEx, operations)
             return operations
 
@@ -1452,11 +1499,11 @@ class TokenQuestsFormatter(WaitItemsSyncFormatter):
             data = message.data or {}
             completedQuestIDs = data.get('completedQuestIDs', set())
             fmt = self._formatQuestAchieves(message)
-            if fmt is not None:
+            if fmt:
                 settings = self._getGuiSettings(message, self._getTemplateName(completedQuestIDs))
                 formatted = g_settings.msgTemplates.format(self._getTemplateName(completedQuestIDs), {'achieves': fmt})
         callback((formatted, settings))
-        return
+        return None
 
     def _getTemplateName(self, completedQuestIDs = set()):
         if len(completedQuestIDs):
@@ -1480,14 +1527,19 @@ class TokenQuestsFormatter(WaitItemsSyncFormatter):
             freeXP = data.get('freeXP', 0)
             if freeXP:
                 result.append(self.__makeQuestsAchieve('battleQuestsFreeXP', freeXP=BigWorld.wg_getIntegralFormat(freeXP)))
-        vehicles = data.get('vehicles', {})
-        if vehicles is not None and len(vehicles) > 0:
-            msg = InvoiceReceivedFormatter._getVehiclesString(vehicles, htmlTplPostfix='QuestsReceived')
-            if len(msg):
-                result.append(msg)
-            comptnStr = InvoiceReceivedFormatter._getComptnString(vehicles, htmlTplPostfix='QuestsReceived')
-            if len(comptnStr):
-                result.append('<br/>' + comptnStr)
+        tokens = data.get('tokens', {})
+        if tokens is not None and len(tokens) > 0:
+            result.append(InvoiceReceivedFormatter._getChristmasToyString(tokens))
+        vehiclesList = data.get('vehicles', [])
+        for vehiclesData in vehiclesList:
+            if vehiclesData is not None and len(vehiclesData) > 0:
+                msg = InvoiceReceivedFormatter._getVehiclesString(vehiclesData, htmlTplPostfix='QuestsReceived')
+                if len(msg):
+                    result.append(msg)
+                comptnStr = InvoiceReceivedFormatter._getComptnString(vehiclesData, htmlTplPostfix='QuestsReceived')
+                if len(comptnStr):
+                    result.append('<br/>' + comptnStr)
+
         if not self._asBattleFormatter:
             creditsVal = data.get('credits', 0)
             if creditsVal:

@@ -436,7 +436,7 @@ class LegacyEntity(_LegacyEntity):
         return self.getTeamState().isInQueue() and self.getPlayerInfo().isReady() and assigned
 
     def getConfirmDialogMeta(self, ctx):
-        if not self._settings:
+        if not self._settings or ctx.isForced():
             return None
         else:
             prbType = self.getEntityType()

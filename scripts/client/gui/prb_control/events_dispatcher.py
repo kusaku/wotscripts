@@ -73,6 +73,9 @@ class EventDispatcher(object):
     def loadHangar(self):
         self.__fireLoadEvent(VIEW_ALIAS.LOBBY_HANGAR)
 
+    def loadChristmasView(self):
+        self.__fireLoadEvent(VIEW_ALIAS.LOBBY_CHRISTMAS)
+
     def loadBattleQueue(self):
         self.__fireLoadEvent(VIEW_ALIAS.BATTLE_QUEUE)
 

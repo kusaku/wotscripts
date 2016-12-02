@@ -1,4 +1,5 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/battle/classic/page.py
+from AvatarInputHandler.aih_constants import CTRL_MODE_NAME
 from debug_utils import LOG_DEBUG
 from gui.Scaleform.daapi.view.battle.shared import SharedPage
 from gui.Scaleform.framework import ViewTypes
@@ -83,3 +84,9 @@ class ClassicPage(SharedPage):
         super(ClassicPage, self)._switchToPostmortem()
         if self.as_isComponentVisibleS(BATTLE_VIEW_ALIASES.RADIAL_MENU):
             self._toggleRadialMenu(False)
+
+    def _changeCtrlMode(self, ctrlMode):
+        if ctrlMode == CTRL_MODE_NAME.VIDEO:
+            self._setComponentsVisibility(hidden={BATTLE_VIEW_ALIASES.DAMAGE_PANEL, BATTLE_VIEW_ALIASES.BATTLE_DAMAGE_LOG_PANEL})
+        else:
+            self._setComponentsVisibility(visible={BATTLE_VIEW_ALIASES.DAMAGE_PANEL, BATTLE_VIEW_ALIASES.BATTLE_DAMAGE_LOG_PANEL})

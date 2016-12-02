@@ -699,3 +699,9 @@ class EventsCache(IEventsCache):
 
     def __onLockedQuestsChanged(self):
         self.__lockedQuestIds = BigWorld.player().potapovQuestsLock
+
+    def __getNewYearData(self):
+        return self.__getEventsData(EVENT_CLIENT_DATA.INGAME_EVENTS).get('christmasEvent', {})
+
+    def getNYData(self):
+        return self.__getNewYearData()

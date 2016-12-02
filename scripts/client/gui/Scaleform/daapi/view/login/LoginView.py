@@ -3,11 +3,11 @@ import json
 import random
 import weakref
 from collections import defaultdict, namedtuple
+import WWISE
 import BigWorld
 import ResMgr
 import ScaleformFileLoader
 import Settings
-import WWISE
 import constants
 from ConnectionManager import connectionManager, LOGIN_STATUS
 from PlayerEvents import g_playerEvents
@@ -457,7 +457,7 @@ class LoginView(LoginPageMeta):
         isValid = True
         errorMessage = None
         invalidFields = None
-        if isToken2Login or constants.IS_DEVELOPMENT:
+        if isToken2Login or constants.IS_DEVELOPMENT and len(userName):
             return _ValidateCredentialsResult(isValid, errorMessage, invalidFields)
         else:
             if len(userName) < _LOGIN_NAME_MIN_LENGTH:

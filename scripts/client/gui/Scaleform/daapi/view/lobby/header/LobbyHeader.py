@@ -12,6 +12,7 @@ from gui.Scaleform.genConsts.STORE_CONSTANTS import STORE_CONSTANTS
 from gui.Scaleform.genConsts.FORTIFICATION_ALIASES import FORTIFICATION_ALIASES
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
+from gui.christmas.christmas_controller import g_christmasCtrl
 from gui.game_control.ServerStats import STATS_TYPE
 from gui.gold_fish import isGoldFishActionActive, isTimeToShowGoldFishPromo
 from gui.goodies import g_goodiesCache
@@ -208,6 +209,10 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, IGlobalListener):
          'goodies': self.__updateGoodies,
          'account.premiumExpiryTime': self.__onPremiumExpireTimeChanged,
          'cache.SPA': self.__onSPAUpdated})
+        g_christmasCtrl.onOpenChestAnimationStarted += self.__onChristmasChestUpdate
+        g_christmasCtrl.onRibbonAnimationFinished += self.__onChristmasChestUpdate
+        g_christmasCtrl.onAwardsAndFightBtnLocked += self.__onChristmasChestUpdate
+        g_christmasCtrl.onAwardsAndFightBtnUnlocked += self.__onChristmasChestUpdate
         self.as_setFightButtonS(i18n.makeString('#menu:headerButtons/battle'))
         self.as_setWalletStatusS(self.wallet.componentsStatuses)
         self.as_setPremShopDataS(RES_ICONS.MAPS_ICONS_LOBBY_ICON_PREMSHOP, MENU.HEADERBUTTONS_BTNLABEL_PREMSHOP, TOOLTIPS.HEADER_PREMSHOP, TOOLTIP_TYPES.COMPLEX)
@@ -254,6 +259,10 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, IGlobalListener):
         self.settingsCore.onSettingsChanged -= self.__onSettingsChanged
         self.encyclopedia.onStateChanged -= self.__updateHangarMenuData
         self.encyclopedia.onNewRecommendationReceived -= self.__onNewEncyclopediaRecommendation
+        g_christmasCtrl.onOpenChestAnimationStarted -= self.__onChristmasChestUpdate
+        g_christmasCtrl.onRibbonAnimationFinished -= self.__onChristmasChestUpdate
+        g_christmasCtrl.onAwardsAndFightBtnLocked -= self.__onChristmasChestUpdate
+        g_christmasCtrl.onAwardsAndFightBtnUnlocked -= self.__onChristmasChestUpdate
         super(LobbyHeader, self)._dispose()
 
     def __updateServerData(self):
@@ -470,6 +479,9 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, IGlobalListener):
     def __getSandboxTooltipData(self, ctx):
         return makeTooltip(i18n.makeString(MENU.HEADERBUTTONS_FIGHTBTN_TOOLTIP_SANDBOX_INVALID_HEADER), i18n.makeString(MENU.HEADERBUTTONS_FIGHTBTN_TOOLTIP_SANDBOX_INVALID_LEVEL_BODY, levels=toRomanRangeString(ctx['levels'], 1)))
 
+    def __onChristmasChestUpdate(self, *args):
+        self.__updatePrebattleControls()
+
     def __updatePrebattleControls(self):
         if not self.prbDispatcher:
             return
@@ -481,12 +493,13 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, IGlobalListener):
         result = self.prbEntity.canPlayerDoAction()
         canDo, canDoMsg = result.isValid, result.restriction
         playerInfo = self.prbDispatcher.getPlayerInfo()
+        isChristmasLockGUI = g_christmasCtrl.isNavigationDisabled()
         if selected.isInSquad(state):
             isInSquad = True
-            self.as_doDisableHeaderButtonS(self.BUTTONS.SQUAD, True)
+            self.as_doDisableHeaderButtonS(self.BUTTONS.SQUAD, not isChristmasLockGUI)
         else:
             isInSquad = False
-            self.as_doDisableHeaderButtonS(self.BUTTONS.SQUAD, self.prbDispatcher.getEntity().getPermissions().canCreateSquad())
+            self.as_doDisableHeaderButtonS(self.BUTTONS.SQUAD, self.prbDispatcher.getEntity().getPermissions().canCreateSquad() and not isChristmasLockGUI)
         isFallout = self.falloutCtrl.isSelected()
         isEvent = self.eventsCache.isEventEnabled()
         if isInSquad:
@@ -502,7 +515,7 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, IGlobalListener):
         else:
             iconSquad = RES_ICONS.MAPS_ICONS_BATTLETYPES_40X40_SQUAD
         self.as_updateSquadS(isInSquad, tooltip, TOOLTIP_TYPES.COMPLEX, isEvent, iconSquad)
-        isFightBtnDisabled = not canDo or selected.isFightButtonForcedDisabled()
+        isFightBtnDisabled = not canDo or selected.isFightButtonForcedDisabled() or isChristmasLockGUI or g_christmasCtrl.isFightBtnLocked()
         if isFightBtnDisabled and not state.hasLockedState:
             if canDoMsg == PRE_QUEUE_RESTRICTION.LIMIT_LEVEL:
                 self.as_setFightBtnTooltipS(self.__getSandboxTooltipData(result.ctx))
@@ -518,16 +531,16 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, IGlobalListener):
             self.as_setFightBtnTooltipS('')
         self.as_disableFightButtonS(isFightBtnDisabled)
         self.as_setFightButtonS(selected.getFightButtonLabel(state, playerInfo))
-        self.as_updateBattleTypeS(i18n.makeString(selected.getLabel()), selected.getSmallIcon(), selected.isSelectorBtnEnabled(), TOOLTIPS.HEADER_BATTLETYPE, TOOLTIP_TYPES.COMPLEX, selected.getData())
-        if selected.isDisabled():
+        self.as_updateBattleTypeS(i18n.makeString(selected.getLabel()), selected.getSmallIcon(), selected.isSelectorBtnEnabled() and not isChristmasLockGUI, TOOLTIPS.HEADER_BATTLETYPE, TOOLTIP_TYPES.COMPLEX, selected.getData())
+        if selected.isDisabled() or isChristmasLockGUI:
             self.__closeBattleTypeSelectPopover()
         else:
             self.__updateBattleTypeSelectPopover()
-        if squadSelected.isDisabled():
+        if squadSelected.isDisabled() or isChristmasLockGUI:
             self.__closeSquadTypeSelectPopover()
         else:
             self.__updateSquadTypeSelectPopover()
-        isNavigationEnabled = not state.isNavigationDisabled()
+        isNavigationEnabled = not state.isNavigationDisabled() and not isChristmasLockGUI
         for button in self.PRB_NAVIGATION_DISABLE_BUTTONS:
             self.as_doDisableHeaderButtonS(button, isNavigationEnabled)
 

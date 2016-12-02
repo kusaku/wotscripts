@@ -79,8 +79,17 @@ class HangarVideoCameraController:
 
 class _HangarSpace(object):
     isPremium = property(lambda self: (self.__isSpacePremium if self.__spaceInited else self.__delayedIsPremium))
+    selectedEntity = property(lambda self: self.__selectedEntity)
     gameSession = dependency.descriptor(IGameSessionController)
     igrCtrl = dependency.descriptor(IIGRController)
+
+    @property
+    def selectedEntity(self):
+        return self.__selectedEntity
+
+    @selectedEntity.setter
+    def selectedEntity(self, value):
+        self.__selectedEntity = value
 
     def __init__(self):
         self.__space = ClientHangarSpace()
@@ -94,11 +103,13 @@ class _HangarSpace(object):
         self.__delayedRefreshCallback = None
         self.__spaceDestroyedDuringLoad = False
         self.__lastUpdatedVehicle = None
+        self.__selectedEntity = None
         self.onSpaceCreate = Event.Event()
         self.onObjectSelected = Event.Event()
         self.onObjectUnselected = Event.Event()
         self.onObjectClicked = Event.Event()
         g_statistics.subscribeToHangarSpaceCreate(self.onSpaceCreate)
+        self.onObjectClicked = Event.Event()
         return
 
     @property

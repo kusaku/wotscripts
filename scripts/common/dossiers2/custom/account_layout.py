@@ -371,7 +371,10 @@ _SINGLE_ACHIEVEMENTS_VALUES = ['titleSniper',
  'moonSphere',
  'EFC2016',
  'markIProtector',
- 'markIBaseProtector']
+ 'markIBaseProtector',
+ 'xmasTreeBronze',
+ 'xmasTreeSilver',
+ 'xmasTreeGold']
 _singleAchievementsPopUps = ['titleSniper',
  'invincible',
  'diehard',
@@ -395,7 +398,10 @@ _singleAchievementsPopUps = ['titleSniper',
  'moonSphere',
  'EFC2016',
  'markIProtector',
- 'markIBaseProtector']
+ 'markIBaseProtector',
+ 'xmasTreeBronze',
+ 'xmasTreeSilver',
+ 'xmasTreeGold']
 _singleAchievementsBlockBuilder = BinarySetDossierBlockBuilder('singleAchievements', _SINGLE_ACHIEVEMENTS_VALUES, {}, _singleAchievementsPopUps)
 FORT_ACHIEVEMENTS_BLOCK_LAYOUT = ['conqueror',
  'fireAndSword',

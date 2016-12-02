@@ -11,7 +11,8 @@ from skeletons.gui.game_control import IInternalLinksController, IBrowserControl
 _LISTENERS = {OpenLinkEvent.CLUB_HELP: '_handleClubHelp',
  OpenLinkEvent.MEDKIT_HELP: '_handleVideoHelp',
  OpenLinkEvent.REPAIRKITHELP_HELP: '_handleVideoHelp',
- OpenLinkEvent.FIRE_EXTINGUISHERHELP_HELP: '_handleVideoHelp'}
+ OpenLinkEvent.FIRE_EXTINGUISHERHELP_HELP: '_handleVideoHelp',
+ OpenLinkEvent.NY_RULES: '_handleNyRulesHelp'}
 
 class InternalLinksHandler(IInternalLinksController):
     browserCtrl = dependency.descriptor(IBrowserController)
@@ -69,6 +70,9 @@ class InternalLinksHandler(IInternalLinksController):
 
     def _handleClubHelp(self, event):
         self.__openInternalBrowse(event.eventType, event.title, browserSize=gc_constants.BROWSER.CLUB_SIZE)
+
+    def _handleNyRulesHelp(self, event):
+        self.__openInternalBrowse(event.eventType, event.title, browserSize=gc_constants.BROWSER.PROMO_SIZE)
 
     def _handleVideoHelp(self, event):
         self.__openInternalBrowse(event.eventType, event.title, browserSize=gc_constants.BROWSER.VIDEO_SIZE, showActionBtn=False, showCloseBtn=True)

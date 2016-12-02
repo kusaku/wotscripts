@@ -1072,13 +1072,8 @@ class CompositeVehicleDescriptor(object):
         return getattr(self.__vehicleDescr, item)
 
     def __setattr__(self, key, value):
-        if key == 'activeGunShotIndex':
-            setattr(self.__siegeDescr, key, value)
-            setattr(self.__vehicleDescr, key, value)
-        if self.__vehicleMode == VEHICLE_MODE.SIEGE:
-            setattr(self.__siegeDescr, key, value)
-        else:
-            setattr(self.__vehicleDescr, key, value)
+        setattr(self.__siegeDescr, key, value)
+        setattr(self.__vehicleDescr, key, value)
 
     def onSiegeStateChanged(self, siegeMode):
         if siegeMode == VEHICLE_SIEGE_STATE.ENABLED:

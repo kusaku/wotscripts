@@ -46,6 +46,8 @@ class QUESTS(object):
     BONUSES_GOLD_DESCRIPTION = '#quests:bonuses/gold/description'
     BONUSES_TANKMEN_DESCRIPTION = '#quests:bonuses/tankmen/description'
     BONUSES_ITEM_TANKWOMAN = '#quests:bonuses/item/tankwoman'
+    BONUSES_ITEM_TANKWOMAN_DESCRIPTION = '#quests:bonuses/item/tankwoman/description'
+    BONUSES_ITEM_TANKWOMAN_CHRISTMAS_DESCRIPTION = '#quests:bonuses/item/tankwoman/christmas/description'
     BONUSES_ITEM_ADDITIONBONUS = '#quests:bonuses/item/additionBonus'
     BONUSES_ITEM_TANKMEN_NO_SKILLS = '#quests:bonuses/item/tankmen/no_skills'
     BONUSES_ITEM_TANKMEN_WITH_SKILLS = '#quests:bonuses/item/tankmen/with_skills'

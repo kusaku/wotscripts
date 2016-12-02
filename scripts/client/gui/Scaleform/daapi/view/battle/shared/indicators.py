@@ -454,16 +454,12 @@ class SixthSenseIndicator(SixthSenseMeta):
     def __show(self):
         if self.__detectionSoundEvent is not None:
             if self.__detectionSoundEvent.isPlaying:
-                self.__detectionSoundEvent.stop()
-                BigWorld.callback(0.01, self.__playCallback)
+                self.__detectionSoundEvent.restart()
             else:
                 self.__detectionSoundEvent.play()
         self.as_showS()
         self.__callbackID = BigWorld.callback(GUI_SETTINGS.sixthSenseDuration / 1000.0, self.__hide)
         return
-
-    def __playCallback(self):
-        self.__detectionSoundEvent.play()
 
     def __hide(self):
         self.__callbackID = None
@@ -520,14 +516,16 @@ class SiegeModeIndicator(SiegeModeIndicatorMeta):
         self._isHintShown = False
         self._isInPostmortem = False
         self._isObserver = False
-        isReplayPlaying = self.sessionProvider.isReplayPlaying
-        self._siegeComponent = siege_component.createSiegeComponent(self, isReplayPlaying)
+        self._siegeComponent = None
+        return
 
     def _populate(self):
         vStateCtrl = self.sessionProvider.shared.vehicleState
         crosshairCtrl = self.sessionProvider.shared.crosshair
         keyboardSetting = self.settingsCore.options.getSetting(CONTROLS.KEYBOARD)
         arenaDP = self.sessionProvider.getArenaDP()
+        isReplayPlaying = self.sessionProvider.isReplayPlaying
+        self._siegeComponent = siege_component.createSiegeComponent(self, isReplayPlaying)
         keyboardSetting.onKeyBindingsChanged += self.__onKeyBindingsChanged
         self._hintsLeft = AccountSettings.getSettings('siegeModeHintCounter')
         vInfo = arenaDP.getVehicleInfo()
@@ -559,6 +557,7 @@ class SiegeModeIndicator(SiegeModeIndicatorMeta):
             vStateCtrl.onPostMortemSwitched -= self.__onPostMortemSwitched
         self._switchTimeTable.clear()
         self._siegeComponent.clear()
+        self._siegeComponent = None
         AccountSettings.setSettings('siegeModeHintCounter', self._hintsLeft)
         return
 

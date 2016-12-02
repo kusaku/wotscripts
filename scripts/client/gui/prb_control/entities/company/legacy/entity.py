@@ -1,6 +1,7 @@
 # Embedded file name: scripts/client/gui/prb_control/entities/company/legacy/entity.py
 import BigWorld
 from account_helpers import gameplay_ctx
+from adisp import process
 from constants import PREBATTLE_COMPANY_DIVISION, QUEUE_TYPE
 from constants import PREBATTLE_TYPE
 from debug_utils import LOG_ERROR
@@ -464,12 +465,13 @@ class CompanyEntity(LegacyEntity):
         """
         g_eventDispatcher.addCompanyToCarousel()
 
+    @process
     def __companyExpiredCallback(self, result):
         """
         Callback for company expired dialog.
         Args:
             result: confirmation result
         """
-        ctx = LeaveLegacyCtx(waitingID='prebattle/leave')
+        ctx = LeaveLegacyCtx(waitingID='prebattle/leave', isForced=True, flags=FUNCTIONAL_FLAG.EXIT)
         if not self.prbDispatcher.isRequestInProcess():
-            self.leave(ctx)
+            yield self.prbDispatcher.leave(ctx)

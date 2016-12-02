@@ -40,6 +40,14 @@ NEW_SETTINGS_COUNTER = 'newSettingsCounter'
 LAST_CLUB_OPENED_FOR_APPS = 'lastClubOpenedForApps'
 SHOW_INVITE_COMMAND_BTN_ANIMATION = 'showInviteCommandBtnAnimation'
 DEFAULT_QUEUE = 'defaultQueue'
+MANUAL_BOX_OPEN = 'manualBoxOpen'
+CHRISTMAS_STARTED = 'christmasStarted'
+CHRISTMAS_FINISHED = 'christmasFinished'
+CHRISTMAS_PAUSED = 'christmasPaused'
+CHRISTMAS_STARTED_AGAIN = 'christmasStartedAgain'
+CHRISTMAS_NEW_TOYS = 'christmasNewToys'
+CHRISTMAS_SHOWN_AWARDS = 'christmasShownAwards'
+CHTISTMAS_VIEW_TAB = 'chtistmasViewTab'
 STORE_TAB = 'store_tab'
 KNOWN_SELECTOR_BATTLES = 'knownSelectorBattles'
 DEFAULT_VALUES = {KEY_FILTERS: {STORE_TAB: 0,
@@ -213,6 +221,15 @@ DEFAULT_VALUES = {KEY_FILTERS: {STORE_TAB: 0,
                                                       _FBT.OFFICE,
                                                       _FBT.MILITARY_SHOP}},
                 'vehicleSellDialog': {'isOpened': False},
+                MANUAL_BOX_OPEN: True,
+                CHRISTMAS_STARTED: False,
+                CHRISTMAS_FINISHED: False,
+                CHRISTMAS_PAUSED: False,
+                CHRISTMAS_STARTED_AGAIN: False,
+                CHRISTMAS_NEW_TOYS: {},
+                CHRISTMAS_SHOWN_AWARDS: set(),
+                'alchemyBtnShown': False,
+                CHTISTMAS_VIEW_TAB: 'ny_tree',
                 KNOWN_SELECTOR_BATTLES: set(),
                 'tankmanDropSkillIdx': 0,
                 'cursor': False,

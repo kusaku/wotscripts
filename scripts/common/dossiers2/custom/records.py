@@ -445,6 +445,9 @@ RECORDS = (('total', 'creationTime', 'p', 'I', 4000000001L),
  ('singleAchievements', 'moonSphere', 'p', 'B', 1),
  ('singleAchievements', 'markIProtector', 'p', 'B', 1),
  ('singleAchievements', 'markIBaseProtector', 'p', 'B', 1),
+ ('singleAchievements', 'xmasTreeBronze', 'p', 'B', 1),
+ ('singleAchievements', 'xmasTreeSilver', 'p', 'B', 1),
+ ('singleAchievements', 'xmasTreeGold', 'p', 'B', 1),
  ('achievements', 'beasthunter', 'p', 'H', 60001),
  ('achievements', 'sinai', 'p', 'H', 60001),
  ('achievements', 'mousebane', 'p', 'H', 60001),
@@ -1625,7 +1628,10 @@ RECORD_DB_IDS = {('total', 'creationTime'): 68,
  ('singleAchievements', 'markIBaseProtector'): 878,
  ('achievements', 'markIBomberman'): 879,
  ('achievements', 'markIRepairer'): 880,
- ('achievements', 'markI100Years'): 881}
+ ('achievements', 'markI100Years'): 881,
+ ('singleAchievements', 'xmasTreeBronze'): 882,
+ ('singleAchievements', 'xmasTreeSilver'): 883,
+ ('singleAchievements', 'xmasTreeGold'): 884}
 DB_ID_TO_RECORD = dict([ (value, key) for key, value in RECORD_DB_IDS.iteritems() ])
 raise len(RECORD_DB_IDS) == len(DB_ID_TO_RECORD) or AssertionError
 raise len(RECORD_DB_IDS) == len(RECORDS) or AssertionError

@@ -1,6 +1,6 @@
 # Embedded file name: scripts/client/tutorial/doc_loader/sub_parsers/battle_quests.py
 from tutorial.doc_loader import sub_parsers
-from tutorial.doc_loader.sub_parsers import quests
+from tutorial.doc_loader.sub_parsers import quests, lobby
 from tutorial.control.quests.battle import triggers
 from tutorial.data import effects
 _EFFECT_TYPE = effects.EFFECT_TYPE
@@ -15,7 +15,7 @@ def _readInstallItemsTriggerSection(xmlCtx, section, chapter, triggerID):
 
 def init():
     sub_parsers.setEffectsParsers({'save-setting': quests.readSaveTutorialSettingSection})
-    sub_parsers.setEntitiesParsers({'tutorial-setting': quests.readTutorialSettingSection})
+    sub_parsers.setEntitiesParsers({'tutorial-setting': lobby.readTutorialSettingSection})
     sub_parsers.setTriggersParsers({'tutorialIntSetting': quests.readTutorialIntSettingTriggerSection,
      'tutorialAccountSetting': quests.readTutorialAccountSettingTriggerSection,
      'useItem': _readUseItemsTriggerSection,

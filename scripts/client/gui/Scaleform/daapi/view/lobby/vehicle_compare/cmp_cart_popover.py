@@ -6,6 +6,7 @@ from gui.Scaleform.daapi.view.meta.VehicleCompareCartPopoverMeta import VehicleC
 from gui.Scaleform.framework.entities.DAAPIDataProvider import SortableDAAPIDataProvider
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.Scaleform.locale.VEH_COMPARE import VEH_COMPARE
+from gui.christmas.christmas_controller import g_christmasCtrl
 from gui.prb_control.dispatcher import g_prbLoader
 from gui.shared.ItemsCache import g_itemsCache
 from gui.shared.event_dispatcher import showVehicleCompare
@@ -44,12 +45,16 @@ class VehicleCompareCartPopover(VehicleCompareCartPopoverMeta):
         self._cartDP.rebuildList(self.comparisonBasket.getVehiclesCDs())
         self.comparisonBasket.onChange += self.__onBasketChange
         self.comparisonBasket.onSwitchChange += self.onWindowClose
+        g_christmasCtrl.onOpenChestAnimationStarted += self.__updateButtonsState
+        g_christmasCtrl.onRibbonAnimationFinished += self.__updateButtonsState
         self.__initControls()
 
     def _dispose(self):
         super(VehicleCompareCartPopover, self)._dispose()
         self.comparisonBasket.onChange -= self.__onBasketChange
         self.comparisonBasket.onSwitchChange -= self.onWindowClose
+        g_christmasCtrl.onOpenChestAnimationStarted -= self.__updateButtonsState
+        g_christmasCtrl.onRibbonAnimationFinished -= self.__updateButtonsState
         self._cartDP.fini()
         self._cartDP = None
         return
@@ -76,7 +81,7 @@ class VehicleCompareCartPopover(VehicleCompareCartPopoverMeta):
         else:
             addBtnTT = VEH_COMPARE.CARTPOPOVER_OPENCMPBTN_TOOLTIP
             addBtnIcon = None
-        isNavigationEnabled = not g_prbLoader.getDispatcher().getFunctionalState().isNavigationDisabled()
+        isNavigationEnabled = not g_prbLoader.getDispatcher().getFunctionalState().isNavigationDisabled() and not g_christmasCtrl.isNavigationDisabled()
         self.as_updateToCmpBtnPropsS({'btnLabel': _ms(VEH_COMPARE.CARTPOPOVER_GOTOCOMPAREBTN_LABEL, value=count),
          'btnTooltip': addBtnTT,
          'btnEnabled': buttonsEnabled and isNavigationEnabled,
