@@ -623,7 +623,7 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
     def __requestModelsRefresh(self):
         currentModelState = self.__currentDamageState.modelState
         assembler = model_assembler.prepareCompoundAssembler(self.__typeDesc, currentModelState, self.__vehicle.spaceID, self.__vehicle.isTurretDetached)
-        BigWorld.loadResourceListBG([assembler], functools.partial(self.__onModelsRefresh, currentModelState))
+        BigWorld.loadResourceListBG((assembler,), functools.partial(self.__onModelsRefresh, currentModelState))
 
     def __onModelsRefresh(self, modelState, resourceList):
         if not self.damageState.isCurrentModelDamaged:

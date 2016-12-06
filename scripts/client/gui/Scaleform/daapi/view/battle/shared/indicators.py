@@ -15,10 +15,10 @@ from gui.Scaleform.daapi.view.battle.shared import siege_component
 from gui.Scaleform.daapi.view.meta.SixthSenseMeta import SixthSenseMeta
 from gui.Scaleform.daapi.view.meta.SiegeModeIndicatorMeta import SiegeModeIndicatorMeta
 from gui.shared.crits_mask_parser import critsParserGenerator
+from gui.shared.formatters import text_styles
 from gui.shared.utils.key_mapping import getReadableKey
 from gui.battle_control.battle_constants import HIT_INDICATOR_MAX_ON_SCREEN
 from gui.battle_control.battle_constants import VEHICLE_VIEW_STATE
-from gui.battle_control.battle_constants import CROSSHAIR_VIEW_ID
 from gui.battle_control.battle_constants import DEVICE_STATES_RANGE
 from gui.battle_control.controllers.hit_direction_ctrl import IHitIndicator
 from gui.Scaleform.genConsts.DAMAGE_INDICATOR_ATLAS_ITEMS import DAMAGE_INDICATOR_ATLAS_ITEMS
@@ -577,7 +577,7 @@ class SiegeModeIndicator(SiegeModeIndicatorMeta):
         if self._isInPostmortem or self._isObserver:
             return
         if self._siegeState not in _SIEGE_STATE.SWITCHING and self._hintsLeft:
-            self.as_showHintS(self.__getHint())
+            self.as_showHintS(*self.__getHint())
             self._isHintShown = True
         elif self._isHintShown:
             self.as_hideHintS()
@@ -678,12 +678,13 @@ class SiegeModeIndicator(SiegeModeIndicatorMeta):
 
     def __getHint(self):
         keyName = getReadableKey(CommandMapping.CMD_CM_VEHICLE_SWITCH_AUTOROTATION)
-        hint = INGAME_GUI.siegeModeHint(self._siegeState)
         if keyName:
-            return makeHtmlString('html_templates:battle/siegeMode', 'toggle', ctx={'key': i18n.makeString(keyName),
-             'text': i18n.makeString(hint)})
+            pressText = text_styles.tutorial(INGAME_GUI.SIEGEMODE_HINT_PRESS)
+            hintText = text_styles.tutorial(INGAME_GUI.siegeModeHint(self._siegeState))
+            keyText = makeHtmlString('html_templates:battle/siegeMode', 'toggle', ctx={'key': keyName})
+            return (keyText, pressText, hintText)
         else:
-            return makeHtmlString('html_templates:battle/siegeMode', 'noBinding', ctx={'text': i18n.makeString(INGAME_GUI.SIEGEMODE_HINT_NOBINDING)})
+            return ('', '', text_styles.tutorial(INGAME_GUI.SIEGEMODE_HINT_NOBINDING))
 
 
 class IDirectionIndicator(object):

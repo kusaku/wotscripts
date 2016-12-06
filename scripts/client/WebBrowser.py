@@ -60,6 +60,7 @@ class WebBrowser(object):
         self.onReadyToShowContent = Event()
         self.onNavigate = Event()
         self.onReady = Event()
+        self.onFailedCreation = Event()
         LOG_BROWSER('INIT ', self.__baseUrl, texName, size, self.__browserID)
         return
 
@@ -69,7 +70,7 @@ class WebBrowser(object):
         self.__browser = BigWorld.createBrowser(self.__browserID, clientLanguage)
         if self.__browser is None:
             LOG_BROWSER('create() NO BROWSER WAS CREATED', self.__baseUrl)
-            return
+            return False
         else:
             self.__browser.script = EventListener(self)
             self.__browser.script.onLoadStart += self.__onLoadStart
@@ -151,7 +152,7 @@ class WebBrowser(object):
               None,
               None,
               lambda me, e: injectKeyUp(me, e)))
-            return
+            return True
 
     def ready(self, success):
         LOG_BROWSER('READY ', success, self.__baseUrl, self.__browserID)
@@ -171,12 +172,12 @@ class WebBrowser(object):
             if self.__startFocused:
                 self.focus()
             self.update()
+            g_mgr.addBrowser(self)
+            self.onReady(self.__browser.url, success)
         else:
             self.__isNavigationComplete = True
-        g_mgr.addBrowser(self)
-        self.onReady(self.__browser.url, success)
-        if not success:
-            self.onLoadEnd(self.__browser.url, False)
+            LOG_BROWSER(' FAILED ', self.__baseUrl, self.__browserID)
+            self.onFailedCreation()
 
     def updateSize(self, size):
         self.__browserSize = size
@@ -191,6 +192,7 @@ class WebBrowser(object):
 
     def destroy(self):
         if self.__browser is not None:
+            LOG_BROWSER('DESTROYED ', self.__baseUrl, self.__browserID)
             self.__browser.script.onLoadStart -= self.__onLoadStart
             self.__browser.script.onLoadEnd -= self.__onLoadEnd
             self.__browser.script.onLoadingStateChange -= self.__onLoadingStateChange

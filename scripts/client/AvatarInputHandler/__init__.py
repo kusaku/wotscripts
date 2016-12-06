@@ -19,7 +19,7 @@ import control_modes
 from AvatarInputHandler import aih_global_binding, aih_constants, gun_marker_ctrl
 from AvatarInputHandler.AimingSystems.SniperAimingSystem import SniperAimingSystem
 from AvatarInputHandler.commands.siege_mode_control import SiegeModeControl
-from AvatarInputHandler.siege_mode_sound_notifications import SiegeModeSoundNotifications
+from AvatarInputHandler.siege_mode_player_notifications import SiegeModeSoundNotifications, SiegeModeCameraShaker
 from Event import Event
 from constants import ARENA_PERIOD, AIMING_MODE
 from control_modes import _ARCADE_CAM_PIVOT_POS
@@ -186,6 +186,7 @@ class AvatarInputHandler(CallbackDelayer, ComponentSystem):
             self.siegeModeSoundNotifications = SiegeModeSoundNotifications()
             self.siegeModeControl.onSiegeStateChanged += self.siegeModeSoundNotifications.onSiegeStateChanged
             self.siegeModeControl.onRequestFail += self.__onRequestFail
+            self.siegeModeControl.onSiegeStateChanged += SiegeModeCameraShaker.shake
 
     def prerequisites(self):
         out = []
@@ -634,6 +635,17 @@ class AvatarInputHandler(CallbackDelayer, ComponentSystem):
                 vehicleSensitivity *= avatarVehicle.typeDescriptor.hull['swinging']['sensitivityToImpulse']
             _, impulseValue = self.__adjustImpulse(Math.Vector3(0, 0, 0), impulseValue, camera, position, vehicleSensitivity, cameras.ImpulseReason.VEHICLE_EXPLOSION)
             camera.applyDistantImpulse(position, impulseValue, cameras.ImpulseReason.PROJECTILE_HIT)
+            return
+
+    def onSpecificImpulse(self, position, impulse, specificCtrl = None):
+        if specificCtrl is None:
+            camera = getattr(self.ctrl, 'camera', None)
+        else:
+            camera = self.ctrls[specificCtrl].camera
+        if camera is None:
+            return
+        else:
+            camera.applyImpulse(position, impulse, cameras.ImpulseReason.MY_SHOT)
             return
 
     def __adjustImpulse(self, impulseDir, impulseValue, camera, impulsePosition, vehicleSensitivity, impulseReason):

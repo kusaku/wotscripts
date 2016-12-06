@@ -1,11 +1,14 @@
 # Embedded file name: scripts/client/vehicle_systems/components/siegeEffectsController.py
-import svarog_script.py_component
+from AvatarInputHandler.cameras import ImpulseReason
+import BigWorld
 import Math
+import svarog_script.py_component
 from constants import VEHICLE_SIEGE_STATE
+from vehicle_systems.tankStructure import TankNodeNames
 
 class SiegeEffectsController(svarog_script.py_component.Component):
     SIEGE_TIMEOUT = 2.0
-    SIEGE_IMPULSE = 0.25
+    SIEGE_IMPULSE = 0.1
 
     def __init__(self, appearance):
         self.__appearance = appearance
@@ -14,25 +17,28 @@ class SiegeEffectsController(svarog_script.py_component.Component):
         self.__siegeInProgress = 0
         self.__state = VEHICLE_SIEGE_STATE.DISABLED
 
-    def __del__(self):
+    def destroy(self):
         self.__effectManager = None
         self.__appearance = None
         return
+
+    def __shake(self):
+        matrix = Math.Matrix(self.__appearance.compoundModel.matrix)
+        impulseDir = -matrix.applyToAxis(2)
+        self.__appearance.receiveShotImpulse(impulseDir, self.SIEGE_IMPULSE)
 
     def onSiegeStateChanged(self, newState):
         if self.__state != newState:
             if newState == VEHICLE_SIEGE_STATE.SWITCHING_ON:
                 self.__siegeInProgress = 1
                 self.__siegeTimeOut = self.SIEGE_TIMEOUT
-                matrix = Math.Matrix(self.__appearance.compoundModel.matrix)
-                self.__appearance.receiveShotImpulse(-matrix.applyToAxis(2), self.SIEGE_IMPULSE)
+                self.__shake()
             elif newState == VEHICLE_SIEGE_STATE.ENABLED:
                 self.__siegeInProgress = 0
             elif newState == VEHICLE_SIEGE_STATE.SWITCHING_OFF:
                 self.__siegeInProgress = 1
                 self.__siegeTimeOut = self.SIEGE_TIMEOUT
-                matrix = Math.Matrix(self.__appearance.compoundModel.matrix)
-                self.__appearance.receiveShotImpulse(-matrix.applyToAxis(2), self.SIEGE_IMPULSE)
+                self.__shake()
             elif newState == VEHICLE_SIEGE_STATE.DISABLED:
                 self.__siegeInProgress = 0
             self.__state = newState

@@ -481,6 +481,7 @@ class INGAME_GUI(object):
     BATTLEMESSENGER_TOXIC_BLACKLIST_CANT_ADD_IN_BLACKLIST_BODY = '#ingame_gui:battleMessenger/toxic/blackList/CANT_ADD_IN_BLACKLIST/body'
     BATTLEMESSENGER_TOXIC_BLACKLIST_REMOVE_FROM_BLACKLIST_HEADER = '#ingame_gui:battleMessenger/toxic/blackList/REMOVE_FROM_BLACKLIST/header'
     BATTLEMESSENGER_TOXIC_BLACKLIST_REMOVE_FROM_BLACKLIST_BODY = '#ingame_gui:battleMessenger/toxic/blackList/REMOVE_FROM_BLACKLIST/body'
+    SIEGEMODE_HINT_PRESS = '#ingame_gui:siegeMode/hint/press'
     SIEGEMODE_HINT_FORMODE_0 = '#ingame_gui:siegeMode/hint/forMode/0'
     SIEGEMODE_HINT_FORMODE_1 = '#ingame_gui:siegeMode/hint/forMode/1'
     SIEGEMODE_HINT_FORMODE_2 = '#ingame_gui:siegeMode/hint/forMode/2'

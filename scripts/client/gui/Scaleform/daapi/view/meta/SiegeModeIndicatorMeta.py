@@ -29,9 +29,9 @@ class SiegeModeIndicatorMeta(BaseDAAPIComponent):
         if self._isDAAPIInited():
             return self.flashObject.as_setVisible(visible)
 
-    def as_showHintS(self, label):
+    def as_showHintS(self, buttonName, messageLeft, messageRight):
         if self._isDAAPIInited():
-            return self.flashObject.as_showHint(label)
+            return self.flashObject.as_showHint(buttonName, messageLeft, messageRight)
 
     def as_hideHintS(self):
         if self._isDAAPIInited():

@@ -968,6 +968,9 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager, AvatarOb
             elif code == STATUS.HORN_BANNED:
                 self.__hornCooldown.ban(floatArg)
             elif code == STATUS.SIEGE_MODE_STATE_CHANGED:
+                self.__cruiseControlMode = _CRUISE_CONTROL_MODE.NONE
+                self.__updateCruiseControlPanel()
+                self.moveVehicleByCurrentKeys(False)
                 self.guiSessionProvider.invalidateVehicleState(VEHICLE_VIEW_STATE.SIEGE_MODE, (intArg, floatArg))
                 self.__onSiegeStateUpdated(vehicleID, intArg, floatArg)
             return
