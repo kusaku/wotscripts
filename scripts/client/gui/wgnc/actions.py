@@ -80,11 +80,11 @@ class OpenInternalBrowser(_OpenBrowser):
             title = actor.getTopic()
         else:
             title = None
-        self.__doInvoke(title)
+        self._doInvoke(title)
         return
 
     @process
-    def _doInvoke(self, ctrl, title):
+    def _doInvoke(self, title):
         self._browserID = yield self.browserCtrl.load(self._url, browserID=self._browserID, title=title)
 
 
@@ -95,7 +95,7 @@ class OpenPromoBrowser(OpenInternalBrowser):
     promoCtrl = dependency.descriptor(IPromoController)
 
     @process
-    def _doInvoke(self, ctrl, title):
+    def _doInvoke(self, title):
         self.promoCtrl.showPromo(self._url, title)
 
 
