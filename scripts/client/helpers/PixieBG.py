@@ -4,7 +4,7 @@ from vehicle_systems import stricted_loading
 from debug_utils import LOG_ERROR, LOG_CURRENT_EXCEPTION
 
 class PixieBG(object):
-    __slots__ = ('__loader', '__callback', 'name', 'pixie')
+    __slots__ = ('__loader', '__callback', '__data', 'name', 'pixie')
 
     @staticmethod
     def enablePixie(pixie, turnOn):
@@ -16,7 +16,7 @@ class PixieBG(object):
             except:
                 LOG_CURRENT_EXCEPTION()
 
-    def __init__(self, name, onLoadCallback, pixie = None):
+    def __init__(self, name, onLoadCallback, pixie = None, data = None):
         if pixie is None:
             self.__loader = stricted_loading.restrictBySpace(self.__onLoad)
             self.__callback = onLoadCallback
@@ -25,12 +25,24 @@ class PixieBG(object):
             self.__callback = None
         self.name = name
         self.pixie = pixie
+        self.__data = data
         Pixie.createBG(name, self.__loader)
         return
 
     def __del__(self):
         self.__loader = None
         self.__callback = None
+        self.__data = None
+        if self.pixie is not None:
+            self.pixie.clear()
+            self.pixie = None
+        self.name = None
+        return
+
+    def destroy(self):
+        self.__loader = None
+        self.__callback = None
+        self.__data = None
         if self.pixie is not None:
             self.pixie.clear()
             self.pixie = None
@@ -43,9 +55,13 @@ class PixieBG(object):
             return
         else:
             self.pixie = newPixie
-            self.__callback(self)
+            if self.__data is not None:
+                self.__callback(self, self.__data)
+            else:
+                self.__callback(self)
             self.__loader = None
             self.__callback = None
+            self.__data = None
             return
 
     def stopLoading(self):

@@ -1868,11 +1868,6 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager, AvatarOb
             return
         else:
             self.__isOnArena = onArena
-            for vehicle in self.__vehicles:
-                suspensionSound = vehicle.appearance.suspensionSound
-                if suspensionSound is not None:
-                    suspensionSound.isOnArena = self.__isOnArena
-
             if not onArena:
                 if self.gunRotator is not None:
                     self.gunRotator.stop()
