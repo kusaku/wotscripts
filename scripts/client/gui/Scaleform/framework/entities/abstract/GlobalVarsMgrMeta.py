@@ -53,3 +53,9 @@ class GlobalVarsMgrMeta(BaseDAAPIModule):
 
     def isLoginLoadedAtFirstTime(self):
         self._printOverrideError('isLoginLoadedAtFirstTime')
+
+    def isVehicleRestoreEnabled(self):
+        self._printOverrideError('isVehicleRestoreEnabled')
+
+    def isTradeInEnabled(self):
+        self._printOverrideError('isTradeInEnabled')

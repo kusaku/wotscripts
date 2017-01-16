@@ -9,5 +9,5 @@ class ShopMeta(StoreComponent):
     @extends StoreComponent
     """
 
-    def buyItem(self, itemCD):
+    def buyItem(self, itemCD, allowTradeIn):
         self._printOverrideError('buyItem')

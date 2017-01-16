@@ -14,13 +14,16 @@ from gui.Scaleform.daapi.view.lobby.techtree.techtree_dp import g_techTreeDP
 from gui.shared import g_itemsCache
 from gui.shared.gui_items import GUI_ITEM_TYPE
 from gui.shared.utils.requesters import REQ_CRITERIA
+from helpers import dependency
 from items import vehicles, ITEM_TYPE_NAMES, getTypeOfCompactDescr as getTypeOfCD
+from skeletons.gui.game_control import ITradeInController
 __all__ = ['ResearchItemsData', 'NationTreeData']
 
 class _ItemsData(object):
     """
      Class for storing data of nodes.
     """
+    tradeIn = dependency.descriptor(ITradeInController)
 
     def __init__(self, dumper):
         super(_ItemsData, self).__init__()
@@ -71,6 +74,17 @@ class _ItemsData(object):
         state = NODE_STATE.removeIfHas(state, NODE_STATE_FLAGS.RENT_AVAILABLE)
         if not item.isRented and item.isRentable and item.isRentAvailable:
             state = NODE_STATE.addIfNot(state, NODE_STATE_FLAGS.RENT_AVAILABLE)
+        return state
+
+    def _checkTradeInState(self, state, item):
+        if item.itemTypeID != GUI_ITEM_TYPE.VEHICLE:
+            return state
+        state = NODE_STATE.removeIfHas(state, NODE_STATE_FLAGS.CAN_TRADE_IN)
+        if item.canTradeIn:
+            state = NODE_STATE.addIfNot(state, NODE_STATE_FLAGS.CAN_TRADE_IN)
+        state = NODE_STATE.removeIfHas(state, NODE_STATE_FLAGS.CAN_TRADE_OFF)
+        if item.canTradeOff:
+            state = NODE_STATE.addIfNot(state, NODE_STATE_FLAGS.CAN_TRADE_OFF)
         return state
 
     @prbDispatcherProperty
@@ -216,6 +230,7 @@ class _ItemsData(object):
                 state = self._checkMoney(state, nodeCD)
             state = self._checkRestoreState(state, item)
             state = self._checkRentableState(state, item)
+            state = self._checkTradeInState(state, item)
             node['state'] = state
             result.append((nodeCD, state))
 
@@ -353,6 +368,8 @@ class _ItemsData(object):
         """
         item = self.getItem(nodeCD)
         money = self._stats.money
+        if item.itemTypeID == GUI_ITEM_TYPE.VEHICLE:
+            money = self.tradeIn.addTradeInPriceIfNeeded(item, money)
         return item.mayObtainWithMoneyExchange(money, self._items.shop.exchangeRate)
 
     def _canSell(self, nodeCD):
@@ -693,6 +710,7 @@ class ResearchItemsData(_ItemsData):
                 state |= NODE_STATE_FLAGS.PURCHASE_DISABLED
             state = self._checkRestoreState(state, guiItem)
             state = self._checkRentableState(state, guiItem)
+            state = self._checkTradeInState(state, guiItem)
             renderer = 'root' if self._rootCD == nodeCD else 'vehicle'
         else:
             renderer = 'item'
@@ -965,6 +983,7 @@ class NationTreeData(_ItemsData):
             state |= NODE_STATE_FLAGS.VEHICLE_CAN_BE_CHANGED
         state = self._checkRestoreState(state, guiItem)
         state = self._checkRentableState(state, guiItem)
+        state = self._checkTradeInState(state, guiItem)
         return {'id': nodeCD,
          'earnedXP': earnedXP,
          'state': state,
