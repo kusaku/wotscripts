@@ -140,9 +140,7 @@ class _PotapovQuestsGetReward(Processor):
         return 'potapovQuests/reward/regular'
 
     def _errorHandler(self, code, errStr = '', ctx = None):
-        if len(errStr):
-            return makeI18nError('%s/server_error/%s' % (self._getMessagePrefix(), errStr))
-        return makeI18nError('%s/server_error' % self._getMessagePrefix())
+        return makeI18nError('%s/server_error/%s' % (self._getMessagePrefix(), errStr), defaultSysMsgKey='%s/server_error' % self._getMessagePrefix())
 
     def _successHandler(self, code, ctx = None):
         return makeI18nSuccess('%s/success' % self._getMessagePrefix())

@@ -16,9 +16,7 @@ class TankmanBerthsBuyer(Processor):
         self.berthsPrice = berthsPrice
 
     def _errorHandler(self, code, errStr = '', ctx = None):
-        if len(errStr):
-            return makeI18nError('buy_tankmen_berths/%s' % errStr)
-        return makeI18nError('buy_tankmen_berths/server_error')
+        return makeI18nError('buy_tankmen_berths/%s' % errStr, defaultSysMsgKey='buy_tankmen_berths/server_error')
 
     def _successHandler(self, code, ctx = None):
         return makeI18nSuccess('buy_tankmen_berths/success', money=formatPrice(self.berthsPrice), type=SM_TYPE.PurchaseForGold)
@@ -38,9 +36,7 @@ class PremiumAccountBuyer(Processor):
         self.arenaUniqueID = arenaUniqueID
 
     def _errorHandler(self, code, errStr = '', ctx = None):
-        if len(errStr) and i18n.doesTextExist('#system_messages:premium/%s' % errStr):
-            return makeI18nError('premium/%s' % errStr, period=self.period, auxData={'errStr': errStr})
-        return makeI18nError('premium/server_error', period=self.period, auxData={'errStr': errStr})
+        return makeI18nError('premium/%s' % errStr, defaultSysMsgKey='premium/server_error', period=self.period, auxData={'errStr': errStr})
 
     def _successHandler(self, code, ctx = None):
         localKey = 'premium/continueSuccess' if self.wasPremium else 'premium/buyingSuccess'
@@ -69,9 +65,7 @@ class GoldToCreditsExchanger(Processor):
           'resultCurrencyAmount': BigWorld.wg_getIntegralFormat(self.credits)}), plugins.MoneyValidator(Money(gold=self.gold))))
 
     def _errorHandler(self, code, errStr = '', ctx = None):
-        if len(errStr):
-            return makeI18nError('exchange/%s' % errStr, gold=self.gold)
-        return makeI18nError('exchange/server_error', gold=self.gold)
+        return makeI18nError('exchange/%s' % errStr, defaultSysMsgKey='exchange/server_error', gold=self.gold)
 
     def _successHandler(self, code, ctx = None):
         return makeI18nSuccess('exchange/success', gold=BigWorld.wg_getGoldFormat(self.gold), credits=formatPrice(Money(credits=self.credits)), type=SM_TYPE.FinancialTransactionWithGold)
@@ -92,9 +86,7 @@ class FreeXPExchanger(Processor):
         super(FreeXPExchanger, self).__init__(plugins=(self.__makeConfirmator(), plugins.MoneyValidator(Money(gold=self.gold)), plugins.EliteVehiclesValidator(self.vehiclesCD)))
 
     def _errorHandler(self, code, errStr = '', ctx = None):
-        if len(errStr):
-            return makeI18nError('exchangeXP/%s' % errStr, xp=BigWorld.wg_getIntegralFormat(self.xp))
-        return makeI18nError('exchangeXP/server_error', xp=BigWorld.wg_getIntegralFormat(self.xp))
+        return makeI18nError('exchangeXP/%s' % errStr, defaultSysMsgKey='exchangeXP/server_error', xp=BigWorld.wg_getIntegralFormat(self.xp))
 
     def _successHandler(self, code, ctx = None):
         return makeI18nSuccess('exchangeXP/success', gold=BigWorld.wg_getGoldFormat(self.gold), xp=BigWorld.wg_getIntegralFormat(self.xp), type=SM_TYPE.FinancialTransactionWithGold)
