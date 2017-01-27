@@ -8,6 +8,9 @@ class CallbackDelayer(object):
         self.__callbacks = {}
 
     def destroy(self):
+        self.clearCallbacks()
+
+    def clearCallbacks(self):
         for callbackFunc, callbackId in self.__callbacks.iteritems():
             if callbackId is not None:
                 BigWorld.cancelCallback(callbackId)

@@ -499,7 +499,7 @@ class ResearchItemsData(_ItemsData):
             lockReason = item.lock
             if lockReason == LOCK_REASON.ON_ARENA:
                 status = 'battle'
-            elif lockReason in (LOCK_REASON.PREBATTLE, LOCK_REASON.UNIT, LOCK_REASON.UNIT_CLUB):
+            elif lockReason in (LOCK_REASON.PREBATTLE, LOCK_REASON.UNIT):
                 status = 'inPrebattle'
             elif item.repairCost > 0:
                 status = 'destroyed'

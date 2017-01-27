@@ -844,10 +844,6 @@ class LegacyEntity(_LegacyEntity):
             ctx: set player state request context
             callback: operation callback
         """
-        if self._cooldown.validate(REQUEST_TYPE.SET_PLAYER_STATE, REQUEST_COOLDOWN.PREBATTLE_NOT_READY):
-            if callback:
-                callback(False)
-            return
         rosterKey = self.getRosterKey()
         team, assigned = decodeRoster(rosterKey)
         if assigned and self.getTeamState(team=team).isInQueue():

@@ -25,6 +25,7 @@ def ownVehicleGunPositionGetter():
 
 
 class ProjectileMover(object):
+    __START_POINT_MAX_DIFF = 20
     __PROJECTILE_HIDING_TIME = 0.05
     __PROJECTILE_TIME_AFTER_DEATH = 2.0
     __AUTO_SCALE_DISTANCE = 180.0
@@ -52,6 +53,8 @@ class ProjectileMover(object):
         if BattleReplay.g_replayCtrl.isTimeWarpInProgress:
             return
         else:
+            if startPoint.distTo(refStartPoint) > ProjectileMover.__START_POINT_MAX_DIFF:
+                startPoint = refStartPoint
             artID = effectsDescr.get('artilleryID')
             if artID is not None:
                 self.salvo.addProjectile(artID, gravity, refStartPoint, refVelocity)

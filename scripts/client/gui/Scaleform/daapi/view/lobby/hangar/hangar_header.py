@@ -1,31 +1,37 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/hangar/hangar_header.py
 import constants
-from shared_utils import first
 from CurrentVehicle import g_currentVehicle
+from gui.ClientUpdateManager import g_clientUpdateManager
 from gui.Scaleform.daapi.view.lobby.server_events import events_helpers
 from gui.Scaleform.daapi.view.meta.HangarHeaderMeta import HangarHeaderMeta
+from gui.Scaleform.genConsts.TOOLTIPS_CONSTANTS import TOOLTIPS_CONSTANTS
 from gui.Scaleform.locale.MENU import MENU
-from gui.Scaleform.locale.QUESTS import QUESTS
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
-from gui.christmas.christmas_controller import g_christmasCtrl
 from gui.server_events.events_dispatcher import showEventsWindow
-from gui.shared.formatters import text_styles
+from gui.shared.ItemsCache import g_itemsCache
+from gui.shared.formatters import text_styles, icons
 from gui.shared.utils.functions import makeTooltip
 from helpers import dependency
 from helpers.i18n import makeString as _ms
+from shared_utils import first
 from skeletons.gui.server_events import IEventsCache
+from skeletons.gui.game_control import IQuestsController
 
 class WIDGET_PQ_STATE(object):
     """ State of the personal quests overall relatively to current vehicle.
     """
     DISABLED = 'disabled'
     UNAVAILABLE = 'unavailable'
+    COMPLETED = 'completed'
     AVAILABLE = 'available'
     IN_PROGRESS = 'inprogress'
     AWARD = 'award'
-    UNSUITABLE = (DISABLED, UNAVAILABLE)
-    NOT_SELECTED = (DISABLED, UNAVAILABLE, AVAILABLE)
+    UNSUITABLE = (DISABLED, UNAVAILABLE, COMPLETED)
+    NOT_SELECTED = (DISABLED,
+     UNAVAILABLE,
+     AVAILABLE,
+     COMPLETED)
 
 
 class WIDGET_BQ_STATE(object):
@@ -33,6 +39,7 @@ class WIDGET_BQ_STATE(object):
     """
     AVAILABLE = 'available'
     DISABLED = 'disabled'
+    ALL_DONE = 'all_done'
 
 
 class LABEL_STATE(object):
@@ -41,14 +48,16 @@ class LABEL_STATE(object):
     ACTIVE = 'active'
     EMPTY = 'empty'
     INACTIVE = 'inactive'
+    ALL_DONE = 'all_done'
 
 
-def _getBattleQuestsTooltip(state, **ctx):
-    return makeTooltip(TOOLTIPS.battleQuestsTooltipHeader(state), _ms(TOOLTIPS.battleQuestsTooltipBody(state), **ctx))
-
-
-def _getPersonalQuestsTooltip(state, **ctx):
-    return makeTooltip(_ms(TOOLTIPS.personalQuestsTooltipHeader(state), **ctx), _ms(TOOLTIPS.personalQuestsTooltipBody(state), **ctx))
+def _getPersonalQuestsTooltipData(state, **ctx):
+    if state != WIDGET_PQ_STATE.IN_PROGRESS:
+        return {'personalQuestsTooltip': makeTooltip(_ms(TOOLTIPS.personalQuestsTooltipHeader(state), **ctx), _ms(TOOLTIPS.personalQuestsTooltipBody(state), **ctx)),
+         'personalQuestsTooltipIsSpecial': False}
+    else:
+        return {'personalQuestsTooltip': TOOLTIPS_CONSTANTS.PERSONAL_QUESTS_PREVIEW,
+         'personalQuestsTooltipIsSpecial': True}
 
 
 def _findPersonalQuestsState(eventsCache, vehicle):
@@ -70,15 +79,17 @@ def _findPersonalQuestsState(eventsCache, vehicle):
     vehicleLvl = vehicle.level
     vehicleType = vehicle.type
     for tile in eventsCache.potapov.getTiles().itervalues():
-        if not tile.isUnlocked():
-            continue
         for chainID, chain in tile.getQuests().iteritems():
             if tile.getChainVehicleClass(chainID) != vehicleType:
                 continue
             for quest in chain.itervalues():
                 if vehicleLvl < quest.getVehMinLevel():
                     continue
-                if state == WIDGET_PQ_STATE.DISABLED:
+                if quest.isFullCompleted(isRewardReceived=True):
+                    if state == WIDGET_PQ_STATE.DISABLED:
+                        state = WIDGET_PQ_STATE.COMPLETED
+                    continue
+                if state in WIDGET_PQ_STATE.UNSUITABLE:
                     state = WIDGET_PQ_STATE.UNAVAILABLE
                 if quest.canBeSelected() and state in WIDGET_PQ_STATE.UNSUITABLE:
                     state = WIDGET_PQ_STATE.AVAILABLE
@@ -99,35 +110,12 @@ def _findPersonalQuestsState(eventsCache, vehicle):
      None)
 
 
-def _findBattleQuestsState(eventsCache, vehicle):
-    """ Find state of BQs with relation to current vehicle.
-    
-    Here we simply iterate over all battle quests looking for the ones
-    that can be accomplished on the current vehicle.
-    
-    :param eventsCache: instance of gui.server_events._EventsCache
-    :param vehicle: instance of gui_items.Vehicle
-    
-    :return: tuple (WIDGET_BQ_STATE, applicable quests)
-    """
-
-    def filterFunc(quest):
-        return quest.getType() not in constants.EVENT_TYPE.SHARED_QUESTS and not quest.isCompleted() and quest.isAvailableForVehicle(vehicle)[0]
-
-    quests = eventsCache.getQuests(filterFunc)
-    quests = sorted(quests.itervalues(), events_helpers.questsSortFunc)
-    totalCount = len(quests)
-    if totalCount > 0:
-        return (WIDGET_BQ_STATE.AVAILABLE, quests)
-    else:
-        return (WIDGET_BQ_STATE.DISABLED, quests)
-
-
 class HangarHeader(HangarHeaderMeta):
     """ This class is responsible for displaying current vehicle information
     and battle/personal quests widgets (those two flags on top of hangar).
     """
     _eventsCache = dependency.descriptor(IEventsCache)
+    _questController = dependency.descriptor(IQuestsController)
 
     def __init__(self):
         super(HangarHeader, self).__init__()
@@ -143,16 +131,24 @@ class HangarHeader(HangarHeaderMeta):
     def showCommonQuests(self):
         showEventsWindow(eventID=self._battleQuestId, eventType=constants.EVENT_TYPE.BATTLE_QUEST)
 
+    def showBeginnerQuests(self):
+        showEventsWindow(eventID=self._battleQuestId, eventType=constants.EVENT_TYPE.TUTORIAL)
+
     def update(self, *args):
         self._personalQuestID = None
         if self._currentVehicle.isPresent():
             vehicle = self._currentVehicle.item
+            isBeginner = self._questController.isNewbiePlayer()
             headerVO = {'tankType': '{}_elite'.format(vehicle.type) if vehicle.isElite else vehicle.type,
              'tankInfo': text_styles.concatStylesToMultiLine(text_styles.promoSubTitle(vehicle.shortUserName), text_styles.stats(MENU.levels_roman(vehicle.level))),
              'isPremIGR': vehicle.isPremiumIGR,
-             'isVisible': True}
-            headerVO.update(self.__getBattleQuestsVO(vehicle))
-            headerVO.update(self.__getPersonalQuestsVO(vehicle))
+             'isVisible': True,
+             'isBeginner': isBeginner}
+            if isBeginner:
+                headerVO.update(self.__getBeginnerQuestsVO())
+            else:
+                headerVO.update(self.__getBattleQuestsVO(vehicle))
+                headerVO.update(self.__getPersonalQuestsVO(vehicle))
         else:
             headerVO = {'isVisible': False}
         self.as_setDataS(headerVO)
@@ -163,8 +159,11 @@ class HangarHeader(HangarHeaderMeta):
         self._currentVehicle = g_currentVehicle
         self._eventsCache.onSyncCompleted += self.update
         self._eventsCache.onProgressUpdated += self.update
+        g_clientUpdateManager.addCallbacks({'inventory.1': self.update,
+         'stats.tutorialsCompleted': self.update})
 
     def _dispose(self):
+        g_clientUpdateManager.removeObjectCallbacks(self)
         self._eventsCache.onSyncCompleted -= self.update
         self._eventsCache.onProgressUpdated -= self.update
         self._currentVehicle = None
@@ -172,72 +171,84 @@ class HangarHeader(HangarHeaderMeta):
         super(HangarHeader, self)._dispose()
         return
 
+    def __getBeginnerQuestsVO(self):
+        completed = g_itemsCache.items.stats.tutorialsCompleted
+        questsDescriptor = events_helpers.getTutorialEventsDescriptor()
+        chapters = []
+        for chapter in questsDescriptor:
+            chapterStatus = chapter.getChapterStatus(questsDescriptor, completed)
+            if chapterStatus != events_helpers.EVENT_STATUS.NOT_AVAILABLE and chapterStatus != events_helpers.EVENT_STATUS.COMPLETED:
+                chapters.append(chapter)
+
+        chapter = first(chapters)
+        self._battleQuestId = chapter.getID() if chapter else None
+        return {'beginnerQuestsLabel': str(len(chapters)),
+         'beginnerQuestsIcon': RES_ICONS.MAPS_ICONS_LIBRARY_OUTLINE_BEGINNER,
+         'beginnerQuestsTooltip': makeTooltip(chapter.getTitle(), chapter.getDescription()),
+         'beginnerQuestsEnable': True}
+
     def __getBattleQuestsVO(self, vehicle):
+        """ Get part of VO responsible for battle quests flag.
         """
-        Get part of VO responsible for battle quests flag.
-        """
-        bqState, quests = _findBattleQuestsState(self._eventsCache, vehicle)
-        questsEnabled = bqState == WIDGET_BQ_STATE.AVAILABLE
-        if questsEnabled:
-            commonQuestsIcon = RES_ICONS.MAPS_ICONS_LIBRARY_OUTLINE_QUESTS_AVAILABLE
-            bgIconStr = RES_ICONS.MAPS_ICONS_LIBRARY_OUTLINE_FLAG_BLUE
-            if g_christmasCtrl.isEventInProgress():
-                commonQuestsIcon = RES_ICONS.MAPS_ICONS_LIBRARY_OUTLINE_FLAG_CHRISTMAS_ICON
-                bgIconStr = RES_ICONS.MAPS_ICONS_LIBRARY_OUTLINE_FLAG_CHRISTMAS
-            labelState = LABEL_STATE.ACTIVE
-            self._battleQuestId = first(quests).getID()
-        else:
-            if g_christmasCtrl.isEventInProgress():
-                commonQuestsIcon = RES_ICONS.MAPS_ICONS_LIBRARY_OUTLINE_FLAG_CHRISTMAS_ICON_DISABLED
+        quests = self._questController.getQuestForVehicle(vehicle)
+        totalCount = len(quests)
+        completedQuests = len([ q for q in quests if q.isCompleted() ])
+        if totalCount > 0:
+            if completedQuests != totalCount:
+                bqState = WIDGET_BQ_STATE.AVAILABLE
+                commonQuestsIcon = RES_ICONS.questsStateIconOutline(WIDGET_BQ_STATE.AVAILABLE)
+                label = _ms(MENU.hangarHeaderBattleQuestsLabel(LABEL_STATE.ACTIVE), total=totalCount - completedQuests)
+                self._battleQuestId = first(quests).getID()
             else:
-                commonQuestsIcon = RES_ICONS.questsStateIconOutline(bqState)
-            bgIconStr = RES_ICONS.MAPS_ICONS_LIBRARY_OUTLINE_FLAG_GRAY
-            labelState = LABEL_STATE.INACTIVE
-            self._battleQuestId = None
-        ctx = {'total': len(quests)}
-        return {'commonQuestsLabel': _ms(MENU.hangarHeaderBattleQuestsLabel(labelState), **ctx),
+                bqState = WIDGET_BQ_STATE.ALL_DONE
+                commonQuestsIcon = RES_ICONS.questsStateIconOutline(WIDGET_BQ_STATE.AVAILABLE)
+                label = icons.makeImageTag(RES_ICONS.MAPS_ICONS_LIBRARY_OUTLINE_QUESTS_ALL_DONE)
+                self._battleQuestId = first(quests).getID() if quests else None
+        else:
+            bqState = WIDGET_BQ_STATE.DISABLED
+            commonQuestsIcon = RES_ICONS.questsStateIconOutline(WIDGET_BQ_STATE.DISABLED)
+            label = ''
+        return {'commonQuestsLabel': label,
          'commonQuestsIcon': commonQuestsIcon,
-         'commonQuestsTooltip': _getBattleQuestsTooltip(bqState, **ctx),
-         'commonQuestsEnable': questsEnabled,
-         'commonQuestsBg': bgIconStr}
+         'commonQuestsTooltip': TOOLTIPS_CONSTANTS.QUESTS_PREVIEW,
+         'commonQuestsEnable': bqState != WIDGET_BQ_STATE.DISABLED}
 
     def __getPersonalQuestsVO(self, vehicle):
         """ Get part of VO responsible for personal quests flag.
         """
         pqState, quest, chain, tile = _findPersonalQuestsState(self._eventsCache, vehicle)
-        questsEnabled = pqState not in WIDGET_PQ_STATE.UNSUITABLE
+        isReward = False
         if pqState == WIDGET_PQ_STATE.AVAILABLE:
             icon = RES_ICONS.MAPS_ICONS_LIBRARY_OUTLINE_PLUS
         elif pqState == WIDGET_PQ_STATE.AWARD:
             icon = RES_ICONS.MAPS_ICONS_LIBRARY_OUTLINE_REWARD
-        elif not questsEnabled:
+            isReward = True
+        elif pqState == WIDGET_PQ_STATE.DISABLED:
             icon = RES_ICONS.vehicleTypeInactiveOutline(vehicle.type)
         else:
             icon = RES_ICONS.vehicleTypeOutline(vehicle.type)
-        if not questsEnabled:
+        if pqState == WIDGET_PQ_STATE.DISABLED:
             labelState = LABEL_STATE.INACTIVE
         elif pqState == WIDGET_PQ_STATE.AVAILABLE:
             labelState = LABEL_STATE.EMPTY
+        elif pqState in WIDGET_PQ_STATE.UNSUITABLE:
+            labelState = LABEL_STATE.ALL_DONE
         else:
             labelState = LABEL_STATE.ACTIVE
         ctx = {}
         if all((quest, chain, tile)):
             self._personalQuestID = quest.getID()
             chainType = tile.getChainMajorTag(quest.getChainID())
-            ctx.update({'questName': quest.getUserName(),
-             'description': '{}\n{}\n\n{}\n{}'.format(text_styles.standard(_ms(QUESTS.QUESTTASKDETAILSVIEW_MAINCONDITIONS)), quest.getUserMainCondition(), text_styles.standard(_ms(QUESTS.QUESTTASKDETAILSVIEW_ADDITIONALCONDITIONS)), quest.getUserAddCondition()),
-             'current': len(filter(lambda q: q.isCompleted(), chain.itervalues())),
+            ctx.update({'current': len(filter(lambda q: q.isCompleted(), chain.itervalues())),
              'total': len(chain),
              'tileName': tile.getUserName(),
              'chainName': _ms(MENU.classesShort(chainType))})
         else:
             self._personalQuestID = None
-        if questsEnabled:
-            bgIconStr = RES_ICONS.MAPS_ICONS_LIBRARY_OUTLINE_FLAG_RED
-        else:
-            bgIconStr = RES_ICONS.MAPS_ICONS_LIBRARY_OUTLINE_FLAG_GRAY
-        return {'personalQuestsLabel': _ms(MENU.hangarHeaderPersonalQuestsLabel(labelState), **ctx),
+            ctx.update({'icon': icons.makeImageTag(RES_ICONS.MAPS_ICONS_LIBRARY_OUTLINE_QUESTS_ALL_DONE)})
+        res = {'personalQuestsLabel': _ms(MENU.hangarHeaderPersonalQuestsLabel(labelState), **ctx),
          'personalQuestsIcon': icon,
-         'personalQuestsTooltip': _getPersonalQuestsTooltip(pqState, **ctx),
-         'personalQuestsEnable': questsEnabled,
-         'personalQuestsBg': bgIconStr}
+         'personalQuestsEnable': pqState != WIDGET_PQ_STATE.DISABLED,
+         'isPersonalReward': isReward}
+        res.update(_getPersonalQuestsTooltipData(pqState, **ctx))
+        return res

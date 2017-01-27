@@ -197,12 +197,17 @@ def get_ratings_error(data):
     return exceptions.WgrsError
 
 
+def get_wgsh_error(data):
+    exceptions.WgshError
+
+
 ERROR_MAP = {'ratings': get_ratings_error,
  'exporter': get_exporter_error,
  'global_map': get_global_map_error,
  'clans': get_clan_error,
  'spa': get_spa_error,
- 'strongholds': get_stronghold_error}
+ 'strongholds': get_stronghold_error,
+ 'wgsh': get_wgsh_error}
 
 def preprocess_callback(callback, service):
 
@@ -271,7 +276,7 @@ class StagingDataAccessor(base.BaseDataAccessor):
     """
     requests_before_logout = -1
 
-    def __init__(self, url_fetcher, staging_hosts = {}, client_lang = None):
+    def __init__(self, url_fetcher, staging_hosts = {}, client_lang = None, user_agent = None):
         """
         url_fetcher is fetch_url method with following signature
         staging_hosts is dict of staging hosts for example
@@ -281,6 +286,7 @@ class StagingDataAccessor(base.BaseDataAccessor):
         :param staging_hosts: stagings hosts with backend name as a key
         :type url_fetcher: function
         :type staging_hosts: dict
+        :type user_agent: dict
         
         :Example:
         
@@ -294,6 +300,7 @@ class StagingDataAccessor(base.BaseDataAccessor):
         ...         'clans': 'http://wgccbe.clan0101.wott.iv/'
         ...         'spa': 'http://spa.clan0101.wott.iv/',
         ...         'strongholds': 'http://wgccfe.clan0101.wgnt.iv/clans/api/',
+        ...         'wgsh': 'https://wgsh.wot.ru.wott.iv/'
         ...     }
         ... )
         
@@ -302,6 +309,7 @@ class StagingDataAccessor(base.BaseDataAccessor):
         self._account = None
         self.url_fetcher = url_fetcher
         self.staging_hosts = staging_hosts
+        self.user_agent = user_agent
         return
 
     def login(self, callback, account_id, spa_token):
@@ -355,7 +363,7 @@ class StagingDataAccessor(base.BaseDataAccessor):
         """
         return data from ratings backend using `bulks API method`_
         
-                .. _bulks API method: http://rtd.wargaming.net/docs/wgrs-api/en/latest/clans.html#bulks
+            .. _bulks API method: http://rtd.wargaming.net/docs/wgrs-api/en/latest/clans.html#bulks
         """
         get_params = {'project': 'api',
          'fields': ','.join(fields),
@@ -382,7 +390,7 @@ class StagingDataAccessor(base.BaseDataAccessor):
         """
         return data from WGCCBE backend using `clans API method`_
         
-                .. _clans API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/api-common/clans.html
+            .. _clans API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/api-common/clans.html
         """
         get_params = {'ids': ','.join(map(str, clan_ids)),
          'fields': ','.join(fields)}
@@ -400,8 +408,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
         """
         return data from SPA backend using `account id/name mappings API method`_
         
-                .. _account id/name mappings API method: https://confluence.wargaming.net/display/
-                WEBDEV/%5BWGNSPA%5D+-+SPA+HTTP+API+Examples#id-[WGNSPA]-SPAHTTPAPIExamples-Byids
+            .. _account id/name mappings API method:
+            https://confluence.wargaming.net/display/WEBDEV/%5BWGNSPA%5D+-+SPA+HTTP+API+Examples
         """
         get_params = {'id': account_ids}
         url = '/spa/accounts/names/?%s' % urlencode(get_params, doseq=True)
@@ -423,8 +431,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
         """
         return data from WGCCBE backend using `clan members API method`_
         
-                .. _clan members API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/api-common/
-                clans_id_members.html
+            .. _clan members API method:
+            http://rtd.wargaming.net/docs/wgccbe/en/latest/api-common/clans_id_members.html
         """
         get_params = {'fields': ','.join(fields)}
         url = '/clans/%s/members?%s' % (clan_id, urlencode(get_params))
@@ -440,8 +448,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
         """
         return data from WGCCBE backend using `favorite_attributes API method`_
         
-                .. _favorite_attributes API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/statistics/
-                favorite_attributes.html
+            .. _favorite_attributes API method:
+            http://rtd.wargaming.net/docs/wgccbe/en/latest/statistics/favorite_attributes.html
         """
         url = '/gm/clans/%s/favorite_attributes' % clan_id
 
@@ -472,7 +480,7 @@ class StagingDataAccessor(base.BaseDataAccessor):
         """
         return data from WGCCBE backend using `accounts API method`_
         
-                .. _accounts API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/api-common/accounts.html
+            .. _accounts API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/api-common/accounts.html
         """
         get_params = {'fields': ','.join(fields),
          'ids': ','.join(map(str, account_ids))}
@@ -489,7 +497,7 @@ class StagingDataAccessor(base.BaseDataAccessor):
         """
         return data from WGCCBE backend using `applications API method`_
         
-                .. _applications API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/wotx/applications.html
+            .. _applications API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/wotx/applications.html
         """
         get_params = {'fields': 'id',
          'account_id': account_id,
@@ -502,7 +510,7 @@ class StagingDataAccessor(base.BaseDataAccessor):
         """
         return data from WGCCBE backend using `invites API method`_
         
-                .. _invites API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/wotx/invites.html
+            .. _invites API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/wotx/invites.html
         """
         get_params = {'fields': 'id',
          'clan_id': clan_id,
@@ -525,7 +533,7 @@ class StagingDataAccessor(base.BaseDataAccessor):
         """
         return data from WGCCBE backend using `applications API method`_
         
-                .. _applications API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/wotx/applications.html
+            .. _applications API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/wotx/applications.html
         """
         statuses = statuses or ['active',
          'declined',
@@ -556,7 +564,7 @@ class StagingDataAccessor(base.BaseDataAccessor):
         """
         return data from WGCCBE backend using `applications API method`_
         
-                .. _applications API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/wotx/applications.html
+            .. _applications API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/wotx/applications.html
         """
         statuses = statuses or ['active',
          'declined',
@@ -578,8 +586,9 @@ class StagingDataAccessor(base.BaseDataAccessor):
     def create_applications(self, callback, clan_ids, comment, fields = None):
         """
         create applications for accounts into clan using `create applications API method`_
-                .. _create applications API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/wotx/
-                applications.html
+        
+            .. _create applications API method:
+            http://rtd.wargaming.net/docs/wgccbe/en/latest/wotx/applications.html
         """
         url = '/applications/'
         data = {'account_id': self._account,
@@ -599,8 +608,9 @@ class StagingDataAccessor(base.BaseDataAccessor):
     def accept_application(self, callback, application_id, fields = None):
         """
         accept application for accounts into clan using `accept applications API method`_
-                .. _accept applications API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/wotx/
-                applications_id.html
+        
+            .. _accept applications API method:
+            http://rtd.wargaming.net/docs/wgccbe/en/latest/wotx/applications_id.html
         """
         url = '/applications/%s/' % application_id
         data = {'initiator_id': self._account,
@@ -622,8 +632,9 @@ class StagingDataAccessor(base.BaseDataAccessor):
     def decline_application(self, callback, application_id, fields = None):
         """
         decline application for accounts into clan using `decline applications API method`_
-                .. _decline applications API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/wotx/
-                applications_id.html
+        
+            .. _decline applications API method:
+            http://rtd.wargaming.net/docs/wgccbe/en/latest/wotx/applications_id.html
         """
         url = '/applications/%s/' % application_id
         data = {'initiator_id': self._account,
@@ -643,7 +654,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
     def create_invites(self, callback, clan_id, account_ids, comment, fields = None):
         """
         create applications for accounts into clan using `create invites API method`_
-                .. _create invites API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/wotx/invites.html
+        
+            .. _create invites API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/wotx/invites.html
         """
         url = '/invites/'
         data = {'initiator_id': self._account,
@@ -664,7 +676,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
     def accept_invite(self, callback, invite_id, fields = None):
         """
         accept application for accounts into clan using `accept invite API method`_
-                .. _accept invite API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/wotx/invites_id.html
+        
+            .. _accept invite API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/wotx/invites_id.html
         """
         url = '/invites/%s/' % invite_id
         data = {'initiator_id': self._account,
@@ -686,7 +699,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
     def decline_invite(self, callback, invite_id, fields = None):
         """
         decline application for accounts into clan using `decline invites API method`_
-                .. _decline invites API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/wotx/invites_id.html
+        
+            .. _decline invites API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/wotx/invites_id.html
         """
         url = '/invites/%s/' % invite_id
         data = {'initiator_id': self._account,
@@ -706,7 +720,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
     def bulk_decline_invites(self, callback, invite_ids, fields = None):
         """
         decline invites for clan using `decline invites API method`_
-                .. _decline invites API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/wgcc/invites.html#patch
+        
+            .. _decline invites API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/wgcc/invites.html#patch
         """
         url = '/invites/'
         data = {'initiator_id': self._account,
@@ -734,7 +749,7 @@ class StagingDataAccessor(base.BaseDataAccessor):
         """
         return data from WGCCBE backend using `clans API method`_
         
-                .. _clans API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/api-common/clans.html
+            .. _clans API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/api-common/clans.html
         """
         get_params = {'search': search,
          'game': 'wot',
@@ -758,7 +773,7 @@ class StagingDataAccessor(base.BaseDataAccessor):
         """
         return data from WGCCBE backend using `clans API method`_
         
-                .. _clans API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/api-common/clans.html
+            .. _clans API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/api-common/clans.html
         """
         get_params = {'game': 'wot',
          'fields': ','.join(fields),
@@ -782,7 +797,7 @@ class StagingDataAccessor(base.BaseDataAccessor):
         """
         return data from WGCCBE backend using `invites API method`_
         
-                .. _invites API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/wotx/invites.html
+            .. _invites API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/wotx/invites.html
         """
         statuses = statuses or ['active',
          'declined',
@@ -813,7 +828,7 @@ class StagingDataAccessor(base.BaseDataAccessor):
         """
         return data from WGCCBE backend using `invites API method`_
         
-                .. _invites API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/wotx/invites.html
+            .. _invites API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/wotx/invites.html
         """
         statuses = statuses or ['active',
          'declined',
@@ -839,8 +854,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
         """
         return data from exporter backend using `accounts detailed information`_
         
-                .. _accounts detailed information: http://rtd.wargaming.net/docs/exporter/en/latest/
-                api_wot.html#accounts-detailed-information
+            .. _accounts detailed information:
+            http://rtd.wargaming.net/docs/exporter/en/latest/api_wot.html#accounts-detailed-information
         """
         fields = [ i.split('.', 1) for i in fields if i != 'account_id' ]
         grouped = groupby(sorted(fields), key=lambda x: x[0])
@@ -879,8 +894,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
         """
         return data from WGCW backend using `clans provinces API method`_
         
-                .. _clans provinces API method: http://rtd.wargaming.net/docs/wgcw/en/latest/api/
-                wgapi.html?highlight=stats#clans-provinces
+            .. _clans provinces API method:
+            http://rtd.wargaming.net/docs/wgcw/en/latest/api/wgapi.html?highlight=stats#clans-provinces
         """
         get_params = {'clans': ','.join(map(str, [clan_id]))}
         url = '/clans/provinces/?%s' % urlencode(get_params)
@@ -912,8 +927,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
         """
         return data from WGCW backend using `clans stats API method`_
         
-                .. _clans stats API method: http://rtd.wargaming.net/docs/wgcw/en/latest/api/
-                wgapi.html?highlight=stats#clans-stats
+            .. _clans stats API method:
+            http://rtd.wargaming.net/docs/wgcw/en/latest/api/wgapi.html?highlight=stats#clans-stats
         """
         get_params = {'clans': ','.join(map(str, [clan_id]))}
         url = '/clans/stats?%s' % urlencode(get_params)
@@ -932,8 +947,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
         """
         return data from WGCW backend using `fronts info API method`_
         
-                .. _fronts info API method: http://rtd.wargaming.net/docs/wgcw/en/latest/api/
-                wgapi.html?highlight=stats#id1
+            .. _fronts info API method:
+            http://rtd.wargaming.net/docs/wgcw/en/latest/api/wgapi.html?highlight=stats#id1
         """
         url = '/fronts/'
 
@@ -984,8 +999,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
         """
         return data from WGCCFE backend using `stronghold info API method`_
         
-                .. _stronghold info API method: http://rtd.wargaming.net/docs/wgccfe/en/latest/rst/
-                strongholds.html#strongholds-clan-id
+            .. _stronghold info API method:
+            http://rtd.wargaming.net/docs/wgccfe/en/latest/rst/strongholds.html#strongholds-clan-id
         """
         get_params = urlencode({'performer_id': self._account})
         try:
@@ -1031,8 +1046,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
         """
         return data from WGCCFE backend using `stronghold statistics API method`_
         
-                .. _stronghold statistics API method: http://rtd.wargaming.net/docs/wgccfe/en/
-                latest/rst/strongholds.html#strongholds-statistics-clan-id
+            .. _stronghold statistics API method:
+            http://rtd.wargaming.net/docs/wgccfe/en/latest/rst/strongholds.html#strongholds-statistics-clan-id
         """
         get_params = urlencode({'performer_id': self._account})
         try:
@@ -1051,6 +1066,368 @@ class StagingDataAccessor(base.BaseDataAccessor):
 
         return self._request_data(inner_callback, 'strongholds', url)
 
+    def get_wgsh_unit_info(self, callback, periphery_id, unit_server_id, fields = None):
+        """
+        return data from WGSH backend with info needed for prebattle window header
+        
+            .. _prebattle info API method:
+            https://stash.wargaming.net/projects/CLANWARS/repos/wgsh/browse/docs/unit_api/api.md
+        """
+        try:
+            periphery_id = int(periphery_id)
+            unit_server_id = int(unit_server_id)
+        except (TypeError, ValueError):
+            error = exceptions.BadRequest()
+            return callback({'description': error.description}, error.status_code, error.response_code)
+
+        url = '/unit_api/periphery/{periphery_id}/units/{unit_server_id}/'.format(periphery_id=periphery_id, unit_server_id=unit_server_id)
+
+        @preprocess_callback(callback, 'wgsh')
+        def inner_callback(data):
+            return data or {}
+
+        return self._request_data(inner_callback, 'wgsh', url)
+
+    def set_vehicle(self, callback, periphery_id, unit_server_id, vehicle_cd, fields = None):
+        """
+        set/change vehicle for current user
+        
+            .. _prebattle info API method:
+            https://stash.wargaming.net/projects/CLANWARS/repos/wgsh/browse/docs/unit_api/api.md
+        """
+        try:
+            periphery_id = int(periphery_id)
+            unit_server_id = int(unit_server_id)
+        except (TypeError, ValueError):
+            error = exceptions.BadRequest()
+            return callback({'description': error.description}, error.status_code, error.response_code)
+
+        url = '/unit_api/periphery/{periphery_id}/units/{unit_server_id}/members/{account_id}/vehicles'.format(periphery_id=periphery_id, unit_server_id=unit_server_id, account_id=self._account)
+        patch_data = {'vehicle_cd': vehicle_cd}
+
+        @preprocess_callback(callback, 'wgsh')
+        def inner_callback(data):
+            return data or {}
+
+        return self._request_data(inner_callback, 'wgsh', url, method='PATCH', postData=patch_data)
+
+    def set_readiness(self, callback, periphery_id, unit_server_id, is_ready, reset_vehicle, fields = None):
+        """
+        set cuurent player as ready(or not)
+        
+            .. _prebattle info API method:
+            https://stash.wargaming.net/projects/CLANWARS/repos/wgsh/browse/docs/unit_api/api.md
+        """
+        try:
+            periphery_id = int(periphery_id)
+            unit_server_id = int(unit_server_id)
+        except (TypeError, ValueError):
+            error = exceptions.BadRequest()
+            return callback({'description': error.description}, error.status_code, error.response_code)
+
+        url = '/unit_api/periphery/{periphery_id}/units/{unit_server_id}/members/{account_id}/readiness'.format(periphery_id=periphery_id, unit_server_id=unit_server_id, account_id=self._account)
+        patch_data = {'is_ready': is_ready,
+         'reset_vehicle': reset_vehicle}
+
+        @preprocess_callback(callback, 'wgsh')
+        def inner_callback(data):
+            return data or {}
+
+        return self._request_data(inner_callback, 'wgsh', url, method='PATCH', postData=patch_data)
+
+    def invite_players(self, callback, periphery_id, unit_server_id, accounts_to_invite, comment, fields = None):
+        """
+        invite some players to battle
+        
+            .. _prebattle info API method:
+            https://stash.wargaming.net/projects/CLANWARS/repos/wgsh/browse/docs/unit_api/api.md
+        """
+        try:
+            periphery_id = int(periphery_id)
+            unit_server_id = int(unit_server_id)
+        except (TypeError, ValueError):
+            error = exceptions.BadRequest()
+            return callback({'description': error.description}, error.status_code, error.response_code)
+
+        url = '/unit_api/periphery/{periphery_id}/units/{unit_server_id}/participants/{account_id}/invite'.format(periphery_id=periphery_id, unit_server_id=unit_server_id, account_id=self._account)
+        post_data = {'accounts_to_invite': accounts_to_invite,
+         'comment': comment}
+
+        @preprocess_callback(callback, 'wgsh')
+        def inner_callback(data):
+            return data or {}
+
+        return self._request_data(inner_callback, 'wgsh', url, method='POST', postData=post_data)
+
+    def assign_player(self, callback, periphery_id, unit_server_id, account_to_assign, fields = None):
+        """
+        assign target player to battle
+        
+            .. _prebattle info API method:
+            https://stash.wargaming.net/projects/CLANWARS/repos/wgsh/browse/docs/unit_api/api.md
+        """
+        try:
+            periphery_id = int(periphery_id)
+            unit_server_id = int(unit_server_id)
+        except (TypeError, ValueError):
+            error = exceptions.BadRequest()
+            return callback({'description': error.description}, error.status_code, error.response_code)
+
+        url = '/unit_api/periphery/{periphery_id}/units/{unit_server_id}/participants/{account_id}/assign'.format(periphery_id=periphery_id, unit_server_id=unit_server_id, account_id=self._account)
+        post_data = {'account_to_assign': account_to_assign}
+
+        @preprocess_callback(callback, 'wgsh')
+        def inner_callback(data):
+            return data or {}
+
+        return self._request_data(inner_callback, 'wgsh', url, method='POST', postData=post_data)
+
+    def unassign_player(self, callback, periphery_id, unit_server_id, account_to_unassign, fields = None):
+        """
+        unassign target player from battle
+        
+            .. _prebattle info API method:
+            https://stash.wargaming.net/projects/CLANWARS/repos/wgsh/browse/docs/unit_api/api.md
+        """
+        try:
+            periphery_id = int(periphery_id)
+            unit_server_id = int(unit_server_id)
+        except (TypeError, ValueError):
+            error = exceptions.BadRequest()
+            return callback({'description': error.description}, error.status_code, error.response_code)
+
+        url = '/unit_api/periphery/{periphery_id}/units/{unit_server_id}/participants/{account_id}/unassign'.format(periphery_id=periphery_id, unit_server_id=unit_server_id, account_id=self._account)
+        post_data = {'account_to_unassign': account_to_unassign}
+
+        @preprocess_callback(callback, 'wgsh')
+        def inner_callback(data):
+            return data or {}
+
+        return self._request_data(inner_callback, 'wgsh', url, method='POST', postData=post_data)
+
+    def give_leadership(self, callback, periphery_id, unit_server_id, target_account_id, fields = None):
+        """
+        give leadership to given player
+        
+            .. _prebattle info API method:
+            https://stash.wargaming.net/projects/CLANWARS/repos/wgsh/browse/docs/unit_api/api.md
+        """
+        try:
+            periphery_id = int(periphery_id)
+            unit_server_id = int(unit_server_id)
+        except (TypeError, ValueError):
+            error = exceptions.BadRequest()
+            return callback({'description': error.description}, error.status_code, error.response_code)
+
+        url = '/unit_api/periphery/{periphery_id}/units/{unit_server_id}/members/{account_id}/give_leadership'.format(periphery_id=periphery_id, unit_server_id=unit_server_id, account_id=self._account)
+        post_data = {'target_account_id': target_account_id}
+
+        @preprocess_callback(callback, 'wgsh')
+        def inner_callback(data):
+            return data or {}
+
+        return self._request_data(inner_callback, 'wgsh', url, method='PATCH', postData=post_data)
+
+    def leave_room(self, callback, periphery_id, unit_server_id, fields = None):
+        """
+        leave current user from room
+        
+            .. _prebattle info API method:
+            https://stash.wargaming.net/projects/CLANWARS/repos/wgsh/browse/docs/unit_api/api.md
+        """
+        try:
+            periphery_id = int(periphery_id)
+            unit_server_id = int(unit_server_id)
+        except (TypeError, ValueError):
+            error = exceptions.BadRequest()
+            return callback({'description': error.description}, error.status_code, error.response_code)
+
+        url = '/unit_api/periphery/{periphery_id}/units/{unit_server_id}/participants/{account_id}/leave'.format(periphery_id=periphery_id, unit_server_id=unit_server_id, account_id=self._account)
+
+        @preprocess_callback(callback, 'wgsh')
+        def inner_callback(data):
+            return data or {}
+
+        return self._request_data(inner_callback, 'wgsh', url, method='POST')
+
+    def take_away_leadership(self, callback, periphery_id, unit_server_id, fields = None):
+        """
+        request WGSH to take leadership on room if current user have rights
+        
+            .. _prebattle info API method:
+            https://stash.wargaming.net/projects/CLANWARS/repos/wgsh/browse/docs/unit_api/api.md
+        """
+        try:
+            periphery_id = int(periphery_id)
+            unit_server_id = int(unit_server_id)
+        except (TypeError, ValueError):
+            error = exceptions.BadRequest()
+            return callback({'description': error.description}, error.status_code, error.response_code)
+
+        url = '/unit_api/periphery/{periphery}/units/{unit}/participants/{account}/take_away_leadership'.format(periphery=periphery_id, unit=unit_server_id, account=self._account)
+
+        @preprocess_callback(callback, 'wgsh')
+        def inner_callback(data):
+            return data or {}
+
+        return self._request_data(inner_callback, 'wgsh', url, method='PATCH')
+
+    def kick_player(self, callback, periphery_id, unit_server_id, account_to_kick, fields = None):
+        """
+        kick  player from unit
+        
+            .. _prebattle info API method:
+            https://stash.wargaming.net/projects/CLANWARS/repos/wgsh/browse/docs/unit_api/api.md
+        """
+        try:
+            periphery_id = int(periphery_id)
+            unit_server_id = int(unit_server_id)
+        except (TypeError, ValueError):
+            error = exceptions.BadRequest()
+            return callback({'description': error.description}, error.status_code, error.response_code)
+
+        url = '/unit_api/periphery/{periphery_id}/units/{unit_server_id}/members/{account_id}/kick'.format(periphery_id=periphery_id, unit_server_id=unit_server_id, account_id=self._account)
+        post_data = {'account_to_kick': account_to_kick}
+
+        @preprocess_callback(callback, 'wgsh')
+        def inner_callback(data):
+            return data or {}
+
+        return self._request_data(inner_callback, 'wgsh', url, method='POST', postData=post_data)
+
+    def set_open(self, callback, periphery_id, unit_server_id, is_open, fields = None):
+        """
+        set unit to open
+        
+            .. _prebattle info API method:
+            https://stash.wargaming.net/projects/CLANWARS/repos/wgsh/browse/docs/unit_api/api.md
+        """
+        try:
+            periphery_id = int(periphery_id)
+            unit_server_id = int(unit_server_id)
+        except (TypeError, ValueError):
+            error = exceptions.BadRequest()
+            return callback({'description': error.description}, error.status_code, error.response_code)
+
+        url = '/unit_api/periphery/{periphery_id}/units/{unit_server_id}/participants/{account_id}/set_open'.format(periphery_id=periphery_id, unit_server_id=unit_server_id, account_id=self._account)
+        post_data = {'is_open': is_open}
+
+        @preprocess_callback(callback, 'wgsh')
+        def inner_callback(data):
+            return data or {}
+
+        return self._request_data(inner_callback, 'wgsh', url, method='PATCH', postData=post_data)
+
+    def lock_reserve(self, callback, periphery_id, unit_server_id, reserve_id, fields = None):
+        """
+        lock reserve
+        
+            .. _prebattle info API method:
+            https://stash.wargaming.net/projects/CLANWARS/repos/wgsh/browse/docs/unit_api/api.md
+        """
+        try:
+            periphery_id = int(periphery_id)
+            unit_server_id = int(unit_server_id)
+        except (TypeError, ValueError):
+            error = exceptions.BadRequest()
+            return callback({'description': error.description}, error.status_code, error.response_code)
+
+        url = '/unit_api/periphery/{periphery_id}/units/{unit_server_id}/members/{account_id}/lock_reserve'.format(periphery_id=periphery_id, unit_server_id=unit_server_id, account_id=self._account)
+        post_data = {'reserve_id': reserve_id}
+
+        @preprocess_callback(callback, 'wgsh')
+        def inner_callback(data):
+            return data or {}
+
+        return self._request_data(inner_callback, 'wgsh', url, method='POST', postData=post_data)
+
+    def unlock_reserve(self, callback, periphery_id, unit_server_id, reserve_id, fields = None):
+        """
+        unlock reserve
+        
+            .. _prebattle info API method:
+            https://stash.wargaming.net/projects/CLANWARS/repos/wgsh/browse/docs/unit_api/api.md
+        """
+        try:
+            periphery_id = int(periphery_id)
+            unit_server_id = int(unit_server_id)
+        except (TypeError, ValueError):
+            error = exceptions.BadRequest()
+            return callback({'description': error.description}, error.status_code, error.response_code)
+
+        url = '/unit_api/periphery/{periphery_id}/units/{unit_server_id}/members/{account_id}/unlock_reserve'.format(periphery_id=periphery_id, unit_server_id=unit_server_id, account_id=self._account)
+        post_data = {'reserve_id': reserve_id}
+
+        @preprocess_callback(callback, 'wgsh')
+        def inner_callback(data):
+            return data or {}
+
+        return self._request_data(inner_callback, 'wgsh', url, method='POST', postData=post_data)
+
+    def clan_statistics(self, callback, clan_id, fields = None):
+        """
+        get clan statistics
+        
+            .. _prebattle info API method:
+            https://confluence.wargaming.net/display/WEBDEV/WGSH+-+API+for+WoT+client+dialogs
+        """
+        try:
+            clan_id = int(clan_id)
+        except (TypeError, ValueError):
+            error = exceptions.BadRequest()
+            return callback({'description': error.description}, error.status_code, error.response_code)
+
+        url = '/external_api/v1/clan_card/{clan_id}'.format(clan_id=clan_id)
+
+        @preprocess_callback(callback, 'wgsh')
+        def inner_callback(data):
+            return data or {}
+
+        return self._request_data(inner_callback, 'wgsh', url, method='GET')
+
+    def account_statistics(self, callback, account_id, fields = None):
+        """
+        get account statistics
+        
+            .. _prebattle info API method:
+            https://confluence.wargaming.net/display/WEBDEV/WGSH+-+API+for+WoT+client+dialogs
+        """
+        try:
+            account_id = int(account_id)
+        except (TypeError, ValueError):
+            error = exceptions.BadRequest()
+            return callback({'description': error.description}, error.status_code, error.response_code)
+
+        url = '/external_api/accounts/{account_id}'.format(account_id=account_id)
+
+        @preprocess_callback(callback, 'wgsh')
+        def inner_callback(data):
+            return data or {}
+
+        return self._request_data(inner_callback, 'wgsh', url, method='GET')
+
+    def join_room(self, callback, periphery_id, unit_server_id, fields = None):
+        """
+        join room
+        
+            .. _prebattle info API method:
+            https://stash.wargaming.net/projects/CLANWARS/repos/wgsh/browse/docs/unit_api/api.md
+        """
+        try:
+            periphery_id = int(periphery_id)
+            unit_server_id = int(unit_server_id)
+        except (TypeError, ValueError):
+            error = exceptions.BadRequest()
+            return callback({'description': error.description}, error.status_code, error.response_code)
+
+        url = '/unit_api/periphery/{periphery_id}/units/{unit_server_id}/members/{account_id}/join'.format(periphery_id=periphery_id, unit_server_id=unit_server_id, account_id=self._account)
+
+        @preprocess_callback(callback, 'wgsh')
+        def inner_callback(data):
+            return data or {}
+
+        return self._request_data(inner_callback, 'wgsh', url, method='POST')
+
     @convert_data({'defence_hour': lambda x: (dt_time(x, 0) if x >= 0 else None)})
     @mapped_fields({'clan_id': 'clan_id',
      'defence_hour': 'defence_hour'})
@@ -1058,8 +1435,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
         """
         return data from WGCCFE backend using `stronghold state API method`_
         
-                .. _stronghold state API method: http://rtd.wargaming.net/docs/wgccfe/en/latest/
-                rst/strongholds.html#strongholds-state
+            .. _stronghold state API method:
+            http://rtd.wargaming.net/docs/wgccfe/en/latest/rst/strongholds.html#strongholds-state
         """
         get_params = {'clan_id': clan_id}
         try:

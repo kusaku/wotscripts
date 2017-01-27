@@ -142,7 +142,6 @@ class PurchaseWindow(CustomizationBuyWindowMeta):
          'enoughCredits': enoughCredits,
          'notEnoughGoldTooltip': notEnoughGoldTooltip,
          'notEnoughCreditsTooltip': notEnoughCreditsTooltip})
-        self.as_setBuyBtnEnabledS(canBuy)
 
     @process
     def __buyElements(self, purchaseItems, replacedElementGroups):
@@ -200,15 +199,16 @@ class PurchaseDataProvider(SortableDAAPIDataProvider):
              'selected': item['isSelected'],
              'cType': item['type'],
              'itemName': element.getName(),
-             'imgBonus': element.qualifier.getIcon16x16(),
              'price': element.getPrice(item['duration']),
-             'lblBonus': text_styles.stats('+{0}%{1}'.format(element.qualifier.getValue(), '*' if element.qualifier.getDescription() is not None else '')),
              'titleMode': False,
              'DDPrice': _getDropdownPriceVO(element),
              'selectIndex': DURATION.ALL.index(item['duration']),
              'isDuplicatePrice': item['isDuplicate'],
              'duplicatePriceText': icons.info() + _ms(VEHICLE_CUSTOMIZATION.BUYWINDOW_BUYTIME_COPY),
              'duplicatePriceTooltip': makeTooltip(_ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_BUYWINDOW_COPY_HEADER), _ms(VEHICLE_CUSTOMIZATION.CUSTOMIZATION_BUYWINDOW_COPY_BODY))}
+            if element.qualifier.getValue() > 0:
+                dropdownItem['imgBonus'] = element.qualifier.getIcon16x16()
+                dropdownItem['lblBonus'] = text_styles.stats('+{0}%{1}'.format(element.qualifier.getValue(), '*' if element.qualifier.getDescription() is not None else ''))
             elementGroups[item['type']].append(dropdownItem)
 
         for elements, title in zip(elementGroups, _CUSTOMIZATION_TYPE_TITLES):

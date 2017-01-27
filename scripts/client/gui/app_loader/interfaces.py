@@ -46,9 +46,6 @@ class IAppFactory(object):
     def destroyBattle(self):
         pass
 
-    def createLogitech(self):
-        pass
-
     def destroy(self):
         pass
 

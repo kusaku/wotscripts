@@ -8,6 +8,7 @@ from gui.prb_control.entities.base.unit.ctx import KickPlayerUnitCtx, GiveLeader
 from gui.prb_control.entities.base.unit.listener import IUnitListener
 from messenger.m_constants import PROTO_TYPE
 from messenger.proto import proto_getter
+from UnitBase import UNIT_FLAGS
 KICK_FROM_UNIT = 'kickPlayerFromUnit'
 GIVE_LEADERSHIP = 'giveLeadership'
 TAKE_LEADERSHIP = 'takeLeadership'
@@ -57,7 +58,7 @@ class UnitUserCMHandler(BaseUserCMHandler, IUnitListener):
         return options
 
     def _addPrebattleInfo(self, options, userCMInfo):
-        if self.prbEntity.getPermissions().canKick():
+        if self._canKick():
             options.append(self._makeItem(KICK_FROM_UNIT, MENU.contextmenu(KICK_FROM_UNIT)))
         if self._canGiveLeadership():
             options.append(self._makeItem(GIVE_LEADERSHIP, MENU.contextmenu(GIVE_LEADERSHIP)))
@@ -65,13 +66,25 @@ class UnitUserCMHandler(BaseUserCMHandler, IUnitListener):
             options.append(self._makeItem(TAKE_LEADERSHIP, MENU.contextmenu(TAKE_LEADERSHIP)))
         return options
 
+    def _canKick(self):
+        unitEntity = self.prbEntity
+        pInfo = unitEntity.getPlayerInfo(dbID=self.databaseID)
+        flags = pInfo.unit.getFlags()
+        isInPreArena = flags & UNIT_FLAGS.IN_PRE_ARENA > 0
+        isInArena = flags & UNIT_FLAGS.IN_ARENA > 0
+        canKick = self.prbEntity.getPermissions().canKick()
+        if isInArena or isInPreArena:
+            return canKick and not pInfo.isInSlot
+        else:
+            return canKick
+
     def _canGiveLeadership(self):
         unitEntity = self.prbEntity
         myPermissions = unitEntity.getPermissions()
         myPInfo = unitEntity.getPlayerInfo()
         permissions = unitEntity.getPermissions(dbID=self.databaseID)
         pInfo = unitEntity.getPlayerInfo(dbID=self.databaseID)
-        return myPInfo.isCommander() and pInfo.isInSlot and myPermissions.canChangeLeadership() and permissions.canLead()
+        return myPInfo.isCommander() and pInfo.isInSlot and myPermissions.canChangeLeadership() and permissions.canLead() and not pInfo.isLegionary()
 
     def _canTakeLeadership(self):
         unitEntity = self.prbEntity

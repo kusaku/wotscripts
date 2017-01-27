@@ -449,10 +449,10 @@ class ConsumablesPanel(ConsumablesPanelMeta, BattleGUIKeyHandler):
             else:
                 itemName = deviceName
             idx = int(self.as_updateEntityStateS(itemName, actualState))
-            if idx and idx < len(self.__cds):
+            if 0 <= idx < len(self.__cds):
                 intCD = self.__cds[idx]
                 ctrl = self.sessionProvider.shared.equipments
-                if ctrl is None:
+                if ctrl is None or not ctrl.hasEquipment(intCD):
                     return
                 item = ctrl.getEquipment(intCD)
                 if item and item.isEntityRequired():

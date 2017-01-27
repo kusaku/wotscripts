@@ -62,7 +62,7 @@ class CustomizationMainViewMeta(View):
 
     def as_setBonusPanelDataS(self, data):
         """
-        :param data: Represented by CustomizationTotalBonusPanelVO (AS)
+        :param data: Represented by CustomizationBonusPanelVO (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_setBonusPanelData(data)

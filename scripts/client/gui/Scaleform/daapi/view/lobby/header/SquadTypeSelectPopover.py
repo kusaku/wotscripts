@@ -18,7 +18,7 @@ class SquadTypeSelectPopover(BattleTypeSelectPopoverMeta, IGlobalListener):
         else:
             LOG_ERROR('Prebattle dispatcher is not defined')
 
-    def getTooltipData(self, itemData):
+    def getTooltipData(self, itemData, itemIsDisabled):
         tooltip = ''
         if itemData == 'eventSquad':
             tooltip = TOOLTIPS.HEADER_EVENTSQUAD

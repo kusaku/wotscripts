@@ -1,9 +1,12 @@
 # Embedded file name: scripts/client/gui/wgnc/proxy_data.py
 from account_helpers import getAccountDatabaseID
+from adisp import process
+from debug_utils import LOG_WARNING
+from gui.Scaleform.locale.MENU import MENU
 from gui.wgnc.events import g_wgncEvents
 from gui.wgnc.settings import WGNC_DATA_PROXY_TYPE
 from helpers import dependency
-from skeletons.gui.game_control import IEncyclopediaController
+from skeletons.gui.game_control import IEncyclopediaController, IBrowserController
 
 class _ProxyDataItem(object):
 
@@ -42,6 +45,32 @@ class ClanApplicationItem(_ClanBaseAooItem):
 
     def getID(self):
         return self.getApplicationID()
+
+
+class _ClanApplicationActionItem(_ProxyDataItem):
+
+    def __init__(self, account_id, application_id):
+        super(_ClanApplicationActionItem, self).__init__()
+        self.__accountId = account_id
+        self.__appId = application_id
+
+    def getAccountID(self):
+        return self.__accountId
+
+    def getApplicationID(self):
+        return self.__appId
+
+
+class ClanAppAcceptedActionItem(_ClanApplicationActionItem):
+
+    def getType(self):
+        return WGNC_DATA_PROXY_TYPE.CLAN_APP_ACCEPTED_FOR_MEMBERS
+
+
+class ClanAppDeclinedActionItem(_ClanApplicationActionItem):
+
+    def getType(self):
+        return WGNC_DATA_PROXY_TYPE.CLAN_APP_DECLINED_FOR_MEMBERS
 
 
 class ClanInviteItem(_ClanBaseAooItem):
@@ -126,11 +155,34 @@ class _ClanInviteActionResultItem(_ProxyDataItem):
     def getInviteId(self):
         return self.__inviteId
 
+    def getID(self):
+        return self.getInviteId()
+
 
 class ClanInviteDeclinedItem(_ClanInviteActionResultItem):
 
     def getType(self):
         return WGNC_DATA_PROXY_TYPE.CLAN_INVITE_DECLINED
+
+
+class ClanInvitesCreatedItem(_ProxyDataItem):
+
+    def __init__(self, account_id, invite_id):
+        super(ClanInvitesCreatedItem, self).__init__()
+        self.__accountIds = account_id
+        self.__inviteIds = invite_id
+
+    def getAccountIDs(self):
+        return self.__accountIds
+
+    def getInviteIds(self):
+        return self.__inviteIds
+
+    def getNewInvitesCount(self):
+        return len(self.__inviteIds)
+
+    def getType(self):
+        return WGNC_DATA_PROXY_TYPE.CLAN_INVITES_CREATED
 
 
 class ClanInviteAcceptedItem(_ClanInviteActionResultItem):
@@ -146,10 +198,56 @@ class EncyclopediaContentItem(_ProxyDataItem):
         self.__contentId = contentId
 
     def getType(self):
-        return WGNC_DATA_PROXY_TYPE.UNDEFINED
+        return WGNC_DATA_PROXY_TYPE.ENCYCLOPEDIA_CONTENT_RECEIVED
 
     def show(self, _):
         self.encyclopedia.addEncyclopediaRecommendation(self.__contentId)
+
+
+class ShowInBrowserItem(_ProxyDataItem):
+    _webHandlers = {}
+    browserCtrl = dependency.descriptor(IBrowserController)
+
+    def __init__(self, url, size = None, title = None, showRefresh = False, webHandlerName = '', titleKey = ''):
+        self.__url = url
+        self.__size = size
+        self.__title = title
+        self.__titleKey = titleKey
+        self.__showRefresh = showRefresh
+        self.__webHandlerName = webHandlerName
+
+    def getType(self):
+        return WGNC_DATA_PROXY_TYPE.SHOW_IN_BROWSER
+
+    @process
+    def show(self, _):
+        name = self.__webHandlerName
+        if name:
+            handlers = self._webHandlers.get(name)
+            if not handlers:
+                LOG_WARNING("Wrong web-client handler's name '%s'" % name)
+        else:
+            handlers = None
+        browserId = yield self.browserCtrl.load(self.__url, browserSize=self.__size, title=self.__getTitle(), showActionBtn=self.__showRefresh, handlers=handlers)
+        browser = self.browserCtrl.getBrowser(browserId)
+        if browser:
+            browser.useSpecialKeys = False
+        return
+
+    def __getTitle(self):
+        localizedValue = None
+        if self.__titleKey:
+            localizedValue = MENU.browser_customtitle(self.__titleKey)
+        return localizedValue or self.__title
+
+    @classmethod
+    def addWebHandler(cls, name, handler):
+        cls._webHandlers[name] = handler
+
+    @classmethod
+    def removeWebHandler(cls, name):
+        if name in ShowInBrowserItem._webHandlers:
+            del cls._webHandlers[name]
 
 
 class ProxyDataHolder(object):

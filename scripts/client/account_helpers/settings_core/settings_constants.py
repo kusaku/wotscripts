@@ -11,7 +11,6 @@ class GRAPHICS(CONST_CONTAINER):
     RESOLUTION = 'resolution'
     BORDERLESS_SIZE = 'borderlessSize'
     REFRESH_RATE = 'refreshRate'
-    ASPECT_RATIO = 'aspectRatio'
     CUSTOM_AA = 'customAA'
     MULTISAMPLING = 'multisampling'
     GAMMA = 'gamma'
@@ -32,6 +31,18 @@ class GRAPHICS(CONST_CONTAINER):
     DRR_AUTOSCALER_ENABLED = 'DRR_AUTOSCALER_ENABLED'
     RENDER_PIPELINE = 'RENDER_PIPELINE'
 
+    @classmethod
+    def getScreenConstants(cls):
+        """Returns only the subset of constants related to screen/monitor settings."""
+        return (cls.MONITOR,
+         cls.VIDEO_MODE,
+         cls.WINDOW_SIZE,
+         cls.RESOLUTION,
+         cls.BORDERLESS_SIZE,
+         cls.REFRESH_RATE,
+         cls.DYNAMIC_RENDERER,
+         cls.INTERFACE_SCALE)
+
 
 class GAME(CONST_CONTAINER):
     ENABLE_OL_FILTER = 'enableOlFilter'
@@ -43,7 +54,6 @@ class GAME(CONST_CONTAINER):
     RECEIVE_CLAN_INVITES_NOTIFICATIONS = 'receiveClanInvitesNotifications'
     RECEIVE_INVITES_IN_BATTLE = 'receiveInvitesInBattle'
     BATTLE_LOADING_INFO = 'battleLoadingInfo'
-    SIMPLIFIED_TTC = 'simplifiedTTC'
     RECEIVE_FRIENDSHIP_REQUEST = 'receiveFriendshipRequest'
     STORE_RECEIVER_IN_BATTLE = 'storeReceiverInBattle'
     DISABLE_BATTLE_CHAT = 'disableBattleChat'
@@ -76,6 +86,8 @@ class GAME(CONST_CONTAINER):
     MINIMAP_DRAW_RANGE = 'minimapDrawRange'
     SNIPER_MODE_SWINGING_ENABLED = 'SNIPER_MODE_SWINGING_ENABLED'
     CAROUSEL_TYPE = 'carouselType'
+    DOUBLE_CAROUSEL_TYPE = 'doubleCarouselType'
+    VEHICLE_CAROUSEL_STATS = 'vehicleCarouselStats'
 
 
 class TUTORIAL(CONST_CONTAINER):
@@ -173,6 +185,7 @@ class DAMAGE_INDICATOR(CONST_CONTAINER):
     DAMAGE_VALUE = 'damageIndicatorDamageValue'
     VEHICLE_INFO = 'damageIndicatorVehicleInfo'
     ANIMATION = 'damageIndicatorAnimation'
+    DYNAMIC_INDICATOR = 'damageIndicatorDynamicIndicator'
 
 
 class DAMAGE_LOG(CONST_CONTAINER):
@@ -180,6 +193,8 @@ class DAMAGE_LOG(CONST_CONTAINER):
     BLOCKED_DAMAGE = 'damageLogBlockedDamage'
     ASSIST_DAMAGE = 'damageLogAssistDamage'
     SHOW_DETAILS = 'damageLogShowDetails'
+    SHOW_EVENT_TYPES = 'damageLogShowEventTypes'
+    EVENT_POSITIONS = 'damageLogEventsPosition'
 
 
 class BATTLE_EVENTS(CONST_CONTAINER):
@@ -197,6 +212,9 @@ class BATTLE_EVENTS(CONST_CONTAINER):
     ENEMY_CRITICAL_HIT = 'battleEventsEnemyCriticalHit'
     EVENT_NAME = 'battleEventsEventName'
     VEHICLE_INFO = 'battleEventsVehicleInfo'
+    ENEMY_WORLD_COLLISION = 'battleEventsEnemyWorldCollision'
+    RECEIVED_DAMAGE = 'battleEventsReceivedDamage'
+    RECEIVED_CRITS = 'battleEventsReceivedCrits'
 
 
 class CONTACTS(CONST_CONTAINER):

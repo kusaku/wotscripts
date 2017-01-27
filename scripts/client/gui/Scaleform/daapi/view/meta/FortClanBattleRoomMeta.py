@@ -12,6 +12,12 @@ class FortClanBattleRoomMeta(BaseRallyRoomView):
     def onTimerAlert(self):
         self._printOverrideError('onTimerAlert')
 
+    def openConfigureWindow(self):
+        self._printOverrideError('openConfigureWindow')
+
+    def toggleRoomStatus(self):
+        self._printOverrideError('toggleRoomStatus')
+
     def as_updateTeamHeaderTextS(self, value):
         if self._isDAAPIInited():
             return self.flashObject.as_updateTeamHeaderText(value)
@@ -27,6 +33,13 @@ class FortClanBattleRoomMeta(BaseRallyRoomView):
         if self._isDAAPIInited():
             return self.flashObject.as_updateReadyStatus(mineValue, enemyValue)
 
+    def as_setConfigureButtonStateS(self, data):
+        """
+        :param data: Represented by ActionButtonVO (AS)
+        """
+        if self._isDAAPIInited():
+            return self.flashObject.as_setConfigureButtonState(data)
+
     def as_setTimerDeltaS(self, data):
         """
         :param data: Represented by ClanBattleTimerVO (AS)
@@ -41,10 +54,28 @@ class FortClanBattleRoomMeta(BaseRallyRoomView):
         if self._isDAAPIInited():
             return self.flashObject.as_updateDirections(data)
 
-    def as_setMineClanIconS(self, value):
+    def as_setDirectionS(self, value, animationNotAvailable):
         if self._isDAAPIInited():
-            return self.flashObject.as_setMineClanIcon(value)
+            return self.flashObject.as_setDirection(value, animationNotAvailable)
 
-    def as_setEnemyClanIconS(self, value):
+    def as_setReservesEnabledS(self, data):
         if self._isDAAPIInited():
-            return self.flashObject.as_setEnemyClanIcon(value)
+            return self.flashObject.as_setReservesEnabled(data)
+
+    def as_setReservesDataS(self, reservesData):
+        """
+        :param reservesData: Represented by Vector.<DeviceSlotVO> (AS)
+        """
+        if self._isDAAPIInited():
+            return self.flashObject.as_setReservesData(reservesData)
+
+    def as_setOpenedS(self, buttonLabel, statusLabel, tooltipLabel):
+        if self._isDAAPIInited():
+            return self.flashObject.as_setOpened(buttonLabel, statusLabel, tooltipLabel)
+
+    def as_setTableHeaderS(self, data):
+        """
+        :param data: Represented by Vector.<NormalSortingBtnVO> (AS)
+        """
+        if self._isDAAPIInited():
+            return self.flashObject.as_setTableHeader(data)

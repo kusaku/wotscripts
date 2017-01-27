@@ -1,16 +1,13 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/meta/VehicleCompareViewMeta.py
-from gui.Scaleform.framework.entities.View import View
+from gui.Scaleform.daapi.view.meta.VehicleCompareCommonViewMeta import VehicleCompareCommonViewMeta
 
-class VehicleCompareViewMeta(View):
+class VehicleCompareViewMeta(VehicleCompareCommonViewMeta):
     """
     DO NOT MODIFY!
     Generated with yaml.
     __author__ = 'yaml_processor'
-    @extends View
+    @extends VehicleCompareCommonViewMeta
     """
-
-    def closeView(self):
-        self._printOverrideError('closeView')
 
     def onBackClick(self):
         self._printOverrideError('onBackClick')
@@ -32,6 +29,9 @@ class VehicleCompareViewMeta(View):
 
     def onRemoveVehicle(self, index):
         self._printOverrideError('onRemoveVehicle')
+
+    def onRevertVehicle(self, index):
+        self._printOverrideError('onRevertVehicle')
 
     def onRemoveAllVehicles(self):
         self._printOverrideError('onRemoveAllVehicles')
@@ -61,7 +61,3 @@ class VehicleCompareViewMeta(View):
     def as_setVehiclesCountTextS(self, text):
         if self._isDAAPIInited():
             return self.flashObject.as_setVehiclesCountText(text)
-
-    def as_setAttentionVisibleS(self, value):
-        if self._isDAAPIInited():
-            return self.flashObject.as_setAttentionVisible(value)

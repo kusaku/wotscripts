@@ -18,20 +18,11 @@ class CyberSportUnitsListMeta(BaseRallyListView):
     def filterVehicles(self):
         self._printOverrideError('filterVehicles')
 
-    def setTeamFilters(self, showOnlyStatic):
-        self._printOverrideError('setTeamFilters')
-
     def loadPrevious(self):
         self._printOverrideError('loadPrevious')
 
     def loadNext(self):
         self._printOverrideError('loadNext')
-
-    def showRallyProfile(self, id):
-        self._printOverrideError('showRallyProfile')
-
-    def searchTeams(self, name):
-        self._printOverrideError('searchTeams')
 
     def as_setDummyS(self, data):
         """
@@ -43,13 +34,6 @@ class CyberSportUnitsListMeta(BaseRallyListView):
     def as_setDummyVisibleS(self, visible):
         if self._isDAAPIInited():
             return self.flashObject.as_setDummyVisible(visible)
-
-    def as_setSearchResultTextS(self, text, descrText, filterData):
-        """
-        :param filterData: Represented by CheckBoxIconVO (AS)
-        """
-        if self._isDAAPIInited():
-            return self.flashObject.as_setSearchResultText(text, descrText, filterData)
 
     def as_setHeaderS(self, data):
         """

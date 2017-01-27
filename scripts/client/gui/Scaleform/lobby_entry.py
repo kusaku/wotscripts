@@ -108,7 +108,7 @@ class LobbyEntry(SFApplication):
         self._containerMgr.load(VIEW_ALIAS.WAITING)
 
     def _getRequiredLibraries(self):
-        return ('windows.swf', 'animations.swf', 'common_i18n.swf', 'popovers.swf', 'guiControlsLogin.swf', 'guiControlsLoginBattleDynamic.swf')
+        return ('windows.swf', 'animations.swf', 'common_i18n.swf', 'guiControlsLogin.swf', 'guiControlsLoginBattleDynamic.swf')
 
     def __getCursorFromContainer(self):
         if self._containerMgr is not None:

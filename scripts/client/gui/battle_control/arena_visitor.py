@@ -84,6 +84,7 @@ class _ClientArenaSkeleton(object):
     vehicles = {}
     statistics = {}
     extraData = {}
+    viewPoints = []
 
 
 class _ArenaTypeSkeleton(object):
@@ -248,6 +249,9 @@ class _ArenaTypeVisitor(IArenaVisitor):
     def getMaxTeamsOnArena(self):
         return self._arenaType.maxTeamsInArena
 
+    def getTeamsOnArenaRange(self):
+        return range(1, self.getMaxTeamsOnArena() + 1)
+
     @catch_attribute_exception(default=_ArenaTypeSkeleton.soloTeamNumbers)
     def getSoloTeamNumbers(self):
         return self._arenaType.soloTeamNumbers
@@ -374,6 +378,12 @@ class _ArenaBonusTypeVisitor(IArenaVisitor):
 
     def hasGasAttack(self):
         return _CAPS.checkAny(self._bonusType, _CAPS.GAS_ATTACK_MECHANICS)
+
+    def isSquadSupported(self):
+        return _CAPS.checkAny(self._bonusType, _CAPS.SQUADS)
+
+    def canTakeSquadXP(self):
+        return _CAPS.checkAny(self._bonusType, _CAPS.SQUAD_XP)
 
 
 class _ArenaExtraDataVisitor(IArenaVisitor):
@@ -609,3 +619,7 @@ class _ClientArenaVisitor(object):
     @catch_attribute_exception(default=_ClientArenaSkeleton.statistics)
     def getArenaStatistics(self):
         return self._arena.statistics
+
+    @catch_attribute_exception(default=_ClientArenaSkeleton.viewPoints)
+    def getArenaViewPoints(self):
+        return self._arena.viewPoints

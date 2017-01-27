@@ -9,6 +9,9 @@ class AbstractRallyViewMeta(BaseDAAPIComponent):
     @extends BaseDAAPIComponent
     """
 
+    def viewSize(self, width, height):
+        self._printOverrideError('viewSize')
+
     def as_setPyAliasS(self, alias):
         if self._isDAAPIInited():
             return self.flashObject.as_setPyAlias(alias)
@@ -16,3 +19,7 @@ class AbstractRallyViewMeta(BaseDAAPIComponent):
     def as_getPyAliasS(self):
         if self._isDAAPIInited():
             return self.flashObject.as_getPyAlias()
+
+    def as_loadBrowserS(self):
+        if self._isDAAPIInited():
+            return self.flashObject.as_loadBrowser()

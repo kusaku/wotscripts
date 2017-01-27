@@ -9,13 +9,13 @@ class SiegeModeIndicatorMeta(BaseDAAPIComponent):
     @extends BaseDAAPIComponent
     """
 
-    def as_switchSiegeStateS(self, totalTime, leftTime, siegeState, engineState):
+    def as_switchSiegeStateS(self, totalTime, leftTime, siegeState, engineState, isSmooth):
         if self._isDAAPIInited():
-            return self.flashObject.as_switchSiegeState(totalTime, leftTime, siegeState, engineState)
+            return self.flashObject.as_switchSiegeState(totalTime, leftTime, siegeState, engineState, isSmooth)
 
-    def as_switchSiegeStateSnapshotS(self, totalTime, leftTime, siegeState, engineState):
+    def as_switchSiegeStateSnapshotS(self, totalTime, leftTime, siegeState, engineState, isSmooth):
         if self._isDAAPIInited():
-            return self.flashObject.as_switchSiegeStateSnapshot(totalTime, leftTime, siegeState, engineState)
+            return self.flashObject.as_switchSiegeStateSnapshot(totalTime, leftTime, siegeState, engineState, isSmooth)
 
     def as_updateDeviceStateS(self, deviceName, deviceState):
         if self._isDAAPIInited():

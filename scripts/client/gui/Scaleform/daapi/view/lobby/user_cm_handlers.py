@@ -9,7 +9,6 @@ from gui.Scaleform.framework.entities.EventSystemEntity import EventSystemEntity
 from gui.Scaleform.framework.managers.context_menu import AbstractContextMenuHandler
 from gui.Scaleform.locale.MENU import MENU
 from gui.Scaleform.locale.SYSTEM_MESSAGES import SYSTEM_MESSAGES
-from gui.christmas.christmas_controller import g_christmasCtrl
 from gui.clans.clan_helpers import showClanInviteSystemMsg
 from gui.clans.contexts import CreateInviteCtx
 from gui.prb_control import prbDispatcherProperty, prbEntityProperty
@@ -211,7 +210,6 @@ class BaseUserCMHandler(AbstractContextMenuHandler, EventSystemEntity):
         options.append(self._makeItem(USER.COPY_TO_CLIPBOARD, MENU.contextmenu(USER.COPY_TO_CLIPBOARD)))
         options = self._addSquadInfo(options, userCMInfo.isIgnored)
         options = self._addPrebattleInfo(options, userCMInfo)
-        options = self._addClubInfo(options, userCMInfo)
         options = self._addContactsNoteInfo(options, userCMInfo)
         options = self._addAppealInfo(options)
         options = self._addIgnoreInfo(options, userCMInfo)
@@ -275,9 +273,6 @@ class BaseUserCMHandler(AbstractContextMenuHandler, EventSystemEntity):
         return options
 
     def _addRejectFriendshipInfo(self, options, userCMInfo):
-        return options
-
-    def _addClubInfo(self, options, userCMInfo):
         return options
 
     def _addClanProfileInfo(self, options, userCMInfo):
@@ -374,7 +369,7 @@ class AppealCMHandler(BaseUserCMHandler):
             if not vehicle.isSecret:
                 isEnabled = True
                 if vehicle.isPreviewAllowed():
-                    isEnabled = not self.prbDispatcher.getFunctionalState().isNavigationDisabled() and not g_christmasCtrl.isNavigationDisabled()
+                    isEnabled = not self.prbDispatcher.getFunctionalState().isNavigationDisabled()
                     action = USER.VEHICLE_PREVIEW
                     label = MENU.contextmenu(USER.VEHICLE_PREVIEW)
                 else:

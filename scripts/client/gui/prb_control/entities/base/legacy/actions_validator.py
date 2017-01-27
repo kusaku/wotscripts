@@ -1,4 +1,5 @@
 # Embedded file name: scripts/client/gui/prb_control/entities/base/legacy/actions_validator.py
+from PlayerEvents import g_playerEvents
 from gui.prb_control.entities.base.actions_validator import BaseActionsValidator, ActionsValidatorComposite
 from gui.prb_control.items import ValidationResult
 from gui.prb_control.settings import PREBATTLE_RESTRICTION
@@ -10,6 +11,8 @@ class InQueueValidator(BaseActionsValidator):
     """
 
     def _validate(self):
+        if g_playerEvents.isPlayerEntityChanging:
+            return ValidationResult(False, PREBATTLE_RESTRICTION.TEAM_IS_IN_QUEUE)
         _, assigned = decodeRoster(self._entity.getRosterKey())
         if self._entity.getTeamState().isInQueue() and assigned:
             return ValidationResult(False, PREBATTLE_RESTRICTION.TEAM_IS_IN_QUEUE)

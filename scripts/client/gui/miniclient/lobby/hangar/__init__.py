@@ -10,7 +10,3 @@ def configure_pointcuts(config):
     _pointcuts.TankModelHangarVisibility(config)
     _pointcuts.EnableCrew(config)
     _pointcuts.ChangeLobbyMenuTooltip()
-    _pointcuts.ShowChristmasViewPointcut()
-    _pointcuts.On3DObjectClickedPointcut()
-    _pointcuts.On3DObjectSelectedPointcut()
-    _pointcuts.On3DObjectUnSelectedPointcut()

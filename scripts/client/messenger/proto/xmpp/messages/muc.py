@@ -319,11 +319,12 @@ class LazyLeaveAction(LeaveAction):
 
 
 class MUCProvider(ChatProvider):
-    __slots__ = ('__actions',)
+    __slots__ = ('__actions', '__isAccountInited')
 
     def __init__(self):
         super(MUCProvider, self).__init__()
         self.__actions = {}
+        self.__isAccountInited = False
 
     @staticmethod
     def createJoinAction(channel, initResult = ACTION_RESULT.DO_NOTHING, name = ''):
@@ -362,6 +363,7 @@ class MUCProvider(ChatProvider):
             _, action = self.__actions.popitem()
             action.clear()
 
+        self.__isAccountInited = False
         super(MUCProvider, self).clear()
 
     def release(self):
@@ -460,8 +462,11 @@ class MUCProvider(ChatProvider):
 
     def handlePresence(self, jid, resource):
         result = False
+        presence = resource.presence
+        if not self.__isAccountInited and utils.getPlayerDatabaseID() == resource.getWgDatabaseID() and presence == PRESENCE.AVAILABLE:
+            self.release()
+            self.__isAccountInited = True
         if g_settings.server.XMPP.isMucServiceAllowed(hostname=jid.getDomain()):
-            presence = resource.presence
             mucInfo = resource.getMucInfo()
             dbID = resource.getWgDatabaseID()
             nickname = resource.getWgNickname() or jid.getResource()

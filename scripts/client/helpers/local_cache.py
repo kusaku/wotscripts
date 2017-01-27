@@ -193,6 +193,9 @@ class PickleIO(RedirectIO):
         except cPickle.PickleError as error:
             LOG_WARNING('Can not unpickle cache', error)
             return None
+        except EOFError as error:
+            LOG_WARNING('Data is broken', error)
+            return None
 
         return None
 

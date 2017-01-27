@@ -12,6 +12,7 @@ from gui.battle_control.controllers.interfaces import IBattleController
 from gui.shared.utils.MethodsRules import MethodsRules
 from gui.shared.utils.decorators import ReprInjector
 from items import vehicles
+import BattleReplay
 __all__ = ('AmmoController', 'AmmoReplayRecord', 'AmmoReplayPlayer')
 _ClipBurstSettings = namedtuple('_ClipBurstSettings', 'size interval')
 
@@ -131,7 +132,7 @@ class ReloadingTimeSnapshot(IGunReloadingSnapshot):
 
     def getTimeLeft(self):
         if self.isReloading():
-            return max(0.0, self._actualTime - self.getTimePassed())
+            return max(0.0, self._baseTime - self.getTimePassed())
         else:
             return 0.0
 
@@ -382,15 +383,19 @@ class AmmoController(MethodsRules, IBattleController):
             self.onGunReloadTimeSet(self.__currShellCD, self._reloadingState.getSnapshot())
 
     def triggerReloadEffect(self, timeLeft):
-        if timeLeft > 0.0 and self.__gunSettings.reloadEffect is not None:
-            shellCounts = self.__ammo[self.__currShellCD]
-            clipCapacity = self.__gunSettings.clip.size
-            ammoLow = False
-            if clipCapacity > shellCounts[0]:
-                ammoLow = True
-                clipCapacity = shellCounts[0]
-            self.__gunSettings.reloadEffect.start(timeLeft, ammoLow, shellCounts[1], clipCapacity)
-        return
+        replayCtrl = BattleReplay.g_replayCtrl
+        if replayCtrl.isPlaying and replayCtrl.isTimeWarpInProgress:
+            return
+        else:
+            if timeLeft > 0.0 and self.__gunSettings.reloadEffect is not None:
+                shellCounts = self.__ammo[self.__currShellCD]
+                clipCapacity = self.__gunSettings.clip.size
+                ammoLow = False
+                if clipCapacity > shellCounts[0]:
+                    ammoLow = True
+                    clipCapacity = shellCounts[0]
+                self.__gunSettings.reloadEffect.start(timeLeft, ammoLow, shellCounts[1], clipCapacity)
+            return
 
     def getGunReloadingState(self):
         """ Gets snapshot of reloading state.

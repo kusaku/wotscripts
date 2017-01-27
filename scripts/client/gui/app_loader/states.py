@@ -233,6 +233,9 @@ class LobbyState(ConnectionState):
             appFactory.attachCursor(appNS)
             appFactory.goToLobby(appNS)
 
+    def hideGUI(self, appFactory):
+        appFactory.detachCursor(APP_NAME_SPACE.SF_LOBBY)
+
     def _getNextState(self, ctx):
         newState = None
         if ctx.guiSpaceID == _SPACE_ID.BATTLE_LOADING:
@@ -268,13 +271,12 @@ class BattleLoadingState(_ArenaState):
         else:
             appFactory.hideBattle()
             appFactory.reloadLobbyPackages()
-            appFactory.showLobby()
             appFactory.destroyBattle()
+            appFactory.showLobby()
 
     def showGUI(self, appFactory, appNS, appState):
         if appState == _STATE_ID.INITIALIZED:
-            if not _isBattleReplayPlaying():
-                appFactory.hideLobby()
+            appFactory.hideLobby()
             appFactory.loadBattlePage(appNS, arenaGuiType=self._arenaGuiType)
 
     def updateGUI(self, appFactory, appNS):
@@ -291,6 +293,8 @@ class BattleLoadingState(_ArenaState):
             newState = self._createBattleState()
         elif spaceID == _SPACE_ID.LOBBY:
             newState = LobbyState()
+        elif spaceID == _SPACE_ID.WAITING:
+            newState = WaitingState()
         return newState
 
     def _createBattleState(self):

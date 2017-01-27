@@ -40,10 +40,10 @@ def getClientLanguage():
 
 
 def getClientOverride():
-    if constants.IS_KOREA:
-        return 'KR'
-    elif constants.IS_CHINA:
+    if constants.IS_CHINA:
         return 'CN'
+    elif getClientLanguage() == 'ko':
+        return 'KR'
     else:
         return None
 

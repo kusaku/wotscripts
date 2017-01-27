@@ -32,7 +32,7 @@ class ProfileTechnique(ProfileTechniqueMeta):
         if accountDossier is not None and accountDossier.getHistoricalStats().getVehicles():
             dropDownProvider.append(self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.HISTORICAL))
         dropDownProvider.extend((self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.TEAM), self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.STATICTEAM), self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.CLAN)))
-        if g_lobbyContext.getServerSettings().isFortsEnabled():
+        if g_lobbyContext.getServerSettings().isStrongholdsEnabled():
             dropDownProvider.extend((self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.FORTIFICATIONS_SORTIES), self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.FORTIFICATIONS_BATTLES)))
         return {'dropDownProvider': dropDownProvider,
          'tableHeader': self._getTableHeader(isFallout)}
@@ -74,6 +74,7 @@ class ProfileTechnique(ProfileTechniqueMeta):
         return i18n.makeString(emptyScreenLabelsDictionary[self._battlesType])
 
     def _sendAccountData(self, targetData, accountDossier):
+        super(ProfileTechnique, self)._sendAccountData(targetData, accountDossier)
         self.as_setInitDataS(self._getInitData(accountDossier, self._battlesType == PROFILE_DROPDOWN_KEYS.FALLOUT))
         self.as_responseDossierS(self._battlesType, self._getTechniqueListVehicles(targetData), '', self.getEmptyScreenLabel())
 

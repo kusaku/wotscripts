@@ -82,7 +82,10 @@ class IControlMode(object):
     def setGUIVisible(self, isVisible):
         pass
 
-    def selectPlayer(self, index):
+    def selectPlayer(self, vehID):
+        pass
+
+    def selectViewPoint(self, pointID):
         pass
 
     def onMinimapClicked(self, worldPos):
@@ -376,10 +379,12 @@ class CatControlMode(IControlMode):
 
     def destroy(self):
         self.disable()
-        self.__shellingControl.destroy()
-        self.__shellingControl = None
-        self.__cam.destroy()
-        self.__cam = None
+        if self.__shellingControl is not None:
+            self.__shellingControl.destroy()
+            self.__shellingControl = None
+        if self.__cam is not None:
+            self.__cam.destroy()
+            self.__cam = None
         self.__isCreated = False
         return
 
@@ -399,9 +404,12 @@ class CatControlMode(IControlMode):
         return False
 
     def disable(self):
-        self.__shellingControl.setEnable(False)
-        self.__cam.disable()
+        if self.__shellingControl is not None:
+            self.__shellingControl.setEnable(False)
+        if self.__cam is not None:
+            self.__cam.disable()
         self.__isEnabled = False
+        return
 
     def handleKeyEvent(self, isDown, key, mods, event = None):
         if not self.__isEnabled:
@@ -556,6 +564,10 @@ class ArcadeControlMode(_GunControlMode):
         else:
             self.__activateAlternateMode(pos=None, bByScroll=True)
             return
+
+    def setForcedGuiControlMode(self, enable):
+        if not enable:
+            self._cam.update(0, 0, 0, False, False)
 
     def __activateAlternateMode(self, pos = None, bByScroll = False):
         ownVehicle = BigWorld.entity(BigWorld.player().playerVehicleID)
@@ -911,6 +923,10 @@ class SniperControlMode(_GunControlMode):
         self._cam.disable()
         self._cam.enable(preferredPos, True)
 
+    def setForcedGuiControlMode(self, enable):
+        if not enable:
+            self._cam.update(0, 0, 0, False)
+
     def __setupBinoculars(self, isCoatedOptics):
         modeDesc = self.__binocularsModes[SniperControlMode._BINOCULARS_MODE_SUFFIX[1 if isCoatedOptics else 0]]
         self.__binoculars.setBackgroundTexture(modeDesc.background)
@@ -992,12 +1008,12 @@ class PostMortemControlMode(IControlMode):
             if self.__isObserverMode:
                 vehicleID = args.get('vehicleID')
                 if vehicleID is None:
-                    self.__switchViewpoint(False)
+                    self.__switch()
                 else:
                     self.__fakeSwitchToVehicle(vehicleID)
                 return
             if PostMortemControlMode.getIsPostmortemDelayEnabled() and bool(args.get('bPostmortemDelay')):
-                self.__postmortemDelay = PostmortemDelay(self.__cam, self.__onPostmortemDelayStop)
+                self.__postmortemDelay = PostmortemDelay(self.__cam, self.__aih.onPostmortemKillerVision, self.__onPostmortemDelayStop)
                 self.__postmortemDelay.start()
             else:
                 self.__switchToVehicle(None)
@@ -1026,10 +1042,10 @@ class PostMortemControlMode(IControlMode):
                 self.__aih.onControlModeChanged(CTRL_MODE_NAME.VIDEO, prevModeName=CTRL_MODE_NAME.POSTMORTEM, camMatrix=self.__cam.camera.matrix, curVehicleID=self.__curVehicleID)
                 return True
             if cmdMap.isFired(CommandMapping.CMD_CM_POSTMORTEM_NEXT_VEHICLE, key) and isDown:
-                self.__switchViewpoint(toPrevious=False)
+                self.__switch()
                 return True
             if cmdMap.isFired(CommandMapping.CMD_CM_POSTMORTEM_SELF_VEHICLE, key) and isDown:
-                self.__switchViewpoint(toPrevious=True)
+                self.__switch(False)
                 return True
             if cmdMap.isFiredList((CommandMapping.CMD_CM_CAMERA_ROTATE_LEFT,
              CommandMapping.CMD_CM_CAMERA_ROTATE_RIGHT,
@@ -1065,8 +1081,11 @@ class PostMortemControlMode(IControlMode):
     def onRecreateDevice(self):
         pass
 
-    def selectPlayer(self, vehId):
-        self.__switchToVehicle(vehId)
+    def selectPlayer(self, vehID):
+        self.__switchToVehicle(vehID)
+
+    def selectViewPoint(self, pointID):
+        self.__switchToViewpoint(pointID)
 
     def setGUIVisible(self, isVisible):
         pass
@@ -1091,16 +1110,22 @@ class PostMortemControlMode(IControlMode):
             self.onSwitchViewpoint(vehicleID, Math.Vector3(0.0, 0.0, 0.0))
             return
 
-    def __switchViewpoint(self, toPrevious, vehicleID = None):
-        if not isinstance(toPrevious, bool):
-            raise AssertionError
-            return self.__postmortemDelay is not None and None
+    def __switchToViewpoint(self, toId):
+        if self.__postmortemDelay is not None:
+            return
         else:
+            raise isinstance(toId, int) or AssertionError
             self.__doPreBind()
-            if vehicleID is None:
-                BigWorld.player().positionControl.switchViewpoint(toPrevious)
-            else:
-                self.onSwitchViewpoint(vehicleID, Math.Vector3(0.0, 0.0, 0.0))
+            self.guiSessionProvider.shared.viewPoints.selectViewPoint(toId)
+            return
+
+    def __switch(self, isNext = True):
+        if self.__postmortemDelay is not None:
+            return
+        else:
+            raise isinstance(isNext, bool) or AssertionError
+            self.__doPreBind()
+            self.guiSessionProvider.shared.viewPoints.switch(isNext)
             return
 
     def __switchToVehicle(self, toId = None):
@@ -1110,7 +1135,7 @@ class PostMortemControlMode(IControlMode):
             raise not toId or isinstance(toId, int) and toId >= 0 or AssertionError
             self.__doPreBind()
             self.__changeVehicle(toId)
-            BigWorld.player().positionControl.bindToVehicle(vehicleID=toId)
+            self.guiSessionProvider.shared.viewPoints.selectVehicle(toId)
             return
 
     def __doPreBind(self):
@@ -1126,19 +1151,19 @@ class PostMortemControlMode(IControlMode):
         self.__curVehicleID = vehicleID if vehicleID != -1 else self.__selfVehicleID
         self.__changeVehicle(vehicleID)
         if self.__curVehicleID != player.playerVehicleID and self.__curVehicleID is not None and BigWorld.entity(self.__curVehicleID) is None and not replayCtrl.isPlaying and not self.__isObserverMode and player.arena.positions.get(self.__curVehicleID) is None:
-            self.__switchViewpoint(False)
+            self.__switch()
         return
 
     def __changeVehicle(self, vehicleID):
         """
         Do all the job to switch to another vehicle in postmortem:
         - calls postmortem event
-        - sets vehicle in state controller
+        - sets vehicle in state controller and resets other controllers in guiSessionProvider
         - calls camera update event
         :param vehicleID: controlling vehicle ID
         """
         self.__aih.onPostmortemVehicleChanged(vehicleID)
-        self.guiSessionProvider.shared.vehicleState.switchToOther(vehicleID)
+        self.guiSessionProvider.switchVehicle(vehicleID)
         if vehicleID in BigWorld.entities.keys():
             self.__aih.onCameraChanged(CTRL_MODE_NAME.POSTMORTEM, vehicleID)
 

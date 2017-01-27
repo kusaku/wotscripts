@@ -255,6 +255,10 @@ class Tankman(GUIItem, HasStrCD):
         return 0
 
     @property
+    def isMaxRoleLevel(self):
+        return self.roleLevel == tankmen.MAX_SKILL_LEVEL
+
+    @property
     def vehicleNativeType(self):
         for tag in vehicles.VEHICLE_CLASS_TAGS.intersection(self.vehicleNativeDescr.type.tags):
             return tag
@@ -450,6 +454,10 @@ def getRoleMediumIconPath(role):
 
 def getRoleSmallIconPath(role):
     return '../maps/icons/tankmen/roles/small/%s' % getRoleIconName(role)
+
+
+def getRoleWhiteIconPath(role):
+    return '../maps/icons/tankmen/roles/white/{}'.format(getRoleIconName(role))
 
 
 def getRankUserName(nationID, rankID):

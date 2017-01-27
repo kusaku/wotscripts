@@ -9,6 +9,7 @@ from gui.Scaleform.daapi.view.lobby.rally.vo_converters import makeVehicleVO
 from gui.Scaleform.daapi.view.meta.VehicleBuyWindowMeta import VehicleBuyWindowMeta
 from gui.Scaleform.locale.DIALOGS import DIALOGS
 from gui.Scaleform.locale.MENU import MENU
+from gui.Scaleform.locale.SYSTEM_MESSAGES import SYSTEM_MESSAGES
 from gui.shared import g_itemsCache
 from gui.shared.events import VehicleBuyEvent
 from gui.shared.formatters import text_styles, moneyWithIcon
@@ -22,7 +23,7 @@ from gui.shared.tooltips.formatters import packItemActionTooltipData, packItemRe
 from gui.shared.utils import decorators
 from helpers import i18n, time_utils, dependency
 from shared_utils import CONST_CONTAINER
-from skeletons.gui.game_control import IRentalsController, ITradeInController
+from skeletons.gui.game_control import IRentalsController, ITradeInController, IRestoreController
 
 class _TABS(CONST_CONTAINER):
     UNDEFINED = -1
@@ -64,7 +65,7 @@ class VehicleBuyWindow(VehicleBuyWindowMeta):
         super(VehicleBuyWindow, self)._populate()
         self._initData()
         g_itemsCache.onSyncCompleted += self._initData
-        self.rentals.onRentChangeNotify += self._onRentChange
+        self.rentals.onRentChangeNotify += self.__onRentChange
         g_clientUpdateManager.addCallbacks({'stats.credits': self.__setCreditsCallBack,
          'stats.gold': self.__setGoldCallBack})
         self.addListener(VehicleBuyEvent.VEHICLE_SELECTED, self.__setTradeOffVehicle)
@@ -72,7 +73,7 @@ class VehicleBuyWindow(VehicleBuyWindowMeta):
     def _dispose(self):
         g_itemsCache.onSyncCompleted -= self._initData
         g_clientUpdateManager.removeObjectCallbacks(self)
-        self.rentals.onRentChangeNotify -= self._onRentChange
+        self.rentals.onRentChangeNotify -= self.__onRentChange
         self.removeListener(VehicleBuyEvent.VEHICLE_SELECTED, self.__setTradeOffVehicle)
         self.vehicle = None
         self.tradeOffVehicle = None
@@ -229,11 +230,6 @@ class VehicleBuyWindow(VehicleBuyWindowMeta):
         else:
             return None
 
-    def _onRentChange(self, vehicles):
-        vehicle = g_itemsCache.items.getItem(GUI_ITEM_TYPE.VEHICLE, self.nationID, self.inNationID)
-        if vehicle and vehicle.intCD in vehicles:
-            self._initData()
-
     def _getRentData(self, vehicle, vehiclePricesActionData):
         result = []
         rentPackages = vehicle.rentPackages
@@ -268,6 +264,11 @@ class VehicleBuyWindow(VehicleBuyWindowMeta):
 
     def _getObtainVehicleProcessor(self, vehicle, data):
         return VehicleBuyer(vehicle, data.buySlot, data.buyAmmo, data.crewType)
+
+    def __onRentChange(self, vehicles):
+        vehicle = g_itemsCache.items.getItem(GUI_ITEM_TYPE.VEHICLE, self.nationID, self.inNationID)
+        if vehicle and vehicle.intCD in vehicles:
+            self._initData()
 
     @decorators.process('buyItem')
     def __requestForMoneyObtain(self, data):
@@ -336,17 +337,18 @@ class VehicleBuyWindow(VehicleBuyWindowMeta):
 
 
 class VehicleRestoreWindow(VehicleBuyWindow):
+    restore = dependency.descriptor(IRestoreController)
 
     def submit(self, data):
         super(VehicleRestoreWindow, self).submit(data)
 
     def _populate(self):
         super(VehicleRestoreWindow, self)._populate()
-        self.rentals.onRentChangeNotify += self.__onRestoreChange
+        self.restore.onRestoreChangeNotify += self.__onRestoreChange
 
     def _dispose(self):
         super(VehicleRestoreWindow, self)._dispose()
-        self.rentals.onRentChangeNotify -= self.__onRestoreChange
+        self.restore.onRestoreChangeNotify -= self.__onRestoreChange
 
     def _addPriceBlock(self, result, vehicle, vehiclePricesActionData):
         disabled = not vehicle.isRestoreAvailable() or constants.IS_CHINA and vehicle.rentalIsActive
@@ -379,7 +381,8 @@ class VehicleRestoreWindow(VehicleBuyWindow):
     def _isTradeIn(self):
         return False
 
-    def __onRestoreChange(self, vehicles):
+    def __onRestoreChange(self, _):
         vehicle = g_itemsCache.items.getItem(GUI_ITEM_TYPE.VEHICLE, self.nationID, self.inNationID)
-        if vehicle and vehicle.intCD in vehicles:
-            self._initData()
+        if vehicle and not vehicle.isRestoreAvailable():
+            self.onWindowClose()
+            SystemMessages.pushI18nMessage(SYSTEM_MESSAGES.VEHICLE_RESTORE_FINISHED, vehicleName=vehicle.userName)

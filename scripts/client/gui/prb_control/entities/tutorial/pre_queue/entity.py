@@ -51,6 +51,7 @@ class TutorialEntity(PreQueueEntity):
 
     def init(self, ctx = None):
         result = super(TutorialEntity, self).init(ctx)
+        g_eventDispatcher.loadHangar()
         g_eventDispatcher.startOffbattleTutorial()
         return result
 
@@ -59,7 +60,6 @@ class TutorialEntity(PreQueueEntity):
 
     def doSelectAction(self, action):
         if action.actionName == PREBATTLE_ACTION_NAME.BATTLE_TUTORIAL:
-            g_eventDispatcher.startOffbattleTutorial()
             return SelectResult(True)
         return super(TutorialEntity, self).doSelectAction(action)
 

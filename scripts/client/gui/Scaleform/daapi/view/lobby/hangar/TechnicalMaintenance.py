@@ -3,6 +3,7 @@ from CurrentVehicle import g_currentVehicle
 from debug_utils import LOG_DEBUG
 from gui import SystemMessages, DialogsInterface
 from gui.ClientUpdateManager import g_clientUpdateManager
+from gui.Scaleform.locale.MENU import MENU
 from gui.shared.event_bus import EVENT_BUS_SCOPE
 from gui.shared.tooltips.formatters import packItemActionTooltipData
 from gui.Scaleform.daapi.view.meta.TechnicalMaintenanceMeta import TechnicalMaintenanceMeta
@@ -145,7 +146,8 @@ class TechnicalMaintenance(TechnicalMaintenanceMeta):
                  'tableName': shell.getShortInfo(vehicle, True),
                  'maxAmmo': vehicle.gun.maxAmmo,
                  'userCredits': money.toDict(),
-                 'actionPriceData': action})
+                 'actionPriceData': action,
+                 'desc': MENU.SHELLLISTITEMRENDERER_REPLACE})
 
         self.as_setDataS(data)
         return

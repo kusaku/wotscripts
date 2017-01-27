@@ -8,7 +8,7 @@ from VehicleAppearance import VehicleDamageState, _setupVehicleFashion, setupSpl
 from vehicle_systems.components.CrashedTracks import CrashedTrackController
 from debug_utils import *
 from vehicle_systems.tankStructure import VehiclePartsTuple, TankNodeNames
-from constants import VEHICLE_PHYSICS_MODE, VEHICLE_SIEGE_STATE
+from constants import VEHICLE_SIEGE_STATE
 import constants
 from OcclusionDecal import OcclusionDecal
 from ShadowForwardDecal import ShadowForwardDecal
@@ -232,7 +232,6 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
             self.__originalFilter = self.__vehicle.filter
             self.__createFilter()
             self.__vehicle.filter = self.__filter
-            self.__vehicle.filter.enableNewPhysics(True)
             self.__vehicle.filter.enableStabilisedMatrix(isPlayerVehicle)
             self.__filter.isStrafing = self.__vehicle.isStrafing
             self.__filter.vehicleCollisionCallback = player.handleVehicleCollidedVehicle
@@ -515,6 +514,8 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
                 BigWorld.player().inputHandler.onVehicleDeath(vehicle, currentState.state == 'ammoBayExplosion')
                 self.processVehicleDeath(currentState)
                 self.__requestModelsRefresh()
+            elif not vehicle.isCrewActive:
+                self.__stopEngineAudition()
         return
 
     @ComponentSystem.groupCall
@@ -546,30 +547,6 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
         if BattleReplay.isPlaying() and BattleReplay.g_replayCtrl.isTimeWarpInProgress:
             return
         else:
-            isOldPhysicsMode = self.__vehicle.physicsMode == VEHICLE_PHYSICS_MODE.STANDARD
-            if isOldPhysicsMode and forceSwinging:
-                flags = mode[1]
-                prevFlags = self.__swingMoveFlags
-                swingingAnimator = self.__swingingAnimator
-                if swingingAnimator is not None:
-                    moveMask = 3
-                    rotMask = 12
-                    if flags & moveMask ^ prevFlags & moveMask:
-                        swingPeriod = 2.0
-                        if flags & 1:
-                            swingingAnimator.accelSwingingDirection = -1
-                        elif flags & 2:
-                            swingingAnimator.accelSwingingDirection = 1
-                        else:
-                            swingingAnimator.accelSwingingDirection = 0
-                    elif not flags & moveMask and flags & rotMask ^ prevFlags & rotMask:
-                        swingPeriod = 1.0
-                        swingingAnimator.accelSwingingDirection = 0
-                    else:
-                        swingPeriod = 0.0
-                    if swingPeriod > swingingAnimator.accelSwingingPeriod:
-                        swingingAnimator.accelSwingingPeriod = swingPeriod
-                self.__swingMoveFlags = flags
             return
 
     def stopSwinging(self):
@@ -646,6 +623,7 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
                 self.leveredSuspension = None
                 self.__setFashions(fashions, self.__isTurretDetached)
                 self.__destroySystems()
+                self.__splineTracks = None
             self.__setupModels()
             self.setVehicle(vehicle)
             self.activate()
@@ -781,6 +759,12 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
         if self.__effectsPlayer is not None:
             self.__effectsPlayer.stop()
         self.__effectsPlayer = None
+        return
+
+    def __stopEngineAudition(self):
+        if self.engineAudition is not None:
+            self.engineAudition.destroy()
+            self.engineAudition = None
         return
 
     def __calcIsUnderwater(self):
@@ -1046,10 +1030,7 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
         if self.suspensionController is not None:
             self.suspensionController.onSiegeStateChanged(newState)
         if self.__suspensionSound is not None:
-            if newState == VEHICLE_SIEGE_STATE.ENABLED:
-                self.__suspensionSound.activate()
-            else:
-                self.__suspensionSound.deactivate()
+            self.__suspensionSound.vehicleState = newState
         if self.__siegeEffects is not None:
             self.__siegeEffects.onSiegeStateChanged(newState)
         return

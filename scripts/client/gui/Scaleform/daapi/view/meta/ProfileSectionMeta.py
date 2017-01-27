@@ -12,7 +12,7 @@ class ProfileSectionMeta(BaseDAAPIComponent):
     def setActive(self, value):
         self._printOverrideError('setActive')
 
-    def requestData(self, data):
+    def requestData(self, vehicleId):
         self._printOverrideError('requestData')
 
     def requestDossier(self, type):

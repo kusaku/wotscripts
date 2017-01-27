@@ -94,8 +94,6 @@ class EventsWindow(QuestsWindowMeta):
                         self._navInfo.selectRandomQuest(pQuest.getTileID(), pQuest.getID())
                     else:
                         self._navInfo.selectFalloutQuest(pQuest.getTileID(), pQuest.getID())
-                elif eventType == constants.EVENT_TYPE.CLUBS_QUEST:
-                    self._navInfo.selectLadderQuest(eventID)
                 elif eventType in (constants.EVENT_TYPE.TUTORIAL, constants.EVENT_TYPE.MOTIVE_QUEST):
                     self._navInfo.selectTutorialQuest(eventID)
                 else:

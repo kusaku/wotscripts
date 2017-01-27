@@ -85,7 +85,7 @@ class SandboxEntity(PreQueueEntity):
         return prb_getters.isInSandboxQueue()
 
     def leave(self, ctx, callback = None):
-        if not self.canSwitch(ctx):
+        if not (ctx.hasFlags(FUNCTIONAL_FLAG.TUTORIAL) or ctx.hasFlags(FUNCTIONAL_FLAG.RANDOM)):
             self.storage.suspend()
         super(SandboxEntity, self).leave(ctx, callback)
 

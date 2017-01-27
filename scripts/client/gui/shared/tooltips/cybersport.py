@@ -82,11 +82,10 @@ class CybersportUnitToolTipData(CybersportToolTipData):
 
     def getDisplayableData(self, data = None):
         if data is not None:
-            commanderRatingDesc = TOOLTIPS.CYBERSPORT_CAPTAIN_STATS if data.isStatic else TOOLTIPS.CYBERSPORT_COMMANDER_STATS
             return {'unitComment': data.description,
              'commanderName': data.creatorName,
              'commanderRating': data.rating,
-             'commanderRatingDesc': commanderRatingDesc}
+             'commanderRatingDesc': TOOLTIPS.CYBERSPORT_COMMANDER_STATS}
         else:
             return super(CybersportUnitToolTipData, self).getDisplayableData(data)
 

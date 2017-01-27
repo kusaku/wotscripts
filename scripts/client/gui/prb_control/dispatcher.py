@@ -22,7 +22,7 @@ from gui.prb_control.entities.base.entity import NotSupportedEntity
 from gui.prb_control.entities.listener import IGlobalListener
 from gui.prb_control.invites import InvitesManager, AutoInvitesNotifier
 from gui.prb_control.items import PlayerDecorator, FunctionalState
-from gui.prb_control.settings import CTRL_ENTITY_TYPE as _CTRL_TYPE
+from gui.prb_control.settings import CTRL_ENTITY_TYPE as _CTRL_TYPE, ENTER_UNIT_MGR_ERRORS
 from gui.prb_control.settings import IGNORED_UNIT_BROWSER_ERRORS
 from gui.prb_control.settings import IGNORED_UNIT_MGR_ERRORS
 from gui.prb_control.settings import PREBATTLE_RESTRICTION, FUNCTIONAL_FLAG
@@ -57,6 +57,7 @@ class _PreBattleDispatcher(ListenersCollection):
         self.__requestCtx = PrbCtrlRequestCtx()
         self.__factories = ControlFactoryComposite()
         self.__entity = NotSupportedEntity()
+        self.__prevEntity = NotSupportedEntity()
         self._setListenerClass(IGlobalListener)
 
     def __del__(self):
@@ -74,7 +75,7 @@ class _PreBattleDispatcher(ListenersCollection):
         self.__startListening()
         initDevFunctional()
         if result & FUNCTIONAL_FLAG.LOAD_PAGE == 0:
-            BigWorld.callback(0.001, lambda : g_eventDispatcher.loadHangar())
+            g_eventDispatcher.loadHangar()
         if GUI_SETTINGS.specPrebatlesVisible and not prb_getters.areSpecBattlesHidden():
             g_eventDispatcher.addSpecBattlesToCarousel()
 
@@ -415,6 +416,14 @@ class _PreBattleDispatcher(ListenersCollection):
         """
         return self.__requestCtx.isProcessing()
 
+    def restorePrevious(self):
+        """
+        Trying to set current entity to previous.
+        Returns:
+            initialization result as flags
+        """
+        return self.__setEntity(CreatePrbEntityCtx(self.__prevEntity.getCtrlType(), self.__prevEntity.getEntityType(), flags=self.__prevEntity.getFunctionalFlags()))
+
     def ec_onCompanyStateChanged(self, state):
         """
         Events cache companies state subscriber. Updates UI on changed.
@@ -631,6 +640,8 @@ class _PreBattleDispatcher(ListenersCollection):
             msgType, msgBody = messages.getUnitMessage(errorCode, errorString)
             SystemMessages.pushMessage(msgBody, type=msgType)
             self.__requestCtx.stopProcessing()
+        if errorCode in ENTER_UNIT_MGR_ERRORS:
+            self.restorePrevious()
 
     def unitBrowser_onErrorReceived(self, errorCode, errorString):
         """
@@ -807,6 +818,7 @@ class _PreBattleDispatcher(ListenersCollection):
         if self.__entity is not None:
             self.__entity.fini(woEvents=woEvents)
             self.__entity = None
+        self.__prevEntity = None
         g_eventDispatcher.removeSpecBattlesFromCarousel()
         self.clear()
         return
@@ -887,6 +899,7 @@ class _PreBattleDispatcher(ListenersCollection):
         if not isinstance(self.__entity, NotSupportedEntity):
             self._invokeListeners('onPrbEntitySwitching')
             self.__entity.fini(ctx=ctx)
+            self.__prevEntity = self.__entity
             self.__entity = NotSupportedEntity()
             self.__requestCtx.stopProcessing(result=True)
 
@@ -904,6 +917,7 @@ class _PreBattleDispatcher(ListenersCollection):
             if created.getEntityFlags() & FUNCTIONAL_FLAG.SET_GLOBAL_LISTENERS > 0:
                 created.addMutualListeners(self)
             self.__entity = created
+            self.__prevEntity = NotSupportedEntity()
             flag = self.__entity.init(ctx=ctx)
             self._invokeListeners('onPrbEntitySwitched')
             ctx.clearFlags()

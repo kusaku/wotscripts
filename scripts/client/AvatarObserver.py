@@ -65,12 +65,13 @@ class ObservedVehicleData(CallbackDelayer):
         self.__optionalDevices[deviceID] = isOn
 
 
-class AvatarObserver(object):
+class AvatarObserver(CallbackDelayer):
     observedVehicleID = property(lambda self: self.__observedVehicleID)
     observedVehicleData = property(lambda self: self.__observedVehicleData)
 
     def __init__(self):
         LOG_DEBUG_DEV('client AvatarObserver.init')
+        CallbackDelayer.__init__(self)
         self.__observedVehicleID = None
         self.__observedVehicleData = defaultdict(ObservedVehicleData)
         return
@@ -78,6 +79,9 @@ class AvatarObserver(object):
     def onBecomePlayer(self):
         LOG_DEBUG_DEV('AvatarObserver.onBecomePlayer')
         self.cell.switchObserverFPV(False)
+
+    def onBecomeNonPlayer(self):
+        CallbackDelayer.destroy(self)
 
     def onEnterWorld(self):
         LOG_DEBUG_DEV('AvatarObserver.onEnterWorld')
@@ -210,12 +214,22 @@ class AvatarObserver(object):
 
     def set_isObserverFPV(self, prev):
         LOG_DEBUG_DEV('Avatar::set_isObserverFPV', self.isObserverFPV)
-        self.inputHandler.onVehicleControlModeChanged(None)
-        if self.isObserverFPV and self.vehicle is not None:
-            self.guiSessionProvider.stopVehicleVisual(self.vehicle.id, False)
+        self.__applyObserverModeChange()
+
+    def __applyObserverModeChange(self):
+        if self.vehicle is None and self.inputHandler.ctrlModeName != CTRL_MODE_NAME.STRATEGIC:
+            self.delayCallback(0.0, self.__applyObserverModeChange)
+            return
         else:
-            self.guiSessionProvider.startVehicleVisual(self.vehicle, True)
-        return
+            self.stopCallback(self.__applyObserverModeChange)
+            self.inputHandler.onVehicleControlModeChanged(None)
+            vehicle = self.getVehicleAttached()
+            if vehicle is not None:
+                if self.isObserverFPV:
+                    self.guiSessionProvider.stopVehicleVisual(vehicle.id, False)
+                else:
+                    self.guiSessionProvider.startVehicleVisual(vehicle, True)
+            return
 
     def set_observerFPVControlMode(self, prev):
         if self.isObserver() is not None:

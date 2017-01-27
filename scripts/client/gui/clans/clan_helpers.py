@@ -4,7 +4,8 @@ from collections import namedtuple
 from adisp import async, process
 import Event
 from client_request_lib.exceptions import ResponseCodes
-from gui import SystemMessages
+from gui import SystemMessages, GUI_SETTINGS
+from gui.LobbyContext import g_lobbyContext
 from gui.Scaleform.daapi.view.dialogs import I18nConfirmDialogMeta
 from gui.Scaleform.locale.DIALOGS import DIALOGS
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
@@ -13,7 +14,8 @@ from helpers import dependency
 from helpers import i18n
 from helpers.local_cache import FileLocalCache
 from gui.shared.utils import sortByFields
-from debug_utils import LOG_DEBUG, LOG_WARNING
+from debug_utils import LOG_DEBUG, LOG_WARNING, LOG_CURRENT_EXCEPTION
+from gui.LobbyContext import g_lobbyContext
 from gui.clans import interfaces, items, formatters
 from gui.clans.contexts import SearchClansCtx, GetRecommendedClansCtx, AccountInvitesCtx, ClanRatingsCtx
 from gui.clans.contexts import ClansInfoCtx, AcceptInviteCtx, DeclineInviteCtx, DeclineInvitesCtx
@@ -42,7 +44,7 @@ def showClanInviteSystemMsg(userName, isSuccess, code):
         if code == ResponseCodes.ACCOUNT_ALREADY_INVITED:
             error = 'clans/request/errors/Account already invited'
         if code == ResponseCodes.ACCOUNT_ALREADY_IN_CLAN:
-            error = 'clans/request/errors/Account is in clan already'
+            error = 'clans/request/errors/user is in clan already'
         msg = formatters.getInviteNotSentSysMsg(userName, error)
         msgType = SystemMessages.SM_TYPE.Error
     SystemMessages.pushMessage(msg, msgType)
@@ -726,3 +728,35 @@ class CachedValue(object):
 
     def _now(self):
         return time_utils.getTimestampFromUTC(datetime.utcnow().timetuple())
+
+
+def isStrongholdsEnabled():
+    try:
+        settings = g_lobbyContext.getServerSettings()
+        return settings.isStrongholdsEnabled()
+    except:
+        return False
+
+
+def getStrongholdUrl(urlName):
+    try:
+        return _getWgshHost() + GUI_SETTINGS.stronghold.get(urlName)
+    except (AttributeError, TypeError):
+        LOG_CURRENT_EXCEPTION()
+        return None
+
+    return None
+
+
+def getStrongholdClanCardUrl(clanDBID):
+    return getStrongholdUrl('clanCardUrl') + str(clanDBID)
+
+
+def _getWgshHost():
+    try:
+        return g_lobbyContext.getServerSettings().stronghold.wgshHostUrl
+    except AttributeError:
+        LOG_CURRENT_EXCEPTION()
+        return None
+
+    return None

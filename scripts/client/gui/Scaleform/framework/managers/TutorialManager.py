@@ -107,7 +107,7 @@ class TutorialManager(TutorialManagerMeta):
     def _validate(self, componentID):
         if not self._isEnabled or self._config is None:
             return False
-        elif not self._isCreated():
+        elif not self.isCreated():
             raise AssertionError('TutorialManager must be initialised')
             component = self._config.getItem(componentID)
             component is None and LOG_DEBUG('Component is not found', componentID)

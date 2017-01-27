@@ -27,9 +27,6 @@ class TankCarouselMeta(BaseDAAPIComponent):
     def updateHotFilters(self):
         self._printOverrideError('updateHotFilters')
 
-    def onChristmasBtnClick(self):
-        self._printOverrideError('onChristmasBtnClick')
-
     def as_getDataProviderS(self):
         if self._isDAAPIInited():
             return self.flashObject.as_getDataProvider()
@@ -64,9 +61,6 @@ class TankCarouselMeta(BaseDAAPIComponent):
         if self._isDAAPIInited():
             return self.flashObject.as_blinkCounter()
 
-    def as_setChristmasBtnDataS(self, data):
-        """
-        :param data: Represented by ChristmasButtonVO (AS)
-        """
+    def as_setSmallDoubleCarouselS(self, value):
         if self._isDAAPIInited():
-            return self.flashObject.as_setChristmasBtnData(data)
+            return self.flashObject.as_setSmallDoubleCarousel(value)

@@ -2,7 +2,6 @@
 from collections import namedtuple
 import BigWorld
 import Math
-from christmas_shared import TOY_TYPE_NAMES, BOX_COLORS
 from constants import EVENT_TYPE as _ET, DOSSIER_TYPE
 from debug_utils import LOG_ERROR, LOG_CURRENT_EXCEPTION
 from dossiers2.ui.achievements import ACHIEVEMENT_BLOCK
@@ -91,17 +90,13 @@ class SimpleBonus(object):
     def getList(self):
         return None
 
-    def getCarouselList(self, isReceived = False, isChristmasFormat = False):
-        """
-        Get list of VOs for award carousel.
+    def getCarouselList(self, isReceived = False):
+        """ Get list of VOs for award carousel.
         """
         return [{'label': self.carouselFormat(),
           'tooltip': self.getTooltip()}]
 
     def hasIconFormat(self):
-        return False
-
-    def isVisualOnly(self):
         return False
 
     def _format(self, styleSubset):
@@ -133,14 +128,9 @@ class FloatBonus(SimpleBonus):
 
 class CountableIntegralBonus(IntegralBonus):
 
-    def getCarouselList(self, isReceived = False, isChristmasFormat = False):
-        counter = text_styles.stats('x{}'.format(self._value))
-        icon = RES_ICONS.getAwardsCarouselIcon(self._name)
-        if isChristmasFormat:
-            counter = text_styles.promoTitle('x{}'.format(self._value))
-            icon = RES_ICONS.maps_icons_christmas_awards_all(self._name)
-        return [{'imgSource': icon,
-          'counter': counter,
+    def getCarouselList(self, isReceived = False):
+        return [{'imgSource': RES_ICONS.getAwardsCarouselIcon(self._name),
+          'counter': text_styles.stats('x{}'.format(self._value)),
           'tooltip': self.getTooltip()}]
 
 
@@ -201,11 +191,8 @@ class PremiumDaysBonus(IntegralBonus):
     def hasIconFormat(self):
         return True
 
-    def getCarouselList(self, isReceived = False, isChristmasFormat = False):
-        icon = RES_ICONS.getPremiumCarouselIcon(self._value)
-        if isChristmasFormat:
-            icon = RES_ICONS.getBigPremiumCarouselIcon(self._value)
-        return [{'imgSource': icon,
+    def getCarouselList(self, isReceived = False):
+        return [{'imgSource': RES_ICONS.getPremiumCarouselIcon(self._value),
           'tooltip': self.getTooltip()}]
 
 
@@ -245,7 +232,7 @@ class BattleTokensBonus(TokensBonus):
         self._name = 'battleToken'
 
     def isShowInGUI(self):
-        return True
+        return self.__getFirstQuestName() != ''
 
     def getCarouselList(self, isReceived = False):
         return [{'imgSource': RES_ICONS.MAPS_ICONS_QUESTS_ICON_BATTLE_MISSIONS_PRIZE_TOKEN,
@@ -292,51 +279,6 @@ class BattleTokensBonus(TokensBonus):
         return ''
 
 
-class ChristmasToyTokensBonus(TokensBonus):
-
-    def getToys(self):
-        toys = {}
-        from gui.christmas.christmas_controller import g_christmasCtrl
-        for tID, tRecord in self.getTokens().iteritems():
-            toyID = g_christmasCtrl.getToyID(tID)
-            if toyID is not None:
-                toy = g_christmasCtrl.getChristmasItemByID(toyID)
-                toys[toy] = tRecord.count
-
-        return toys
-
-    def format(self):
-        return ''
-
-    def getList(self):
-        result = []
-        for item, count in self.getToys().iteritems():
-            if item is not None and count:
-                result.append({'value': BigWorld.wg_getIntegralFormat(count),
-                 'item': item,
-                 'itemSource': RES_ICONS.maps_icons_christmas_decorations_small_decoration(item.getIconName())})
-
-        return result
-
-    def getCarouselList(self, isReceived = False, isChristmasFormat = False):
-        result = []
-        for item, count in self.getToys().iteritems():
-            if item is not None and count:
-                result.append({'counter': text_styles.stats('x{}'.format(count)),
-                 'imgSource': RES_ICONS.maps_icons_christmas_decorations_small_decoration(item.getIconName())})
-
-        return result
-
-    def hasIconFormat(self):
-        return True
-
-    def isVisualOnly(self):
-        return True
-
-    def isShowInGUI(self):
-        return True
-
-
 class PotapovTokensBonus(TokensBonus):
 
     def __init__(self, name, value):
@@ -354,7 +296,7 @@ class PotapovTokensBonus(TokensBonus):
     def format(self):
         return makeHtmlString('html_templates:lobby/quests/bonuses', 'pqTokens', {'value': self.formatValue()})
 
-    def getCarouselList(self, isReceived = False, isChristmasFormat = False):
+    def getCarouselList(self, isReceived = False):
         return [{'imgSource': RES_ICONS.getAwardsCarouselIcon(self._name),
           'counter': text_styles.stats('x{}'.format(self.__count)),
           'tooltip': self.getTooltip()}]
@@ -400,7 +342,7 @@ class ItemsBonus(SimpleBonus):
     def hasIconFormat(self):
         return True
 
-    def getCarouselList(self, isReceived = False, isChristmasFormat = False):
+    def getCarouselList(self, isReceived = False):
         result = []
         for item, count in self.getItems().iteritems():
             if item is not None and count:
@@ -410,13 +352,8 @@ class ItemsBonus(SimpleBonus):
                     alias = TOOLTIPS_CONSTANTS.AWARD_SHELL
                 else:
                     alias = TOOLTIPS_CONSTANTS.AWARD_MODULE
-                icon = item.icon
-                counter = text_styles.stats('x{}'.format(count))
-                if isChristmasFormat:
-                    icon = RES_ICONS.maps_icons_christmas_awards_all(item.descriptor.icon[0])
-                    counter = text_styles.promoTitle('x{}'.format(count))
-                result.append({'imgSource': icon,
-                 'counter': counter,
+                result.append({'imgSource': item.icon,
+                 'counter': text_styles.stats('x{}'.format(count)),
                  'isSpecial': True,
                  'specialAlias': alias,
                  'specialArgs': [item.intCD]})
@@ -462,7 +399,6 @@ class GoodiesBonus(SimpleBonus):
         for booster, count in sorted(self.getBoosters().iteritems(), key=lambda (booster, count): booster.boosterType):
             if booster is not None:
                 result.append({'value': BigWorld.wg_getIntegralFormat(count),
-                 'valueAtLeft': True,
                  'tooltip': TOOLTIPS_CONSTANTS.BOOSTERS_BOOSTER_INFO,
                  'boosterVO': self.__makeBoosterVO(booster)})
 
@@ -487,75 +423,22 @@ class GoodiesBonus(SimpleBonus):
 
         return result
 
-    def getCarouselList(self, isReceived = False, isChristmasFormat = False):
+    def getCarouselList(self, isReceived = False):
         result = []
         for booster, count in sorted(self.getBoosters().iteritems(), key=lambda (booster, count): booster.boosterType):
             if booster is not None:
-                icon = booster.icon
-                counter = text_styles.stats('x{}'.format(count))
-                if isChristmasFormat:
-                    icon = RES_ICONS.maps_icons_christmas_awards_all(booster.boosterGuiType)
-                    counter = text_styles.promoTitle('x{}'.format(count))
-                result.append({'imgSource': icon,
-                 'counter': counter,
+                result.append({'imgSource': booster.icon,
+                 'counter': text_styles.stats('x{}'.format(count)),
                  'isSpecial': True,
                  'specialAlias': TOOLTIPS_CONSTANTS.BOOSTERS_BOOSTER_INFO,
                  'specialArgs': [booster.boosterID]})
 
         for discount, count in sorted(self.getDiscounts().iteritems()):
-            icon = discount.icon
-            formatter = text_styles.stats
-            if isChristmasFormat:
-                vehicle = g_itemsCache.items.getItemByCD(discount.targetValue)
-                vehName = vehicle.name.replace(':', '-')
-                icon = '../maps/icons/christmas/awards/discounts/%s.png' % vehName
-                if icon not in RES_ICONS.MAPS_ICONS_CHRISTMAS_AWARDS_DISCOUNTS_ENUM:
-                    icon = vehicle.icon
-                formatter = text_styles.promoTitle
-            result.append({'imgSource': icon,
-             'counter': discount.getFormattedValue(formatter),
+            result.append({'imgSource': discount.icon,
+             'counter': discount.getFormattedValue(text_styles.stats),
              'tooltip': makeTooltip(header=discount.userName, body=discount.description)})
 
         return result
-
-
-_BoxInfo = namedtuple('BoxInfo', 'color, toyType')
-
-class BoxBonus(SimpleBonus):
-
-    def format(self):
-        return ''
-
-    def getList(self):
-        boxInfo = self.__getBoxInfo()
-        if boxInfo.color in BOX_COLORS:
-            return [{'value': '',
-              'itemSource': '../maps/icons/christmas/boxes/%s.png' % boxInfo.color,
-              'valueAtLeft': False,
-              'tooltip': makeTooltip(header=i18n.makeString(TOOLTIPS.CHRISTMAS_QUESTS_BOXAWARD_HEADER), body=TOOLTIPS.CHRISTMAS_QUESTS_BOXAWARD_BODY)}]
-        return []
-
-    def hasIconFormat(self):
-        return True
-
-    def isVisualOnly(self):
-        return True
-
-    def getCarouselList(self, isReceived = False, isChristmasFormat = False):
-        boxInfo = self.__getBoxInfo()
-        if boxInfo.color in BOX_COLORS:
-            return [{'counter': '',
-              'imgSource': '../maps/icons/christmas/boxes/%s.png' % boxInfo.color,
-              'tooltip': makeTooltip(header=i18n.makeString(TOOLTIPS.CHRISTMAS_QUESTS_BOXAWARD_HEADER), body=TOOLTIPS.CHRISTMAS_QUESTS_BOXAWARD_BODY)}]
-        return []
-
-    def __getBoxInfo(self):
-        qIDInfo = self._value.split('_')
-        color, toyType = (None, None)
-        if len(qIDInfo) >= 2:
-            color = qIDInfo[0]
-            toyType = qIDInfo[1].upper()
-        return _BoxInfo(color, toyType)
 
 
 class VehiclesBonus(SimpleBonus):
@@ -600,15 +483,14 @@ class VehiclesBonus(SimpleBonus):
     def getVehicles(self):
         result = []
         if self._value is not None:
-            if isinstance(self._value, list):
-                for vehicleData in self._value:
-                    result.extend(self.__getVehiclesResult(vehicleData))
+            for intCD, vehInfo in self._value.iteritems():
+                item = g_itemsCache.items.getItemByCD(intCD)
+                if item is not None:
+                    result.append((item, vehInfo))
 
-            else:
-                result = self.__getVehiclesResult(self._value)
         return result
 
-    def getCarouselList(self, isReceived = False, isChristmasFormat = False):
+    def getCarouselList(self, isReceived = False):
         result = []
         for vehicle, vehInfo in self.getVehicles():
             tmanRoleLevel = self.__getTmanRoleLevel(vehInfo)
@@ -620,24 +502,10 @@ class VehiclesBonus(SimpleBonus):
             else:
                 image = RES_ICONS.MAPS_ICONS_LIBRARY_BONUSES_VEHICLES
                 rentExpiryTime = 0
-            if isChristmasFormat:
-                vehName = vehicle.name.replace(':', '-')
-                image = '../maps/icons/christmas/awards/discounts/%s.png' % vehName
-                if image not in RES_ICONS.MAPS_ICONS_CHRISTMAS_AWARDS_DISCOUNTS_ENUM:
-                    image = vehicle.icon
             result.append({'imgSource': image,
              'isSpecial': True,
              'specialAlias': TOOLTIPS_CONSTANTS.AWARD_VEHICLE,
              'specialArgs': [vehicle.intCD, tmanRoleLevel, rentExpiryTime]})
-
-        return result
-
-    def __getVehiclesResult(self, value):
-        result = []
-        for intCD, vehInfo in value.iteritems():
-            item = g_itemsCache.items.getItemByCD(intCD)
-            if item is not None:
-                result.append((item, vehInfo))
 
         return result
 
@@ -704,7 +572,7 @@ class DossierBonus(SimpleBonus):
                     if block == ACHIEVEMENT_BLOCK.RARE:
                         continue
                     achieve = _getAchievement(block, record, value)
-                    result.append(achieve.getUserName())
+                    result.append(achieve.userName)
                 else:
                     result.append(i18n.makeString('#quests:details/dossier/%s' % record))
             except Exception:
@@ -713,7 +581,7 @@ class DossierBonus(SimpleBonus):
 
         return result
 
-    def getCarouselList(self, isReceived = False, isChristmasFormat = False):
+    def getCarouselList(self, isReceived = False):
         result = []
         for (block, record), value in self.getRecords().iteritems():
             try:
@@ -721,11 +589,7 @@ class DossierBonus(SimpleBonus):
                     if block == ACHIEVEMENT_BLOCK.RARE:
                         continue
                     achievement = _getAchievement(block, record, value)
-                    if isChristmasFormat:
-                        imgSource = achievement.getBigIcon()
-                    else:
-                        imgSource = achievement.getSmallIcon()
-                    result.append({'imgSource': imgSource,
+                    result.append({'imgSource': achievement.getSmallIcon(),
                      'isSpecial': True,
                      'specialAlias': TOOLTIPS_CONSTANTS.BATTLE_STATS_ACHIEVS,
                      'specialArgs': [block, record, value]})
@@ -809,23 +673,16 @@ class TankmenBonus(SimpleBonus):
 
         return RES_ICONS.MAPS_ICONS_REFERRAL_REFSYS_MEN_BW
 
-    def getCarouselList(self, isReceived = False, isChristmasFormat = False):
+    def getCarouselList(self, isReceived = False):
         result = []
-        if isChristmasFormat:
-            for tmanInfo in self.getTankmenData():
-                vehIntCD = vehicles.makeIntCompactDescrByID('vehicle', tmanInfo.nationID, tmanInfo.vehicleTypeID)
-                vehName = g_itemsCache.items.getItemByCD(vehIntCD).shortUserName
-                result.append({'imgSource': RES_ICONS.MAPS_ICONS_CHRISTMAS_AWARDS_TANKWOMEN,
-                 'tooltip': makeTooltip(TOOLTIPS.getAwardHeader('tankwomen'), i18n.makeString(QUESTS.BONUSES_ITEM_TANKWOMAN_CHRISTMAS_DESCRIPTION, vehName=vehName, role=getRoleUserName(tmanInfo.role)))})
-
-        else:
-            for group in self.getTankmenGroups().itervalues():
-                if group['skills']:
-                    key = '#quests:bonuses/item/tankmen/with_skills'
-                else:
-                    key = '#quests:bonuses/item/tankmen/no_skills'
-                result.append({'imgSource': RES_ICONS.MAPS_ICONS_LIBRARY_BONUSES_TANKMEN,
-                 'tooltip': makeTooltip(TOOLTIPS.getAwardHeader(self._name), i18n.makeString(key, **group))})
+        for group in self.getTankmenGroups().itervalues():
+            if group['skills']:
+                key = '#quests:bonuses/item/tankmen/with_skills'
+            else:
+                key = '#quests:bonuses/item/tankmen/no_skills'
+            tooltip = makeTooltip(TOOLTIPS.getAwardHeader(self._name), i18n.makeString(key, **group))
+            result.append({'imgSource': RES_ICONS.MAPS_ICONS_LIBRARY_BONUSES_TANKMEN,
+             'tooltip': tooltip})
 
         return result
 
@@ -846,7 +703,7 @@ class PotapovTankmenBonus(TankmenBonus):
 
         return ', '.join(result)
 
-    def getCarouselList(self, isReceived = False, isChristmasFormat = False):
+    def getCarouselList(self, isReceived = False):
         result = []
         for tmanInfo in self.getTankmenData():
             if tmanInfo.isFemale:
@@ -857,19 +714,6 @@ class PotapovTankmenBonus(TankmenBonus):
              'tooltip': tooltip})
 
         return result
-
-
-class ChristmasTankmenBonus(TankmenBonus):
-
-    def formatValue(self):
-        result = []
-        for tmanInfo in self.getTankmenData():
-            if tmanInfo.isFemale:
-                result.append(i18n.makeString('#quests:bonuses/item/tankwoman/description', value=getRoleUserName(tmanInfo.role)))
-            else:
-                result.append(i18n.makeString('#quests:bonuses/tankmen/description', value=getRoleUserName(tmanInfo.role)))
-
-        return ', '.join(result)
 
 
 class RefSystemTankmenBonus(TankmenBonus):
@@ -958,7 +802,7 @@ class CustomizationsBonus(SimpleBonus):
 
         return result
 
-    def getCarouselList(self, isReceived = False, isChristmasFormat = False):
+    def getCarouselList(self, isReceived = False):
         result = []
         for item, data in zip(self.getCustomizations(), self.getList(defaultSize=128)):
             result.append({'imgSource': data.get('texture'),
@@ -989,13 +833,13 @@ _BONUSES = {'credits': CreditsBonus,
  'meta': MetaBonus,
  'tokens': {'default': TokensBonus,
             _ET.BATTLE_QUEST: BattleTokensBonus,
-            'christmas': ChristmasToyTokensBonus,
+            _ET.TOKEN_QUEST: BattleTokensBonus,
+            _ET.PERSONAL_QUEST: BattleTokensBonus,
             _ET.POTAPOV_QUEST: {'regular': PotapovTokensBonus,
                                 'fallout': FalloutTokensBonus}},
  'dossier': {'default': DossierBonus,
              _ET.POTAPOV_QUEST: PotapovDossierBonus},
  'tankmen': {'default': TankmenBonus,
-             'christmas': ChristmasTankmenBonus,
              _ET.POTAPOV_QUEST: PotapovTankmenBonus,
              _ET.REF_SYSTEM_QUEST: RefSystemTankmenBonus},
  'customizations': CustomizationsBonus,
@@ -1041,9 +885,7 @@ def _initFromTree(key, name, value):
 def getBonusObj(quest, name, value):
     questType = quest.getType()
     key = [name, questType]
-    if name in ('optional', 'oneof', 'group'):
-        return BoxBonus(name, quest.getID())
-    if questType == _ET.BATTLE_QUEST and name == 'tokens':
+    if questType in (_ET.BATTLE_QUEST, _ET.TOKEN_QUEST, _ET.PERSONAL_QUEST) and name == 'tokens':
         for n, v in value.items():
             parentsName = quest.getParentsName()
             if n in parentsName:
@@ -1053,14 +895,8 @@ def getBonusObj(quest, name, value):
 
     elif questType == _ET.POTAPOV_QUEST:
         key.append(quest.getQuestBranchName())
-    elif quest.getID().startswith('christmas'):
-        key = [name, 'christmas']
     return _initFromTree(key, name, value)
 
 
 def getTutorialBonusObj(name, value):
     return _initFromTree((name,), name, value)
-
-
-def getChristmasBonusObj(name, value):
-    return _initFromTree((name, 'christmas'), name, value)

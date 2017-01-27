@@ -1,6 +1,9 @@
 # Embedded file name: scripts/client/gui/prb_control/entities/base/unit/ctx.py
+import BigWorld
+import gui.macroses as macroses
 from account_helpers import gameplay_ctx
 from external_strings_utils import truncate_utf8
+from UnitBase import UNIT_SLOT
 from gui.prb_control import settings, prb_getters
 from gui.prb_control.entities.base.ctx import PrbCtrlRequestCtx
 from gui.shared.utils.decorators import ReprInjector
@@ -296,6 +299,9 @@ class AssignUnitCtx(UnitRequestCtx):
         """
         return self.__slotIdx
 
+    def isRemove(self):
+        return self.__slotIdx == UNIT_SLOT.REMOVE
+
 
 @ReprInjector.withParent(('__action', 'action'), ('__vehTypes', 'vehTypes'))
 
@@ -313,6 +319,9 @@ class AutoSearchUnitCtx(UnitRequestCtx):
 
     def getRequestType(self):
         return _REQUEST_TYPE.AUTO_SEARCH
+
+    def getAction(self):
+        return self.__action
 
     def getActionName(self):
         """
@@ -361,7 +370,7 @@ class BattleQueueUnitCtx(AutoSearchUnitCtx):
     """
     Context for enqueue unit request
     """
-    __slots__ = ('selectVehInvID',)
+    __slots__ = ('selectVehInvID', '__isActionStartBattle')
 
     def __init__(self, waitingID = '', action = 1, vehTypes = None):
         super(BattleQueueUnitCtx, self).__init__(waitingID=waitingID, action=action, vehTypes=vehTypes)

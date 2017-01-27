@@ -35,7 +35,6 @@ class UnitsListItem(object):
         isRosterSet = False
         creator = None
         description = None
-        isClub = False
         extra = None
         if unit:
             creator = unit.getCreator()
@@ -48,7 +47,6 @@ class UnitsListItem(object):
             commandSize = len(playersSlots) + len(freeSlots)
             isRosterSet = unit.isRosterSet(ignored=CREATOR_ROSTER_SLOT_INDEXES)
             description = passCensor(unit.getComment())
-            isClub = unit.isClub()
             extra = unit.getExtra()
         self.cfdUnitID = cfdUnitID
         self.unitMgrID = unitMgrID
@@ -60,7 +58,6 @@ class UnitsListItem(object):
         self.flags = UnitFlags(flags)
         self.isRosterSet = isRosterSet
         self.description = description
-        self.isClub = isClub
         self.extra = extra
         return
 

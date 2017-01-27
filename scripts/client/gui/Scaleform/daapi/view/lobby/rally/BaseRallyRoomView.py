@@ -66,6 +66,7 @@ class BaseRallyRoomView(BaseRallyRoomViewMeta):
     def onUnitPlayersListChanged(self):
         if self._candidatesDP is not None:
             self._candidatesDP.rebuild(self.prbEntity.getCandidates())
+        self._updateRallyData()
         return
 
     def onUnitPlayerInfoChanged(self, pInfo):
@@ -178,9 +179,8 @@ class BaseRallyRoomView(BaseRallyRoomViewMeta):
         if self.isPlayerInSlot(playerId):
             self.requestToUnassign(playerId)
 
-    def chooseVehicleRequest(self):
+    def _chooseVehicleRequest(self, levelsRange):
         playerInfo = self.prbEntity.getPlayerInfo()
-        levelsRange = self.prbEntity.getRosterSettings().getLevelsRange()
         slotIdx = playerInfo.slotIdx
         vehicles = playerInfo.getSlotsToVehicles(True).get(slotIdx)
         if vehicles is not None:
@@ -191,6 +191,10 @@ class BaseRallyRoomView(BaseRallyRoomViewMeta):
          'section': 'cs_unit_view_vehicle',
          'levelsRange': levelsRange}), scope=EVENT_BUS_SCOPE.LOBBY)
         return
+
+    def chooseVehicleRequest(self):
+        levelsRange = self.prbEntity.getRosterSettings().getLevelsRange()
+        self._chooseVehicleRequest(levelsRange)
 
     def _getVehicleSelectorDescription(self):
         return ''

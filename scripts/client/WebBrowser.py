@@ -29,6 +29,21 @@ class WebBrowser(object):
     isFocused = property(lambda self: self.__isFocused)
     updateInterval = 0.01
     isSuccessfulLoad = property(lambda self: self.__successfulLoad)
+    skipEscape = property(lambda self: self.__skipEscape)
+    ignoreKeyEvents = property(lambda self: self.__ignoreKeyEvents)
+    useSpecialKeys = property(lambda self: self.__useSpecialKeys)
+
+    @skipEscape.setter
+    def skipEscape(self, value):
+        self.__skipEscape = value
+
+    @ignoreKeyEvents.setter
+    def ignoreKeyEvents(self, value):
+        self.__ignoreKeyEvents = value
+
+    @useSpecialKeys.setter
+    def useSpecialKeys(self, value):
+        self.__useSpecialKeys = value
 
     def __init__(self, browserID, uiObj, texName, size, url = 'about:blank', isFocused = False, handlers = None):
         """
@@ -54,12 +69,18 @@ class WebBrowser(object):
         self.__isNavigationComplete = False
         self.__isFocused = False
         self.__navigationFilters = handlers or set()
+        self.__skipEscape = True
+        self.__ignoreKeyEvents = False
+        self.__useSpecialKeys = True
+        self.__allowAutoLoadingScreenChange = True
         self.onLoadStart = Event()
         self.onLoadEnd = Event()
         self.onLoadingStateChange = Event()
         self.onReadyToShowContent = Event()
         self.onNavigate = Event()
         self.onReady = Event()
+        self.onJsHostQuery = Event()
+        self.onTitleChange = Event()
         self.onFailedCreation = Event()
         LOG_BROWSER('INIT ', self.__baseUrl, texName, size, self.__browserID)
         return
@@ -79,6 +100,8 @@ class WebBrowser(object):
             self.__browser.script.onDOMReady += self.__onReadyToShowContent
             self.__browser.script.onCursorUpdated += self.__onCursorUpdated
             self.__browser.script.onReady += self.__onReady
+            self.__browser.script.onJsHostQuery += self.__onJsHostQuery
+            self.__browser.script.onTitleChange += self.__onTitleChange
 
             def injectBrowserKeyEvent(me, e):
                 if _BROWSER_KEY_LOGGING:
@@ -98,25 +121,23 @@ class WebBrowser(object):
             def resetBit(value, bitMask):
                 return value & ~bitMask
 
-            self.__browserKeyHandlers = ((Keys.KEY_LEFTARROW,
+            self.__specialKeyHandlers = ((Keys.KEY_LEFTARROW,
               True,
               True,
               None,
               None,
-              lambda me, _: me.__browser.goBack()),
-             (Keys.KEY_RIGHTARROW,
+              lambda me, _: me.__browser.goBack()), (Keys.KEY_RIGHTARROW,
               True,
               True,
               None,
               None,
-              lambda me, _: me.__browser.goForward()),
-             (Keys.KEY_F5,
+              lambda me, _: me.__browser.goForward()), (Keys.KEY_F5,
               True,
               None,
               None,
               None,
-              lambda me, _: me.__browser.reload()),
-             (Keys.KEY_LSHIFT,
+              lambda me, _: me.__browser.reload()))
+            self.__browserKeyHandlers = ((Keys.KEY_LSHIFT,
               False,
               None,
               True,
@@ -177,7 +198,7 @@ class WebBrowser(object):
         else:
             self.__isNavigationComplete = True
             LOG_BROWSER(' FAILED ', self.__baseUrl, self.__browserID)
-            self.onFailedCreation()
+            self.onFailedCreation(self.__baseUrl)
 
     def updateSize(self, size):
         self.__browserSize = size
@@ -198,6 +219,8 @@ class WebBrowser(object):
             self.__browser.script.onLoadingStateChange -= self.__onLoadingStateChange
             self.__browser.script.onDOMReady -= self.__onReadyToShowContent
             self.__browser.script.onCursorUpdated -= self.__onCursorUpdated
+            self.__browser.script.onJsHostQuery -= self.__onJsHostQuery
+            self.__browser.script.onTitleChange -= self.__onTitleChange
             self.__browser.script = None
             self.__browser.resetScaleformRender(self.__uiObj.movie, self.__texName)
             BigWorld.removeBrowser(self.__browserID)
@@ -238,6 +261,10 @@ class WebBrowser(object):
             self.__delayedUrls.append(url)
         self.__processDelayedNavigation()
 
+    def sendMessage(self, message):
+        if self.hasBrowser:
+            self.__browser.sendMessage(message)
+
     def doNavigate(self, url):
         LOG_BROWSER('doNavigate', url)
         if self.hasBrowser:
@@ -272,32 +299,39 @@ class WebBrowser(object):
          isShiftDown,
          isCtrlDown)
         matches = lambda t: t[0] is None or t[0] == t[1]
-        for values in self.__browserKeyHandlers:
+        browserKeyHandlers = self.__browserKeyHandlers
+        if self.useSpecialKeys:
+            browserKeyHandlers = self.__specialKeyHandlers + browserKeyHandlers
+        for values in browserKeyHandlers:
             if reduce(lambda a, b: a and matches(b), izip(values, params), True):
                 return values[-1]
 
         return None
 
     def handleKeyEvent(self, event):
+        e = event
+        keyState = (e.key,
+         e.isKeyDown(),
+         e.isAltDown(),
+         e.isShiftDown(),
+         e.isCtrlDown())
         if not (self.hasBrowser and self.enableUpdate):
             return False
+        if not self.skipEscape and e.key == Keys.KEY_ESCAPE and e.isKeyDown():
+            self.__getBrowserKeyHandler(*keyState)(self, e)
+            return True
         if not self.isFocused:
-            self.__browser.injectKeyModifiers(event)
+            self.__browser.injectKeyModifiers(e)
             return False
         if _BROWSER_KEY_LOGGING:
-            LOG_BROWSER('handleKeyEvent', (event.key,
-             event.isKeyDown(),
-             event.isAltDown(),
-             event.isShiftDown(),
-             event.isCtrlDown()))
-        if event.key == Keys.KEY_ESCAPE:
+            LOG_BROWSER('handleKeyEvent', keyState)
+        if self.ignoreKeyEvents and e.key != Keys.KEY_LEFTMOUSE:
             return False
-        if event.key == Keys.KEY_RETURN and event.isAltDown():
+        if e.key in (Keys.KEY_ESCAPE, Keys.KEY_SYSRQ):
             return False
-        if event.key == Keys.KEY_SYSRQ:
+        if e.key == Keys.KEY_RETURN and e.isAltDown():
             return False
-        e = event
-        self.__getBrowserKeyHandler(e.key, e.isKeyDown(), e.isAltDown(), e.isShiftDown(), e.isCtrlDown())(self, event)
+        self.__getBrowserKeyHandler(*keyState)(self, e)
         return True
 
     def browserMove(self, x, y, z):
@@ -380,6 +414,14 @@ class WebBrowser(object):
 
         return stopNavigation
 
+    def setLoadingScreenVisible(self, visible):
+        self.onLoadingStateChange(visible)
+
+    def setAllowAutoLoadingScreen(self, enabled):
+        self.__allowAutoLoadingScreenChange = enabled
+        if not self.__allowAutoLoadingScreenChange:
+            self.setLoadingScreenVisible(False)
+
     def __onLoadStart(self, url):
         if url == self.__browser.url:
             self.__isNavigationComplete = False
@@ -389,23 +431,40 @@ class WebBrowser(object):
             self.__readyToShow = False
             self.__successfulLoad = False
 
-    def __onLoadEnd(self, url, isLoaded = True):
+    def __onLoadEnd(self, url, isLoaded = True, httpStatusCode = None):
         if url == self.__browser.url:
             self.__isNavigationComplete = True
             self.__successfulLoad = isLoaded
             if not self.__processDelayedNavigation():
-                LOG_BROWSER('onLoadEnd', self.__browser.url, isLoaded)
-                self.onLoadEnd(self.__browser.url, isLoaded)
+                LOG_BROWSER('onLoadEnd', self.__browser.url, isLoaded, httpStatusCode)
+                self.onLoadEnd(self.__browser.url, isLoaded, httpStatusCode)
 
     def __onLoadingStateChange(self, isLoading):
-        LOG_BROWSER('onLoadingStateChange', isLoading)
-        self.onLoadingStateChange(isLoading)
+        if self.__allowAutoLoadingScreenChange:
+            LOG_BROWSER('onLoadingStateChange', isLoading)
+            self.onLoadingStateChange(isLoading)
 
     def __onReadyToShowContent(self, url):
         if url == self.__browser.url:
             LOG_BROWSER('onReadyToShowContent', self.__browser.url)
             self.__readyToShow = True
             self.onReadyToShowContent(self.__browser.url)
+
+    def __isValidTitle(self, title):
+        if self.__browser.url.startswith('about:'):
+            return False
+        if self.__browser.url.endswith(title):
+            return False
+        if self.__browser.url.endswith('/'):
+            secondtest = self.__browser.url[:-1]
+            if secondtest.endswith(title):
+                return False
+        return True
+
+    def __onTitleChange(self, title):
+        if self.__isValidTitle(title):
+            LOG_BROWSER('onTitleChange', title, self.__browser.url)
+            self.onTitleChange(title)
 
     def __onCursorUpdated(self):
         if self.hasBrowser and self.isFocused:
@@ -415,6 +474,9 @@ class WebBrowser(object):
 
     def __onReady(self, success):
         self.ready(success)
+
+    def __onJsHostQuery(self, command):
+        self.onJsHostQuery(command)
 
     def executeJavascript(self, script, frame):
         if self.hasBrowser:
@@ -438,6 +500,8 @@ class EventListener():
         self.onCursorUpdated = Event()
         self.onDOMReady = Event()
         self.onReady = Event()
+        self.onJsHostQuery = Event()
+        self.onTitleChange = Event()
         self.__urlFailed = False
         self.__browserProxy = weakref.proxy(browser)
         return
@@ -451,6 +515,7 @@ class EventListener():
 
     def onChangeTitle(self, title):
         LOG_BROWSER('onChangeTitle', title)
+        self.onTitleChange(title)
 
     def ready(self, success):
         self.onReady(success)
@@ -470,7 +535,7 @@ class EventListener():
     def onFinishLoadingFrame(self, frameId, isMainFrame, url, httpStatusCode):
         if isMainFrame:
             LOG_BROWSER('onFinishLoadingFrame(isMainFrame)', url, httpStatusCode)
-            self.onLoadEnd(url, not self.__urlFailed)
+            self.onLoadEnd(url, not self.__urlFailed, httpStatusCode)
 
     def onBrowserLoadingStateChange(self, isLoading):
         LOG_BROWSER('onBrowserLoadingStateChange()', isLoading)

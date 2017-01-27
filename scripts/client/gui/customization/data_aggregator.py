@@ -11,7 +11,7 @@ from skeletons.gui.server_events import IEventsCache
 _ITEM_CLASS = {CUSTOMIZATION_TYPE.EMBLEM: Emblem,
  CUSTOMIZATION_TYPE.INSCRIPTION: Inscription,
  CUSTOMIZATION_TYPE.CAMOUFLAGE: Camouflage}
-_VEHICLE_CAMOUFLAGE_BONUS = {VEHICLE_CLASS_NAME.LIGHT_TANK: 3,
+VEHICLE_CAMOUFLAGE_BONUS = {VEHICLE_CLASS_NAME.LIGHT_TANK: 3,
  VEHICLE_CLASS_NAME.MEDIUM_TANK: 3,
  VEHICLE_CLASS_NAME.HEAVY_TANK: 2,
  VEHICLE_CLASS_NAME.AT_SPG: 4,
@@ -67,7 +67,7 @@ class DataAggregator(object):
             if rawElement[7] in self._qualifiersCache.qualifiers:
                 qualifier = Qualifier(self._qualifiersCache.qualifiers[rawElement[7]])
             else:
-                qualifier = CamouflageQualifier('winter', _VEHICLE_CAMOUFLAGE_BONUS[self._currentVehicle.item.type])
+                qualifier = CamouflageQualifier('winter', VEHICLE_CAMOUFLAGE_BONUS[self._currentVehicle.item.type])
             group = groups[rawElement[0]]
             readableGroupName = group[1]
             if len(group) == 5:
@@ -81,7 +81,7 @@ class DataAggregator(object):
         else:
             groupName = rawElement['groupName']
             igrLessGroupName = groupName[3:] if groupName.startswith('IGR') else groupName
-            qualifier = CamouflageQualifier(igrLessGroupName, _VEHICLE_CAMOUFLAGE_BONUS[self._currentVehicle.item.type])
+            qualifier = CamouflageQualifier(igrLessGroupName, VEHICLE_CAMOUFLAGE_BONUS[self._currentVehicle.item.type])
             allowedNations = None
             allowedVehicles = list(rawElement['allow'])
             notAllowedVehicles = rawElement['deny']

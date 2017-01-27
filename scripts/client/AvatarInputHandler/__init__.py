@@ -157,6 +157,7 @@ class AvatarInputHandler(CallbackDelayer, ComponentSystem):
         sec = self._readCfg()
         self.onCameraChanged = Event()
         self.onPostmortemVehicleChanged = Event()
+        self.onPostmortemKillerVision = Event()
         self.__isArenaStarted = False
         self.__isStarted = False
         self.__targeting = _Targeting()
@@ -173,6 +174,7 @@ class AvatarInputHandler(CallbackDelayer, ComponentSystem):
         self.__isDetached = False
         self.__waitObserverCallback = None
         self.__observerVehicle = None
+        self.__observerIsSwitching = False
         self.__commands = []
         return
 
@@ -406,9 +408,12 @@ class AvatarInputHandler(CallbackDelayer, ComponentSystem):
         self.onCameraChanged = None
         self.onPostmortemVehicleChanged.clear()
         self.onPostmortemVehicleChanged = None
+        self.onPostmortemKillerVision.clear()
+        self.onPostmortemKillerVision = None
         self.__targeting.enable(False)
         self.__killerVehicleID = None
-        g_guiResetters.remove(self.__onRecreateDevice)
+        if self.__onRecreateDevice in g_guiResetters:
+            g_guiResetters.remove(self.__onRecreateDevice)
         BigWorld.player().arena.onPeriodChange -= self.__onArenaStarted
         self.settingsCore.onSettingsChanged -= self.__onSettingsChanged
         BigWorld.player().consistentMatrices.onVehicleMatrixBindingChanged -= self.__onVehicleChanged
@@ -418,13 +423,14 @@ class AvatarInputHandler(CallbackDelayer, ComponentSystem):
 
     def __onVehicleChanged(self, isStatic):
         self.steadyVehicleMatrixCalculator.relinkSources()
-        if self.__waitObserverCallback and self.__observerVehicle:
+        if self.__waitObserverCallback is not None and self.__observerVehicle is not None:
             player = BigWorld.player()
             ownVehicle = BigWorld.entity(player.playerVehicleID)
             vehicle = player.getVehicleAttached()
             if vehicle != ownVehicle:
                 self.__waitObserverCallback()
-                self.__waitObserverCallback = None
+                self.__observerIsSwitching = False
+                self.__observerVehicle = None
         return
 
     def setObservedVehicle(self, vehicleID):
@@ -438,20 +444,19 @@ class AvatarInputHandler(CallbackDelayer, ComponentSystem):
         else:
             player = BigWorld.player()
             isObserverMode = 'observer' in player.vehicleTypeDescriptor.type.tags if player is not None else True
-            if self.__waitObserverCallback:
+            if self.__waitObserverCallback is not None:
                 self.__waitObserverCallback = None
             if isObserverMode and eMode == _CTRL_MODE.POSTMORTEM:
-                player = BigWorld.player()
-                ownVehicle = BigWorld.entity(player.playerVehicleID)
-                vehicle = player.getVehicleAttached()
-                if (vehicle is ownVehicle or vehicle is None) and self.__observerVehicle is not None:
+                if self.__observerVehicle is not None and not self.__observerIsSwitching:
                     self.__waitObserverCallback = partial(self.onControlModeChanged, eMode, **args)
+                    self.__observerIsSwitching = True
                     player.positionControl.followCamera(False)
                     player.positionControl.bindToVehicle(True, self.__observerVehicle)
                     return
             if isObserverMode and self.__ctrlModeName == _CTRL_MODE.POSTMORTEM:
                 player = BigWorld.player()
                 self.__observerVehicle = player.vehicle.id if player.vehicle else None
+                self.__observerIsSwitching = False
             replayCtrl = BattleReplay.g_replayCtrl
             if replayCtrl.isRecording:
                 replayCtrl.setControlMode(eMode)
@@ -803,6 +808,7 @@ class _VertScreenshotCamera(object):
             BigWorld.projection().nearPlane = self.__nearPlane
             BigWorld.projection().farPlane = self.__farPlane
             BigWorld.setWatcher('Render/Fog/enabled', True)
+            BigWorld.setWatcher('Occlusion Culling/Disable distance culling', False)
             LOG_DEBUG('Vertical screenshot camera is disabled')
             return
         self.__isEnabled = True
@@ -840,4 +846,5 @@ class _VertScreenshotCamera(object):
         BigWorld.projection().farPlane = camPos.y + 1000
         BigWorld.setWatcher('Render/Shadows/qualityPreset', 7)
         BigWorld.setWatcher('Client Settings/Script tick', False)
+        BigWorld.setWatcher('Occlusion Culling/Disable distance culling', True)
         LOG_DEBUG('Vertical screenshot camera is enabled')

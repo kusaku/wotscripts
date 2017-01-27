@@ -291,7 +291,6 @@ class SettingsWindow(SettingsWindowMeta):
         return
 
     def __updateInterfaceScale(self):
-        self.as_setDataS(self.__getSettings())
         self.as_updateVideoSettingsS(self.params.getMonitorSettings())
 
     def __isGraphicsPresetApplied(self, settings):

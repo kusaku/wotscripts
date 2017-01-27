@@ -445,7 +445,7 @@ class _UnitEntity(BaseUnitEntity, ListenersCollection):
             if not state.isFree and slotIdx in members:
                 dbID = members[slotIdx].get('accountDBID', -1L)
                 if dbID in players:
-                    player = unit_items.PlayerUnitInfo(dbID, unitIdx, unit, isReady=isPlayerReady(slotIdx), isInSlot=True, slotIdx=slotIdx, **players[dbID])
+                    player = self._buildPlayerInfo(unitIdx, unit, dbID, slotIdx=slotIdx, data=players[dbID])
                 if dbID in vehicles and vehicles[dbID]:
                     vehicle = vehicles[dbID][0]
             yield unit_items.SlotInfo(slotIdx, state, player, vehicle)
@@ -680,10 +680,13 @@ class UnitEntity(_UnitEntity):
         self._showLeadershipNotification = False
         return
 
+    def _getRequestProcessor(self):
+        return self._createRequestProcessor()
+
     def init(self, ctx = None):
         super(UnitEntity, self).init(ctx=ctx)
         flags = self.getFlags()
-        self._requestsProcessor = self._createRequestProcessor()
+        self._requestsProcessor = self._getRequestProcessor()
         self._requestsProcessor.init()
         initResult = self._actionsHandler.executeInit(ctx)
         self._vehiclesWatcher = self._createVehicelsWatcher()
@@ -718,9 +721,10 @@ class UnitEntity(_UnitEntity):
             self._actionsHandler.clear()
             self._actionsHandler = None
         if woEvents:
-            g_eventDispatcher.removeUnitFromCarousel(self._prbType, closeWindow=False)
+            g_eventDispatcher.removeUnitFromCarousel(self._prbType)
         self._removeClientUnitListeners()
         self._deferredReset = False
+        g_eventDispatcher.loadHangar()
         return super(UnitEntity, self).fini(ctx=ctx, woEvents=woEvents)
 
     def restore(self):
@@ -765,10 +769,10 @@ class UnitEntity(_UnitEntity):
 
     def getConfirmDialogMeta(self, ctx):
         if self.hasLockedState():
-            meta = rally_dialog_meta.RallyLeaveDisabledDialogMeta(CTRL_ENTITY_TYPE.UNIT, self._prbType)
-        else:
-            meta = rally_dialog_meta.createUnitLeaveMeta(ctx, self._prbType, self.canSwitch(ctx))
-        return meta
+            return rally_dialog_meta.RallyLeaveDisabledDialogMeta(CTRL_ENTITY_TYPE.UNIT, self._prbType)
+        if self.isCommander() and len(self.getPlayers()) == 1:
+            return super(UnitEntity, self).getConfirmDialogMeta(ctx)
+        return rally_dialog_meta.createUnitLeaveMeta(ctx, self._prbType, self.canSwitch(ctx))
 
     def getID(self):
         return prb_getters.getUnitMgrID()
@@ -784,7 +788,7 @@ class UnitEntity(_UnitEntity):
     def hasLockedState(self):
         pInfo = self.getPlayerInfo()
         flags = self.getFlags()
-        return pInfo.isInSlot and (flags.isInSearch() or flags.isInQueue() or flags.isInPreArena() or flags.isInArena() and pInfo.isInArena())
+        return pInfo.isInSlot and (flags.isInSearch() or flags.isInQueue() or flags.isInArena() and pInfo.isInArena())
 
     def validateLevels(self):
         result = self._actionsValidator.getLevelsValidator().canPlayerDoAction(ignoreEnable=True)
@@ -975,7 +979,7 @@ class UnitEntity(_UnitEntity):
             if callback:
                 callback(False)
             return
-        self._requestsProcessor.doRequest(ctx, 'invite', ctx.getDatabaseIDs(), ctx.getComment())
+        self._requestsProcessor.doRequest(ctx, 'invite', ctx.getDatabaseIDs(), ctx.getComment(), callback=callback)
         self._cooldown.process(settings.REQUEST_TYPE.SEND_INVITE, coolDown=REQUEST_COOLDOWN.PREBATTLE_INVITES)
 
     def kick(self, ctx, callback = None):
@@ -991,7 +995,7 @@ class UnitEntity(_UnitEntity):
             if callback:
                 callback(False)
             return
-        self._requestsProcessor.doRequest(ctx, 'kick', ctx.getPlayerID())
+        self._requestsProcessor.doRequest(ctx, 'kick', ctx.getPlayerID(), callback=callback)
 
     def setVehicle(self, ctx, callback = None):
         """
@@ -1010,6 +1014,9 @@ class UnitEntity(_UnitEntity):
             self._setVehicle(ctx, callback=callback)
         else:
             self._clearVehicle(ctx, callback=callback)
+
+    def setReserve(self, ctx, callback = None):
+        raise NotImplementedError()
 
     def setVehicleList(self, ctx, callback = None):
         """
@@ -1036,7 +1043,7 @@ class UnitEntity(_UnitEntity):
                             callback(False)
                         return
 
-            self._requestsProcessor.doRequest(ctx, 'setVehicleList', vehicleList=vehsList)
+            self._requestsProcessor.doRequest(ctx, 'setVehicleList', vehicleList=vehsList, callback=callback)
             self._cooldown.process(settings.REQUEST_TYPE.SET_VEHICLE_LIST, coolDown=ctx.getCooldown())
             return
 
@@ -1078,7 +1085,7 @@ class UnitEntity(_UnitEntity):
             if callback:
                 callback(False)
             return
-        self._requestsProcessor.doRequest(ctx, 'setReady', isReady, ctx.resetVehicle)
+        self._requestsProcessor.doRequest(ctx, 'setReady', isReady, ctx.resetVehicle, callback=callback)
         self._cooldown.process(settings.REQUEST_TYPE.SET_PLAYER_STATE, coolDown=ctx.getCooldown())
 
     def closeSlot(self, ctx, callback = None):
@@ -1126,7 +1133,7 @@ class UnitEntity(_UnitEntity):
             if callback:
                 callback(False)
             return
-        self._requestsProcessor.doRequest(ctx, 'closeSlot', slotIdx, isClosed)
+        self._requestsProcessor.doRequest(ctx, 'closeSlot', slotIdx, isClosed, callback=callback)
         self._cooldown.process(settings.REQUEST_TYPE.CLOSE_SLOT, coolDown=ctx.getCooldown())
 
     def changeOpened(self, ctx, callback = None):
@@ -1150,7 +1157,7 @@ class UnitEntity(_UnitEntity):
             if callback:
                 callback(False)
             return
-        self._requestsProcessor.doRequest(ctx, 'openUnit', isOpen=ctx.isOpened())
+        self._requestsProcessor.doRequest(ctx, 'openUnit', isOpen=ctx.isOpened(), callback=callback)
         self._cooldown.process(settings.REQUEST_TYPE.CHANGE_UNIT_STATE, coolDown=ctx.getCooldown())
 
     def changeComment(self, ctx, callback = None):
@@ -1173,7 +1180,7 @@ class UnitEntity(_UnitEntity):
             if callback:
                 callback(False)
             return
-        self._requestsProcessor.doRequest(ctx, 'setComment', cgi.escape(ctx.getComment()))
+        self._requestsProcessor.doRequest(ctx, 'setComment', cgi.escape(ctx.getComment()), callback=callback)
         self._cooldown.process(settings.REQUEST_TYPE.CHANGE_UNIT_STATE, coolDown=ctx.getCooldown())
 
     def lock(self, ctx, callback = None):
@@ -1197,7 +1204,7 @@ class UnitEntity(_UnitEntity):
             if callback:
                 callback(False)
             return
-        self._requestsProcessor.doRequest(ctx, 'lockUnit', isLocked=ctx.isLocked())
+        self._requestsProcessor.doRequest(ctx, 'lockUnit', isLocked=ctx.isLocked(), callback=callback)
         self._cooldown.process(settings.REQUEST_TYPE.CHANGE_UNIT_STATE, coolDown=ctx.getCooldown())
 
     def setRostersSlots(self, ctx, callback = None):
@@ -1213,7 +1220,7 @@ class UnitEntity(_UnitEntity):
             if callback:
                 callback(False)
             return
-        self._requestsProcessor.doRequest(ctx, 'setAllRosterSlots', ctx.getRosterSlots())
+        self._requestsProcessor.doRequest(ctx, 'setAllRosterSlots', ctx.getRosterSlots(), callback=callback)
 
     def doAutoSearch(self, ctx, callback = None):
         """
@@ -1258,13 +1265,13 @@ class UnitEntity(_UnitEntity):
                 if callback:
                     callback(False)
                 return
-            self._requestsProcessor.doRequest(ctx, 'startAutoSearch')
+            self._requestsProcessor.doRequest(ctx, 'startAutoSearch', callback=callback)
         elif not flags.isInSearch():
             LOG_DEBUG('Unit did not start auto search')
             if callback:
                 callback(True)
         else:
-            self._requestsProcessor.doRequest(ctx, 'stopAutoSearch')
+            self._requestsProcessor.doRequest(ctx, 'stopAutoSearch', callback=callback)
 
     def doBattleQueue(self, ctx, callback = None):
         """
@@ -1309,7 +1316,7 @@ class UnitEntity(_UnitEntity):
                 if callback:
                     callback(False)
                 return
-            self._requestsProcessor.doRequest(ctx, 'startBattle', vehInvID=ctx.selectVehInvID, gameplaysMask=ctx.getGamePlayMask())
+            self._requestsProcessor.doRequest(ctx, 'startBattle', vehInvID=ctx.selectVehInvID, gameplaysMask=ctx.getGamePlayMask(), callback=callback)
         else:
             if not pPermissions.canStopBattleQueue():
                 LOG_ERROR('Player can not stop battle queue', pPermissions)
@@ -1321,7 +1328,7 @@ class UnitEntity(_UnitEntity):
                 if callback:
                     callback(True)
             else:
-                self._requestsProcessor.doRequest(ctx, 'stopBattle')
+                self._requestsProcessor.doRequest(ctx, 'stopBattle', callback=callback)
 
     def giveLeadership(self, ctx, callback = None):
         """
@@ -1342,7 +1349,7 @@ class UnitEntity(_UnitEntity):
             if callback:
                 callback(False)
             return
-        self._requestsProcessor.doRequest(ctx, 'giveLeadership', ctx.getPlayerID())
+        self._requestsProcessor.doRequest(ctx, 'giveLeadership', ctx.getPlayerID(), callback=callback)
 
     def changeDivision(self, ctx, callback = None):
         """
@@ -1364,7 +1371,7 @@ class UnitEntity(_UnitEntity):
             if callback:
                 callback(False)
             return
-        self._requestsProcessor.doRequest(ctx, 'changeSortieDivision', division=ctx.getDivisionID())
+        self._requestsProcessor.doRequest(ctx, 'changeSortieDivision', division=ctx.getDivisionID(), callback=callback)
         self._cooldown.process(settings.REQUEST_TYPE.CHANGE_DIVISION, coolDown=ctx.getCooldown())
 
     @vehicleAmmoCheck
@@ -1804,7 +1811,7 @@ class UnitEntity(_UnitEntity):
             if callback:
                 callback(False)
             return
-        self._requestsProcessor.doRequest(ctx, 'unassign', dbID)
+        self._requestsProcessor.doRequest(ctx, 'unassign', dbID, callback=callback)
 
     def _assign(self, ctx, callback = None):
         """
@@ -1821,7 +1828,7 @@ class UnitEntity(_UnitEntity):
             if callback:
                 callback(False)
             return
-        self._requestsProcessor.doRequest(ctx, 'assign', dbID, slotIdx)
+        self._requestsProcessor.doRequest(ctx, 'assign', dbID, slotIdx, callback=callback)
 
     def _reassign(self, ctx, callback = None):
         """
@@ -1834,9 +1841,9 @@ class UnitEntity(_UnitEntity):
         dbID = ctx.getPlayerID()
         pPermissions = self.getPermissions()
         if pPermissions.canReassignToSlot():
-            self._requestsProcessor.doRequest(ctx, 'reassign', dbID, slotIdx)
+            self._requestsProcessor.doRequest(ctx, 'reassign', dbID, slotIdx, callback=callback)
         elif pPermissions.canAssignToSlot(dbID):
-            self._requestsProcessor.doRequest(ctx, 'assign', dbID, slotIdx)
+            self._requestsProcessor.doRequest(ctx, 'assign', dbID, slotIdx, callback=callback)
         else:
             LOG_ERROR('Player can not (re)assign to slot', pPermissions)
             if callback:
@@ -1880,7 +1887,7 @@ class UnitEntity(_UnitEntity):
             return
         else:
             setReadyAfterVehicleSelect = ctx.setReady
-            self._requestsProcessor.doRequest(ctx, 'setVehicle', vehInvID=vehInvID, setReady=setReadyAfterVehicleSelect)
+            self._requestsProcessor.doRequest(ctx, 'setVehicle', vehInvID=vehInvID, setReady=setReadyAfterVehicleSelect, callback=callback)
             if setReadyAfterVehicleSelect:
                 self._cooldown.process(settings.REQUEST_TYPE.SET_PLAYER_STATE, coolDown=ctx.getCooldown())
             return
@@ -1899,7 +1906,7 @@ class UnitEntity(_UnitEntity):
                 callback(True)
             return
         else:
-            self._requestsProcessor.doRequest(ctx, 'setVehicle', INV_ID_CLEAR_VEHICLE)
+            self._requestsProcessor.doRequest(ctx, 'setVehicle', INV_ID_CLEAR_VEHICLE, callback=callback)
             return
 
     def _getTimeLeftInIdle(self):

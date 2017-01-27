@@ -10,6 +10,9 @@ class BattleQuestsProxy(GUIProxy):
         self.onGUILoaded()
         return True
 
+    def fini(self):
+        self.eManager.clear()
+
     def clear(self):
         self.clearChapterInfo()
 

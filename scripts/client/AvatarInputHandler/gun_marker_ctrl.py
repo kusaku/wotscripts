@@ -114,7 +114,7 @@ def _setupGunMarkerSizeLimits(dataProvider, scale = None):
     if scale is None:
         settingsCore = dependency.instance(ISettingsCore)
         scale = settingsCore.interfaceScale.get()
-    limits = (aih_constants.GUN_MARKER_MIN_SIZE * scale * dataProvider.minSizeCF, aih_constants.GUN_MARKER_MAX_SIZE)
+    limits = (aih_constants.GUN_MARKER_MIN_SIZE * scale, min(GUI.screenResolution()))
     dataProvider.sizeConstraint = limits
     return limits
 
@@ -403,7 +403,7 @@ class _DefaultGunMarkerController(_GunMarkerController):
     def create(self):
         minSize = self._dataProvider.sizeConstraint[0]
         self.__sizeFilter.setStartSize(minSize)
-        self.__sizeFilter.setMinLimit(minSize)
+        self.__sizeFilter.setMinLimit(0)
         self.settingsCore.interfaceScale.onScaleChanged += self.__onScaleChanged
 
     def destroy(self):
@@ -452,8 +452,7 @@ class _DefaultGunMarkerController(_GunMarkerController):
         self.__screenRatio = GUI.screenResolution()[0] * 0.5
 
     def __onScaleChanged(self, scale):
-        minSize, _ = _setupGunMarkerSizeLimits(self._dataProvider, scale=scale)
-        self.__sizeFilter.setMinLimit(minSize)
+        _setupGunMarkerSizeLimits(self._dataProvider, scale=scale)
 
 
 class _SPGGunMarkerController(_GunMarkerController):

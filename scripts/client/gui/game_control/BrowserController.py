@@ -1,9 +1,11 @@
 # Embedded file name: scripts/client/gui/game_control/BrowserController.py
+import BigWorld
 import Event
 from WebBrowser import WebBrowser, LOG_BROWSER
 from adisp import async, process
 from debug_utils import LOG_WARNING
 from gui import GUI_SETTINGS
+from gui.Scaleform.Waiting import Waiting
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui.app_loader import g_appLoader
 from gui.game_control.browser_filters import getFilters as _getGlobalFilters
@@ -65,7 +67,9 @@ class BrowserController(IBrowserController):
 
     @async
     @process
-    def load(self, url = None, title = None, showActionBtn = True, showWaiting = True, browserID = None, isAsync = False, browserSize = None, isDefault = True, callback = None, showCloseBtn = False, useBrowserWindow = True):
+    def load(self, url = None, title = None, showActionBtn = True, showWaiting = True, browserID = None, isAsync = False, browserSize = None, isDefault = True, callback = None, showCloseBtn = False, useBrowserWindow = True, isModal = False, showCreateWaiting = False, handlers = None, showBrowserCallback = None):
+        if showCreateWaiting:
+            Waiting.show('browser/init')
         url = yield self.__urlMacros.parse(url or GUI_SETTINGS.browser.url)
         suffix = yield self.__urlMacros.parse(GUI_SETTINGS.browser.params)
         concatenator = '&' if '?' in url else '?'
@@ -86,7 +90,11 @@ class BrowserController(IBrowserController):
          'size': size,
          'isAsync': isAsync,
          'showCloseBtn': showCloseBtn,
-         'showWindow': useBrowserWindow}
+         'showWindow': useBrowserWindow,
+         'alias': VIEW_ALIAS.BROWSER_WINDOW_MODAL if isModal else VIEW_ALIAS.BROWSER_WINDOW,
+         'showCreateWaiting': showCreateWaiting,
+         'handlers': handlers,
+         'showBrowserCallback': showBrowserCallback}
         texture = browserID not in self.__browsers and browserID not in self.__pendingBrowsers and self._BROWSER_TEXTURE
         app = g_appLoader.getApp()
         if not app:
@@ -119,6 +127,8 @@ class BrowserController(IBrowserController):
             if self.__creatingBrowserID == browserID:
                 self.__creatingBrowserID = None
                 self.__tryCreateNextPendingBrowser()
+            if browserID in self.__pendingBrowsers:
+                del self.__pendingBrowsers[browserID]
         self.onBrowserDeleted(browserID)
         return
 
@@ -127,15 +137,15 @@ class BrowserController(IBrowserController):
 
     def __createDone(self, ctx):
         LOG_BROWSER('CTRL: Finished creating a browser: ', self.__creatingBrowserID)
-        self.__creatingBrowserID = None
-        g_eventBus.handleEvent(BrowserEvent(BrowserEvent.BROWSER_CREATED, ctx=ctx))
-        self.__tryCreateNextPendingBrowser()
-        return
+        if ctx['showCreateWaiting']:
+            Waiting.hide('browser/init')
 
     def __tryCreateNextPendingBrowser(self):
+        self.__creatingBrowserID = None
         if len(self.__pendingBrowsers) > 0:
             nextCtx = self.__pendingBrowsers.popitem()[1]
             self.__createBrowser(nextCtx)
+        return
 
     def __createBrowser(self, ctx):
         browserID = ctx['browserID']
@@ -144,26 +154,41 @@ class BrowserController(IBrowserController):
         if not self.__browsers[browserID].create():
             LOG_BROWSER('CTRL: Failed the create step: ', browserID)
             self.delBrowser(browserID)
-            self.__createDone(browserID)
+            self.__tryCreateNextPendingBrowser()
             return
         else:
             self.onBrowserAdded(browserID)
 
-            def failedCreationCallback():
-                LOG_BROWSER('CTRL: Failed a creation: ', browserID)
+            def createBrowserTimeout():
+                LOG_BROWSER('CTRL: Browser create timed out')
+                createNextBrowser(False)
+
+            timeoutid = BigWorld.callback(30.0, createBrowserTimeout)
+
+            def createNextBrowser(visible):
+                if not visible:
+                    LOG_BROWSER('CTRL: Triggering create of next browser from: ', browserID)
+                    BigWorld.cancelCallback(timeoutid)
+                    if browserID in self.__browsers:
+                        self.__browsers[browserID].onLoadingStateChange -= createNextBrowser
+                    BigWorld.callback(1.0, self.__tryCreateNextPendingBrowser)
+
+            def failedCreationCallback(url):
+                LOG_BROWSER('CTRL: Failed a creation: ', browserID, url)
                 self.__clearCallbacks(browserID, self.__browsers[browserID])
                 self.delBrowser(browserID)
-                self.__createDone(browserID)
 
-            def successfulCreationCallback(url, isLoaded):
-                LOG_BROWSER('CTRL: Successful creation, show window: ', browserID, isLoaded)
+            def successfulCreationCallback(url, isLoaded, httpStatusCode = None):
+                LOG_BROWSER('CTRL: Ready to show: ', browserID, isLoaded, url)
                 self.__clearCallbacks(browserID, self.__browsers[browserID])
                 if isLoaded:
                     self.__showBrowser(browserID, ctx)
                 else:
                     LOG_WARNING('Browser request url was not loaded!', url)
-                self.__createDone(browserID)
+                g_eventBus.handleEvent(BrowserEvent(BrowserEvent.BROWSER_CREATED, ctx=ctx))
+                self.__createDone(ctx)
 
+            self.__browsers[browserID].onLoadingStateChange += createNextBrowser
             self.__browsers[browserID].onFailedCreation += failedCreationCallback
             if ctx['isAsync']:
                 self.__browsersCallbacks[browserID] = (None, successfulCreationCallback, failedCreationCallback)
@@ -193,4 +218,8 @@ class BrowserController(IBrowserController):
     def __showBrowser(self, browserID, ctx):
         LOG_BROWSER('CTRL: Showing a browser: ', browserID, ctx['url'])
         if ctx.get('showWindow'):
-            g_eventBus.handleEvent(LoadViewEvent(VIEW_ALIAS.BROWSER_WINDOW, getViewName(VIEW_ALIAS.BROWSER_WINDOW, browserID), ctx=ctx), EVENT_BUS_SCOPE.LOBBY)
+            alias = ctx['alias']
+            g_eventBus.handleEvent(LoadViewEvent(alias, getViewName(alias, browserID), ctx=ctx), EVENT_BUS_SCOPE.LOBBY)
+        showBrowserCallback = ctx.get('showBrowserCallback')
+        if showBrowserCallback:
+            showBrowserCallback()

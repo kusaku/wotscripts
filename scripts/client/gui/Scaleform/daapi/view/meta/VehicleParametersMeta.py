@@ -19,10 +19,6 @@ class VehicleParametersMeta(BaseDAAPIComponent):
         if self._isDAAPIInited():
             return self.flashObject.as_getDP()
 
-    def as_setRendererLnkS(self, rendererLnk):
-        if self._isDAAPIInited():
-            return self.flashObject.as_setRendererLnk(rendererLnk)
-
     def as_setIsParamsAnimatedS(self, isParamsAnimated):
         if self._isDAAPIInited():
             return self.flashObject.as_setIsParamsAnimated(isParamsAnimated)

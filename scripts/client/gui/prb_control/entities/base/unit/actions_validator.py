@@ -115,7 +115,7 @@ class UnitSlotsValidator(CommanderValidator):
         return super(UnitSlotsValidator, self)._validate()
 
 
-class UnitLevelsValidator(CommanderValidator):
+class UnitLevelsValidator(ExceptDevModeValidator):
     """
     Validates unit vehicles levels
     """

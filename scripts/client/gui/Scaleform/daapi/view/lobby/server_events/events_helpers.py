@@ -32,6 +32,7 @@ from quest_xml_source import MAX_BONUS_LIMIT
 from shared_utils import CONST_CONTAINER
 from skeletons.gui.server_events import IEventsCache
 _AWARDS_PER_PAGE = 3
+_AWARDS_PER_SINGLE_PAGE = 4
 FINISH_TIME_LEFT_TO_SHOW = time_utils.ONE_DAY
 START_TIME_LIMIT = 5 * time_utils.ONE_DAY
 RENDER_BACKS = {1: RES_ICONS.MAPS_ICONS_QUESTS_EVENTBACKGROUNDS_QUESTS_BACK_EXP,
@@ -58,8 +59,7 @@ RENDER_BACKS = {1: RES_ICONS.MAPS_ICONS_QUESTS_EVENTBACKGROUNDS_QUESTS_BACK_EXP,
  5006: RES_ICONS.MAPS_ICONS_QUESTS_EVENTBACKGROUNDS_RANDOM_6,
  DEFAULTS_GROUPS.UNGROUPED_QUESTS: RES_ICONS.MAPS_ICONS_QUESTS_EVENTBACKGROUNDS_OTHER_QUESTS,
  DEFAULTS_GROUPS.UNGROUPED_ACTIONS: RES_ICONS.MAPS_ICONS_QUESTS_EVENTBACKGROUNDS_SALES,
- DEFAULTS_GROUPS.CURRENTLY_AVAILABLE: RES_ICONS.MAPS_ICONS_QUESTS_EVENTBACKGROUNDS_CURRENTLY_AVAILABLE,
- 5: RES_ICONS.MAPS_ICONS_QUESTS_EVENTBACKGROUNDS_QUESTS_BACK_NY2016}
+ DEFAULTS_GROUPS.CURRENTLY_AVAILABLE: RES_ICONS.MAPS_ICONS_QUESTS_EVENTBACKGROUNDS_CURRENTLY_AVAILABLE}
 
 class EVENT_STATUS(CONST_CONTAINER):
     COMPLETED = 'done'
@@ -298,31 +298,33 @@ class _EventInfo(object):
                 fmt = i18n.makeString(QUESTS.ITEM_TIMER_TILLFINISH_SHORTFULLFORMAT)
             fmt %= {'hours': time.strftime('%H', gmtime)}
             return fmt
-        else:
-            if self.event.getStartTimeLeft() > 0:
-                i18nKey = '#quests:details/header/activeDuration'
-                args = {'startTime': self._getDateTimeString(self.event.getStartTime()),
-                 'finishTime': self._getDateTimeString(self.event.getFinishTime())}
-            elif self.event.getFinishTimeLeft() <= time_utils.HALF_YEAR:
-                i18nKey = '#quests:details/header/tillDate'
-                args = {'finishTime': self._getDateTimeString(self.event.getFinishTime())}
-            weekDays = self.event.getWeekDays()
-            intervals = self.event.getActiveTimeIntervals()
-            if len(weekDays) or len(intervals):
-                if i18nKey is None:
-                    i18nKey = '#quests:details/header/schedule'
-                if len(weekDays):
-                    days = ', '.join([ i18n.makeString('#menu:dateTime/weekDays/full/%d' % idx) for idx in self.event.getWeekDays() ])
-                    i18nKey += 'Days'
-                    args['days'] = days
-                if len(intervals):
-                    times = []
-                    for low, high in intervals:
-                        times.append('%s - %s' % (BigWorld.wg_getShortTimeFormat(low), BigWorld.wg_getShortTimeFormat(high)))
+        if self.event.getStartTimeLeft() > 0:
+            i18nKey = '#quests:details/header/activeDuration'
+            args = {'startTime': self._getDateTimeString(self.event.getStartTime()),
+             'finishTime': self._getDateTimeString(self.event.getFinishTime())}
+        elif self.event.getFinishTimeLeft() <= time_utils.HALF_YEAR:
+            i18nKey = '#quests:details/header/tillDate'
+            args = {'finishTime': self._getDateTimeString(self.event.getFinishTime())}
+        weekDays = self.event.getWeekDays()
+        intervals = self.event.getActiveTimeIntervals()
+        if len(weekDays) or len(intervals):
+            if i18nKey is None:
+                i18nKey = '#quests:details/header/schedule'
+            if len(weekDays):
+                days = ', '.join([ i18n.makeString('#menu:dateTime/weekDays/full/%d' % idx) for idx in self.event.getWeekDays() ])
+                i18nKey += 'Days'
+                args['days'] = days
+            if len(intervals):
+                times = []
+                for low, high in intervals:
+                    times.append('%s - %s' % (BigWorld.wg_getShortTimeFormat(low), BigWorld.wg_getShortTimeFormat(high)))
 
-                    i18nKey += 'Times'
-                    times = ', '.join(times)
-                    args['times'] = times
+                i18nKey += 'Times'
+                times = ', '.join(times)
+                args['times'] = times
+        if i18nKey is None:
+            return
+        else:
             return i18n.makeString(i18nKey, **args)
 
 
@@ -349,7 +351,7 @@ class _QuestInfo(_EventInfo):
                     flist = b.formattedList()
                     if flist:
                         vehiclesList.extend(flist)
-                elif b.hasIconFormat() and useIconFormat or b.isVisualOnly():
+                elif b.hasIconFormat() and useIconFormat:
                     iconBonusesList.extend(b.getList())
                 else:
                     flist = b.formattedList()
@@ -691,17 +693,9 @@ class _MotiveQuestInfo(_QuestInfo):
         return result
 
 
-class _ClubsQuestInfo(_QuestInfo):
-
-    def _getBonuses(self, svrEvents, bonuses = None, useIconFormat = False):
-        return super(_QuestInfo, self)._getBonuses(svrEvents, bonuses, useIconFormat)
-
-
 def getEventInfoData(event):
     if event.getType() == constants.EVENT_TYPE.POTAPOV_QUEST:
         return _PotapovQuestInfo(event)
-    if event.getType() == constants.EVENT_TYPE.CLUBS_QUEST:
-        return _ClubsQuestInfo(event)
     if event.getType() == constants.EVENT_TYPE.MOTIVE_QUEST:
         return _MotiveQuestInfo(event)
     if event.getType() in constants.EVENT_TYPE.QUEST_RANGE:
@@ -852,18 +846,8 @@ def getCarouselAwardVO(bonuses, isReceived = False):
             continue
         result.extend(bonus.getCarouselList(isReceived))
 
-    while len(result) % _AWARDS_PER_PAGE != 0 and len(result) > _AWARDS_PER_PAGE:
+    while len(result) % _AWARDS_PER_PAGE != 0 and len(result) > _AWARDS_PER_SINGLE_PAGE:
         result.append({})
-
-    return result
-
-
-def getChristmasCarouselAwardVO(bonuses, isReceived = False):
-    result = []
-    for bonus in bonuses:
-        if not bonus.isShowInGUI():
-            continue
-        result.extend(bonus.getCarouselList(isReceived, True))
 
     return result
 
@@ -889,7 +873,7 @@ def getPotapovQuestAward(quest, callback):
 
 
 def questsSortFunc(a, b):
-    """ Sort function for common quests (all except potapov, club and motive).
+    """ Sort function for common quests (all except potapov and motive).
     """
     res = cmp(a.isCompleted(), b.isCompleted())
     if res:

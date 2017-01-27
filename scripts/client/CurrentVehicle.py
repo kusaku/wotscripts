@@ -155,6 +155,7 @@ class _CurrentVehicle(_CachedVehicle):
     def onLocksUpdate(self, locksDiff):
         if self.__vehInvID in locksDiff:
             self.refreshModel()
+            self.onChanged()
 
     def refreshModel(self):
         if not g_currentPreviewVehicle.isPresent():
@@ -418,6 +419,9 @@ class _CurrentPreviewVehicle(_CachedVehicle):
         if result.success:
             self.refreshModel()
             self.onComponentInstalled()
+
+    def hasModulesToSelect(self):
+        return self.isPresent() and self.item.hasModulesToSelect
 
     def _addListeners(self):
         super(_CurrentPreviewVehicle, self)._addListeners()

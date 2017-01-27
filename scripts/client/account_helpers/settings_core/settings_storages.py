@@ -110,6 +110,19 @@ class VideoSettingsStorage(ISettingsStorage):
          'value': value})
 
     @property
+    def borderlessSize(self):
+        size = (None, None)
+        current = g_monitorSettings.currentBorderlessSize
+        if current is not None:
+            size = (current.width, current.height)
+        return self._settings.get('borderlessSize', size)
+
+    @borderlessSize.setter
+    def borderlessSize(self, value):
+        self.store({'option': 'borderlessSize',
+         'value': value})
+
+    @property
     def monitor(self):
         return self._settings.get('monitor', g_monitorSettings.activeMonitor)
 
@@ -123,6 +136,8 @@ class VideoSettingsStorage(ISettingsStorage):
             LOG_DEBUG('Applying video settings: ', self._settings)
             cWindowSize = g_monitorSettings.currentWindowSize
             windowSizeWidth, windowSizeHeight = self.windowSize
+            cBorderlessSize = g_monitorSettings.currentBorderlessSize
+            borderlessSizeWidth, borderlessSizeHeight = self.borderlessSize
             cWindowMode = g_monitorSettings.windowMode
             windowMode = self.windowMode
             cVideoMode = g_monitorSettings.currentVideoMode
@@ -130,6 +145,7 @@ class VideoSettingsStorage(ISettingsStorage):
             monitor = self.monitor
             cMonitor = g_monitorSettings.activeMonitor
             windowSizeChanged = cWindowSize is not None and windowSizeWidth is not None and windowSizeHeight is not None and (windowSizeWidth != cWindowSize.width or windowSizeHeight != cWindowSize.height)
+            borderlessSizeChanged = cBorderlessSize is not None and borderlessSizeWidth is not None and borderlessSizeHeight is not None and (borderlessSizeWidth != cBorderlessSize.width or borderlessSizeHeight != cBorderlessSize.height)
             monitorChanged = monitor != cMonitor
             videModeChanged = cVideoMode is not None and videoMode is not None and videoMode.index != cVideoMode.index
             windowModeChanged = windowMode != cWindowMode
@@ -140,6 +156,9 @@ class VideoSettingsStorage(ISettingsStorage):
             if windowSizeChanged and windowMode == BigWorld.WindowModeWindowed:
                 deviseRecreated = True
                 g_monitorSettings.changeWindowSize(windowSizeWidth, windowSizeHeight)
+            elif borderlessSizeChanged and windowMode == BigWorld.WindowModeBorderless:
+                deviseRecreated = True
+                g_monitorSettings.changeBorderlessSize(borderlessSizeWidth, borderlessSizeHeight)
             elif (not monitorChanged or restartApproved) and (videModeChanged or windowModeChanged):
                 deviseRecreated = True
                 BigWorld.changeVideoMode(videoMode.index, windowMode)

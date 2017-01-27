@@ -3,6 +3,7 @@ import weakref
 import GUI
 import Math
 import SoundGroups
+from debug_utils import LOG_WARNING
 from AvatarInputHandler import AvatarInputHandler
 from constants import IS_DEVELOPMENT
 from gui.Scaleform.daapi.view.battle.shared.minimap import settings, plugins
@@ -100,18 +101,17 @@ class MinimapComponent(MinimapMeta, IMinimapComponent):
     def _populate(self):
         super(MinimapComponent, self)._populate()
         sessionProvider = dependency.instance(IBattleSessionProvider)
-        raise sessionProvider is not None or AssertionError('Session provider can not be None')
         arenaVisitor = sessionProvider.arenaVisitor
-        raise arenaVisitor is not None or AssertionError('Arena visitor can not be None')
         arenaDP = sessionProvider.getArenaDP()
-        raise arenaDP is not None or AssertionError('ArenaDP can not be None')
-        if not self.app is not None:
-            raise AssertionError('Application can not be None')
-            setup = self.__createComponent(arenaVisitor) and self._setupPlugins(arenaVisitor)
-            self.__plugins = MinimapPluginsCollection(self)
-            self.__plugins.addPlugins(setup)
-            self.__plugins.init(weakref.proxy(arenaVisitor), weakref.proxy(arenaDP))
-            self.__plugins.start()
+        if sessionProvider is not None and arenaVisitor is not None and arenaDP is not None:
+            if self.__createComponent(arenaVisitor):
+                setup = self._setupPlugins(arenaVisitor)
+                self.__plugins = MinimapPluginsCollection(self)
+                self.__plugins.addPlugins(setup)
+                self.__plugins.init(weakref.proxy(arenaVisitor), weakref.proxy(arenaDP))
+                self.__plugins.start()
+        else:
+            LOG_WARNING('Could not create component due to data missing: sessionProvider={}, arenaVisitor={}, arenaDP={}'.format(sessionProvider, arenaVisitor, arenaDP))
         return
 
     def _dispose(self):
