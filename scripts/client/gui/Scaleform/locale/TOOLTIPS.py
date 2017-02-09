@@ -379,6 +379,12 @@ class TOOLTIPS(object):
     NOTIFICATIONSVIEW_TAB_INFO = '#tooltips:notificationsView/tab/info'
     NOTIFICATIONSVIEW_TAB_INVITES = '#tooltips:notificationsView/tab/invites'
     NOTIFICATIONSVIEW_TAB_OFFERS = '#tooltips:notificationsView/tab/offers'
+    HANGAR_HEADER_PERSONALQUESTS_DISABLED = '#tooltips:hangar/header/personalQuests/disabled'
+    HANGAR_HEADER_PERSONALQUESTS_UNAVAILABLE = '#tooltips:hangar/header/personalQuests/unavailable'
+    HANGAR_HEADER_PERSONALQUESTS_COMPLETED = '#tooltips:hangar/header/personalQuests/completed'
+    HANGAR_HEADER_PERSONALQUESTS_AVAILABLE = '#tooltips:hangar/header/personalQuests/available'
+    HANGAR_HEADER_PERSONALQUESTS_AWARD = '#tooltips:hangar/header/personalQuests/award'
+    HANGAR_HEADER_PERSONALQUESTS_DONE = '#tooltips:hangar/header/personalQuests/done'
     TEMPLATE_DAYS_SHORT = '#tooltips:template/days/short'
     TEMPLATE_HOURS_SHORT = '#tooltips:template/hours/short'
     TEMPLATE_MINUTES_SHORT = '#tooltips:template/minutes/short'
@@ -2299,6 +2305,8 @@ class TOOLTIPS(object):
     HANGAR_HEADER_PERSONALQUESTS_AVAILABLE_BODY = '#tooltips:hangar/header/personalQuests/available/body'
     HANGAR_HEADER_PERSONALQUESTS_AWARD_HEADER = '#tooltips:hangar/header/personalQuests/award/header'
     HANGAR_HEADER_PERSONALQUESTS_AWARD_BODY = '#tooltips:hangar/header/personalQuests/award/body'
+    HANGAR_HEADER_PERSONALQUESTS_DONE_HEADER = '#tooltips:hangar/header/personalQuests/done/header'
+    HANGAR_HEADER_PERSONALQUESTS_DONE_BODY = '#tooltips:hangar/header/personalQuests/done/body'
     TANKCARUSELTOOLTIP_VEHICLETYPE_NORMAL_ENUM = (TANKCARUSELTOOLTIP_VEHICLETYPE_NORMAL_LIGHTTANK,
      TANKCARUSELTOOLTIP_VEHICLETYPE_NORMAL_MEDIUMTANK,
      TANKCARUSELTOOLTIP_VEHICLETYPE_NORMAL_HEAVYTANK,
@@ -2474,16 +2482,6 @@ class TOOLTIPS(object):
      BATTLERESULTS_EFFICIENCYHEADER_SUMMDAMAGE,
      BATTLERESULTS_EFFICIENCYHEADER_SUMMKILL,
      BATTLERESULTS_EFFICIENCYHEADER_VALUE)
-    HANGAR_HEADER_PERSONALQUESTS_ALL_HEADER_ENUM = (HANGAR_HEADER_PERSONALQUESTS_DISABLED_HEADER,
-     HANGAR_HEADER_PERSONALQUESTS_UNAVAILABLE_HEADER,
-     HANGAR_HEADER_PERSONALQUESTS_COMPLETED_HEADER,
-     HANGAR_HEADER_PERSONALQUESTS_AVAILABLE_HEADER,
-     HANGAR_HEADER_PERSONALQUESTS_AWARD_HEADER)
-    HANGAR_HEADER_PERSONALQUESTS_ALL_BODY_ENUM = (HANGAR_HEADER_PERSONALQUESTS_DISABLED_BODY,
-     HANGAR_HEADER_PERSONALQUESTS_UNAVAILABLE_BODY,
-     HANGAR_HEADER_PERSONALQUESTS_COMPLETED_BODY,
-     HANGAR_HEADER_PERSONALQUESTS_AVAILABLE_BODY,
-     HANGAR_HEADER_PERSONALQUESTS_AWARD_BODY)
     AWARDITEM_ALL_HEADER_ENUM = (AWARDITEM_CREDITS_HEADER,
      AWARDITEM_GOLD_HEADER,
      AWARDITEM_FREEXP_HEADER,
@@ -2705,24 +2703,6 @@ class TOOLTIPS(object):
     def battleresults_efficiencyheader(cls, key0):
         outcome = '#tooltips:battleResults/efficiencyHeader/{}'.format(key0)
         if outcome not in cls.BATTLERESULTS_EFFICIENCYHEADER_ENUM:
-            LOG_WARNING('Localization key "{}" not found'.format(outcome))
-            return None
-        else:
-            return outcome
-
-    @classmethod
-    def personalQuestsTooltipHeader(cls, state):
-        outcome = '#tooltips:hangar/header/personalQuests/{}/header'.format(state)
-        if outcome not in cls.HANGAR_HEADER_PERSONALQUESTS_ALL_HEADER_ENUM:
-            LOG_WARNING('Localization key "{}" not found'.format(outcome))
-            return None
-        else:
-            return outcome
-
-    @classmethod
-    def personalQuestsTooltipBody(cls, state):
-        outcome = '#tooltips:hangar/header/personalQuests/{}/body'.format(state)
-        if outcome not in cls.HANGAR_HEADER_PERSONALQUESTS_ALL_BODY_ENUM:
             LOG_WARNING('Localization key "{}" not found'.format(outcome))
             return None
         else:

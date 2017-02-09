@@ -161,7 +161,6 @@ class AccountPopover(AccountPopoverMeta, IGlobalListener, ClanListener, ClanEmbl
 
     def __updateButtonsStates(self):
         self.__setInfoButtonState()
-        self.__setCrewData()
         self.__setClanData()
         self.__setReferralData()
         self.__updateBoostersPanelState()
@@ -257,10 +256,6 @@ class AccountPopover(AccountPopoverMeta, IGlobalListener, ClanListener, ClanEmbl
          'textFieldPositionYposition': 57 if isInClan else 42})
         self.as_setClanDataS(self.__clanData)
         return
-
-    def _crewDataButtonStatus(self):
-        return {'isEnabled': not BigWorld.player().isLongDisconnectedFromCenter and self.__infoBtnEnabled,
-         'disabledTooltip': ''}
 
     def __syncUserInfo(self):
         clanProfile = self.clansCtrl.getAccountProfile()

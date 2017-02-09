@@ -1,5 +1,6 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/server_events/QuestsCurrentTab.py
 from collections import defaultdict
+import time
 import constants
 from CurrentVehicle import g_currentVehicle
 from gui.Scaleform.locale.QUESTS import QUESTS
@@ -241,7 +242,7 @@ class QuestsCurrentTab(QuestsCurrentTabMeta):
         if self.__filterType == self.FILTER_TYPE.ACTIONS:
             return self._isAction(event)
         if self._isQuest(event):
-            return not (self._hideCompleted and event.isCompleted())
+            return not (self._hideCompleted and event.isCompleted() and event.getFinishTimeLeft())
         return False
 
     def _applyFilters(self, quests):

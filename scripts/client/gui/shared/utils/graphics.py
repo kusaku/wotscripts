@@ -155,7 +155,7 @@ class MonitorSettings(object):
 
     @property
     def currentBorderlessSize(self):
-        if self.currentVideoMode == BigWorld.WindowModeBorderless:
+        if self.windowMode == BigWorld.WindowModeBorderless:
             return BorderlessSize(*map(int, BigWorld.getBorderlessParameters()))
         else:
             return VideoMode(*BigWorld.listBorderlessResolutionsAllMonitors()[self.currentMonitor][0])
@@ -226,18 +226,14 @@ class MonitorSettings(object):
     def noRestartExclusiveFullscreenMonitorIndex(self):
         return BigWorld.getExclusiveFullscreenMonitorIndex()
 
-    def maxParams(self, useOnlyWidth = False):
+    def maxParams(self):
         maxWdth = 640
         maxHght = 480
-        for monitorModes in self.__suitableVideoModes:
+        vmodes = getSuitableVideoModes()
+        for monitorModes in vmodes:
             for mode in monitorModes:
-                if useOnlyWidth:
-                    if maxWdth <= mode.width:
-                        maxWdth = mode.width
-                        maxHght = mode.height
-                    else:
-                        maxWdth = max(maxWdth, mode.width)
-                        maxHght = max(maxHght, mode.height)
+                maxWdth = max(maxWdth, mode.width)
+                maxHght = max(maxHght, mode.height)
 
         return (maxWdth, maxHght)
 

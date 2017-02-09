@@ -38,6 +38,7 @@ LAST_RESTORE_NOTIFICATION = 'lastRestoreNotification'
 PREVIEW_INFO_PANEL_IDX = 'previewInfoPanelIdx'
 NEW_SETTINGS_COUNTER = 'newSettingsCounter'
 PROFILE_TECHNIQUE = 'profileTechnique'
+PROFILE_TECHNIQUE_MEMBER = 'profileTechniqueMember'
 LAST_CLUB_OPENED_FOR_APPS = 'lastClubOpenedForApps'
 SHOW_INVITE_COMMAND_BTN_ANIMATION = 'showInviteCommandBtnAnimation'
 DEFAULT_QUEUE = 'defaultQueue'
@@ -205,7 +206,9 @@ DEFAULT_VALUES = {KEY_FILTERS: {STORE_TAB: 0,
                SHOW_INVITE_COMMAND_BTN_ANIMATION: True,
                PROFILE_TECHNIQUE: {'selectedColumn': 4,
                                    'selectedColumnSorting': 'descending',
-                                   'isInHangarSelected': False}},
+                                   'isInHangarSelected': False},
+               PROFILE_TECHNIQUE_MEMBER: {'selectedColumn': 4,
+                                          'selectedColumnSorting': 'descending'}},
  KEY_FAVORITES: {CURRENT_VEHICLE: 0,
                  FALLOUT_VEHICLES: {}},
  KEY_SETTINGS: {'unitWindow': {'selectedIntroVehicles': []},
@@ -320,7 +323,7 @@ DEFAULT_VALUES = {KEY_FILTERS: {STORE_TAB: 0,
                 'sniperModeByShift': True,
                 'nationalVoices': False,
                 'enableVoIP': True,
-                'replayEnabled': 2,
+                'replayEnabled': 1,
                 'players_panel': {'state': 2,
                                   'showLevels': True,
                                   'showTypes': True},

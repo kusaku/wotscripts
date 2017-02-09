@@ -142,6 +142,7 @@ class PurchaseWindow(CustomizationBuyWindowMeta):
          'enoughCredits': enoughCredits,
          'notEnoughGoldTooltip': notEnoughGoldTooltip,
          'notEnoughCreditsTooltip': notEnoughCreditsTooltip})
+        self.as_setBuyBtnEnabledS(canBuy)
 
     @process
     def __buyElements(self, purchaseItems, replacedElementGroups):

@@ -187,10 +187,13 @@ class TechnicalMaintenance(TechnicalMaintenanceMeta):
 
             price = module.altPrice
             defaultPrice = module.defaultAltPrice
+            inventoryCount = module.inventoryCount
             index = None
             if module in selectedItems:
                 index = selectedItems.index(module)
                 priceCurrency = currencies[index] or Currency.CREDITS
+                if module not in installedItems:
+                    inventoryCount -= 1
             else:
                 priceCurrency = module.getBuyPriceCurrency()
             action = None
@@ -207,7 +210,7 @@ class TechnicalMaintenance(TechnicalMaintenanceMeta):
              'index': index,
              'inventoryCount': module.inventoryCount,
              'vehicleCount': len(module.getInstalledVehicles(inventoryVehicles)),
-             'count': module.inventoryCount,
+             'count': inventoryCount,
              'fits': fits,
              'goldEqsForCredits': goldEqsForCredits,
              'userCredits': money.toDict(),

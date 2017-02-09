@@ -43,8 +43,6 @@ class EventsWindow(QuestsWindowMeta):
                 self._showSeasonsView()
         elif tabID == _QA.TAB_COMMON_QUESTS:
             self._showCommonQuestsView(self._navInfo.common.questID)
-        elif tabID == _QA.TAB_LADDER_QUESTS:
-            self._showLadderQuestsView(self._navInfo.common.questID)
         elif tabID == _QA.TAB_BEGINNER_QUESTS:
             self._showBeginnerQuestsView(self._navInfo.tutorial.questID)
         else:
@@ -131,10 +129,6 @@ class EventsWindow(QuestsWindowMeta):
     def _showCommonQuestsView(self, questID = None):
         self._navInfo.selectCommonQuest(questID)
         return self._loadView(_QA.COMMON_QUESTS_VIEW_LINKAGE, _QA.COMMON_QUESTS_VIEW_ALIAS)
-
-    def _showLadderQuestsView(self, questID = None):
-        self._navInfo.selectCommonQuest(questID)
-        return self._loadView(_QA.COMMON_QUESTS_VIEW_LINKAGE, _QA.LADDER_QUESTS_VIEW_ALIAS)
 
     def _showBeginnerQuestsView(self, questID = None):
         self._navInfo.selectTutorialQuest(questID)

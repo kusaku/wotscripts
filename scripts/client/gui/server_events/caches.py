@@ -150,10 +150,6 @@ class _NavigationInfo(object):
         self.tabID = _QA.TAB_BEGINNER_QUESTS
         self.tutorial = self.tutorial.update(questID=questID)
 
-    def selectLadderQuest(self, questID):
-        self.tabID = _QA.TAB_LADDER_QUESTS
-        self.common = self.common.update(questID=questID)
-
 
 _g_navInfo = None
 

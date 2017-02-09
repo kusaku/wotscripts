@@ -312,8 +312,8 @@ class ReplayLoadingState(BattleLoadingState):
     def showGUI(self, appFactory, appNS, appState):
         if appState == _STATE_ID.INITIALIZED:
             appFactory.showBattle()
-            appFactory.goToBattleLoading(appNS)
             appFactory.loadBattlePage(appNS, self._arenaGuiType)
+            appFactory.goToBattleLoading(appNS)
 
     def hideGUI(self, appFactory):
         _enableTimeWrapInReplay()

@@ -144,10 +144,10 @@ class _HitDirection(object):
 
 
 class HitDirectionController(IViewComponentsController):
-    __slots__ = ('__pull', '__ui', '__isVisible', '__callbackIDs', '__damageIndicatorPreset', '__weakref__')
+    __slots__ = ('__pull', '__ui', '__isVisible', '__callbackIDs', '__damageIndicatorPreset', '__arenaDP', '__weakref__')
     settingsCore = dependency.descriptor(ISettingsCore)
 
-    def __init__(self):
+    def __init__(self, setup):
         super(HitDirectionController, self).__init__()
         raise HIT_INDICATOR_MAX_ON_SCREEN or AssertionError('Can not be zero')
         self.__pull = [ _HitDirection(idx_) for idx_ in xrange(HIT_INDICATOR_MAX_ON_SCREEN) ]
@@ -155,6 +155,7 @@ class HitDirectionController(IViewComponentsController):
         self.__isVisible = True
         self.__callbackIDs = {}
         self.__damageIndicatorPreset = DAMAGE_INDICATOR_PRESETS.ALL
+        self.__arenaDP = weakref.proxy(setup.arenaDP)
         return
 
     def getControllerID(self):
@@ -173,6 +174,7 @@ class HitDirectionController(IViewComponentsController):
                 handler.onPostmortemKillerVision -= self.__onPostmortemKillerVision
         g_eventBus.removeListener(GameEvent.GUI_VISIBILITY, self.__handleGUIVisibility, scope=EVENT_BUS_SCOPE.BATTLE)
         self.__clearHideCallbacks()
+        self.__arenaDP = None
         return
 
     def getContainer(self):
@@ -340,7 +342,8 @@ class HitDirectionController(IViewComponentsController):
         return
 
     def __onPostmortemKillerVision(self, killerVehicleID):
-        self._hideAllHits()
+        if killerVehicleID != self.__arenaDP.getPlayerVehicleID():
+            self._hideAllHits()
 
 
 class HitDirectionControllerPlayer(HitDirectionController):
@@ -352,6 +355,6 @@ class HitDirectionControllerPlayer(HitDirectionController):
 
 def createHitDirectionController(setup):
     if setup.isReplayPlaying:
-        return HitDirectionControllerPlayer()
+        return HitDirectionControllerPlayer(setup)
     else:
-        return HitDirectionController()
+        return HitDirectionController(setup)

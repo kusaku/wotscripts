@@ -137,6 +137,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager, AvatarOb
     vehicles = property(lambda self: self.__vehicles)
     consistentMatrices = property(lambda self: self.__consistentMatrices)
     isVehicleOverturned = property(lambda self: self.__isVehicleOverturned)
+    isOwnBarrelUnderWater = property(lambda self: self.__isOwnBarrelUnderWater())
     guiSessionProvider = dependency.descriptor(IBattleSessionProvider)
     settingsCore = dependency.descriptor(ISettingsCore)
 
@@ -980,9 +981,10 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager, AvatarOb
                 self.__cruiseControlMode = intArg
                 self.guiSessionProvider.invalidateVehicleState(VEHICLE_VIEW_STATE.CRUISE_MODE, self.__cruiseControlMode)
             elif code == STATUS.SIEGE_MODE_STATE_CHANGED:
-                self.__cruiseControlMode = _CRUISE_CONTROL_MODE.NONE
-                self.__updateCruiseControlPanel()
-                self.moveVehicleByCurrentKeys(False)
+                if intArg in (constants.VEHICLE_SIEGE_STATE.SWITCHING_ON, constants.VEHICLE_SIEGE_STATE.SWITCHING_OFF):
+                    self.__cruiseControlMode = _CRUISE_CONTROL_MODE.NONE
+                    self.__updateCruiseControlPanel()
+                    self.moveVehicleByCurrentKeys(False)
                 self.guiSessionProvider.invalidateVehicleState(VEHICLE_VIEW_STATE.SIEGE_MODE, (intArg, floatArg))
                 self.__onSiegeStateUpdated(vehicleID, intArg, floatArg)
             return
@@ -1208,7 +1210,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager, AvatarOb
         self.guiSessionProvider.shared.feedback.setVehicleAttrs(self.playerVehicleID, attrs)
 
     def showTracer(self, shooterID, shotID, isRicochet, effectsIndex, refStartPoint, velocity, gravity, maxShotDist):
-        if not self.userSeesWorld():
+        if not self.userSeesWorld() or self.__projectileMover is None:
             return
         else:
             startPoint = refStartPoint

@@ -1097,13 +1097,22 @@ class ResolutionSetting(PreferencesSetting):
     def _getOptions(self):
         return [ [ '%dx%d' % (width, height) for width, height in resolutions ] for resolutions in self._getSuitableResolutions() ]
 
+    def _setAspectRatio(self):
+        w = 640
+        h = 640
+        for idx, (width, height) in enumerate(self._getResolutions()):
+            if w <= width:
+                w = width
+                h = height
+
+        aspectRatio = float(w) / float(h)
+        BigWorld.changeFullScreenAspectRatio(aspectRatio)
+
     def _set(self, value):
         resolution = self._getResolutions()[int(value)]
         self._storage.resolution = resolution
         self._lastSelectedVideoMode = resolution
-        maxWdth, maxHght = g_monitorSettings.maxParams(True)
-        aspectRatio = float(maxWdth) / float(maxHght)
-        BigWorld.changeFullScreenAspectRatio(aspectRatio)
+        self._setAspectRatio()
         FovExtended.instance().refreshFov()
 
     def _savePrefsCallback(self, prefsRoot):

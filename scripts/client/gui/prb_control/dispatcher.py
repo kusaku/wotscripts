@@ -471,6 +471,13 @@ class _PreBattleDispatcher(ListenersCollection):
                 g_eventDispatcher.addSpecBattlesToCarousel()
         g_eventDispatcher.updateUI()
 
+    def pe_onPrebattleInviteError(self, inviteID, errorCode, errorStr):
+        """
+        Player event listener for prebattle invitation failed. Resets current entity to default.
+        """
+        self.__unsetEntity()
+        self.__setDefault()
+
     def pe_onPrebattleJoined(self):
         """
         Player event listener for prebattle join. Sets entity to proper legacy or
@@ -737,6 +744,7 @@ class _PreBattleDispatcher(ListenersCollection):
         g_playerEvents.onArenaJoinFailure += self.pe_onArenaJoinFailure
         g_playerEvents.onKickedFromArena += self.pe_onKickedFromArena
         g_playerEvents.onPrebattleAutoInvitesChanged += self.pe_onPrebattleAutoInvitesChanged
+        g_playerEvents.onPrebattleInvitationsError += self.pe_onPrebattleInviteError
         if self.gameSession.lastBanMsg is not None:
             self.gs_onTillBanNotification(*self.gameSession.lastBanMsg)
         self.gameSession.onTimeTillBan += self.gs_onTillBanNotification
@@ -785,6 +793,7 @@ class _PreBattleDispatcher(ListenersCollection):
         g_playerEvents.onArenaJoinFailure -= self.pe_onArenaJoinFailure
         g_playerEvents.onKickedFromArena -= self.pe_onKickedFromArena
         g_playerEvents.onPrebattleAutoInvitesChanged -= self.pe_onPrebattleAutoInvitesChanged
+        g_playerEvents.onPrebattleInvitationsError -= self.pe_onPrebattleInviteError
         self.gameSession.onTimeTillBan -= self.gs_onTillBanNotification
         self.rentals.onRentChangeNotify -= self.rc_onRentChange
         self.igrCtrl.onIgrTypeChanged -= self.igr_onRoomChange

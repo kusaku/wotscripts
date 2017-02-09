@@ -99,7 +99,7 @@ class _QuestCache(object):
 
     @classmethod
     def __filterFunc(cls, event):
-        return event.getType() not in (EVENT_TYPE.MOTIVE_QUEST, EVENT_TYPE.CLUBS_QUEST)
+        return event.getType() not in (EVENT_TYPE.MOTIVE_QUEST, EVENT_TYPE.CLUBS_QUEST) and event.getFinishTimeLeft()
 
 
 class QuestsController(IQuestsController):

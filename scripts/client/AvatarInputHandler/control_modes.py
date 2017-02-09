@@ -24,6 +24,7 @@ from helpers import dependency
 from post_processing import g_postProcessing
 from skeletons.gui.battle_session import IBattleSessionProvider
 from constants import VEHICLE_SIEGE_STATE
+from gui.battle_control import avatar_getter
 _ARCADE_CAM_PIVOT_POS = Math.Vector3(0, 4, 3)
 
 class IControlMode(object):
@@ -571,7 +572,7 @@ class ArcadeControlMode(_GunControlMode):
 
     def __activateAlternateMode(self, pos = None, bByScroll = False):
         ownVehicle = BigWorld.entity(BigWorld.player().playerVehicleID)
-        if ownVehicle is not None and ownVehicle.isStarted and ownVehicle.appearance.isUnderwater or BigWorld.player().isGunLocked:
+        if ownVehicle is not None and ownVehicle.isStarted and avatar_getter.isVehicleBarrelUnderWater() or BigWorld.player().isGunLocked:
             return
         elif self._aih.isSPG and not bByScroll:
             self._cam.update(0, 0, 0, False, False)
@@ -831,12 +832,16 @@ class SniperControlMode(_GunControlMode):
         return
 
     def setObservedVehicle(self, vehicleID):
-        vehicleDescr = BigWorld.entities[vehicleID].typeDescriptor
-        from items.vehicles import g_cache
-        self.__setupBinoculars(g_cache.optionalDevices()[5] in vehicleDescr.optionalDevices)
-        isHorizontalStabilizerAllowed = vehicleDescr.gun['turretYawLimits'] is None
-        self._cam.aimingSystem.enableHorizontalStabilizerRuntime(isHorizontalStabilizerAllowed)
-        return
+        vehicle = BigWorld.entities.get(vehicleID, None)
+        if vehicle is None:
+            return
+        else:
+            vehicleDescr = vehicle.typeDescriptor
+            from items.vehicles import g_cache
+            self.__setupBinoculars(g_cache.optionalDevices()[5] in vehicleDescr.optionalDevices)
+            isHorizontalStabilizerAllowed = vehicleDescr.gun['turretYawLimits'] is None
+            self._cam.aimingSystem.enableHorizontalStabilizerRuntime(isHorizontalStabilizerAllowed)
+            return
 
     def handleKeyEvent(self, isDown, key, mods, event = None):
         if not self._isEnabled:

@@ -227,6 +227,7 @@ class AvatarObserver(CallbackDelayer):
             if vehicle is not None:
                 if self.isObserverFPV:
                     self.guiSessionProvider.stopVehicleVisual(vehicle.id, False)
+                    self.updateObservedVehicleData()
                 else:
                     self.guiSessionProvider.startVehicleVisual(vehicle, True)
             return

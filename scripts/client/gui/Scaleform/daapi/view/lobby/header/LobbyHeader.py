@@ -124,6 +124,9 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, IGlobalListener):
     def onDequeued(self, *_):
         self.__updatePrebattleControls()
 
+    def onKickedFromQueue(self, *_):
+        self.__updatePrebattleControls()
+
     def updateAccountInfo(self):
         self.updateMoneyStats()
         self.updateXPInfo()
