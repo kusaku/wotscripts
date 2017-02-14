@@ -5,7 +5,7 @@ from constants import PREBATTLE_TYPE
 from gui.Scaleform.daapi.view.lobby.user_cm_handlers import BaseUserCMHandler, USER
 from gui.Scaleform.locale.MENU import MENU
 from gui.prb_control.entities.base.unit.ctx import KickPlayerUnitCtx, GiveLeadershipUnitCtx
-from gui.prb_control.entities.base.unit.listener import IUnitListener
+from gui.prb_control.entities.listener import IGlobalListener
 from messenger.m_constants import PROTO_TYPE
 from messenger.proto import proto_getter
 from UnitBase import UNIT_FLAGS
@@ -13,7 +13,7 @@ KICK_FROM_UNIT = 'kickPlayerFromUnit'
 GIVE_LEADERSHIP = 'giveLeadership'
 TAKE_LEADERSHIP = 'takeLeadership'
 
-class UnitUserCMHandler(BaseUserCMHandler, IUnitListener):
+class UnitUserCMHandler(BaseUserCMHandler, IGlobalListener):
 
     def __init__(self, cmProxy, ctx = None):
         super(UnitUserCMHandler, self).__init__(cmProxy, ctx)
@@ -34,6 +34,9 @@ class UnitUserCMHandler(BaseUserCMHandler, IUnitListener):
         self.onContextMenuHide()
 
     def onUnitMembersListChanged(self):
+        self.onContextMenuHide()
+
+    def onCommanderIsReady(self, isReady):
         self.onContextMenuHide()
 
     def giveLeadership(self):

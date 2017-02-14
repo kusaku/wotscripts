@@ -42,6 +42,7 @@ from gui.shared.utils.MethodsRules import MethodsRules
 from gui.shared.view_helpers import UsersInfoHelper
 from skeletons.gui.game_control import IBrowserController
 from messenger.proto.events import g_messengerEvents
+from gui.Scaleform.managers.Cursor import Cursor
 
 class StrongholdBattleRoom(FortClanBattleRoomMeta, IUnitListener, IStrongholdListener, MethodsRules, UsersInfoHelper):
     browserCtrl = dependency.descriptor(IBrowserController)
@@ -65,7 +66,7 @@ class StrongholdBattleRoom(FortClanBattleRoomMeta, IUnitListener, IStrongholdLis
         self._setActionButtonState()
         data = self.__getStrongholdData()
         if data:
-            self._updateConfigureButtonState(data.isFirstBattle())
+            self._updateConfigureButtonState(data.isFirstBattle(), data.getReadyButtonEnabled())
 
     def onUnitPlayerStateChanged(self, pInfo):
         self.__setMemberStatus(pInfo)
@@ -234,6 +235,7 @@ class StrongholdBattleRoom(FortClanBattleRoomMeta, IUnitListener, IStrongholdLis
     def _populate(self):
         super(StrongholdBattleRoom, self)._populate()
         g_messengerEvents.users.onUserStatusUpdated += self.__onUserStatusUpdated
+        g_messengerEvents.users.onUserActionReceived += self.__onUserDataChanged
         self.addListener(events.CSReserveSelectEvent.RESERVE_SELECTED, self.__onReserveSelectHandler)
         self.addListener(events.FightButtonEvent.FIGHT_BUTTON_UPDATE, self.__onFightButtonUpdated, scope=EVENT_BUS_SCOPE.LOBBY)
         self.__strongholdUpdate()
@@ -241,6 +243,7 @@ class StrongholdBattleRoom(FortClanBattleRoomMeta, IUnitListener, IStrongholdLis
     def _dispose(self):
         self.__proxy = None
         g_messengerEvents.users.onUserStatusUpdated -= self.__onUserStatusUpdated
+        g_messengerEvents.users.onUserActionReceived -= self.__onUserDataChanged
         self.removeListener(events.StrongholdEvent.STRONGHOLD_ON_TIMER, self._onMatchmakingTimerChanged, scope=EVENT_BUS_SCOPE.FORT)
         self.removeListener(events.CSReserveSelectEvent.RESERVE_SELECTED, self.__onReserveSelectHandler)
         self.removeListener(events.FightButtonEvent.FIGHT_BUTTON_UPDATE, self.__onFightButtonUpdated, scope=EVENT_BUS_SCOPE.LOBBY)
@@ -276,7 +279,7 @@ class StrongholdBattleRoom(FortClanBattleRoomMeta, IUnitListener, IStrongholdLis
             self.__destroyChangeModeWindow()
         try:
             for slot in data['slots']:
-                if slot['selectedVehicle']:
+                if slot['selectedVehicle'] and not slot['isFreezed'] and not slot['isCommanderState']:
                     slot['selectedVehicle']['isReadyToFight'] = True
 
         except:
@@ -362,10 +365,10 @@ class StrongholdBattleRoom(FortClanBattleRoomMeta, IUnitListener, IStrongholdLis
                 title += ' (x%s)' % resourceMultiplier
         self.fireEvent(events.RenameWindowEvent(events.RenameWindowEvent.RENAME_WINDOW, ctx={'data': title}), scope=EVENT_BUS_SCOPE.LOBBY)
 
-    def _updateConfigureButtonState(self, isFirstBattle):
+    def _updateConfigureButtonState(self, isFirstBattle, readyButtonEnabled):
         flags = self.prbEntity.getFlags()
-        isEnabled = not flags.isInQueue() and not flags.isInArena()
-        vo = vo_converters.makeConfigureButtonVO(isEnabled and isFirstBattle, isEnabled)
+        isEnabled = not flags.isInQueue() and not flags.isInArena() and readyButtonEnabled
+        vo = vo_converters.makeConfigureButtonVO(isEnabled and isFirstBattle, True)
         self.as_setConfigureButtonStateS(vo)
 
     def _onMatchmakingTimerChanged(self, event):
@@ -454,7 +457,7 @@ class StrongholdBattleRoom(FortClanBattleRoomMeta, IUnitListener, IStrongholdLis
             self._updateBuildings(allData.getCurrentBattle(), allData.getEnemyClan(), allData.getBattleIdx())
             self._updateReserves(allData.getSelectedReservesIdx(), allData.getReserveOrder())
             self._updateTitle(allData.isSortie(), allData.getDirection(), allData.getResourceMultiplier())
-            self._updateConfigureButtonState(allData.isFirstBattle())
+            self._updateConfigureButtonState(allData.isFirstBattle(), allData.getReadyButtonEnabled())
             self.__checkBattleMode()
             return
 
@@ -501,6 +504,13 @@ class StrongholdBattleRoom(FortClanBattleRoomMeta, IUnitListener, IStrongholdLis
         if data and data.getEnemyClan():
             enemyReady = data.getEnemyClan().getReadyStatus()
         self.as_updateReadyStatusS(self.prbEntity.getFlags().isInQueue(), enemyReady)
+
+    def __onUserDataChanged(self, _, user):
+        if self._candidatesDP:
+            candidates = self.prbEntity.getCandidates()
+            if user._databaseID in candidates:
+                self._rebuildCandidatesDP()
+                self._updateRallyData()
 
     def __onUserStatusUpdated(self, user):
         if self._candidatesDP:

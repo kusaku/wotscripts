@@ -294,7 +294,7 @@ class SharedControllersRepository(_ControllersRepository):
         repository.addController(messages)
         repository.addController(chat_cmd_ctrl.ChatCommandsController(setup, feedback, ammo))
         repository.addController(drr_scale_ctrl.DRRScaleController(messages))
-        repository.addController(personal_efficiency_ctrl.createEfficiencyCtrl(setup, feedback))
+        repository.addController(personal_efficiency_ctrl.createEfficiencyCtrl(setup, feedback, state))
         tmpIgnoreListCtrl = tmp_ignore_list_ctrl.createTmpIgnoreListCtrl(setup)
         if tmpIgnoreListCtrl is not None:
             repository.addController(tmpIgnoreListCtrl)

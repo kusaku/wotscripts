@@ -119,14 +119,17 @@ class HangarHeader(HangarHeaderMeta):
         self._personalQuestID = None
         if self._currentVehicle.isPresent():
             vehicle = self._currentVehicle.item
-            isBeginner = self._questController.isNewbiePlayer()
+            if self._questController.isNewbiePlayer():
+                tutorialChapters = self._getTutorialChapters()
+            else:
+                tutorialChapters = None
             headerVO = {'tankType': '{}_elite'.format(vehicle.type) if vehicle.isElite else vehicle.type,
              'tankInfo': text_styles.concatStylesToMultiLine(text_styles.promoSubTitle(vehicle.shortUserName), text_styles.stats(MENU.levels_roman(vehicle.level))),
              'isPremIGR': vehicle.isPremiumIGR,
              'isVisible': True,
-             'isBeginner': isBeginner}
-            if isBeginner:
-                headerVO.update(self.__getBeginnerQuestsVO())
+             'isBeginner': bool(tutorialChapters)}
+            if tutorialChapters:
+                headerVO.update(self.__getBeginnerQuestsVO(tutorialChapters))
             else:
                 headerVO.update(self.__getBattleQuestsVO(vehicle))
                 headerVO.update(self.__getPersonalQuestsVO(vehicle))
@@ -152,7 +155,7 @@ class HangarHeader(HangarHeaderMeta):
         super(HangarHeader, self)._dispose()
         return
 
-    def __getBeginnerQuestsVO(self):
+    def _getTutorialChapters(self):
         completed = g_itemsCache.items.stats.tutorialsCompleted
         questsDescriptor = events_helpers.getTutorialEventsDescriptor()
         chapters = []
@@ -161,8 +164,11 @@ class HangarHeader(HangarHeaderMeta):
             if chapterStatus != events_helpers.EVENT_STATUS.NOT_AVAILABLE and chapterStatus != events_helpers.EVENT_STATUS.COMPLETED:
                 chapters.append(chapter)
 
+        return chapters
+
+    def __getBeginnerQuestsVO(self, chapters):
         chapter = first(chapters)
-        self._battleQuestId = chapter.getID() if chapter else None
+        self._battleQuestId = chapter.getID()
         return {'beginnerQuestsLabel': str(len(chapters)),
          'beginnerQuestsIcon': RES_ICONS.MAPS_ICONS_LIBRARY_OUTLINE_BEGINNER,
          'beginnerQuestsTooltip': makeTooltip(chapter.getTitle(), chapter.getDescription()),

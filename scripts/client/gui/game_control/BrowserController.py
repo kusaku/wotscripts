@@ -25,6 +25,7 @@ class BrowserController(IBrowserController):
         super(BrowserController, self).__init__()
         self.__browsers = {}
         self.__browsersCallbacks = {}
+        self.__browserCreationCallbacks = {}
         self.__browserIDGenerator = SequenceIDGenerator()
         self.__eventMgr = Event.EventManager()
         self.onBrowserAdded = Event.Event(self.__eventMgr)
@@ -41,6 +42,12 @@ class BrowserController(IBrowserController):
         self.__eventMgr = None
         self.__urlMacros.clear()
         self.__urlMacros = None
+        self.__browsersCallbacks.clear()
+        self.__browsersCallbacks = None
+        self.__browsers.clear()
+        self.__browsers = None
+        self.__pendingBrowsers.clear()
+        self.__pendingBrowsers = None
         self.__browserIDGenerator = None
         super(BrowserController, self).fini()
         return
@@ -111,7 +118,9 @@ class BrowserController(IBrowserController):
             self.__pendingBrowsers[browserID] = ctx
         elif browserID in self.__browsers:
             LOG_BROWSER('CTRL: Re-navigating an existing browser: ', browserID, url)
-            self.__browsers[browserID].navigate(url)
+            browser = self.__browsers[browserID]
+            browser.navigate(url)
+            browser.changeTitle(title)
         callback(browserID)
         return
 
@@ -122,7 +131,7 @@ class BrowserController(IBrowserController):
         if browserID in self.__browsers:
             LOG_BROWSER('CTRL: Deleting a browser: ', browserID)
             browser = self.__browsers.pop(browserID)
-            self.__clearCallbacks(browserID, browser)
+            self.__clearCallbacks(browserID, browser, True)
             browser.destroy()
             if self.__creatingBrowserID == browserID:
                 self.__creatingBrowserID = None
@@ -161,26 +170,27 @@ class BrowserController(IBrowserController):
 
             def createBrowserTimeout():
                 LOG_BROWSER('CTRL: Browser create timed out')
-                createNextBrowser(False)
+                createNextBrowser()
 
             timeoutid = BigWorld.callback(30.0, createBrowserTimeout)
 
-            def createNextBrowser(visible):
-                if not visible:
-                    LOG_BROWSER('CTRL: Triggering create of next browser from: ', browserID)
-                    BigWorld.cancelCallback(timeoutid)
-                    if browserID in self.__browsers:
-                        self.__browsers[browserID].onLoadingStateChange -= createNextBrowser
-                    BigWorld.callback(1.0, self.__tryCreateNextPendingBrowser)
+            def createNextBrowser():
+                LOG_BROWSER('CTRL: Triggering create of next browser from: ', browserID)
+                BigWorld.cancelCallback(timeoutid)
+                creation = self.__browserCreationCallbacks.pop(browserID, None)
+                if creation is not None:
+                    self.__browsers[browserID].onCanCreateNewBrowser -= creation
+                BigWorld.callback(1.0, self.__tryCreateNextPendingBrowser)
+                return
 
             def failedCreationCallback(url):
                 LOG_BROWSER('CTRL: Failed a creation: ', browserID, url)
-                self.__clearCallbacks(browserID, self.__browsers[browserID])
+                self.__clearCallbacks(browserID, self.__browsers[browserID], False)
                 self.delBrowser(browserID)
 
             def successfulCreationCallback(url, isLoaded, httpStatusCode = None):
                 LOG_BROWSER('CTRL: Ready to show: ', browserID, isLoaded, url)
-                self.__clearCallbacks(browserID, self.__browsers[browserID])
+                self.__clearCallbacks(browserID, self.__browsers[browserID], False)
                 if isLoaded:
                     self.__showBrowser(browserID, ctx)
                 else:
@@ -188,7 +198,8 @@ class BrowserController(IBrowserController):
                 g_eventBus.handleEvent(BrowserEvent(BrowserEvent.BROWSER_CREATED, ctx=ctx))
                 self.__createDone(ctx)
 
-            self.__browsers[browserID].onLoadingStateChange += createNextBrowser
+            self.__browsers[browserID].onCanCreateNewBrowser += createNextBrowser
+            self.__browserCreationCallbacks[browserID] = createNextBrowser
             self.__browsers[browserID].onFailedCreation += failedCreationCallback
             if ctx['isAsync']:
                 self.__browsersCallbacks[browserID] = (None, successfulCreationCallback, failedCreationCallback)
@@ -201,10 +212,10 @@ class BrowserController(IBrowserController):
     def __stop(self):
         while self.__browsers:
             browserID, browser = self.__browsers.popitem()
-            self.__clearCallbacks(browserID, browser)
+            self.__clearCallbacks(browserID, browser, True)
             browser.destroy()
 
-    def __clearCallbacks(self, browserID, browser):
+    def __clearCallbacks(self, browserID, browser, incDelayedCreation):
         ready, loadEnd, failed = self.__browsersCallbacks.pop(browserID, (None, None, None))
         if browser is not None:
             if failed is not None:
@@ -213,6 +224,10 @@ class BrowserController(IBrowserController):
                 browser.onReady -= ready
             if loadEnd is not None:
                 browser.onLoadEnd -= loadEnd
+        if incDelayedCreation:
+            creation = self.__browserCreationCallbacks.pop(browserID, None)
+            if browser is not None and creation is not None:
+                browser.onCanCreateNewBrowser -= creation
         return
 
     def __showBrowser(self, browserID, ctx):

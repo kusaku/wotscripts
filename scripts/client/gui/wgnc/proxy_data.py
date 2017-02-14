@@ -5,6 +5,7 @@ from debug_utils import LOG_WARNING
 from gui.Scaleform.locale.MENU import MENU
 from gui.wgnc.events import g_wgncEvents
 from gui.wgnc.settings import WGNC_DATA_PROXY_TYPE
+from gui.wgnc.common import WebHandlersContainer
 from helpers import dependency
 from skeletons.gui.game_control import IEncyclopediaController, IBrowserController
 
@@ -204,8 +205,7 @@ class EncyclopediaContentItem(_ProxyDataItem):
         self.encyclopedia.addEncyclopediaRecommendation(self.__contentId)
 
 
-class ShowInBrowserItem(_ProxyDataItem):
-    _webHandlers = {}
+class ShowInBrowserItem(_ProxyDataItem, WebHandlersContainer):
     browserCtrl = dependency.descriptor(IBrowserController)
 
     def __init__(self, url, size = None, title = None, showRefresh = False, webHandlerName = '', titleKey = ''):
@@ -221,33 +221,16 @@ class ShowInBrowserItem(_ProxyDataItem):
 
     @process
     def show(self, _):
-        name = self.__webHandlerName
-        if name:
-            handlers = self._webHandlers.get(name)
-            if not handlers:
-                LOG_WARNING("Wrong web-client handler's name '%s'" % name)
-        else:
-            handlers = None
-        browserId = yield self.browserCtrl.load(self.__url, browserSize=self.__size, title=self.__getTitle(), showActionBtn=self.__showRefresh, handlers=handlers)
+        browserId = yield self.browserCtrl.load(self.__url, browserSize=self.__size, title=self.__getTitle(), showActionBtn=self.__showRefresh, handlers=self.getWebHandler(self.__webHandlerName))
         browser = self.browserCtrl.getBrowser(browserId)
         if browser:
             browser.useSpecialKeys = False
-        return
 
     def __getTitle(self):
         localizedValue = None
         if self.__titleKey:
             localizedValue = MENU.browser_customtitle(self.__titleKey)
         return localizedValue or self.__title
-
-    @classmethod
-    def addWebHandler(cls, name, handler):
-        cls._webHandlers[name] = handler
-
-    @classmethod
-    def removeWebHandler(cls, name):
-        if name in ShowInBrowserItem._webHandlers:
-            del cls._webHandlers[name]
 
 
 class ProxyDataHolder(object):

@@ -13,13 +13,11 @@ from gui.clans import contexts
 from gui.clans.clan_helpers import isStrongholdsEnabled
 from gui.shared.utils.requesters.abstract import Response
 from UnitBase import UNIT_ROLE
-from constants import REQUEST_COOLDOWN
 from gui.prb_control import settings
 from gui.prb_control import prb_getters
 from gui.prb_control.items import ValidationResult, unit_items
 from gui.prb_control.settings import UNIT_RESTRICTION
 from gui.prb_control.events_dispatcher import g_eventDispatcher
-from gui.prb_control.ctrl_events import g_prbCtrlEvents
 from gui.prb_control.entities.base.unit.entity import UnitEntity, UnitEntryPoint, UnitBrowserEntryPoint, UnitBrowserEntity
 from gui.prb_control.entities.stronghold.unit.actions_handler import StrongholdActionsHandler
 from gui.prb_control.items import SelectResult
@@ -38,7 +36,7 @@ from functools import partial
 _CREATION_TIMEOUT = 30
 ERROR_MAX_RETRY_COUNT = 3
 SUCCESS_STATUSES = (200, 201, 403, 409)
-MATCHMAKING_BATTLE_BUTTON_BATTLE = 15 * time_utils.ONE_MINUTE
+MATCHMAKING_BATTLE_BUTTON_BATTLE = 10 * time_utils.ONE_MINUTE
 MATCHMAKING_BATTLE_BUTTON_SORTIE = 10 * time_utils.ONE_MINUTE
 
 class StrongholdDynamicRosterSettings(DynamicRosterSettings):
@@ -122,6 +120,7 @@ class StrongholdEntryPoint(UnitEntryPoint):
 
     def __ctxProcessingTimeout(self):
         if self.__currentCtx:
+            self.__currentCtx.callTimeoutCallback()
             self.__currentCtx.stopProcessing()
         self.__clear()
 
@@ -170,7 +169,6 @@ class StrongholdEntity(UnitEntity):
         self.__timerID = None
         self.__preventInfinityLoopInMatchmakingTimer = False
         self.__isInactiveMatchingButton = True
-        self.__isReadyButtonEnable = True
         self.__showedBattleIdx = 0
         self.__listenersMapping = {'available_reserves': self.__onAvailableReservesChanged,
          'battle_series_status': self.__onBattleSeriesStatusChanged,
@@ -257,6 +255,14 @@ class StrongholdEntity(UnitEntity):
 
     def getStrongholdData(self):
         return self.__strongholdData
+
+    def unit_onUnitFlagsChanged(self, prevFlags, nextFlags):
+        super(StrongholdEntity, self).unit_onUnitFlagsChanged(prevFlags, nextFlags)
+        isInQueue = self.getFlags().isInQueue()
+        if isInQueue:
+            self._invokeListeners('onCommanderIsReady', True)
+        elif prevFlags != nextFlags and nextFlags == 0:
+            self._invokeListeners('onCommanderIsReady', False)
 
     def unit_onUnitExtraChanged(self, extras):
         super(StrongholdEntity, self).unit_onUnitExtraChanged(extras)
@@ -352,7 +358,7 @@ class StrongholdEntity(UnitEntity):
                 matchingCommanderRestriction = ValidationResult(False, resultId)
             else:
                 matchingCommanderRestriction = None
-            if self.__isReadyButtonEnable:
+            if not self.getStrongholdUnitIsFreezed():
                 readyButtonEnableRestriction = None
             else:
                 readyButtonEnableRestriction = ValidationResult(False, UNIT_RESTRICTION.UNIT_MAINTENANCE)
@@ -389,7 +395,10 @@ class StrongholdEntity(UnitEntity):
         return result
 
     def getStrongholdUnitIsFreezed(self):
-        return not self.__isReadyButtonEnable
+        if self.__strongholdData:
+            return not self.__strongholdData.getReadyButtonEnabled()
+        else:
+            return True
 
     def getRosterSettings(self):
         if self.__strongholdData is not None:
@@ -432,7 +441,7 @@ class StrongholdEntity(UnitEntity):
         _, unit = self.getUnit(unitIdx=None)
         playerInfo = self.getPlayerInfo()
         myClanRole = self.__g_clanCache.clanRole
-        canStealLeadership = True
+        canStealLeadership = not self.getFlags().isInIdle()
         commanderDBID = unit.getCreatorDBID()
         if playerInfo.dbID != commanderDBID:
             clanMembers = self.__g_clanCache.clanMembers
@@ -447,7 +456,7 @@ class StrongholdEntity(UnitEntity):
         strongholdRoles = None
         if self.__strongholdData is not None:
             strongholdRoles = self.__strongholdData.getPermissions().get('manage_reserves')
-        return StrongholdPermissions(roles, flags, isCurrentPlayer, isPlayerReady, clanRoles=myClanRole, strongholdRoles=strongholdRoles, isLegionary=playerInfo.isLegionary(), isInSlot=playerInfo.isInSlot, canStealLeadership=canStealLeadership)
+        return StrongholdPermissions(roles, flags, isCurrentPlayer, isPlayerReady, clanRoles=myClanRole, strongholdRoles=strongholdRoles, isLegionary=playerInfo.isLegionary(), isInSlot=playerInfo.isInSlot, canStealLeadership=canStealLeadership, isFreezed=self.getStrongholdUnitIsFreezed())
 
     def _getRequestHandlers(self):
         RQ_TYPE = settings.REQUEST_TYPE
@@ -478,15 +487,16 @@ class StrongholdEntity(UnitEntity):
         if not self.__processResponseMessage(response):
             BigWorld.callback(0.0, self.requestUpdateStronghold)
             return
-        elif response.getCode() != ResponseCodes.NO_ERRORS:
-            return
         else:
+            strongholdData = response.getData()
+            if response.getCode() != ResponseCodes.NO_ERRORS and not strongholdData:
+                return
             self.__waitingManager.onResponseWebReqID(0)
             _, unit = self.getUnit(unitIdx=None, safe=True)
             if unit is None:
                 return
-            diffToUpdate = self.__strongholdDataDiffer.makeDiff(response.getData())
-            self.__strongholdData = makeTupleByDict(StrongholdSettings, response.getData())
+            diffToUpdate = self.__strongholdDataDiffer.makeDiff(strongholdData)
+            self.__strongholdData = makeTupleByDict(StrongholdSettings, strongholdData)
             if diffToUpdate is None or self.__strongholdData is None:
                 return
             self._updateMatchmakingTimer()
@@ -496,6 +506,8 @@ class StrongholdEntity(UnitEntity):
                 if listener is not None:
                     listener()
 
+            if len(diffToUpdate) == 0:
+                self.__onSelectedReservesChanged()
             return
 
     def __onAvailableReservesChanged(self):
@@ -595,8 +607,6 @@ class StrongholdEntity(UnitEntity):
         return True
 
     def __onReadyButtonEnabled(self):
-        if self.__strongholdData:
-            self.__isReadyButtonEnable = self.__strongholdData.getReadyButtonEnabled()
         self._invokeListeners('onStrongholdOnReadyStateChanged')
 
     def __cancelMatchmakingTimer(self):
@@ -608,7 +618,20 @@ class StrongholdEntity(UnitEntity):
     def __updateMatchmakingData(self):
         self.__cancelMatchmakingTimer()
         data = self.getStrongholdData()
-        isInBattle = self.getFlags().isInArena()
+        isInSlot = False
+        playerInfo = self.getPlayerInfo()
+        if playerInfo is not None:
+            isInSlot = playerInfo.isInSlot
+        vInfos = self.getVehiclesInfo()
+        isVehicleInBattle = False
+        if vInfos is not None:
+            for vInfo in vInfos:
+                vehicle = vInfo.getVehicle()
+                if vehicle is not None:
+                    if vehicle.isInBattle:
+                        isVehicleInBattle = True
+
+        isInBattle = isVehicleInBattle or not isInSlot and self.getFlags().isInIdle() or isInSlot and self.getFlags().isInArena() and playerInfo.isInArena()
         dtime = None
         textid = None
         peripheryStartTimestamp = 0

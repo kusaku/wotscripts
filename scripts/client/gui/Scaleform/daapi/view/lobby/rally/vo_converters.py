@@ -209,7 +209,7 @@ def makeCandidateIconPath(pInfo, user):
     tags = user.getTags() if user else {}
     if USER_TAG.PRESENCE_DND in tags:
         return RES_ICONS.MAPS_ICONS_LIBRARY_USERSTATUS_SMALL_BUSY
-    elif USER_TAG.FRIEND in tags and USER_TAG.SUB_PENDING_OUT not in tags or USER_TAG.CLAN_MEMBER in tags:
+    elif USER_TAG.FRIEND in tags and USER_TAG.SUB_PENDING_OUT not in tags and USER_TAG.SUB_NONE not in tags or USER_TAG.CLAN_MEMBER in tags:
         return RES_ICONS.MAPS_ICONS_LIBRARY_USERSTATUS_SMALL_ONLINE
     else:
         return RES_ICONS.MAPS_ICONS_LIBRARY_USERSTATUS_SMALL_OFFLINE
@@ -504,9 +504,13 @@ def makeSortieVO(unitEntity, isCommander, unitIdx = None, app = None, canInvite 
         disableCanBeTakenButtonInSlots(slots)
     if fullData.flags.isLocked() or unitEntity.getStrongholdUnitIsFreezed():
         freezedInSlots(slots)
+        canAssignToSlot = False
+    else:
+        canAssignToSlot = True
     return {'canInvite': showCanInviteButton(canInvite, isCommander, slots, fullData.playerInfo.accID),
      'isCommander': isCommander,
      'isFreezed': fullData.flags.isLocked(),
+     'canAssignToSlot': canAssignToSlot,
      'hasRestrictions': fullData.unit.isRosterSet(ignored=settings.CREATOR_ROSTER_SLOT_INDEXES),
      'statusLbl': makeUnitStateLabel(fullData.flags),
      'statusValue': fullData.flags.isOpened(),
@@ -529,9 +533,13 @@ def makeFortBattleVO(unitEntity, unitIdx = None, app = None, canInvite = True, m
         disableCanBeTakenButtonInSlots(slots)
     if fullData.flags.isLocked() or unitEntity.getStrongholdUnitIsFreezed():
         freezedInSlots(slots)
+        canAssignToSlot = False
+    else:
+        canAssignToSlot = True
     return {'canInvite': showCanInviteButton(canInvite, isPlayerCreator, slots, fullData.playerInfo.accID),
      'isCommander': isPlayerCreator,
      'isFreezed': fullData.flags.isLocked(),
+     'canAssignToSlot': canAssignToSlot,
      'hasRestrictions': fullData.unit.isRosterSet(ignored=settings.CREATOR_ROSTER_SLOT_INDEXES),
      'statusLbl': makeUnitStateLabel(fullData.flags),
      'statusValue': fullData.flags.isOpened(),
@@ -554,6 +562,7 @@ def freezedInSlots(slots):
     for player in slots:
         if player['player'] is not None and player['selectedVehicle'] is not None:
             player['isFreezed'] = True
+        player['canBeTaken'] = False
 
     return slots
 

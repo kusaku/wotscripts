@@ -5,7 +5,7 @@ import Math
 from collections import defaultdict
 from AvatarInputHandler.aih_constants import CTRL_MODE_NAME, CTRL_MODES
 from constants import AVATAR_SUBFILTERS, FILTER_INTERPOLATION_TYPE, VEHICLE_SETTING
-from debug_utils import LOG_DEBUG_DEV
+from debug_utils import LOG_DEBUG_DEV, LOG_ERROR
 from helpers.CallbackDelayer import CallbackDelayer
 
 class ObservedVehicleData(CallbackDelayer):

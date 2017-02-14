@@ -1,13 +1,11 @@
 # Embedded file name: scripts/client/gui/shared/stronghold/stronghold_provider.py
-from adisp import async, process
+from adisp import process
 from gui.LobbyContext import g_lobbyContext
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui import DialogsInterface
-from gui import SystemMessages
 from gui.wgnc.proxy_data import ShowInBrowserItem
+from gui.wgnc.actions import OpenInternalBrowser
 from gui.Scaleform.framework import g_entitiesFactories
-from gui.Scaleform.locale.SYSTEM_MESSAGES import SYSTEM_MESSAGES as I18N_SM
-from gui.shared.notifications import NotificationPriorityLevel
 from gui.shared import g_eventBus, events, EVENT_BUS_SCOPE
 from gui.prb_control.settings import FUNCTIONAL_FLAG
 from gui.prb_control.entities.base.ctx import LeavePrbAction
@@ -36,6 +34,7 @@ class ClientStrongholdProvider(IGlobalListener):
         g_eventBus.addListener(events.StrongholdEvent.STRONGHOLD_DEACTIVATED, self.__onStrongholdsDeactivate, EVENT_BUS_SCOPE.FORT)
         from gui.Scaleform.daapi.view.lobby.strongholds import createStrongholdsWebHandlers
         ShowInBrowserItem.addWebHandler('stronghold', createStrongholdsWebHandlers(True))
+        OpenInternalBrowser.addWebHandler('stronghold', createStrongholdsWebHandlers(True))
 
     def stop(self):
         self.stopGlobalListening()
@@ -43,6 +42,7 @@ class ClientStrongholdProvider(IGlobalListener):
         g_eventBus.removeListener(events.StrongholdEvent.STRONGHOLD_ACTIVATED, self.__onStrongholdsActivate, EVENT_BUS_SCOPE.FORT)
         g_eventBus.removeListener(events.StrongholdEvent.STRONGHOLD_DEACTIVATED, self.__onStrongholdsDeactivate, EVENT_BUS_SCOPE.FORT)
         ShowInBrowserItem.removeWebHandler('stronghold')
+        OpenInternalBrowser.removeWebHandler('stronghold')
 
     def onPrbEntitySwitched(self):
         self.__checkSwitch()

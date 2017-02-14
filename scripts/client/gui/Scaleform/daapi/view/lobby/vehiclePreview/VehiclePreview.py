@@ -31,7 +31,7 @@ from gui.shared.tooltips.formatters import getActionPriceData
 from gui.shared.utils.functions import makeTooltip
 from helpers import dependency
 from helpers.i18n import makeString as _ms
-from skeletons.gui.game_control import IVehicleComparisonBasket, ITradeInController
+from skeletons.gui.game_control import IVehicleComparisonBasket, ITradeInController, IRestoreController
 CREW_INFO_TAB_ID = 'crewInfoTab'
 FACT_SHEET_TAB_ID = 'factSheetTab'
 TAB_ORDER = [FACT_SHEET_TAB_ID, CREW_INFO_TAB_ID]
@@ -52,6 +52,7 @@ class VehiclePreview(LobbySubView, VehiclePreviewMeta):
     __background_alpha__ = 0.0
     comparisonBasket = dependency.descriptor(IVehicleComparisonBasket)
     tradeIn = dependency.descriptor(ITradeInController)
+    restores = dependency.descriptor(IRestoreController)
 
     def __init__(self, ctx = None):
         super(VehiclePreview, self).__init__(ctx)
@@ -72,6 +73,7 @@ class VehiclePreview(LobbySubView, VehiclePreviewMeta):
         g_currentPreviewVehicle.onChanged += self.__onVehicleChanged
         self.comparisonBasket.onChange += self.__onCompareBasketChanged
         self.comparisonBasket.onSwitchChange += self.__updateHeaderData
+        self.restores.onRestoreChangeNotify += self.__onRestoreChanged
         if g_currentPreviewVehicle.isPresent():
             self.__updateHeaderData()
             self.__fullUpdate()
@@ -87,6 +89,7 @@ class VehiclePreview(LobbySubView, VehiclePreviewMeta):
         g_currentPreviewVehicle.onChanged -= self.__onVehicleChanged
         self.comparisonBasket.onChange -= self.__onCompareBasketChanged
         self.comparisonBasket.onSwitchChange -= self.__updateHeaderData
+        self.restores.onRestoreChangeNotify -= self.__onRestoreChanged
         g_currentPreviewVehicle.selectNoVehicle()
 
     def closeView(self):
@@ -152,6 +155,11 @@ class VehiclePreview(LobbySubView, VehiclePreviewMeta):
     def __onInventoryChanged(self, *arg):
         if not g_currentPreviewVehicle.isPresent():
             event_dispatcher.selectVehicleInHangar(self.__vehicleCD)
+
+    def __onRestoreChanged(self, vehicles):
+        if g_currentPreviewVehicle.isPresent():
+            if self.__vehicleCD in vehicles:
+                self.__updateBtnState()
 
     def __updateStatus(self):
         if g_currentPreviewVehicle.hasModulesToSelect():

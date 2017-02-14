@@ -875,7 +875,7 @@ class _PreBattleDispatcher(ListenersCollection):
         Returns:
             initialization result as flags
         """
-        return self.__setEntity(CreatePrbEntityCtx())
+        return self.__setEntity(CreatePrbEntityCtx(flags=FUNCTIONAL_FLAG.DEFAULT))
 
     def __validateJoinOp(self, ctx):
         """

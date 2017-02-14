@@ -1,16 +1,17 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/strongholds/web_handlers.py
 import time
 from adisp import process
-from constants import PREBATTLE_TYPE, TOKEN_TYPE
+from constants import PREBATTLE_TYPE, TOKEN_TYPE, JOIN_FAILURE
 from helpers import dependency
 from ConnectionManager import connectionManager
 from debug_utils import LOG_CURRENT_EXCEPTION
 from functools import partial
 from web_client_api import WebCommandException
-from web_client_api.commands.window_navigator import OpenClanCardCommand, OpenProfileCommand, OpenBrowserCommand
+from web_client_api.commands.window_navigator import OpenClanCardCommand, OpenProfileCommand, OpenBrowserCommand, CloseWindowCommand
 from web_client_api.commands.strongholds import StrongholdsJoinBattleCommand
 from web_client_api.commands import createNotificationHandler, createSoundHandler, createOpenWindowHandler, createCloseWindowHandler, createOpenTabHandler, createStrongholdsBattleHandler, createRequestHandler, instantiateObject
 from gui import DialogsInterface
+from gui.prb_control.formatters import messages
 from gui.prb_control.entities.base.ctx import PrbAction
 from gui.prb_control.settings import PREBATTLE_ACTION_NAME
 from gui.prb_control.dispatcher import g_prbLoader
@@ -29,7 +30,7 @@ from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui.Scaleform.genConsts.FORTIFICATION_ALIASES import FORTIFICATION_ALIASES
 from skeletons.gui.game_control import IBrowserController, IReloginController
 
-def createStrongholdsWebHandlers(includeCloseBrowser = False, onBrowserOpen = None):
+def createStrongholdsWebHandlers(includeCloseBrowser = False, onBrowserOpen = None, onBrowserClose = None):
     """
     Creates list of stronghold specific web handlers
     :param includeCloseBrowser: - whether 'close_browser' handler to be included
@@ -38,6 +39,7 @@ def createStrongholdsWebHandlers(includeCloseBrowser = False, onBrowserOpen = No
     handlers = [createNotificationHandler(handleNotificationCommand),
      createSoundHandler(handleSoundCommand),
      createOpenWindowHandler(partial(handleOpenWindowCommand, onBrowserOpen)),
+     createCloseWindowHandler(partial(handleCloseWindowCommand, onBrowserClose)),
      createOpenTabHandler(handleOpenTabCommand),
      createStrongholdsBattleHandler(handleStrongholdsBattleCommand),
      createRequestHandler(handleRequestCommand)]
@@ -92,13 +94,16 @@ def handleOpenWindowCommand(onBrowserOpen, command, ctx):
         raise WebCommandException('Unknown window: %s!' % command.window_id)
 
 
-def handleCloseWindowCommand(command, ctx):
+def handleCloseWindowCommand(onBrowserClose, command, ctx):
     """
     Closes window by id
     """
+    _CloseWindowSubCommands = {'browser': (CloseWindowCommand, partial(_closeBrowser, onBrowserClose))}
     if command.window_id in _CloseWindowSubCommands:
-        handler = _CloseWindowSubCommands[command.window_id]
-        handler(command, ctx)
+        cls, handler = _CloseWindowSubCommands[command.window_id]
+        command.custom_parameters = {'window_id': command.window_id}
+        subCommand = instantiateObject(cls, command.custom_parameters)
+        handler(subCommand, ctx)
     else:
         raise WebCommandException('Unknown window: %s!' % command.window_id)
 
@@ -180,14 +185,15 @@ def _loadBrowser(onBrowserOpen, url, title, width, height, isModal, showRefresh,
     browserCtrl = dependency.instance(IBrowserController)
     browserId = yield browserCtrl.load(url=url, title=title, browserSize=(width, height), isModal=isModal, showActionBtn=showRefresh, showCreateWaiting=showCreateWaiting, handlers=createStrongholdsWebHandlers(True))
     browser = browserCtrl.getBrowser(browserId)
-    if browser:
+    if browser is not None:
         browser.ignoreKeyEvents = True
-    if onBrowserOpen:
+    if onBrowserOpen is not None:
         alias = getViewName(VIEW_ALIAS.BROWSER_WINDOW_MODAL if isModal else VIEW_ALIAS.BROWSER_WINDOW, browserId)
         onBrowserOpen(alias)
+    return
 
 
-def _closeBrowser(command, ctx):
+def _closeBrowser(onBrowserClose, command, ctx):
     """
     Closes current browser window
     """
@@ -200,10 +206,11 @@ def _closeBrowser(command, ctx):
                 browserWindow.destroy()
             else:
                 raise WebCommandException("Browser window can't be found!")
+    if onBrowserClose is not None:
+        onBrowserClose()
     return
 
 
-_CloseWindowSubCommands = {'browser': _closeBrowser}
 _OpenTabInfo = {'hangar': VIEW_ALIAS.LOBBY_HANGAR}
 
 def _openList():
@@ -227,7 +234,12 @@ def _battleChosen():
 
 @process
 def _doBattleChosen(dispatcher):
-    yield dispatcher.create(CreateUnitCtx(PREBATTLE_TYPE.EXTERNAL, waitingID='prebattle/create'))
+
+    def onTimeout():
+        pushMessage(messages.getJoinFailureMessage(JOIN_FAILURE.TIME_OUT), type=SM_TYPE.Error)
+        dispatcher.restorePrevious()
+
+    yield dispatcher.create(CreateUnitCtx(PREBATTLE_TYPE.EXTERNAL, waitingID='prebattle/create', onTimeoutCallback=onTimeout))
 
 
 @process

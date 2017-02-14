@@ -192,7 +192,7 @@ class TechnicalMaintenance(TechnicalMaintenanceMeta):
             if module in selectedItems:
                 index = selectedItems.index(module)
                 priceCurrency = currencies[index] or Currency.CREDITS
-                if module not in installedItems:
+                if inventoryCount and module not in installedItems:
                     inventoryCount -= 1
             else:
                 priceCurrency = module.getBuyPriceCurrency()

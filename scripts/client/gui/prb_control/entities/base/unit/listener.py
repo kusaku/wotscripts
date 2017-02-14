@@ -355,3 +355,10 @@ class IStrongholdListener(IPrbListener):
 
     def onUpdateAll(self):
         pass
+
+    def onCommanderIsReady(self, isReady):
+        """
+        Args:
+            isReady: is Commander in ready state
+        """
+        pass

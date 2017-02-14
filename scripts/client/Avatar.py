@@ -147,15 +147,22 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager, AvatarOb
         CombatEquipmentManager.__init__(self)
         AvatarObserver.__init__(self)
         if not BattleReplay.isPlaying():
-            self.intUserSettings = Account.g_accountRepository.intUserSettings
             self.syncData = AvatarSyncData.AvatarSyncData()
             self.syncData.setAvatar(self)
-            self.intUserSettings.setProxy(self, self.syncData)
-            self.prebattleInvitations = Account.g_accountRepository.prebattleInvitations
+            repository = Account.g_accountRepository
+            if repository is not None:
+                self.intUserSettings = repository.intUserSettings
+                if self.intUserSettings is not None:
+                    self.intUserSettings.setProxy(self, self.syncData)
+                self.prebattleInvitations = repository.prebattleInvitations
+            else:
+                self.intUserSettings = None
+                self.prebattleInvitations = None
         else:
             self.intUserSettings = None
             self.prebattleInvitations = ClientInvitations.ReplayClientInvitations(g_playerEvents)
-        self.prebattleInvitations.setProxy(self)
+        if self.prebattleInvitations is not None:
+            self.prebattleInvitations.setProxy(self)
         self.__rangeStreamIDCallbacks = RangeStreamIDCallbacks()
         self.__rangeStreamIDCallbacks.addRangeCallback((STREAM_ID_CHAT_MIN, STREAM_ID_CHAT_MAX), '_ClientChat__receiveStreamedData')
         self.__onCmdResponse = {}
@@ -178,6 +185,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager, AvatarOb
         self.__disableRespawnMode = False
         self.__flockMangager = FlockManager.getManager()
         self.gunRotator = None
+        self.inputHandler = None
         self.__vehicles = set()
         self.__consistentMatrices = AvatarPositionControl.ConsistentMatrices()
         self.__ownVehicleMProv = self.__consistentMatrices.ownVehicleMatrix
@@ -234,7 +242,8 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager, AvatarOb
              0.0,
              1.0]
             gas_attack.initAttackManager(self.arena)
-            self.guiSessionProvider.start(BattleSessionSetup(avatar=self, replayCtrl=BattleReplay.g_replayCtrl, gasAttackMgr=gas_attack.gasAttackManager()))
+            if not g_offlineMapCreator.Active():
+                self.guiSessionProvider.start(BattleSessionSetup(avatar=self, replayCtrl=BattleReplay.g_replayCtrl, gasAttackMgr=gas_attack.gasAttackManager()))
             self.__fireInVehicle = False
             self.__forcedGuiCtrlModeFlags = GUI_CTRL_MODE_FLAG.CURSOR_DETACHED
             self.__cruiseControlMode = _CRUISE_CONTROL_MODE.NONE
@@ -275,7 +284,8 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager, AvatarOb
             self.__flockMangager.start(self)
             appearance_cache.init(self.arena)
             self.__gunDamagedShootSound = SoundGroups.g_instance.getSound2D('gun_damaged')
-            self.cell.switchObserverFPV(False)
+            if not g_offlineMapCreator.Active():
+                self.cell.switchObserverFPV(False)
             return
 
     def loadPrerequisites(self, prereqs):
@@ -419,6 +429,8 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager, AvatarOb
             return
         self.__initProgress |= _INIT_STEPS.ENTERED_WORLD
         self.__onInitStepCompleted()
+        if g_offlineMapCreator.Active():
+            self.playerVehicleID = 0
         if self.playerVehicleID != 0:
             if not BattleReplay.isPlaying():
                 self.set_playerVehicleID(0)
@@ -1264,15 +1276,15 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager, AvatarOb
 
     def onBattleEvents(self, events):
         LOG_DEBUG_DEV('Battle events has been received: ', events)
-        if self.vehicle is not None and (self.vehicle.id == self.playerVehicleID or self.isObserver()):
+        observedVehID = self.guiSessionProvider.shared.vehicleState.getControllingVehicleID()
+        if self.isObserver() or observedVehID == self.playerVehicleID:
             self.guiSessionProvider.shared.feedback.handleBattleEvents(events)
-        return
 
     def battleEventsSummary(self, summary):
         LOG_DEBUG_DEV('Summary of battle events has been received:  data={}'.format(summary))
-        if self.vehicle is not None and (self.vehicle.id == self.playerVehicleID or self.isObserver()):
+        observedVehID = self.guiSessionProvider.shared.vehicleState.getControllingVehicleID()
+        if self.isObserver() or observedVehID == self.playerVehicleID:
             self.guiSessionProvider.shared.feedback.handleBattleEventsSummary(summary)
-        return
 
     def updateArena(self, updateType, argStr):
         self.arena.update(updateType, argStr)

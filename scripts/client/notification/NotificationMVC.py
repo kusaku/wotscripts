@@ -10,7 +10,6 @@ class _NotificationMVC:
         self.__model = None
         self.__alertsController = None
         self.__actionsHandlers = None
-        self.__actionsHandlers = None
         self.__unreadMessagesCounter = NotificationsCounter()
         return
 
@@ -28,12 +27,15 @@ class _NotificationMVC:
     def handleAction(self, typeID, entityID, action):
         self.__actionsHandlers.handleAction(self.__model, int(typeID), long(entityID), action)
 
-    def cleanUp(self):
+    def cleanUp(self, resetCounter = False):
         self.__alertsController.cleanUp()
         self.__actionsHandlers.cleanUp()
         self.__model.cleanUp()
         self.__alertsController = None
         self.__actionsHandlers = None
+        if resetCounter:
+            self.__unreadMessagesCounter.clear()
+            self.__unreadMessagesCounter = NotificationsCounter()
         self.__model = None
         return
 

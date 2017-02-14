@@ -4,20 +4,21 @@ from gui.shared.utils.decorators import ReprInjector
 from gui.prb_control.entities.base.unit.permissions import UnitPermissions
 from constants import CLAN_MEMBER_FLAGS
 
-@ReprInjector.simple(('_clanRoles', 'clanRoles'), ('_isLegionary', 'isLegionary'), ('_strongholdRoles', 'strongholdRoles'), ('_isInSlot', 'isInSlot'), ('_canStealLeadership', 'canStealLeadership'))
+@ReprInjector.simple(('_clanRoles', 'clanRoles'), ('_isLegionary', 'isLegionary'), ('_strongholdRoles', 'strongholdRoles'), ('_isInSlot', 'isInSlot'), ('_canStealLeadership', 'canStealLeadership'), ('_isFreezed', 'isFreezed'))
 
 class StrongholdPermissions(UnitPermissions):
 
-    def __init__(self, roles = 0, flags = UNIT_FLAGS.DEFAULT, isCurrentPlayer = False, isPlayerReady = False, hasLockedState = False, clanRoles = None, strongholdRoles = None, isLegionary = False, isInSlot = False, canStealLeadership = False):
+    def __init__(self, roles = 0, flags = UNIT_FLAGS.DEFAULT, isCurrentPlayer = False, isPlayerReady = False, hasLockedState = False, clanRoles = None, strongholdRoles = None, isLegionary = False, isInSlot = False, canStealLeadership = False, isFreezed = False):
         super(StrongholdPermissions, self).__init__(roles, flags, isCurrentPlayer, isPlayerReady, hasLockedState)
         self._clanRoles = clanRoles
         self._strongholdRoles = strongholdRoles
         self._isInSlot = isInSlot
         self._isLegionary = isLegionary
         self._canStealLeadership = canStealLeadership
+        self._isFreezed = isFreezed
 
-    def isNotInBattle(self):
-        return not self._flags.isInArena()
+    def isNotFreezed(self):
+        return not self._isFreezed
 
     def isClanLead(self):
         return self._clanRoles == CLAN_MEMBER_FLAGS.LEADER and not self._isLegionary
@@ -30,27 +31,27 @@ class StrongholdPermissions(UnitPermissions):
 
     def canStealLeadership(self):
         correctRole = self.isClanLead() or self.isClanSubLead()
-        return not self._isLegionary and correctRole and self.isNotInBattle() and self._canStealLeadership
+        return not self._isLegionary and correctRole and self.isNotFreezed() and self._canStealLeadership
 
     def canChangeLeadership(self):
-        return (not self._isLegionary or self.isCommander(self._roles)) and self.isNotInBattle()
+        return (not self._isLegionary or self.isCommander(self._roles)) and self.isNotFreezed()
 
     def canAssignToSlot(self, dbID):
-        return super(StrongholdPermissions, self).canAssignToSlot(dbID) and self.isNotInBattle()
+        return super(StrongholdPermissions, self).canAssignToSlot(dbID) and self.isNotFreezed()
 
     def canReassignToSlot(self):
-        return super(StrongholdPermissions, self).canReassignToSlot() and self.isNotInBattle()
+        return super(StrongholdPermissions, self).canReassignToSlot() and self.isNotFreezed()
 
     def canSetVehicle(self):
-        canChange = self.isNotInBattle() or not self._isInSlot
+        canChange = self.isNotFreezed() or not self._isInSlot
         return super(StrongholdPermissions, self).canSetVehicle() and canChange
 
     def canChangeVehicle(self):
-        canChange = self.isNotInBattle() or not self._isInSlot
+        canChange = self.isNotFreezed() or not self._isInSlot
         return super(StrongholdPermissions, self).canChangeVehicle() and canChange
 
     def canChangeConsumables(self):
-        if not self.isCommander(self._roles):
+        if not self.isCommander(self._roles) or not self.isNotFreezed():
             return False
         else:
             if not self._isLegionary:
@@ -70,4 +71,4 @@ class StrongholdPermissions(UnitPermissions):
         return not self._isLegionary
 
     def canKick(self):
-        return self.isCommander(self._roles) and not self._isLegionary
+        return self.isCommander(self._roles) and not self._isLegionary and not self._isFreezed

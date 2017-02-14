@@ -368,7 +368,7 @@ class SoundGroups(object):
         from gui.app_loader import g_appLoader
         g_appLoader.onGUISpaceEntered -= self.__onGUISpaceEntered
         player = BigWorld.player()
-        if player:
+        if player is not None and player.inputHandler is not None:
             player.inputHandler.onCameraChanged -= self.__onCameraChanged
         self.onVolumeChanged.clear()
         if self.__muteCallbackID is not None:

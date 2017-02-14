@@ -43,11 +43,14 @@ class HintsManager(object):
         return
 
     def stopOnceOnlyHint(self, itemID):
-        hint = self._data.hintForItem(itemID)
-        if hint is not None:
-            self._data.markAsShown(hint)
-            self.settingsCore.serverSettings.setOnceOnlyHintsSettings({hint['hintID']: 1})
-        return
+        if self._data is None:
+            return
+        else:
+            hint = self._data.hintForItem(itemID)
+            if hint is not None:
+                self._data.markAsShown(hint)
+                self.settingsCore.serverSettings.setOnceOnlyHintsSettings({hint['hintID']: 1})
+            return
 
     def __loadHintsData(self):
         LOG_DEBUG('Hints are loading')

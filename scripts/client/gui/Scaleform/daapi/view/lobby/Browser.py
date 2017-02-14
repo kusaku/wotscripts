@@ -110,9 +110,10 @@ class Browser(BrowserMeta):
         self.__isLoaded = self.__isLoaded and isLoaded
         self.__httpStatusCode = httpStatusCode
 
-    def __onLoadingStateChange(self, isLoading):
+    def __onLoadingStateChange(self, isLoading, showLoading):
         if isLoading:
-            self.as_loadingStartS()
+            if showLoading:
+                self.as_loadingStartS()
         elif not self.__isLoaded:
             self.showDataUnavailableView()
         elif self.__httpStatusCode and self.__httpStatusCode >= 400:

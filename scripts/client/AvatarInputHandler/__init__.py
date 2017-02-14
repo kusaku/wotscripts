@@ -8,7 +8,6 @@ import DynamicCameras.ArcadeCamera
 import DynamicCameras.SniperCamera
 import DynamicCameras.StrategicCamera
 import FalloutDeathMode
-import GUI
 import Keys
 import MapCaseMode
 import Math
@@ -476,7 +475,6 @@ class AvatarInputHandler(CallbackDelayer, ComponentSystem):
                         player.positionControl.bindToVehicle(True, self.__observerVehicle)
                     else:
                         player.positionControl.bindToVehicle(True)
-            if player is not None:
                 newAutoRotationMode = self.__curCtrl.getPreferredAutorotationMode()
                 if newAutoRotationMode is not None:
                     if prevCtrl.getPreferredAutorotationMode() is None:
@@ -491,6 +489,9 @@ class AvatarInputHandler(CallbackDelayer, ComponentSystem):
                         self.__isAutorotation = self.__prevModeAutorotation
                         BigWorld.player().enableOwnVehicleAutorotation(self.__isAutorotation)
                     self.__prevModeAutorotation = None
+                if not isObserverMode and self.__ctrlModeName in (_CTRL_MODE.ARCADE, _CTRL_MODE.SNIPER):
+                    lockEnabled = prevCtrl.getAimingMode(AIMING_MODE.TARGET_LOCK)
+                    self.__curCtrl.setAimingMode(lockEnabled, AIMING_MODE.TARGET_LOCK)
             self.__targeting.onRecreateDevice()
             self.__curCtrl.setGUIVisible(self.__isGUIVisible)
             vehicle = player.getVehicleAttached()

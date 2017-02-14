@@ -150,12 +150,15 @@ def _createEfficiencyInfoFromFeedbackEvent(event):
 
 class PersonalEfficiencyController(IBattleController):
 
-    def __init__(self, feedback):
+    def __init__(self, arenaDP, feedback, vehStateCtrl):
         super(PersonalEfficiencyController, self).__init__()
+        self.__arenaDP = weakref.proxy(arenaDP)
         self.__feedback = weakref.proxy(feedback)
+        self.__vehStateCtrl = weakref.proxy(vehStateCtrl)
         self.__eManager = Event.EventManager()
         self.onTotalEfficiencyUpdated = Event.Event(self.__eManager)
         self.onPersonalEfficiencyReceived = Event.Event(self.__eManager)
+        self.onPersonalEfficiencyLogSynced = Event.Event(self.__eManager)
         self.__totalEfficiency = defaultdict(int)
         self.__efficiencyLog = deque(maxlen=_LOG_MAX_LEN)
 
@@ -165,9 +168,12 @@ class PersonalEfficiencyController(IBattleController):
     def startControl(self):
         self.__feedback.onPlayerFeedbackReceived += self._onPlayerFeedbackReceived
         self.__feedback.onPlayerSummaryFeedbackReceived += self._onPlayerSummaryFeedbackReceived
+        self.__vehStateCtrl.onVehicleControlling += self._onVehicleChanged
 
     def stopControl(self):
+        self.__arenaDP = None
         self.__feedback = None
+        self.__vehStateCtrl = None
         self.__eManager.clear()
         self.__eManager = None
         return
@@ -223,6 +229,11 @@ class PersonalEfficiencyController(IBattleController):
         self.__totalEfficiency[_ETYPE.ASSIST_DAMAGE] = event.getTotalAssistDamage()
         self.onTotalEfficiencyUpdated(dict(self.__totalEfficiency))
 
+    def _onVehicleChanged(self, *args, **kwargs):
+        if self.__arenaDP.isPlayerObserver():
+            self.__efficiencyLog.clear()
+            self.onPersonalEfficiencyLogSynced()
 
-def createEfficiencyCtrl(setup, feedback):
-    return PersonalEfficiencyController(feedback)
+
+def createEfficiencyCtrl(setup, feedback, vehStateCtrl):
+    return PersonalEfficiencyController(setup.arenaDP, feedback, vehStateCtrl)

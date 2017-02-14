@@ -379,7 +379,8 @@ class BattleReplay():
          CommandMapping.CMD_MOVE_FORWARD_SPEC,
          CommandMapping.CMD_MOVE_BACKWARD,
          CommandMapping.CMD_ROTATE_LEFT,
-         CommandMapping.CMD_ROTATE_RIGHT), key):
+         CommandMapping.CMD_ROTATE_RIGHT,
+         CommandMapping.CMD_CM_VEHICLE_SWITCH_AUTOROTATION), key):
             suppressCommand = True
         if suppressCommand:
             if isVideoCamera:

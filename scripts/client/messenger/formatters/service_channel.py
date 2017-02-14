@@ -12,7 +12,6 @@ from FortifiedRegionBase import FORT_ATTACK_RESULT, NOT_ACTIVATED
 from adisp import async, process
 from chat_shared import decompressSysMessage
 from debug_utils import LOG_ERROR, LOG_WARNING, LOG_CURRENT_EXCEPTION, LOG_DEBUG
-from gui.Scaleform.locale.MENU import MENU
 from gui.Scaleform.locale.ITEM_TYPES import ITEM_TYPES
 from gui.Scaleform.locale.MENU import MENU
 from gui.Scaleform.locale.SYSTEM_MESSAGES import SYSTEM_MESSAGES
@@ -803,9 +802,9 @@ class InvoiceReceivedFormatter(WaitItemsSyncFormatter):
             tankman = Tankman(tankmenDescr)
             spec.append('{} {} {}'.format(tankman.fullUserName, tankman.roleUserName, getShortUserName(tankman.vehicleNativeDescr.type)))
 
-        specStr = ' ({})'.format(' '.join(spec)) if spec else ''
+        specStr = ' ({})'.format(', '.join(spec)) if spec else ''
         if not len(freeXP) == 1:
-            raise AssertionError
+            raise AssertionError('Invoice has the same amount of experience to all tankmen')
             freeXP = freeXP.pop()
             template = freeXP > 0 and 'tankmenFreeXpAccruedInvoiceReceived'
         else:

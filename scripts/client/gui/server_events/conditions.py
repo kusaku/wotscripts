@@ -599,6 +599,8 @@ class Token(_Requirement):
     def _format(self, svrEvents, event = None):
         result = []
         eventScope = [event] if event is not None else svrEvents.values()
+        tokensCountNeed = self.getNeededCount()
+        isAvailable = event is None or event.isCompleted() or self.isAvailable()
         for e in eventScope:
             if e.getType() not in _TOKEN_REQUIREMENT_QUESTS:
                 continue
@@ -607,13 +609,13 @@ class Token(_Requirement):
                 continue
             ungroupedResult = []
             groupedResult = {}
+            if e.getType() not in (_ET.TOKEN_QUEST, _ET.PERSONAL_QUEST, _ET.BATTLE_QUEST):
+                counterDescr = i18n.makeString('#quests:quests/table/battlesLeft')
+            else:
+                counterDescr = None
             for qID in children[self._id]:
                 quest = svrEvents.get(qID)
                 if quest is not None:
-                    tokensCountNeed = self.getNeededCount()
-                    isAvailable = True
-                    if event is not None and not event.isCompleted():
-                        isAvailable = self.isAvailable()
                     battlesLeft = None
                     if tokensCountNeed > 1:
                         label = i18n.makeString('#quests:details/requirements/token/N', count=BigWorld.wg_getIntegralFormat(tokensCountNeed), questName=quest.getUserName())
@@ -621,12 +623,9 @@ class Token(_Requirement):
                             battlesLeft = tokensCountNeed - self.__getTokensCount()
                     else:
                         label = i18n.makeString('#quests:details/requirements/token', questName=quest.getUserName())
-                    counterDescr = None
-                    if e.getType() not in (_ET.TOKEN_QUEST, _ET.PERSONAL_QUEST, _ET.BATTLE_QUEST):
-                        counterDescr = i18n.makeString('#quests:quests/table/battlesLeft')
                     groupID = quest.getGroupID()
                     group = self.__getGroup(groupID)
-                    if group is not None and tokensCountNeed > 1 and self.__getUniqueGroupTokensCount(svrEvents, group) == 1:
+                    if group is not None and tokensCountNeed > 1 and group.withManyTokenSources(svrEvents):
                         groupName = group.getUserName()
                         label = i18n.makeString('#quests:details/requirements/group/token/N', groupName=groupName, count=BigWorld.wg_getIntegralFormat(tokensCountNeed))
                         groupedResult[groupID, group.getPriority()] = formatters.packTextBlock(label, isAvailable=isAvailable, counterValue=battlesLeft, counterDescr=counterDescr)
@@ -644,15 +643,6 @@ class Token(_Requirement):
 
     def __getTokensCount(self):
         return self.eventsCache.questsProgress.getTokenCount(self._id)
-
-    def __getUniqueGroupTokensCount(self, svrEvents, group):
-        uniqueTokens = set()
-        for qID in group.getGroupEvents():
-            quest = svrEvents.get(qID)
-            if quest is not None:
-                uniqueTokens |= set(quest.getChildren().keys())
-
-        return len(uniqueTokens)
 
     def __getGroup(self, groupID):
         return self.eventsCache.getGroups().get(groupID, None)

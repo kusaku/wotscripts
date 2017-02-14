@@ -217,13 +217,13 @@ class _EventInfo(object):
 
     def _getUnlockedTokens(self):
         childQuestsNames = self.event.getParentsName()
-        if len(childQuestsNames) == 1:
+        if len(childQuestsNames) == 1 and len(childQuestsNames.values()[0]) == 1:
             questTokenName = childQuestsNames.values()[0][0]
             parentTokenName = self.event.getParents().values()[0][0]
             return {'label': formatters.formatGold(TOOLTIPS.AWARDITEM_BATTLETOKEN_ONE_BODY, name=questTokenName),
              'linkID': parentTokenName,
              'isNotAvailable': False}
-        elif len(childQuestsNames) > 1:
+        elif len(childQuestsNames) > 0:
             return {'label': formatters.formatGold(TOOLTIPS.AWARDITEM_BATTLETOKEN_DESCRIPTION),
              'linkID': None,
              'isNotAvailable': False}

@@ -21,13 +21,18 @@ class _GainResourceInBattleItem(base.StatsItem):
     def _convert(self, value, reusable):
         personal = reusable.personal
         baseRecords, premiumRecords = findFirst(None, operator.methodcaller(self.__method)(personal), (None, None))[:2]
+        resource = 0
         if baseRecords is not None and not personal.avatar.hasPenalties():
             if reusable.isPostBattlePremium:
-                resource = premiumRecords.getRecord(*self.__records)
+                records = premiumRecords
             else:
-                resource = baseRecords.getRecord(*self.__records)
-        else:
-            resource = 0
+                records = baseRecords
+            for append, name in self.__records:
+                if append:
+                    resource += records.getRecord(name)
+                else:
+                    resource -= records.getRecord(name)
+
         return BigWorld.wg_getIntegralFormat(resource)
 
 
@@ -35,14 +40,14 @@ class GainCreditsInBattleItem(_GainResourceInBattleItem):
     __slots__ = ()
 
     def __init__(self, field, *path):
-        super(GainCreditsInBattleItem, self).__init__(('credits', 'originalCreditsToDraw'), 'getMoneyRecords', field, *path)
+        super(GainCreditsInBattleItem, self).__init__(((True, 'credits'), (True, 'originalCreditsToDraw')), 'getMoneyRecords', field, *path)
 
 
 class GainXPInBattleItem(_GainResourceInBattleItem):
     __slots__ = ()
 
     def __init__(self, field, *path):
-        super(GainXPInBattleItem, self).__init__(('xp',), 'getXPRecords', field, *path)
+        super(GainXPInBattleItem, self).__init__(((True, 'xp'), (False, 'premiumVehicleXPFactor100')), 'getXPRecords', field, *path)
 
 
 class GainFortResourceInBattleItem(base.StatsItem):
@@ -100,7 +105,7 @@ class BaseXPBlock(base.StatsBlock):
     def setRecord(self, result, reusable):
         isPremuim = not reusable.isPostBattlePremium and reusable.canResourceBeFaded
         for records in reusable.personal.getBaseXPRecords():
-            value = style.makeXpLabel(records.getRecord('xp'), canBeFaded=isPremuim)
+            value = style.makeXpLabel(records.getRecord('xp') - records.getRecord('premiumVehicleXPFactor100'), canBeFaded=isPremuim)
             self.addNextComponent(base.DirectStatsItem('', value))
 
 
@@ -112,10 +117,11 @@ class PremiumXPBlock(base.StatsBlock):
         isDiffShow = reusable.canUpgradeToPremium
         for records in reusable.personal.getXPRecords():
             baseXP, premiumXP = records[:2]
+            xp = premiumXP.getRecord('xp') - premiumXP.getRecord('premiumVehicleXPFactor100')
             if isDiffShow:
-                value = premiumXP.getRecord('xp') - baseXP.getRecord('xp')
+                value = xp - baseXP.getRecord('xp')
             else:
-                value = premiumXP.getRecord('xp')
+                value = xp
             value = style.makeXpLabel(value, canBeFaded=canBeFaded, isDiff=isDiffShow)
             self.addNextComponent(base.DirectStatsItem('', value))
 
@@ -303,8 +309,8 @@ class MoneyDetailsBlock(_EconomicsDetailsBlock):
         autoGold = autoRecords.getRecord('autoLoadGold', 'autoEquipGold')
         columns = {'column1': style.makeCreditsLabel(baseCredits.getRecord('credits', 'originalCreditsToDraw') + autoCredits, canBeFaded=baseCanBeFaded),
          'column3': style.makeCreditsLabel(premiumCredits.getRecord('credits', 'originalCreditsToDraw') + autoCredits, canBeFaded=premiumCanBeFaded),
-         'column2': style.makeGoldLabel(goldRecords.getRecord('gold') + autoGold, canBeFaded=baseCanBeFaded),
-         'column4': style.makeGoldLabel(goldRecords.getRecord('gold') + autoGold, canBeFaded=premiumCanBeFaded)}
+         'column2': style.makeGoldLabel(goldRecords.getRecord('gold') + autoGold, canBeFaded=not self.isPremium),
+         'column4': style.makeGoldLabel(goldRecords.getRecord('gold') + autoGold, canBeFaded=self.isPremium)}
         self._addStatsRow('total', htmlKey='lightText', **columns)
 
 

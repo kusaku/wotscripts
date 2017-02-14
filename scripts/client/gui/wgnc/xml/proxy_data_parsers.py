@@ -1,6 +1,7 @@
 # Embedded file name: scripts/client/gui/wgnc/xml/proxy_data_parsers.py
 from debug_utils import LOG_ERROR
 from gui.wgnc import proxy_data
+from gui.wgnc.wgnc_helpers import parseSize
 from gui.wgnc.xml.shared_parsers import ParsersCollection, SectionParser
 
 class _ClanApplicationParser(SectionParser):
@@ -139,24 +140,12 @@ class _ShowInBrowserParser(SectionParser):
         if not url:
             LOG_ERROR('WGNC show_in_browser item has no URL')
             return
-        else:
-            sizeStr = section.readString('size')
-            if sizeStr:
-                try:
-                    size = map(int, sizeStr.split('x'))
-                    if len(size) != 2:
-                        raise ValueError
-                except ValueError:
-                    LOG_ERROR('WGNC show_in_browser item has wrong browser size')
-                    size = None
-
-            else:
-                size = None
-            title = section.readString('title')
-            titleKey = section.readString('title_key')
-            showRefresh = section.readBool('show_refresh')
-            webClientHandler = section.readString('web_client_handler')
-            return proxy_data.ShowInBrowserItem(url, size, title, showRefresh, webClientHandler, titleKey=titleKey)
+        size = parseSize(section.readString('size'))
+        title = section.readString('title')
+        titleKey = section.readString('title_key')
+        showRefresh = section.readBool('show_refresh')
+        webClientHandler = section.readString('web_client_handler')
+        return proxy_data.ShowInBrowserItem(url, size, title, showRefresh, webClientHandler, titleKey=titleKey)
 
 
 class _ProxyDataItemsParser(ParsersCollection):

@@ -113,7 +113,7 @@ class DetailedEngineState(svarog_script.py_component.Component, CallbackDelayer)
     def activate(self):
         super(DetailedEngineState, self).activate()
         BigWorld.player().arena.onPeriodChange += self.__arenaPeriodChanged
-        if self.__prevArenaPeriod == ARENA_PERIOD.BATTLE or self.__prevArenaPeriod == ARENA_PERIOD.PREBATTLE:
+        if self.__prevArenaPeriod == ARENA_PERIOD.BATTLE or self.__prevArenaPeriod == ARENA_PERIOD.PREBATTLE or BigWorld.player().arena.period == ARENA_PERIOD.BATTLE:
             self.delayCallback(0.1, self.__startEngineFunc)
 
     def deactivate(self):

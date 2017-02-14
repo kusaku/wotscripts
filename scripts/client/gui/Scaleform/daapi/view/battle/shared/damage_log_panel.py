@@ -277,6 +277,7 @@ class _LogViewComponent(object):
         self.__efficiencyCtrl = None
         self.__arenaDP = None
         self.__logViewMode = _VIEW_MODE.SHOW_ALWAYS
+        self.__isVisible = True
         self.__contentMask = 0
         self.__recordStyle = _RECORD_STYLE.FULL
         return
@@ -294,6 +295,21 @@ class _LogViewComponent(object):
         self.__arenaDP = None
         return
 
+    def clear(self):
+        self.__setListProxy(self.__isVisible, bool(self.__recordStyle == _RECORD_STYLE.SHORT), [])
+
+    def invalidate(self):
+        if self.__logViewMode == _VIEW_MODE.SHOW_ALWAYS:
+            self.__isVisible = True
+            messages = self._getLogMessages(self.__contentMask)
+        elif self.__logViewMode == _VIEW_MODE.SHOW_BY_ALT_PRESS:
+            self.__isVisible = False
+            messages = self._getLogMessages(self.__contentMask)
+        else:
+            self.__isVisible = False
+            messages = []
+        self.__setListProxy(self.__isVisible, bool(self.__recordStyle == _RECORD_STYLE.SHORT), messages)
+
     def updateLog(self, contentMask = None, viewMode = None, recordStyle = _RECORD_STYLE.FULL):
         needUpdate = False
         if viewMode != self.__logViewMode:
@@ -306,16 +322,7 @@ class _LogViewComponent(object):
             self.__recordStyle = recordStyle
             needUpdate = True
         if needUpdate:
-            if self.__logViewMode == _VIEW_MODE.SHOW_ALWAYS:
-                isVisible = True
-                messages = self._getLogMessages(self.__contentMask)
-            elif self.__logViewMode == _VIEW_MODE.SHOW_BY_ALT_PRESS:
-                isVisible = False
-                messages = self._getLogMessages(self.__contentMask)
-            else:
-                isVisible = False
-                messages = []
-            self.__setListProxy(isVisible, bool(self.__recordStyle == _RECORD_STYLE.SHORT), messages)
+            self.invalidate()
 
     def addToLog(self, events):
         if self.__logViewMode == _VIEW_MODE.HIDE:
@@ -379,6 +386,7 @@ class DamageLogPanel(BattleDamageLogPanelMeta):
             self._invalidateContent()
             self.__efficiencyCtrl.onTotalEfficiencyUpdated += self._onTotalEfficiencyUpdated
             self.__efficiencyCtrl.onPersonalEfficiencyReceived += self._onEfficiencyReceived
+            self.__efficiencyCtrl.onPersonalEfficiencyLogSynced += self._onPersonalEfficiencyLogSynced
         self.settingsCore.onSettingsChanged += self._onSettingsChanged
         if self.__vehStateCtrl is not None:
             self.__vehStateCtrl.onPostMortemSwitched += self._onPostMortemSwitched
@@ -456,6 +464,10 @@ class DamageLogPanel(BattleDamageLogPanelMeta):
                 if isUpdated:
                     updateMethod(value)
 
+    def _onPersonalEfficiencyLogSynced(self):
+        self.__topLog.invalidate()
+        self.__bottomLog.invalidate()
+
     def _onEfficiencyReceived(self, events):
         self.__topLog.addToLog(events)
         self.__bottomLog.addToLog(events)
@@ -463,11 +475,12 @@ class DamageLogPanel(BattleDamageLogPanelMeta):
     def _invalidatePanelVisibility(self):
         """
         Updates common visibility. The damage panel is not displayed if the player observes
-        another vehicle.
+        another vehicle in Postmortem mode. The panel is always visible if the player is in
+        Observer mode (first person view).
         """
         isVisible = True
         if self.sessionProvider.getCtx().isPlayerObserver():
-            isVisible = False
+            isVisible = True
         elif self.__vehStateCtrl is None:
             isVisible = self.__isVisible
         elif self.__vehStateCtrl.isInPostmortem:

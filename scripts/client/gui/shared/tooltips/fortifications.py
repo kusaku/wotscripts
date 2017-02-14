@@ -199,7 +199,7 @@ class ToolTipRefSysDirects(ToolTipBaseData):
          FORTIFICATIONS.FORT2BUILDS_REWARDPOINT6)
         return _ms(infoMap[index])
 
-    def buildMapPoints(self, size, teamBasePositions, playerTeam):
+    def buildMapPoints(self, size, teamBasePositions, playerTeam, isCurrentBattle):
         minimapSize = 300
         bottomLeft, upperRight = size
         mapWidth, mapHeight = (upperRight - bottomLeft) / minimapSize
@@ -208,10 +208,16 @@ class ToolTipRefSysDirects(ToolTipBaseData):
         for team, points in enumerate(teamBasePositions, 1):
             for baseNumber, basePoint in enumerate(points.values(), 2):
                 pos = (basePoint[0], 0, basePoint[1])
+                if isCurrentBattle:
+                    pointType = 'base'
+                    color = 'blue' if team == playerTeam else 'red'
+                else:
+                    pointType = 'control'
+                    color = 'empty'
                 pointsData.append({'x': pos[0] / mapWidth - viewpoint.x * 0.5,
                  'y': pos[2] / mapHeight - viewpoint.y * 0.5,
-                 'pointType': 'base',
-                 'color': 'blue' if team == playerTeam else 'red',
+                 'pointType': pointType,
+                 'color': color,
                  'id': baseNumber if len(points) > 1 else 1})
 
         return pointsData
@@ -232,6 +238,7 @@ class ToolTipRefSysDirects(ToolTipBaseData):
             battleIndex = args[0]
             battleSeriesStatus = data.getBattleSeriesStatus()
             battle = battleSeriesStatus[battleIndex]
+            isCurrentBattle = battle.getCurrentBattle()
             mapVisible = battle.getMapId() is not None
             arenaType = ArenaType.g_cache[battle.getMapId()] if mapVisible else None
             if arenaType:
@@ -271,5 +278,5 @@ class ToolTipRefSysDirects(ToolTipBaseData):
                 toolTipData['mapTexture'] = RES_ICONS.getMapPath(arenaType.geometryName)
                 toolTipData['mapPoints'] = arenaType.controlPoints or []
                 playerTeam = 1 if g_clanCache.clanDBID == battle.getFirstClanId() else 2
-                toolTipData['mapPoints'] = self.buildMapPoints(arenaType.boundingBox, arenaType.teamBasePositions, playerTeam)
+                toolTipData['mapPoints'] = self.buildMapPoints(arenaType.boundingBox, arenaType.teamBasePositions, playerTeam, isCurrentBattle)
             return toolTipData

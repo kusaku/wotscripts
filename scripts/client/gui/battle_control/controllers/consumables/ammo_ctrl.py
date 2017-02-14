@@ -99,18 +99,20 @@ class IGunReloadingState(IGunReloadingSnapshot):
 class ReloadingTimeSnapshot(IGunReloadingSnapshot):
     """ The state of reloading is based on time.
     Server sends this time each time when gun reloading time is changed"""
-    __slots__ = ('_actualTime', '_baseTime', '_startTime')
+    __slots__ = ('_actualTime', '_baseTime', '_startTime', '_updateTime')
 
-    def __init__(self, actualTime = 0.0, baseTime = 0.0, startTime = 0.0):
+    def __init__(self, actualTime = 0.0, baseTime = 0.0, startTime = 0.0, updateTime = 0.0):
         super(ReloadingTimeSnapshot, self).__init__()
         self._actualTime = actualTime
         self._baseTime = baseTime
         self._startTime = startTime
+        self._updateTime = updateTime
 
     def clear(self):
         self._actualTime = 0.0
         self._baseTime = 0.0
         self._startTime = 0.0
+        self._updateTime = 0.0
 
     def getValueType(self):
         return GUN_RELOADING_VALUE_TYPE.TIME
@@ -125,14 +127,28 @@ class ReloadingTimeSnapshot(IGunReloadingSnapshot):
         return self._baseTime
 
     def getTimePassed(self):
-        if self.isReloading() and self._actualTime:
-            return max(0.0, BigWorld.serverTime() - self._startTime)
+        """
+        Returns time passed from start of reloading till current moment,
+        ignoring setGunReloadTime updates(e.g intuition perk was applied or
+        vehicle received crits, moves from one cell to another - in all these cases
+        server will send updates for actual/base time)
+        :return: int value
+        """
+        return self.__getTimePassedFrom(self._startTime)
+
+    def getTimeLeft(self):
+        """
+        Return time left, considering _updateTime(the last update of actual/base time)
+        :return: int value
+        """
+        if self.isReloading():
+            return max(0.0, self._actualTime - self.__getTimePassedFrom(self._updateTime))
         else:
             return 0.0
 
-    def getTimeLeft(self):
-        if self.isReloading():
-            return max(0.0, self._baseTime - self.getTimePassed())
+    def __getTimePassedFrom(self, specifiedTime):
+        if self.isReloading() and self._actualTime:
+            return max(0.0, BigWorld.timeExact() - specifiedTime)
         else:
             return 0.0
 
@@ -143,7 +159,7 @@ class ReloadingTimeState(ReloadingTimeSnapshot, IGunReloadingState):
     __slots__ = ()
 
     def getSnapshot(self):
-        return ReloadingTimeSnapshot(actualTime=self._actualTime, baseTime=self._baseTime, startTime=self._startTime)
+        return ReloadingTimeSnapshot(actualTime=self._actualTime, baseTime=self._baseTime, startTime=self._startTime, updateTime=self._updateTime)
 
     def setTimes(self, actualTime, baseTime):
         """ Sets new values of state.
@@ -158,11 +174,13 @@ class ReloadingTimeState(ReloadingTimeSnapshot, IGunReloadingState):
             if self._actualTime <= 0:
                 correction = baseTime - actualTime
                 if correction > _TIME_CORRECTION_THRESHOLD:
-                    self._startTime = BigWorld.serverTime() - correction
+                    self._startTime = BigWorld.timeExact() - correction
                 else:
-                    self._startTime = BigWorld.serverTime()
+                    self._startTime = BigWorld.timeExact()
+            self._updateTime = BigWorld.timeExact()
         else:
             self._startTime = 0.0
+            self._updateTime = 0.0
         self._actualTime = actualTime
         self._baseTime = baseTime
 

@@ -86,7 +86,6 @@ class ConsumablesPanel(ConsumablesPanelMeta, BattleGUIKeyHandler):
     def _dispose(self):
         self.__removeListeners()
         self.__keys.clear()
-        self.as_resetS()
         super(ConsumablesPanel, self)._dispose()
 
     def __addListeners(self):

@@ -36,12 +36,15 @@ class ProjectileMover(object):
         self.__ballistics = BigWorld.PyBallisticsSimulator(lambda start, end: BigWorld.player().arena.collideWithSpaceBB(start, end), self.__killProjectile, self.__deleteProjectile)
         if self.__ballistics is not None:
             self.__ballistics.setFixedBallisticsParams(self.__PROJECTILE_HIDING_TIME, self.__PROJECTILE_TIME_AFTER_DEATH, self.__AUTO_SCALE_DISTANCE, constants.SERVER_TICK_LENGTH)
-        BigWorld.player().inputHandler.onCameraChanged += self.__onCameraChanged
+        player = BigWorld.player()
+        if player is not None and player.inputHandler is not None:
+            player.inputHandler.onCameraChanged += self.__onCameraChanged
         return
 
     def destroy(self):
-        if BigWorld.player().inputHandler is not None:
-            BigWorld.player().inputHandler.onCameraChanged -= self.__onCameraChanged
+        player = BigWorld.player()
+        if player is not None and player.inputHandler is not None:
+            player.inputHandler.onCameraChanged -= self.__onCameraChanged
         self.__ballistics = None
         for shotID in self.__projectiles.keys():
             self.__delProjectile(shotID)

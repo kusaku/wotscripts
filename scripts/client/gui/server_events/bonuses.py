@@ -241,7 +241,7 @@ class BattleTokensBonus(TokensBonus):
     def getTooltip(self):
         """ Get award's tooltip for award carousel.
         """
-        if len(self._value) > 1:
+        if len(self._value) > 1 or len(self._value.values()[0].get('questNames', [])) > 1:
             nameFormat = '{}/several'.format(self._name)
             header = i18n.makeString(TOOLTIPS.getAwardHeader(nameFormat))
             body = self.__getAllQuestNames()
@@ -263,8 +263,13 @@ class BattleTokensBonus(TokensBonus):
         :return:
         """
         tooltip = [i18n.makeString(TOOLTIPS.AWARDITEM_BATTLETOKEN_SEVERAL_BODY)]
-        for ind, item in enumerate(self._value.values()):
-            tooltip.append(i18n.makeString(TOOLTIPS.AWARDITEM_BATTLETOKEN_SEVERAL_LINE, num=ind + 1, name=item.get('questName', '')))
+        questIdx = 0
+        for item in self._value.values():
+            names = item.get('questNames', [])
+            for name in names:
+                if name:
+                    questIdx += 1
+                    tooltip.append(i18n.makeString(TOOLTIPS.AWARDITEM_BATTLETOKEN_SEVERAL_LINE, num=questIdx, name=name))
 
         return '\n'.join(tooltip)
 
@@ -275,7 +280,9 @@ class BattleTokensBonus(TokensBonus):
         if len(self._value) > 0:
             _, firstItem = self._value.items()[0]
             if firstItem:
-                return firstItem.get('questName', '')
+                names = firstItem.get('questNames', [])
+                if len(names) > 0:
+                    return names[0]
         return ''
 
 
@@ -886,12 +893,12 @@ def getBonusObj(quest, name, value):
     questType = quest.getType()
     key = [name, questType]
     if questType in (_ET.BATTLE_QUEST, _ET.TOKEN_QUEST, _ET.PERSONAL_QUEST) and name == 'tokens':
-        for n, v in value.items():
-            parentsName = quest.getParentsName()
+        parentsName = quest.getParentsName()
+        for n, v in value.iteritems():
             if n in parentsName:
-                questName = parentsName[n][0]
-                if questName:
-                    v.update({'questName': questName})
+                questNames = parentsName[n]
+                if questNames:
+                    v.update({'questNames': questNames})
 
     elif questType == _ET.POTAPOV_QUEST:
         key.append(quest.getQuestBranchName())

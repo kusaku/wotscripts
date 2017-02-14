@@ -89,7 +89,7 @@ class PersonalEntriesPlugin(common.SimplePlugin):
             self.__updateViewPointEntry(avatar)
             if not self.__isObserver and self.__isAlive:
                 self.__updateViewRangeCircle(avatar)
-            not self.__isObserver and not self.__isAlive and self.__updateDeadPointEntry(avatar)
+            not self.__isObserver and not self.__isAlive and self.__updateDeadPointEntry()
         return
 
     def updateControlMode(self, mode, vehicleID):
@@ -125,7 +125,7 @@ class PersonalEntriesPlugin(common.SimplePlugin):
             elif self.__viewPointID:
                 self._setActive(self.__viewPointID, False)
             if not self.__isObserver and self._isInPostmortemMode():
-                self.__updateDeadPointEntry(BigWorld.player())
+                self.__updateDeadPointEntry()
         self.__invalidateMarkup()
 
     def clearCamera(self):
@@ -271,14 +271,19 @@ class PersonalEntriesPlugin(common.SimplePlugin):
     def _getPlayerVehicleID(self):
         return self.__playerVehicleID
 
-    def __updateDeadPointEntry(self, avatar):
-        ownMatrix = avatar.getOwnVehicleMatrix()
-        matrixCopy = Math.Matrix(ownMatrix)
-        if self.__deadPointID:
-            self._setMatrix(self.__deadPointID, matrixCopy)
-            self._setActive(self.__deadPointID, active=True)
+    def __updateDeadPointEntry(self):
+        vehicle = BigWorld.entities.get(self.__playerVehicleID)
+        if vehicle is None:
+            LOG_ERROR("Player's vehicle is not found", self.__playerVehicleID)
             return
-        self.__deadPointID = self._addEntry(_S_NAME.DEAD_POINT, _C_NAME.PERSONAL, matrix=matrixCopy, active=True)
+        else:
+            provider = matrix_factory.makeVehicleEntityMPCopy(vehicle)
+            if self.__deadPointID:
+                self._setMatrix(self.__deadPointID, provider)
+                self._setActive(self.__deadPointID, active=True)
+                return
+            self.__deadPointID = self._addEntry(_S_NAME.DEAD_POINT, _C_NAME.PERSONAL, matrix=provider, active=True)
+            return
 
     def __onVehicleStateUpdated(self, state, value):
         if state == VEHICLE_VIEW_STATE.SWITCHING:

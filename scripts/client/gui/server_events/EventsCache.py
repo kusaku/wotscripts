@@ -518,13 +518,13 @@ class EventsCache(IEventsCache):
             for tokenID in tokensIDs:
                 children[parentID][tokenID] = makeTokens.get(tokenID, [])
 
-        parents = defaultdict(dict)
-        parentsName = defaultdict(dict)
+        parents = defaultdict(lambda : defaultdict(list))
+        parentsName = defaultdict(lambda : defaultdict(list))
         for parentID, tokens in children.iteritems():
             for tokenID, chn in tokens.iteritems():
                 for childID in chn:
-                    parents[childID][tokenID] = [parentID]
-                    parentsName[childID][tokenID] = [quests[parentID].getUserName()]
+                    parents[childID][tokenID].append(parentID)
+                    parentsName[childID][tokenID].append(quests[parentID].getUserName())
 
         return (children, parents, parentsName)
 

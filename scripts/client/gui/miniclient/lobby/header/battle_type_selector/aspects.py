@@ -60,6 +60,12 @@ class FalloutBattle(_BattleTypeDisable):
         _BattleTypeDisable.__init__(self, (MENU.HEADERBUTTONS_BATTLE_TYPES_FALLOUT, PREBATTLE_ACTION_NAME.FALLOUT, 2))
 
 
+class StrongholdBattle(_BattleTypeDisable):
+
+    def __init__(self):
+        _BattleTypeDisable.__init__(self, (MENU.HEADERBUTTONS_BATTLE_TYPES_FALLOUT, PREBATTLE_ACTION_NAME.STRONGHOLDS_BATTLES_LIST, 4))
+
+
 class OnBattleTypeSelectorPopulate(aop.Aspect):
 
     def atReturn(self, cd):

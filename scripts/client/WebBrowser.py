@@ -6,7 +6,7 @@ import BigWorld
 import Keys
 import helpers
 from gui.Scaleform.managers.Cursor import Cursor
-from Event import Event
+from Event import Event, EventManager
 from debug_utils import _doLog, LOG_ERROR, LOG_CURRENT_EXCEPTION, LOG_DEBUG
 from constants import IS_DEVELOPMENT
 _BROWSER_LOGGING = True
@@ -73,15 +73,17 @@ class WebBrowser(object):
         self.__ignoreKeyEvents = False
         self.__useSpecialKeys = True
         self.__allowAutoLoadingScreenChange = True
-        self.onLoadStart = Event()
-        self.onLoadEnd = Event()
-        self.onLoadingStateChange = Event()
-        self.onReadyToShowContent = Event()
-        self.onNavigate = Event()
-        self.onReady = Event()
-        self.onJsHostQuery = Event()
-        self.onTitleChange = Event()
-        self.onFailedCreation = Event()
+        self.__eventMgr = EventManager()
+        self.onLoadStart = Event(self.__eventMgr)
+        self.onLoadEnd = Event(self.__eventMgr)
+        self.onLoadingStateChange = Event(self.__eventMgr)
+        self.onReadyToShowContent = Event(self.__eventMgr)
+        self.onNavigate = Event(self.__eventMgr)
+        self.onReady = Event(self.__eventMgr)
+        self.onJsHostQuery = Event(self.__eventMgr)
+        self.onTitleChange = Event(self.__eventMgr)
+        self.onFailedCreation = Event(self.__eventMgr)
+        self.onCanCreateNewBrowser = Event(self.__eventMgr)
         LOG_BROWSER('INIT ', self.__baseUrl, texName, size, self.__browserID)
         return
 
@@ -212,15 +214,11 @@ class WebBrowser(object):
         return False
 
     def destroy(self):
+        self.__eventMgr.clear()
+        self.__eventMgr = None
         if self.__browser is not None:
             LOG_BROWSER('DESTROYED ', self.__baseUrl, self.__browserID)
-            self.__browser.script.onLoadStart -= self.__onLoadStart
-            self.__browser.script.onLoadEnd -= self.__onLoadEnd
-            self.__browser.script.onLoadingStateChange -= self.__onLoadingStateChange
-            self.__browser.script.onDOMReady -= self.__onReadyToShowContent
-            self.__browser.script.onCursorUpdated -= self.__onCursorUpdated
-            self.__browser.script.onJsHostQuery -= self.__onJsHostQuery
-            self.__browser.script.onTitleChange -= self.__onTitleChange
+            self.__browser.script.clear()
             self.__browser.script = None
             self.__browser.resetScaleformRender(self.__uiObj.movie, self.__texName)
             BigWorld.removeBrowser(self.__browserID)
@@ -230,6 +228,8 @@ class WebBrowser(object):
             self.__cbID = None
         self.__ui = None
         self.__navigationFilters = None
+        if self.__uiObj is not None:
+            self.__uiObj.cursorMgr.setCursorForced(Cursor.ARROW)
         g_mgr.delBrowser(self)
         return
 
@@ -267,6 +267,7 @@ class WebBrowser(object):
 
     def doNavigate(self, url):
         LOG_BROWSER('doNavigate', url)
+        self.__baseUrl = url
         if self.hasBrowser:
             self.__browser.script.newNavigation()
             self.__browser.loadURL(url)
@@ -415,12 +416,20 @@ class WebBrowser(object):
         return stopNavigation
 
     def setLoadingScreenVisible(self, visible):
-        self.onLoadingStateChange(visible)
+        LOG_BROWSER('setLoadingScreenVisible', visible)
+        self.onLoadingStateChange(visible, True)
 
     def setAllowAutoLoadingScreen(self, enabled):
+        LOG_BROWSER('setAllowAutoLoadingScreen', enabled)
         self.__allowAutoLoadingScreenChange = enabled
-        if not self.__allowAutoLoadingScreenChange:
-            self.setLoadingScreenVisible(False)
+
+    def changeTitle(self, title):
+        """
+        Changes title. Is used by BrowserController
+        @param title:
+        @return:
+        """
+        self.onTitleChange(title)
 
     def __onLoadStart(self, url):
         if url == self.__browser.url:
@@ -440,9 +449,10 @@ class WebBrowser(object):
                 self.onLoadEnd(self.__browser.url, isLoaded, httpStatusCode)
 
     def __onLoadingStateChange(self, isLoading):
-        if self.__allowAutoLoadingScreenChange:
-            LOG_BROWSER('onLoadingStateChange', isLoading)
-            self.onLoadingStateChange(isLoading)
+        LOG_BROWSER('onLoadingStateChange', isLoading, self.__allowAutoLoadingScreenChange)
+        self.onLoadingStateChange(isLoading, self.__allowAutoLoadingScreenChange)
+        if not isLoading:
+            self.onCanCreateNewBrowser()
 
     def __onReadyToShowContent(self, url):
         if url == self.__browser.url:
@@ -459,6 +469,8 @@ class WebBrowser(object):
             secondtest = self.__browser.url[:-1]
             if secondtest.endswith(title):
                 return False
+        if self.__baseUrl == title:
+            return False
         return True
 
     def __onTitleChange(self, title):
@@ -494,17 +506,21 @@ class EventListener():
          CURSOR_TYPES.Grabbing: Cursor.DRAG_CLOSE,
          CURSOR_TYPES.ColumnResize: Cursor.MOVE}
         self.__cursorType = None
-        self.onLoadStart = Event()
-        self.onLoadEnd = Event()
-        self.onLoadingStateChange = Event()
-        self.onCursorUpdated = Event()
-        self.onDOMReady = Event()
-        self.onReady = Event()
-        self.onJsHostQuery = Event()
-        self.onTitleChange = Event()
+        self.__eventMgr = EventManager()
+        self.onLoadStart = Event(self.__eventMgr)
+        self.onLoadEnd = Event(self.__eventMgr)
+        self.onLoadingStateChange = Event(self.__eventMgr)
+        self.onCursorUpdated = Event(self.__eventMgr)
+        self.onDOMReady = Event(self.__eventMgr)
+        self.onReady = Event(self.__eventMgr)
+        self.onJsHostQuery = Event(self.__eventMgr)
+        self.onTitleChange = Event(self.__eventMgr)
         self.__urlFailed = False
         self.__browserProxy = weakref.proxy(browser)
         return
+
+    def clear(self):
+        self.__eventMgr.clear()
 
     def newNavigation(self):
         self.__urlFailed = False

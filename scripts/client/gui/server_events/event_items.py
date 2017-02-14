@@ -189,6 +189,20 @@ class Group(ServerEventAbstract):
     def getGroupEvents(self):
         return self._data.get('groupContent', [])
 
+    def withManyTokenSources(self, svrEvents):
+        uniqueTokens = set()
+        uniqueChildren = set()
+        for qID in self.getGroupEvents():
+            quest = svrEvents.get(qID)
+            if quest is not None:
+                children = quest.getChildren()
+                if len(children) > 0:
+                    for key, value in children.iteritems():
+                        uniqueChildren |= set(value)
+                        uniqueTokens.add(key)
+
+        return len(uniqueTokens) == 1 and len(uniqueChildren) > 1
+
 
 class Quest(ServerEventAbstract):
 
