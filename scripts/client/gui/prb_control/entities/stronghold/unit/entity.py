@@ -1,8 +1,8 @@
 # Embedded file name: scripts/client/gui/prb_control/entities/stronghold/unit/entity.py
 import BigWorld
 import time
-import datetime
 import account_helpers
+import datetime
 from helpers import time_utils
 from debug_utils import LOG_DEBUG, LOG_ERROR
 from client_request_lib.exceptions import ResponseCodes
@@ -479,6 +479,13 @@ class StrongholdEntity(UnitEntity):
     def _getRequestProcessor(self):
         return StrongholdUnitRequestProcessor()
 
+    def _getCurrentUTCTime(self):
+        return datetime.datetime.utcnow()
+
+    def _convertUTCStructToLocalTimestamp(self, val):
+        val = time_utils.utcToLocalDatetime(val).timetuple()
+        return time_utils.getTimestampFromLocal(val)
+
     def __updateRosterSettings(self):
         _, unit = self.getUnit()
         return StrongholdDynamicRosterSettings(unit, self.__strongholdData)
@@ -634,12 +641,12 @@ class StrongholdEntity(UnitEntity):
         isInBattle = isVehicleInBattle or not isInSlot and self.getFlags().isInIdle() or isInSlot and self.getFlags().isInArena() and playerInfo.isInArena()
         dtime = None
         textid = None
-        peripheryStartTimestamp = 0
-        currentTimeLocalTimestamp = 0
+        peripheryStartTimestampUTC = 0
+        currentTimestampUTC = 0
         matchmakerNextTick = None
         tempIsInactiveMatchingButton = self.__isInactiveMatchingButton
         self.__isInactiveMatchingButton = True
-        currentTimeUTC = time_utils.getDateTimeInUTC(time_utils.getServerRegionalTime())
+        currentTimeUTC = self._getCurrentUTCTime()
         peripheryStartTimeUTC = currentTimeUTC.replace(hour=0, minute=0, second=0, microsecond=0)
         peripheryEndTimeUTC = currentTimeUTC.replace(hour=0, minute=0, second=0, microsecond=0)
         if data.getBattlesStartTime() and data.getBattlesEndTime():
@@ -653,9 +660,8 @@ class StrongholdEntity(UnitEntity):
             if not self.__preventInfinityLoopInMatchmakingTimer and currentTimeUTC > peripheryEndTimeUTC and currentTimeUTC > peripheryStartTimeUTC:
                 peripheryEndTimeUTC += datetime.timedelta(days=1)
                 peripheryStartTimeUTC += datetime.timedelta(days=1)
-            peripheryStartTimestamp = int(time_utils.getTimestampFromUTC(peripheryStartTimeUTC.timetuple()))
-            currentTimeLocal = time_utils.getDateTimeInLocal(time_utils.getServerRegionalTime())
-            currentTimeLocalTimestamp = int(time_utils.getTimestampFromLocal(currentTimeLocal.timetuple()))
+            peripheryStartTimestampUTC = int(time_utils.getTimestampFromUTC(peripheryStartTimeUTC.timetuple()))
+            currentTimestampUTC = int(time_utils.getTimestampFromUTC(currentTimeUTC.timetuple()))
         else:
             peripheryEndTimeUTC -= datetime.timedelta(days=1)
             peripheryStartTimeUTC -= datetime.timedelta(days=1)
@@ -676,8 +682,10 @@ class StrongholdEntity(UnitEntity):
             elif isInactivePeriphery or currentTimeUTC > peripheryEndTimeUTC:
                 dtime = 0
             else:
-                currDayStart, currDayEnd = time_utils.getDayTimeBoundsForLocal(currentTimeLocalTimestamp)
-                dtime = peripheryStartTimestamp - currentTimeLocalTimestamp
+                currentTimestamp = self._convertUTCStructToLocalTimestamp(currentTimeUTC)
+                peripheryStartTimestamp = self._convertUTCStructToLocalTimestamp(peripheryStartTimeUTC)
+                currDayStart, currDayEnd = time_utils.getDayTimeBoundsForLocal(currentTimestamp)
+                dtime = peripheryStartTimestampUTC - currentTimestampUTC
                 if dtime <= data.getSortiesBeforeStartLag():
                     if dtime < 0:
                         dtime = 0
@@ -688,35 +696,37 @@ class StrongholdEntity(UnitEntity):
                     textid = FORTIFICATIONS.SORTIE_INTROVIEW_FORTBATTLES_NEXTTIMEOFBATTLETOMORROW
                 elif currDayStart <= peripheryStartTimestamp <= currDayEnd:
                     textid = FORTIFICATIONS.SORTIE_INTROVIEW_FORTBATTLES_NEXTTIMEOFBATTLETODAY
-        elif isInactivePeriphery:
-            textid = FORTIFICATIONS.ROSTERINTROWINDOW_INTROVIEW_FORTBATTLES_UNAVAILABLE
         else:
-            matchmakerNextTick = data.getMatchmakerNextTick()
-            dtime = time_utils.ONE_YEAR
-            if matchmakerNextTick is not None:
-                matchmakerNextTick = time_utils.makeLocalServerTime(matchmakerNextTick)
-                dtime = int(time_utils.getTimeDeltaFromNow(matchmakerNextTick))
-            chainMatchmakerNextTick = data.getChainMatchmakerNextTick()
-            if chainMatchmakerNextTick is not None:
-                matchmakerNextTick = time_utils.makeLocalServerTime(chainMatchmakerNextTick)
-                dtime = int(time_utils.getTimeDeltaFromNow(matchmakerNextTick))
-            if isInBattle:
-                textid = TOOLTIPS.STRONGHOLDS_TIMER_SQUADINBATTLE
-            elif dtime >= data.getFortBattlesBeforeStartLag():
-                textid = FORTIFICATIONS.ROSTERINTROWINDOW_INTROVIEW_FORTBATTLES_UNAVAILABLE
-                if data.getMatchmakerNextTick() or data.getChainMatchmakerNextTick():
-                    currDayStart, currDayEnd = time_utils.getDayTimeBoundsForLocal(currentTimeLocalTimestamp)
-                    if currDayStart <= matchmakerNextTick - time_utils.ONE_DAY <= currDayEnd:
-                        textid = FORTIFICATIONS.ROSTERINTROWINDOW_INTROVIEW_FORTBATTLES_NEXTTIMEOFBATTLETOMORROW
-                    elif currDayStart <= matchmakerNextTick <= currDayEnd:
-                        textid = FORTIFICATIONS.ROSTERINTROWINDOW_INTROVIEW_FORTBATTLES_NEXTTIMEOFBATTLETODAY
-            elif dtime >= 0:
-                textid = FORTIFICATIONS.ROSTERINTROWINDOW_INTROVIEW_FORTBATTLES_NEXTTIMEOFBATTLESOON
-                if dtime <= MATCHMAKING_BATTLE_BUTTON_BATTLE:
-                    self.__isInactiveMatchingButton = False
-            else:
-                dtime = 0
-        g_eventDispatcher.strongholdsOnTimer({'peripheryStartTimestamp': peripheryStartTimestamp,
+            textid = FORTIFICATIONS.ROSTERINTROWINDOW_INTROVIEW_FORTBATTLES_UNAVAILABLE
+            if not isInactivePeriphery:
+                dtime = time_utils.ONE_YEAR
+                matchmakerNextTick = data.getChainMatchmakerNextTick()
+                if matchmakerNextTick is not None:
+                    dtime = matchmakerNextTick - currentTimestampUTC
+                else:
+                    matchmakerNextTick = data.getMatchmakerNextTick()
+                    if matchmakerNextTick is not None:
+                        dtime = matchmakerNextTick - currentTimestampUTC
+                if isInBattle:
+                    textid = TOOLTIPS.STRONGHOLDS_TIMER_SQUADINBATTLE
+                elif dtime >= data.getFortBattlesBeforeStartLag():
+                    textid = FORTIFICATIONS.ROSTERINTROWINDOW_INTROVIEW_FORTBATTLES_UNAVAILABLE
+                    if matchmakerNextTick is not None:
+                        currentTimestamp = self._convertUTCStructToLocalTimestamp(currentTimeUTC)
+                        matchmakerNextTickLocal = time_utils.getDateTimeInUTC(matchmakerNextTick)
+                        matchmakerNextTickLocal = self._convertUTCStructToLocalTimestamp(matchmakerNextTickLocal)
+                        currDayStart, currDayEnd = time_utils.getDayTimeBoundsForLocal(matchmakerNextTickLocal)
+                        if currDayStart - time_utils.ONE_DAY <= currentTimestamp <= currDayEnd - time_utils.ONE_DAY:
+                            textid = FORTIFICATIONS.ROSTERINTROWINDOW_INTROVIEW_FORTBATTLES_NEXTTIMEOFBATTLETOMORROW
+                        elif currDayStart <= currentTimestamp <= currDayEnd:
+                            textid = FORTIFICATIONS.ROSTERINTROWINDOW_INTROVIEW_FORTBATTLES_NEXTTIMEOFBATTLETODAY
+                elif dtime >= 0:
+                    textid = FORTIFICATIONS.ROSTERINTROWINDOW_INTROVIEW_FORTBATTLES_NEXTTIMEOFBATTLESOON
+                    if dtime <= MATCHMAKING_BATTLE_BUTTON_BATTLE:
+                        self.__isInactiveMatchingButton = False
+                else:
+                    dtime = 0
+        g_eventDispatcher.strongholdsOnTimer({'peripheryStartTimestamp': peripheryStartTimestampUTC,
          'matchmakerNextTick': matchmakerNextTick,
          'clan': data.getClan(),
          'enemyClan': data.getEnemyClan(),

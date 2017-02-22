@@ -989,9 +989,6 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager, AvatarOb
                 self.guiSessionProvider.useLoaderIntuition()
             elif code == STATUS.HORN_BANNED:
                 self.__hornCooldown.ban(floatArg)
-            elif code == STATUS.CRUISE_CONTROL_MODE_CHANGED:
-                self.__cruiseControlMode = intArg
-                self.guiSessionProvider.invalidateVehicleState(VEHICLE_VIEW_STATE.CRUISE_MODE, self.__cruiseControlMode)
             elif code == STATUS.SIEGE_MODE_STATE_CHANGED:
                 if intArg in (constants.VEHICLE_SIEGE_STATE.SWITCHING_ON, constants.VEHICLE_SIEGE_STATE.SWITCHING_OFF):
                     self.__cruiseControlMode = _CRUISE_CONTROL_MODE.NONE
@@ -2178,8 +2175,6 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager, AvatarOb
         else:
             mode = self.__cruiseControlMode
         self.guiSessionProvider.invalidateVehicleState(VEHICLE_VIEW_STATE.CRUISE_MODE, mode)
-        if not self.guiSessionProvider.getCtx().isObserver(self.playerVehicleID):
-            self.cell.setCruiseControlMode(mode)
 
     def __applyTimeAndWeatherSettings(self, overridePresetID = None):
         presets = self.arena.arenaType.weatherPresets

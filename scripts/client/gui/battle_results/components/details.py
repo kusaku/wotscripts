@@ -47,7 +47,7 @@ class GainXPInBattleItem(_GainResourceInBattleItem):
     __slots__ = ()
 
     def __init__(self, field, *path):
-        super(GainXPInBattleItem, self).__init__(((True, 'xp'), (False, 'premiumVehicleXPFactor100')), 'getXPRecords', field, *path)
+        super(GainXPInBattleItem, self).__init__(((True, 'xpToShow'),), 'getXPRecords', field, *path)
 
 
 class GainFortResourceInBattleItem(base.StatsItem):
@@ -105,7 +105,7 @@ class BaseXPBlock(base.StatsBlock):
     def setRecord(self, result, reusable):
         isPremuim = not reusable.isPostBattlePremium and reusable.canResourceBeFaded
         for records in reusable.personal.getBaseXPRecords():
-            value = style.makeXpLabel(records.getRecord('xp') - records.getRecord('premiumVehicleXPFactor100'), canBeFaded=isPremuim)
+            value = style.makeXpLabel(records.getRecord('xpToShow'), canBeFaded=isPremuim)
             self.addNextComponent(base.DirectStatsItem('', value))
 
 
@@ -117,9 +117,9 @@ class PremiumXPBlock(base.StatsBlock):
         isDiffShow = reusable.canUpgradeToPremium
         for records in reusable.personal.getXPRecords():
             baseXP, premiumXP = records[:2]
-            xp = premiumXP.getRecord('xp') - premiumXP.getRecord('premiumVehicleXPFactor100')
+            xp = premiumXP.getRecord('xpToShow')
             if isDiffShow:
-                value = xp - baseXP.getRecord('xp')
+                value = xp - baseXP.getRecord('xpToShow')
             else:
                 value = xp
             value = style.makeXpLabel(value, canBeFaded=canBeFaded, isDiff=isDiffShow)

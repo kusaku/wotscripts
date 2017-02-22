@@ -1094,18 +1094,50 @@ class ResolutionSetting(PreferencesSetting):
         else:
             return
 
+    def _findBestAspect(self, aspect, maxInt):
+        w = 4
+        bestDelta = 100000.0
+        bestW = 1
+        bestH = 1
+        while w < maxInt:
+            h = 3
+            while h < w:
+                delta = abs(float(w) / h - aspect)
+                if delta < bestDelta:
+                    bestDelta = delta
+                    bestW = w
+                    bestH = h
+                h = h + 1
+
+            w = w + 1
+
+        return (bestW, bestH)
+
     def _getOptions(self):
-        return [ [ '%dx%d' % (width, height) for width, height in resolutions ] for resolutions in self._getSuitableResolutions() ]
+        res = []
+        for resolutions in self._getSuitableResolutions():
+            formatedRes = []
+            for width, height in resolutions:
+                gcd = fractions.gcd(width, height)
+                widthOpt = width / gcd
+                heightOpt = height / gcd
+                if widthOpt > 24:
+                    p = self._findBestAspect(float(widthOpt) / heightOpt, 23)
+                    widthOpt = p[0]
+                    heightOpt = p[1]
+                if widthOpt == 8:
+                    widthOpt *= 2
+                    heightOpt *= 2
+                formatedRes.append('{0}x{1} [{2}:{3}]'.format(width, height, widthOpt, heightOpt))
+
+            res.append(formatedRes)
+
+        return res
 
     def _setAspectRatio(self):
-        w = 640
-        h = 640
-        for idx, (width, height) in enumerate(self._getResolutions()):
-            if w <= width:
-                w = width
-                h = height
-
-        aspectRatio = float(w) / float(h)
+        R = self._storage.resolution
+        wd, ht = R
+        aspectRatio = float(wd) / ht
         BigWorld.changeFullScreenAspectRatio(aspectRatio)
 
     def _set(self, value):

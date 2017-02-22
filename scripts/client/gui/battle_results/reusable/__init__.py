@@ -301,7 +301,7 @@ class _ReusableInfo(object):
                 playerDBID = self.__personal.avatar.accountDBID
                 getVehicleInfo = self.__vehicles.getVehicleInfo
                 details = records['details']
-                for (vehicleID, intCD), data in details.iteritems():
+                for (vehicleID, _), data in details.iteritems():
                     vehicleInfo = getVehicleInfo(vehicleID)
                     if vehicleInfo.accountDBID != playerDBID and vehicleInfo.team != playerTeam:
                         critsRecords.append(data['crits'])

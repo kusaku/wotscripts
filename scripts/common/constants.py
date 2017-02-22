@@ -17,7 +17,7 @@ else:
     IS_BASEAPP = BigWorld.component in ('base', 'service')
     IS_WEB = False
 
-CURRENT_REALM = 'CT'
+CURRENT_REALM = 'RU'
 DEFAULT_LANGUAGE = 'ru'
 AUTH_REALM = 'RU'
 IS_DEVELOPMENT = CURRENT_REALM == 'DEV'
@@ -671,7 +671,6 @@ if not sum([IS_CHINA, IS_KOREA, IS_SINGAPORE]) <= 1:
         IN_DEATH_ZONE = 5
         HORN_BANNED = 6
         DESTROYED_DEVICE_IS_REPAIRING = 7
-        CRUISE_CONTROL_MODE_CHANGED = 8
         SIEGE_MODE_STATE_CHANGED = 9
 
 

@@ -17,6 +17,7 @@ from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.clans import formatters as clans_fmts
 from gui.clans.items import formatField
 from gui.shared.formatters import icons, text_styles
+from gui.shared.formatters.text_styles import concatStylesToMultiLine
 from gui.shared.formatters.time_formatters import getTimeLeftStr
 from gui.shared.fortifications.settings import FORT_BATTLE_DIVISIONS
 from gui.shared.gui_items.Vehicle import VEHICLE_TAGS
@@ -489,21 +490,11 @@ class SettingsButtonTooltipData(BlocksTooltipData):
         serverBlocks.append(formatters.packTextBlockData(text_styles.middleTitle(TOOLTIPS.HEADER_MENU_SERVER), padding=formatters.packPadding(0, 0, 4)))
         simpleHostList = g_preDefinedHosts.getSimpleHostsList(g_preDefinedHosts.hostsWithRoaming())
         isColorBlind = self.settingsCore.getSetting('isColorBlind')
-
-        def __getPingData(url):
-            pingData = g_preDefinedHosts.getHostPingData(url)
-            if pingData.status == PING_STATUSES.REQUESTED:
-                return PingData(pingData.value, PING_STATUSES.UNDEFINED)
-            else:
-                return pingData
-
         if connectionManager.peripheryID == 0:
-            serverBlocks.append(self.__packServerBlock(self.__wrapServerName(connectionManager.serverUserName), __getPingData(connectionManager.url), HOST_AVAILABILITY.IGNORED, True, isColorBlind))
+            serverBlocks.append(self.__packServerBlock(self.__wrapServerName(connectionManager.serverUserName), self.__getPingData(connectionManager.url), HOST_AVAILABILITY.IGNORED, True, isColorBlind))
         if len(simpleHostList):
             currServUrl = connectionManager.url
-            for key, name, csisStatus, peripheryID in simpleHostList:
-                serverBlocks.append(self.__packServerBlock(name, __getPingData(key), csisStatus, currServUrl == key, isColorBlind))
-
+            serverBlocks.append(self.__packServerListBlock(simpleHostList, currServUrl, isColorBlind))
         items.append(formatters.packBuildUpBlockData(serverBlocks, linkage=BLOCKS_TOOLTIP_TYPES.TOOLTIP_BUILDUP_BLOCK_WHITE_BG_LINKAGE))
         serversStats = None
         if constants.IS_SHOW_SERVER_STATS:
@@ -523,8 +514,28 @@ class SettingsButtonTooltipData(BlocksTooltipData):
         :param isColorBlind: bool
         :return:
         """
-        separator = '  '
         pingValue, pingStatus = pingData
+        formattedPing, pingStatusIcon = cls.__formatPingStatus(csisStatus, isColorBlind, isSelected, pingStatus, pingValue)
+        return formatters.packTextParameterBlockData(cls.__formatServerName(name, isSelected), text_styles.concatStylesToSingleLine(formattedPing, '  ', pingStatusIcon), valueWidth=55, gap=2, padding=formatters.packPadding(left=40))
+
+    @classmethod
+    def __packServerListBlock(cls, simpleHostList, currServUrl, isColorBlind = False):
+        """
+        Collect all server names and statuses for one textBlock
+        """
+        serverNames = []
+        pingTexts = []
+        for key, name, csisStatus, peripheryID in simpleHostList:
+            pingValue, pingStatus = cls.__getPingData(key)
+            isSelected = currServUrl == key
+            formattedPing, pingStatusIcon = cls.__formatPingStatus(csisStatus, isColorBlind, isSelected, pingStatus, pingValue)
+            serverNames.append(cls.__formatServerName(name, isSelected))
+            pingTexts.append(text_styles.concatStylesToSingleLine(formattedPing, '  ', pingStatusIcon))
+
+        return formatters.packTextParameterBlockData(concatStylesToMultiLine(*serverNames), concatStylesToMultiLine(*pingTexts), valueWidth=55, gap=2, padding=formatters.packPadding(left=40))
+
+    @classmethod
+    def __formatPingStatus(cls, csisStatus, isColorBlind, isSelected, pingStatus, pingValue):
         if csisStatus != HOST_AVAILABILITY.NOT_AVAILABLE and pingStatus != PING_STATUSES.UNDEFINED:
             if pingStatus == PING_STATUSES.LOW:
                 formattedPing = text_styles.success(pingValue)
@@ -538,7 +549,7 @@ class SettingsButtonTooltipData(BlocksTooltipData):
         if isColorBlind and pingStatus == PING_STATUSES.HIGH:
             colorBlindName = '_color_blind'
         pingStatusIcon = cls.__formatPingStatusIcon(RES_ICONS.maps_icons_pingstatus_stairs_indicator(str(pingStatus) + colorBlindName + '.png'))
-        return formatters.packTextParameterBlockData(cls.__formatServerName(name, isSelected), text_styles.concatStylesToSingleLine(formattedPing, separator, pingStatusIcon), valueWidth=55, gap=2, padding=formatters.packPadding(left=40))
+        return (formattedPing, pingStatusIcon)
 
     @classmethod
     def __formatServerName(cls, name, isSelected = False):
@@ -550,7 +561,15 @@ class SettingsButtonTooltipData(BlocksTooltipData):
 
     @classmethod
     def __formatPingStatusIcon(cls, icon):
-        return icons.makeImageTag(icon, 16, 16, -4)
+        return icons.makeImageTag(icon, 14, 14, -3)
+
+    @classmethod
+    def __getPingData(cls, url):
+        pingData = g_preDefinedHosts.getHostPingData(url)
+        if pingData.status == PING_STATUSES.REQUESTED:
+            return PingData(pingData.value, PING_STATUSES.UNDEFINED)
+        else:
+            return pingData
 
     @staticmethod
     def __wrapServerName(name):

@@ -312,9 +312,11 @@ class _ClanDossier(object):
                     if count is not None and count != self.__vitalInfo[SYNC_KEYS.APPS]:
                         self.__changeWebInfo(SYNC_KEYS.APPS, count, 'onClanAppsCountReceived')
         elif requestType == CLAN_REQUESTED_DATA_TYPE.CREATE_INVITES:
+            code = response.getCode()
+            if code not in (ResponseCodes.ACCOUNT_ALREADY_APPLIED, ResponseCodes.ACCOUNT_ALREADY_INVITED):
+                return
             successAccounts = [ item.getAccountDbID() for item in ctx.getDataObj(response.data) ]
             failedAccounts = set(ctx.getAccountDbIDs()) - set(successAccounts)
-            code = response.getCode()
             if code == ResponseCodes.ACCOUNT_ALREADY_APPLIED:
                 cached = self.__cache[_CACHE_KEYS.APPS] or set()
                 cached.update(failedAccounts)
