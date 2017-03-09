@@ -260,6 +260,7 @@ if not sum([IS_CHINA, IS_KOREA, IS_SINGAPORE]) <= 1:
         SYNC_OBJECTS = 24
         SYNC_OBJECTS_DIFF = 25
         VIEW_POINTS = 26
+        FOG_OF_WAR = 27
 
 
     class ARENA_SYNC_OBJECTS:

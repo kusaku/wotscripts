@@ -21,6 +21,7 @@ class FinishSoundController(IArenaVehiclesController, ITeamsBasesController):
     def __init__(self):
         super(FinishSoundController, self).__init__()
         self.__battleCtx = None
+        self.__arenaVisitor = None
         self.__canPlaySound = True
         self.__deadAllies = set()
         self.__deadEnemies = set()
@@ -34,9 +35,11 @@ class FinishSoundController(IArenaVehiclesController, ITeamsBasesController):
 
     def startControl(self, battleCtx, arenaVisitor):
         self.__battleCtx = battleCtx
+        self.__arenaVisitor = arenaVisitor
 
     def stopControl(self):
         self.__battleCtx = None
+        self.__arenaVisitor = None
         self.__canPlaySound = True
         self.__deadAllies.clear()
         self.__deadEnemies.clear()
@@ -88,6 +91,6 @@ class FinishSoundController(IArenaVehiclesController, ITeamsBasesController):
     def __onRoundFinished(self, soundID):
         """ Play finish sound if it hasn't already been played.
         """
-        if self.__canPlaySound:
+        if self.__canPlaySound and not self.__arenaVisitor._arena.hasFogOfWarHiddenVehicles:
             self._playSound(soundID)
             self.__canPlaySound = False
