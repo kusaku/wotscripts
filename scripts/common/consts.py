@@ -1,0 +1,2906 @@
+# Embedded file name: scripts/common/consts.py
+from math import *
+import Math
+import math
+import config_consts
+BOTS_DISABLED_AIRPLANES_IDS = [1099]
+VELLOCITY_OF_SOUND = 343.0
+try:
+    import BigWorld
+except:
+    IS_CLIENT = False
+    IS_CELLAPP = False
+    IS_BASEAPP = True
+    IS_WEB = IS_BASEAPP
+    IS_EDITOR = False
+    IS_AIRPLANE_EDITOR = False
+else:
+    IS_CLIENT = BigWorld.component == 'client'
+    IS_CELLAPP = BigWorld.component == 'cell'
+    IS_AIRPLANE_EDITOR = BigWorld.component == 'aeditor'
+    IS_EDITOR = IS_AIRPLANE_EDITOR or BigWorld.component == 'editor'
+    IS_BASEAPP = not (IS_CLIENT or IS_CELLAPP or IS_EDITOR)
+    IS_WEB = IS_BASEAPP
+
+class GUN_STATE():
+    READY = 1
+    OVERHEATED = 2
+    DESTROYED = 3
+
+
+MAIN_GUNS_CONTROLLER = 0
+IS_CHECK_REFERRERS = False
+WAIT_GAME_PARAMS_FOR_START = not config_consts.IS_DEVELOPMENT
+IS_DEV_ACCOUNT_TYPE = False
+IS_DEBUG_IMPORTED = False
+COLLISION_RECORDER = (IS_CELLAPP or IS_CLIENT) and hasattr(BigWorld, 'hm_collisionRecorder') and BigWorld.hm_collisionRecorder()
+QA_FUNCTIONALITY_ENABLED = True and config_consts.IS_DEVELOPMENT
+UPGRADE_SYSTEM_ONLY_FOR_DEV = False
+ECONOMICS_ENABLE_LOG = False and config_consts.IS_DEVELOPMENT
+ECONOMICS_ENABLE_DUMP = False and config_consts.IS_DEVELOPMENT
+BATTLE_ACTIVITY_POINTS_ENABLE_LOG = False and config_consts.IS_DEVELOPMENT
+IS_OFFLINE_MODE_ENABLED = False
+
+class GUN_TYPE():
+    NORMAL = 1
+    AA = 2
+    AA_NORMAL = 3
+
+
+TURRET_BOOSTER_COEF = 2.0
+TEAM_OBJECT_CLASS_NAMES = ['SimpleTeamObject', 'MovingTeamObject', 'BigTeamObject']
+AVATAR_CLASS_NAMES = ['Avatar', 'AvatarBot', 'PlayerAvatar']
+
+class AOGAS_TIME():
+    REDUCED_GAIN = 10200
+    NO_GAIN = 17400
+    RESET = 18000
+
+
+class AOGAS_NOTIFY_TIME():
+    AOND_1 = 3000
+    AOND_2 = 6600
+    AOND_3 = AOGAS_TIME.REDUCED_GAIN
+    AOND_5 = AOGAS_TIME.NO_GAIN
+
+
+class AOGAS_NOTIFY_PERIOD():
+    AOND_START = AOGAS_NOTIFY_TIME.AOND_1
+    AOND_2_3 = 3600
+    AOND_3_5 = 1800
+    AOND_END = 900
+
+
+ENABLE_DB_VERIFICATION = False and config_consts.IS_DEVELOPMENT
+
+class CREDENTIALS_RESTRICTIONS():
+    BASIC = 0
+    CHINESE = 1
+
+
+CREDENTIALS_RESTRICTIONS_SET = CREDENTIALS_RESTRICTIONS.BASIC if not config_consts.IS_CHINA else CREDENTIALS_RESTRICTIONS.CHINESE
+
+class REQUEST_COOLDOWN():
+    PLAYER_DOSSIER = 1.0
+    PLAYER_CLAN_INFO = 1.0
+    PLAYER_GLOBAL_RATING = 1.0
+    PREBATTLE_CREATION = 4.0
+    PREBATTLE_NOT_READY = 2.0
+    PREBATTLE_TEAM_NOT_READY = 1.0
+    PREBATTLE_JOIN = 1.0
+    PREBATTLE_INVITES = 8.0
+    STEAM_INIT_TXN = 1.0
+    STEAM_FINALIZE_TXN = 1.0
+    EBANK_GET_BALANCE = 2.0
+    EBANK_BUY_GOLD = 2.0
+    REQUEST_CHAT_TOKEN = 10.0
+    REQUEST_WEB_TOKEN = 10.0
+    REQUEST_TOKEN = 10.0
+    UNIT_CHANGE_STATE = 4.0
+    UNIT_SET_READY = 4.0
+    UNIT_BROWSER_REFRESH = 4.0
+    CALL_FORT_METHOD = 0.5
+    GET_FORT_SORTIE_DATA = 1.0
+    ADD_DEL_BUILDING = 3.0
+    FORT_KEEPALIVE = 60.0
+    CLIENT_LOG_UX_DATA_COOLDOWN = 2.0
+    REQUEST_FORT_PUBLIC_INFO = 10.0
+
+
+class CAPTCHA_API():
+    RE_CAPTCHA = 1
+    KONG = 2
+
+
+CURRENT_CAPTCHA_API = config_consts.IS_CHINA and CAPTCHA_API.KONG or CAPTCHA_API.RE_CAPTCHA
+
+class DENUNCIATION():
+    OFFEND = 0
+    NOT_FAIR_PLAY = 1
+    TEAMKILL = 2
+    BOT = 3
+    FLOOD = 4
+    ALLY_EJECTION = 5
+    OPENING_OF_ALLY_POS = 6
+
+
+class VIOLATOR_KIND():
+    UNKNOWN = 0
+    ENEMY = 1
+    ALLY = 2
+
+
+PLAYER_READY_TIMEOUT = 5
+DEBUG_HUD_MODE_0 = 2 ** 14
+DEBUG_HUD_MODE_1 = 1
+DEBUG_HUD_MODE_2 = 2
+DEBUG_HUD_MODE_3 = 4
+DEBUG_HUD_MODE_4 = 8
+DEBUG_HUD_MODE_5 = 16
+DEBUG_HUD_MODE_6 = 32
+DEBUG_HUD_MODE_7 = 64
+DEBUG_HUD_MODE_8 = 128
+DEBUG_HUD_MODE_9 = 256
+
+class LOGICAL_PART():
+    """
+    logical parts type enum
+    """
+    HULL = 0
+    ENGINE = 1
+    TURRET = 2
+    COUNT = 3
+
+
+DEFAULT_HULL = 0
+DEFAULT_WINGS = 0
+DEFAULT_ENGINE = 0
+DEFAULT_PROPELLER = 0
+DEFAULT_WEP = 0
+WEP_ENABLE_TEMPERATURE = 50.0
+WEP_MAX_TEMPERATURE = 125.0
+WEP_DISABLE_TEMPERATURE = 150.0
+ENGINE_MAX_TEMPERATURE = 200.0
+ENGINE_WORK_INTERVAL = WEP_DISABLE_TEMPERATURE - WEP_ENABLE_TEMPERATURE
+ENGINE_LN = math.log((ENGINE_MAX_TEMPERATURE - WEP_ENABLE_TEMPERATURE) / (ENGINE_MAX_TEMPERATURE - WEP_DISABLE_TEMPERATURE))
+CRITICAL_HEIGHT_ENABLE = 50
+CRITICAL_HEIGHT_DISABLE = 75
+CRITICAL_HEIGHT_ZERO_ROLL = 5
+SWITCH_ALTITUDE_TIME_OUT = 3.0
+SWITCH_ALTITUDE_TIME_IN = 3.0
+CAM_FALL_SPEED = 0.05
+CAM_BOTTOM_POSITION = 0.5
+LOGICAL_PART_STRING_TO_INT_TYPE = {'hull': LOGICAL_PART.HULL,
+ 'engine': LOGICAL_PART.ENGINE,
+ 'turret': LOGICAL_PART.TURRET}
+ITEM_TYPE_NAMES = ('reserved',
+ 'plane',
+ 'engine',
+ 'planer',
+ 'turret',
+ 'gun',
+ 'bomb',
+ 'rocket',
+ 'crew',
+ 'aircraft',
+ 'equipment',
+ 'consumable',
+ 'ammobelt',
+ 'camouflage',
+ 'pack')
+ITEM_TYPE_INDICES = dict(((x[1], x[0]) for x in enumerate(ITEM_TYPE_NAMES)))
+
+def makeIntCompactDescrByID(itemTypeName, nationID, itemID):
+    header = ITEM_TYPE_INDICES[itemTypeName] + (nationID << 4)
+    return (itemID << 8) + header
+
+
+def parseIntCompactDescr(compactDescr):
+    return (compactDescr & 15, compactDescr >> 4 & 15, compactDescr >> 8 & 65535)
+
+
+SERVER_DB_PATH = 'scripts/server_db/'
+DB_PATH = 'scripts/db/'
+ARENA_TYPE_PATH = DB_PATH + 'arena_defs/'
+AIRCRAFTS_PATH = DB_PATH + 'aircrafts/'
+CREWMANS_PATH = DB_PATH + 'crewmans/'
+HANGAR_PATH = DB_PATH + 'hangar_config.xml'
+USER_HANGAR_SPACES_PATH = DB_PATH + 'user_hangar_spaces.xml'
+AIRPLANE_CAMERA_PRESETS_PATH = DB_PATH + 'aircraft_camera_presets.xml'
+PERMISSION_PATH = DB_PATH + 'permission.xml'
+EFFECTS_PATH = DB_PATH + 'effects.xml'
+DECALS_PATH = DB_PATH + 'decals.xml'
+CAMERAEFFECTS_PATH = DB_PATH + 'camera_effects.xml'
+MATERIAL_NAMES_PATH = DB_PATH + 'material_names.xml'
+AIRCRAFTS_LIST_PATH = AIRCRAFTS_PATH + 'list.xml'
+SHELLS_PATH = AIRCRAFTS_PATH + '/components/shells/'
+GUI_TEXTURES_PATH = DB_PATH + 'guiTextures.xml'
+ENTITY_COLOR_SCHEMA_PATH = DB_PATH + 'entity_color_schema.xml'
+SPLINES_PATH = 'scripts/splines.xml'
+HELP_HINT_PATH = DB_PATH + 'hints.xml'
+NAVIGATION_WINDOWS_PATH = DB_PATH + 'navigation_windows.xml'
+HUD_HINT_PATH = DB_PATH + 'hud_hints.xml'
+LANDSCAPE_PATH = 'maps/landscape/'
+LANDSCAPE_MATERIALS_PATH = LANDSCAPE_PATH + 'materialsid.xml'
+BASES_PATH = DB_PATH + 'bases/'
+TURRETS_PATH = DB_PATH + 'turrets/'
+SOUND_SETTINGS_PATH = DB_PATH + 'sound_settings.xml'
+CAMERA_MISC_PATH = DB_PATH + 'camera_misc.xml'
+NOT_AVAILABLE = 'n/a'
+WORLD_SCALING = 1.0 / 4.5
+SPEED_SCALING = 0.8
+MIN_BOMB_TARGET_SIZE = 2.5
+MAX_BOMB_TARGET_SIZE = 150.0
+BOMB_Z_SCATTER_SCALING = 4.0
+AIR_RESISTANCE = 0.01
+MAX_FLIGHT_DISTANCE = 3000.0
+MIN_FLIGHT_HEIGHT = 0.0
+BOMB_PITCH_ROTATE_SPEED = 0.15 * math.pi
+BOMB_YAW_ROTATE_SPEED = 4.0 * math.pi
+BOMB_ENEMY_DAMAGE = 0.5
+BOMB_ALLY_DAMAGE = 0.01
+AIRCRAFT_MODEL_SCALING = WORLD_SCALING
+SERVER_TICK_LENGTH = 0.1
+
+class PLANE_TYPE():
+    FIGHTER = 1
+    HFIGHTER = 2
+    ASSAULT = 3
+    NAVY = 4
+
+
+PLANE_TYPE_NAME = {PLANE_TYPE.FIGHTER: 'Fighter',
+ PLANE_TYPE.HFIGHTER: 'Heavy fighter',
+ PLANE_TYPE.ASSAULT: 'Assault',
+ PLANE_TYPE.NAVY: 'Navy'}
+BULLET_MAXIMUM_DIST = 1500 * WORLD_SCALING
+SEARCH_MAX_DISTANCE = 5000 * WORLD_SCALING
+BASE_HEALTH_SMOKE_ENABLE_PERCENTAGE = 0.3
+CRASH_DEAD_PLANE_OUT_MAP_OFFSET = 1500.0 * WORLD_SCALING
+MAX_WEAPON_GROUP = 6
+BULLET_EFFECTIVE_DIST = 0.0
+INCREASING_THE_ANGLE_OF_DISPERSION_OF_THE_VIBRATION = 10.0
+PART_STATE_HANGAR = 'hangar'
+PART_STATE_CRASH = 'crash'
+PART_STATE_FALL = 'fall'
+PART_STATE_IDHANGAR = 1
+PART_STATE_IDCRASH = 2
+PART_STATE_IDFALL = 4
+HEALTH_DAMAGE_PART_ID = 127
+HORIZONTAL_AXIS = 0
+VERTICAL_AXIS = 1
+ROLL_AXIS = 2
+FORCE_AXIS = 3
+FLAPS_AXIS = 4
+FREE_HORIZONTAL_CAM_GAMEPAD = 5
+FREE_VERTICAL_CAM_GAMEPAD = 6
+INPUT_AXIS_SET = set([HORIZONTAL_AXIS,
+ VERTICAL_AXIS,
+ ROLL_AXIS,
+ FORCE_AXIS,
+ FLAPS_AXIS])
+AXIS_NAME_TO_INT_MAP = {'horizontal': HORIZONTAL_AXIS,
+ 'vertical': VERTICAL_AXIS,
+ 'roll': ROLL_AXIS,
+ 'force': FORCE_AXIS,
+ 'flaps': FLAPS_AXIS}
+
+class GAME_MODE():
+    UNDEFINED = -1
+    TEAM_DEATHMATCH = 2
+    SUPERIORITY = 6
+    GM_TUTORIAL = 7
+    GM_INTRO = 14
+    SUPERIORITY_2 = 9
+    GM_ANY = 15
+
+
+PREBATTLE_GAMEMODES_FILTER_MAP = {GAME_MODE.UNDEFINED: 'gm_undefined',
+ GAME_MODE.TEAM_DEATHMATCH: 'gm_deathmatch',
+ GAME_MODE.SUPERIORITY: 'superiority_radio_text',
+ GAME_MODE.GM_TUTORIAL: 'gm_tutorial'}
+GM_QUEUE = 16
+GM_VISIBILITY = 32
+
+class GAME_RESULT():
+    UNDEFINED = -1
+    DRAW_TIME_IS_RUNNING_OUT = 0
+    SUPERIORITY_SUCCESS = 11
+    DRAW_SUPERIORITY = 12
+    ELIMINATION = 101
+    DRAW_ELIMINATION_NO_PLAYERS = 102
+    DRAW_ELIMINATION = 103
+
+
+WAITING_QUEUE_MAX_SIZE = 30
+WAITING_QUEUE_ALLOW_START_TIMER = 60.0
+ARENA_QUEUE_CHECKLOADED_TIME = 3.0
+ARENA_RELEASE_TIME = 10.0
+ARENA_QUEUE_AUTODESTROY_TIME = 75.0
+ARENA_DEV_AUTODESTROY_TIME = 5.0
+ARENA_FIRST_TRY_TO_STOP_TIME = 4.0
+ARENA_NONE_LOADED_DESTROY_TIME = 180.0
+ARENA_EMPTY_DESTROY_TIME = 90.0
+ARENA_WAIT4DRAW_DELAY = 3.0
+ARENA_RESPAWN_TIME = 7.0
+AVATAR_SELFDESTRUCT_ON_LOST = 120.0
+AVATAR_SELFDESTRUCT_ON_LEAVE = 30.0
+AVATAR_SELFDESTRUCT_ON_GAME_END = 0.5
+ARENA_SET_RUN_STATE_FOR_DOGFIGHT = 2.0
+
+class KICK_REASON():
+    ARENA_CREATION_FAILURE = 1
+    AVATAR_CREATION_FAILURE = 2
+    VEHICLE_CREATION_FAILURE = 3
+    PREBATTLE_CREATION_FAILURE = 4
+    BASEAPP_CRASH = 5
+    CELLAPP_CRASH = 6
+    UNKNOWN_FAILURE = 7
+    FINISHED = 8
+    CREATOR_LEFT = 9
+    PLAYERKICK = 10
+    TIMEOUT = 11
+    DELETED = 12
+    WRONG_DATA = 14
+    TIMEOUT_COLLECT_STATS = 15
+
+
+KICKOUT_TIMER = 1.0
+
+class BATTLE_DURATIONS():
+    UNDEFINED = -1
+    ROUND_5_MIN = 300.0
+    ROUND_10_MIN = 600.0
+    ROUND_15_MIN = 900.0
+    RANGE = (UNDEFINED,
+     ROUND_5_MIN,
+     ROUND_10_MIN,
+     ROUND_15_MIN)
+    RANGE_NO_UNDEFINED = (ROUND_5_MIN, ROUND_10_MIN, ROUND_15_MIN)
+    BATTLE_DURATIONS_MAP = {ROUND_5_MIN: 'battle_duration_5',
+     ROUND_10_MIN: 'battle_duration_10',
+     ROUND_15_MIN: 'battle_duration_15'}
+    DEFAULT_ROUND_TIMER = ROUND_15_MIN
+
+
+TIME_OUT_AFTER_BATTLE = 60.0
+ARENA_FREE_RUN = -1
+ARENA_WAITING_FOR_RUN = -2
+
+class ARENA_TYPE(object):
+    DISCONNECT = NONE = 0
+    NORMAL = 1
+    DEV = 2
+    TRAINING = 4
+    TUTORIAL = 5
+    PVE = 6
+    PVP_WITH_BOTS = 9
+    JAPANESE_THREAT = 10
+    ALL_TYPES = (NORMAL,
+     DEV,
+     TRAINING,
+     TUTORIAL,
+     PVP_WITH_BOTS,
+     JAPANESE_THREAT)
+    ACTIVE_TYPES = (NORMAL, PVP_WITH_BOTS)
+    if not config_consts.IS_CHINA:
+        ACTIVE_TYPES += (JAPANESE_THREAT,)
+
+    @classmethod
+    def getName(cls, arenaType):
+        for name, value in cls.__dict__.iteritems():
+            if value == arenaType:
+                return name
+
+    @classmethod
+    def getValueByName(cls, name):
+        return cls.__dict__.get(name, None)
+
+
+class ARENA_TYPE_ACTION(object):
+    CONNECT = 0
+    DISCONNECT = 1
+
+
+class SQUAD_MEMBER_STATE():
+    REQUESTED = 0
+    NOT_READY = 1
+    READY = 2
+    REJECTED = 3
+    LEAVE = 4
+
+    @staticmethod
+    def getConstNameByValue(const):
+        """
+        get string representation of some of SQUAD_MEMBER_STATE consts
+        @param classID:
+        @type classID: int
+        @return:
+        """
+        for k, v in SQUAD_MEMBER_STATE.__dict__.items():
+            if v == const:
+                return k
+
+
+class SQUAD_ACCOUNT_STATE():
+    ONLINE = 0
+    IN_BATTLE = 1
+    OFFLINE = 2
+    UNDEFINED = 3
+
+    @staticmethod
+    def getConstNameByValue(const):
+        """
+        get string representation of some of SQUAD_MEMBER_STATE consts
+        @param classID:
+        @type classID: int
+        @return:
+        """
+        for k, v in SQUAD_ACCOUNT_STATE.__dict__.items():
+            if v == const:
+                return k
+
+
+GET_CLIENT_MOTD = '[CLIENT_MOTD]'
+DOMINATION_INCREMENT = [0.7,
+ 1.3,
+ 1.8,
+ 2.3,
+ 2.7,
+ 3.0]
+ARTILLERY_DATA = [{'rMin': 50.0,
+  'rMax': 60.0,
+  'damageMin': 100,
+  'damageMax': 150},
+ {'rMin': 40.0,
+  'rMax': 50.0,
+  'damageMin': 100,
+  'damageMax': 150},
+ {'rMin': 30.0,
+  'rMax': 40.0,
+  'damageMin': 150,
+  'damageMax': 200},
+ {'rMin': 0.0,
+  'rMax': 0.0,
+  'damageMin': 500,
+  'damageMax': 600}]
+COLLISION_TYPE_TREE = 120
+COLLISION_TYPE_MAST = 121
+COLLISION_TYPE_NAV = 122
+COLLISION_TYPE_WATER = 10
+COLLISION_TYPE_GROUND = 0
+FORWARD_DIRECTION = Math.Vector3(0.0, 0.0, 1.0)
+UP_DIRECTION = Math.Vector3(0.0, 1.0, 0.0)
+SIDE_DIRECTION = Math.Vector3(1.0, 0.0, 0.0)
+AUTOGIDER_ENABLED = True
+AUTOGIDER_ANGLE_SCALE = 1.25
+AUTOGUIDER_SCALE_MAXDIST = 0.5
+AUTOGUIDER_SCALE_MINDIST = 1.5
+AUTOGUIDER_ANGLE_GROUND = 1.5 / 57
+DEFAULT_LATENCY = 0.1
+
+class UPDATABLE_TYPE():
+    ROCKET = 3
+    BOMB = 4
+    BALLISTIC = 5
+
+
+class SHELL_INDEX():
+    TYPE1 = 0
+    TYPE2 = 1
+
+
+QA_ACCOUNT_ENABLED = False and config_consts.IS_DEVELOPMENT
+QA_AVATAR_ENABLED = True and config_consts.IS_DEVELOPMENT
+QA_TESTING_ENABLED = False and config_consts.IS_DEVELOPMENT
+QA_CLIENT_ACCOUNT_TESTING = []
+QA_START_GUI_AUTOTESTS = False and config_consts.IS_DEVELOPMENT
+QA_ACCOUNT_SECURITY_TESTING = None
+QA_AVATAR_SECURITY_TESTING = None
+MARKET_EQUIPMENT_GUNS = 0
+MARKET_EQUIPMENT_ENGINES = 1
+MARKET_EQUIPMENT_RADIOS = 2
+MARKET_EQUIPMENT_SHELLS = 3
+MARKET_EQUIPMENT_ALL = 4
+MARKET_PLANE = 5
+MARKET_PLANE_TYPE_ALL = 6
+
+class AUTO_AIMING_MODE():
+    """
+    Auto aiming mode enum
+    """
+    AUTO_AIMING_DISABLED = 0
+    AUTO_AIMING_TARGET = 1
+    AUTO_AIMING_BOT = 2
+    AUTO_AIMING_POINT = 3
+
+
+class AUTO_AIMING_FIRE_TYPE_FLAGS():
+    GUNS = 1
+    ROCKETS = 2
+
+
+AUTO_AIMING_POINT_ENOUGH_DISTANCE_DELTA = 300
+AUTO_AIMING_DEFAULT_SHOOT_DISTANCE = 800 * WORLD_SCALING
+AUTO_AIMING_DEFAULT_SHOOT_RADIUS = 15 * WORLD_SCALING
+AUTO_AIMING_DEFAULT_GUNS_FIRE_PERIOD = 10
+AUTO_AIMING_DEFAULT_GUNS_FIRE_TIME = 5
+AUTO_AIMING_BOT_TARGET_DIST = 3000.0 * WORLD_SCALING
+ALL_GUNS_FIRE_FLAGS = 4294967295L
+ALL_GUNS_NOT_FIRE_FLAGS = 0
+BOT_DEFAULT_MIN_BOMBING_HEIGHT = 20
+BOT_DEFAULT_ENOUGH_TARGET_BOMBING_DISPERSION = 10
+DEFAULT_TARGET_POINT = Math.Vector3(-300.0, 70.0, -275.0)
+DEFAULT_TARGET_POINT_OFFSET = Math.Vector3(300.0, 0.0, 0.0) * WORLD_SCALING
+FORWARD_COLIDE_DIST = 1500.0 * WORLD_SCALING
+BOMBER_PLANE_COUNTRY = 'USSR'.lower()
+BOMBER_PLANE_ID = 'IL-2'.lower()
+BOT_DEBUG = 0
+BOT_BOMBER = 1
+METERS_PER_SEC_TO_KMH_FACTOR = 3.6
+SIEGE_CANNONS_RELOADING_TIME = 5.0
+SUPERIORITY_TAKEN_DAMAGE_K = 1.0
+SUPERIORITY_INITIAL_DELAY = 30.0
+SUPERIORITY_OBJECT_DESTRUCTION_K = 0.3
+SUPERIORITY_AVATAR_DESTRUCTION_K = 0.15
+INACTIVE_ACCOUNT_DISCONNECT_TIME = 0
+GRAVITY = 9.81
+
+class ACCOUNT_TYPE():
+    PLAYER = 1
+    DEVELOPER_SERVER = 252
+
+
+class ACCOUNT_TYPE2():
+    FIRST_FLAG = 1
+    LAST_FLAG = 16384
+    ACCOUNT_TYPE_DEFAULT = ACCOUNT_TYPE.PLAYER << 24
+
+    @staticmethod
+    def getPrimaryGroup(type):
+        return type >> 24 & 255
+
+    @staticmethod
+    def getSecondaryGroup(type):
+        return type >> 16 & 255
+
+    @staticmethod
+    def getFlags(type):
+        return type & 65535
+
+    @staticmethod
+    def getAttrs(types, type):
+        primaryType = ACCOUNT_TYPE2.getPrimaryGroup(type)
+        secondaryType = ACCOUNT_TYPE2.getSecondaryGroup(type)
+        from HelperFunctions import findIf
+        pTypeData = findIf(types.primary.type, lambda t: t.id == primaryType)
+        raise pTypeData is not None or AssertionError
+        attrsPrimaryGroup = 0
+        for attr in pTypeData.attributes:
+            attrsPrimaryGroup |= attr
+
+        sTypeData = findIf(types.secondary.type, lambda t: t.id == secondaryType)
+        attrsSecondaryGroup = 0
+        if sTypeData:
+            for attr in sTypeData.attributes:
+                attrsSecondaryGroup |= attr
+
+        return attrsPrimaryGroup | attrsSecondaryGroup
+
+    @staticmethod
+    def makeAccountType(primary, secondary, flags):
+        return (primary & 255) << 24 | (secondary & 255) << 16 | flags & 65535
+
+
+class ACCOUNT_ATTR():
+    RANDOM_BATTLES = 1
+    TRADING = 2
+    CLAN = 4
+    MERCENARY = 8
+    RATING = 16
+    USER_INFO = 32
+    STATISTICS = 64
+    ARENA_CHANGE = 128
+    CHAT_ADMIN = 256
+    ADMIN = 512
+    ROAMING = 1024
+    DAILY_MULTIPLIED_XP = 2048
+    PAYMENTS = 4096
+    OUT_OF_SESSION_WALLET = 8192
+    DAILY_BONUS_1 = 2097152
+    DAILY_BONUS_2 = 4194304
+    ALPHA = 536870912
+    CBETA = 1073741824
+    OBETA = 2147483648L
+    PREMIUM = 4294967296L
+    AOGAS = 8589934592L
+    IGR_BASE = 34359738368L
+    IGR_PREMIUM = 68719476736L
+    WOWP_EXHIBITION_1 = 562949953421312L
+    WOWP_EXHIBITION_2 = 1125899906842624L
+    WOWP_DEVELOPMENT = 2251799813685248L
+    WOWP_AUTOSQUAD = 4503599627370496L
+    INNER_RANGE = (PREMIUM,)
+
+    @staticmethod
+    def attrsStr(attrs):
+        return ','.join((k for k, v in ACCOUNT_ATTR.__dict__.iteritems() if isinstance(v, int) and attrs & v != 0))
+
+
+class RESTRICTION_TYPE():
+    NONE = 0
+    BAN = 1
+    BAN_AFTER_BATTLE = 2
+    CHAT_BAN = 3
+    TRADING = 4
+    CLAN = 5
+
+
+class RESTRICTION_SOURCE():
+    UNKNOWN = 0
+    SERVER = 1
+    CLIENT = 2
+    BACKYARD = 3
+    MIGRATOR = 4
+
+
+SPA_RESTR_NAME_TO_RESTR_TYPE = {'game': RESTRICTION_TYPE.BAN,
+ 'chat': RESTRICTION_TYPE.CHAT_BAN}
+RESTR_TYPE_TO_SPA_NAME = dict(((x[1], x[0]) for x in SPA_RESTR_NAME_TO_RESTR_TYPE.iteritems()))
+
+class INVOICE_EMITTER():
+    PAYMENT_SYSTEM = 1
+    BACKYARD = 2
+    COMMUNITY = 3
+    PORTAL = 4
+    DEVELOPMENT = 5
+    CN_GIFT = 6
+    CN_BUY = 7
+    EBANK_WORKER = 8
+    ACTION_APPLIER = 9
+    WG = 10
+    WGCW = 11
+    INTERNAL = 120
+    NEGATIVE = (BACKYARD,
+     COMMUNITY,
+     PORTAL,
+     DEVELOPMENT,
+     CN_GIFT,
+     CN_BUY,
+     WG,
+     WGCW,
+     INTERNAL)
+    RANGE = (PAYMENT_SYSTEM,
+     BACKYARD,
+     COMMUNITY,
+     PORTAL,
+     DEVELOPMENT,
+     CN_GIFT,
+     CN_BUY,
+     EBANK_WORKER,
+     ACTION_APPLIER,
+     WG,
+     WGCW,
+     INTERNAL)
+
+
+class INVOICE_ASSET():
+    GOLD = 1
+    CREDITS = 2
+    PREMIUM = 3
+    DATA = 4
+    FREE_XP = 5
+
+
+class STREAM_CLIENT():
+    STREAM_ID_UPDATE_ARENA = 15
+    STREAM_ID_RESPONSE = 20
+    STREAM_ID_TRAINING_ROOM_LIST = 40
+    STREAM_ID_TRAINING_ROOM_DATA = 42
+    STREAM_ID_MESSENGER = 50
+    USE_PROXY_STREAM_FROM_SIZE = 142
+
+
+MAX_SEND_DATA_SIZE = 1536
+
+class RESPONSE_TYPE():
+    RESPONSE_TYPE_CMD = 1
+    RESPONSE_TYPE_OPERATION = 2
+
+
+class ARENA_UPDATE():
+    RECEIVE_TEXT_MESSAGE = 1
+    RECEIVE_MARKER_MESSAGE = 2
+    VEHICLE_KILLED = 3
+    TEAM_DOMINATION_PRC = 4
+    BASE_IS_UNDER_ATTACK = 5
+    RECEIVE_ALL_TEAM_OBJECTS_DATA = 8
+    RECEIVE_NEW_AVATARS_INFO = 13
+    PLAYER_STATS = 14
+    TEAM_SUPERIORITY_POINTS = 17
+    REPORT_BATTLE_RESULT = 18
+    RECEIVE_VOIP_CHANNEL_CREDENTIALS = 19
+    TEAM_OBJECT_DESTROYED = 20
+    TURRET_BOOSTER_DESTROYED = 21
+    GAME_RESULT_CHANGED = 22
+    TEAM_OBJECT_PARTGROUP_DESTROYED = 23
+    SCENARIO_ICON = 24
+    SCENARIO_TEXT = 25
+    GAIN_AWARD = 26
+    RECEIVE_LAUNCH = 27
+    UPDATE_OBJECTS_DATA = 28
+    UPDATE_DEBUG_INFO = 29
+    RECEIVE_BATTLE_MESSAGE_REACTION_RESULT = 30
+
+
+class AWARDS_TYPE():
+    MEDALS_OFFSET = 0
+    ACHIEVEMENTS_OFFSET = 70
+    RIBBONS_OFFSET = 170
+
+
+class QA_FUNCTIONS():
+    GET_ATTR = 1
+    SET_ATTR = 2
+    GET_ALL_OBJECTS = 3
+    TELEPORT = 4
+    CHANGE_PAUSE = 5
+    IS_AVATAR_VISIBLE_TO_OBSERVER = 6
+    IS_ENGINE_OVERHEATED = 7
+    IS_ENGINE_IN_RED_ZONE = 8
+    GET_AVATAR_SPEED = 9
+    IS_AVATAR_DEAD = 10
+    GET_DISTANCE_TO_AVATAR = 11
+    CHANGE_AUTO_AIMING_MODE = 12
+    CHANGE_MODULE_STATE = 13
+    CHANGE_FIRE_STATE = 14
+    CHANGE_ARENA_FREEZE_STATE = 15
+    RESPAWN_AVATAR = 16
+    MAX_VELOCITY = 17
+    MAX_RATE_OF_CLIMB = 18
+    SET_GRAVITY = 19
+    RESET_GRAVITY = 20
+    TEST_START_NOTIFICATION = 21
+    TEST_FINISH_NOTIFICATION = 22
+    SERVER_PRINT = 23
+    TURBO = 24
+    HORIZONTAL_TURN = 25
+    CHANGE_FIRING_STATE = 26
+    CHANGE_DEBUG_MODE = 27
+    SHOOT_SHELL = 28
+    GET_OBJECT_DATA = 29
+    REFILL_AMMO = 30
+    RENEW_AIRCRAFT = 31
+    GET_DYNAMIC_ATTRIBUTES_PROXY_ATTR = 32
+    SET_AVATAR_SPEED = 33
+    CLEAR_ENGINE_TEMPERATURE = 34
+    RENEW_CONSUMABLES = 35
+    DESTROY_MODULE = 36
+    CMD_DESTROY_PLANE = 37
+    IGNORE_CURRENT_TURRET_TARGET = 38
+
+
+class TYPE_TEAM_OBJECT():
+    INVALID = -1
+    SMALL = 1
+    BIG = 2
+    TURRET = 3
+    CANNON = 4
+    VEHICLE = 5
+    BALLOON = 6
+
+
+class ACTION_DEALER():
+    NONE = 0
+    PILOT = 1
+    GUNNER = 2
+    RAMMING = 3
+    TURRET = 4
+
+
+class TUTORIAL_AVATAR_DESTROYED_REASON():
+    NONE = 0
+    OTHER = 1
+    RAMMING_AVATAR = 2
+    GROUND = 3
+
+
+TYPE_TEAM_OBJECT_STR_MAP = {'smallTeamObject': TYPE_TEAM_OBJECT.SMALL,
+ 'bigTeamObject': TYPE_TEAM_OBJECT.BIG,
+ 'turret': TYPE_TEAM_OBJECT.TURRET,
+ 'vehicle': TYPE_TEAM_OBJECT.VEHICLE,
+ 'balloon': TYPE_TEAM_OBJECT.BALLOON}
+TYPE_TEAM_OBJECT_STR_MAP_REVERTED = dict([ (val, shellIndex) for shellIndex, val in TYPE_TEAM_OBJECT_STR_MAP.items() ])
+MESSAGE_MAX_SIZE = 254
+
+class MESSAGE_TYPE():
+    MOTD = 0
+    REBOOT = 1
+    BROADCAST = 2
+    COMMON = 10
+    PRIVATE = 11
+    ADMIN = 12
+    BUY_AIRCRAFT = 20
+    SELL_AIRCRAFT = 21
+    REPAIR_AIRCRAFT = 22
+    RESEARCH_AIRCRAFT = 23
+    RESULT_BATTLE = 24
+    GOLD_RECEIVED = 25
+    GOLD_SPENT = 26
+    CREDITS_RECEIVED = 27
+    EXCHANGE_EXP = 28
+    INSTALL_PRESET = 29
+    BUY_UPGRADE = 30
+    RESEARCH_UPGRADE = 31
+    REFILL_AIRCRAFT_SHELLS = 32
+    REFILL_AIRCRAFT_BELTS = 33
+    REFILL_AIRCRAFT_CONSUMABLES = 34
+    INSTALL_UPGRADE = 35
+    BUY_EQUIPMENT = 36
+    INSTALL_EQUIPMENT = 37
+    DETACH_EQUIPMENT = 38
+    DESTROY_EQUIPMENT = 39
+    BATTLE_ALL = 40
+    BATTLE_ALLY = 41
+    BATTLE_ALL_FROM_OPPONENT = 42
+    BATTLE_SQUAD = 43
+    BATTLE_PROMPT_COMMAND = 44
+    BATTLE_NEUTRAL = 45
+    BATTLE_NEUTRAL_UNIVERSAL = 46
+    SYSTEM_SYNC_ALL_INVENTORY = 47
+    PREMIUM_EXTENDED = 50
+    PREMIUM_BOUGHT = 51
+    PREMIUM_EXPIRED = 52
+    SCREENSHOT = 60
+    DROP_SKILLS = 62
+    TRAINING_SKILL = 63
+    RETRAINING_SKILL = 64
+    GOT_FIRST_SP = 65
+    GOT_NEW_SP = 66
+    CREW_DEMOBILIZE = 67
+    CREW_EXP_PUMPING = 68
+    CHANGE_XP_TO_SP = 69
+    SQUAD_INVITATION = 70
+    SQUAD_LEAVING = 71
+    SQUAD_EXCLUDED = 72
+    SQUAD_DESTROYED = 73
+    SQUAD_INVITE_ACCEPTED = 74
+    SQUAD_INVITE_REJECTED = 75
+    SQUAD_MEMBER_LEAVING = 76
+    SQUAD_ERROR_MEMBER_OFFLINE = 77
+    SQUAD_ERROR_MEMBER_BATTLE = 78
+    SQUAD_ERROR_MEMBER_NOT_IN_SQUADFINDER = 79
+    BUY_CONSUMABLES = 80
+    INSTALL_CONSUMABLES = 81
+    SELL_CONSUMABLES = 82
+    VOIP_SERVICE_DOWN = 90
+    GIFT_PLANE_I15DM2 = 92
+    GIFT_PLANE = 93
+    DEDUCT_PLANE = 94
+    GIFT_PLANE_SLEIPNIR = 95
+    WINNER_GOLD_RECEIVED = 100
+    TUTORIAL_REWARD_GOLD = 101
+    TUTORIAL_REWARD = 102
+    USER_UNBANNED = 103
+    USER_BANNED = 104
+    UNINSTALL_UPGRADE = 105
+    SHOP_PURCHASE = 106
+    BUY_SLOT = 107
+    CREW_MEMBER_GET_NEW_RANK = 108
+    BUY_BARRACK_SLOTS = 109
+    SELL_EQUIPMENT = 120
+    SELL_UPGRADE = 121
+    BUY_AMMO = 122
+    SELL_AMMO = 123
+    TOKEN_EXCHANGED = 124
+    UPDATE_IN_BATTLE_BUTTON = 125
+    CALL_CLIENT_METHOD = 126
+    BUY_CAMOUFLAGE = 127
+    WALLET_CONNECTED = 128
+    REFILL_FAILED = 129
+    PREMIUM_BELTS_GIVEN = 130
+    FREE_XP_ACTIVATED = 131
+    QUEST_GET_BONUS = 132
+    SERVER_DOWNTIME_COMPENSATION = 133
+    QUEST_NEW_MESSAGES = 134
+    PLANE_RENT_EXTENDED = 135
+    PLANE_PURCHASED_RENT_REFUND = 136
+    SERVER_OVERLOADED = 137
+    PLANE_RENT_COMPENSATION = 138
+    PVE_OLDUSER_WELCOME = 140
+    PVE_COMPLETE_MAIN_QUEST = 141
+    PVP_FIRST_RUN = 142
+    PVE_VS_PVP_INFO = 143
+    PVE_INVITE_WELCOME = 144
+    NEW_YEAR_MESSAGE = 145
+    APRIL1ST_WELCOME = 146
+    APRIL1ST_CAMOUFLAGE = 147
+    AWARD_COMPLETE = 148
+    WINDOW_ADVERTISING_ACTION = 149
+    MESSAGE_GROUP = 150
+    UPGRADES_CHANGED = 151
+    PLANE_BIRTHDAY = 152
+    INTERVIEW_WINDOW = 153
+    PLANE_BIRTHDAY_EMBLEM = 154
+    FINISHED_SKINNER_BOX = 155
+    GOLD_TO_TICKET_EXCHANGE = 156
+    SKINNER_BOX_AWARDS = 157
+    TICKETS_RECEIVED = 158
+    PLANE_BIRTHDAY_INFO_BEFORE = 159
+    SKINNER_BOX_FINISH = 160
+    SKINNER_END_ACTION_WINDOW = 161
+    SKINNER_BEFORE_END_ACTION_WINDOW = 162
+    PLANE_BIRTHDAY_AD = 163
+    END_OF_SELL_GOLD_ITEMS = 164
+    COMPENSATION_QUEST_CHIPS = 165
+    BANNER_ACTION_BUY_QUEST = 166
+    BUY_QUEST_CHIPS = 167
+    WARNING_END_OF_ACTION_SUMMER = 168
+    WINDOW_ADVERTISING_COMMON_1_9 = 169
+    WINDOW_ADVERTISING_CAMOUFLAGE_1_9 = 170
+    WINDOW_BELTS_RECHARGED = 171
+    WINDOW_ADVERTISING_DAILY_QUEST = 172
+    WINDOW_ADVERTISING_NY_1_9_X = 173
+    WINDOW_ADVERTISING_WAR_CASH = 174
+    WINDOW_ADVERTISING_IL_10M = 175
+    SYSTEM_PRESENT_BUY_IL_10M = 176
+    WINDOW_ADVERTISING_TICKETS_ALWAYS = 177
+    TOOLTIP_HOLIDAY_HANGAR = 178
+    WINDOW_ADVERTISING_SPRING_ASSAULT = 179
+    BOT_CHAT_ALL = 180
+    BOT_CHAT_TEAM = 181
+    SPEND_BUYING_QUEST = 182
+    WAR_CASH_PAY_TICKET = 183
+    WINDOW_ADVERTISING_PREMIUM_BY_TICKETS = 190
+    WINDOW_SPRING_ASSAULT_AWARD_PLANE = 191
+    WINDOW_ADVERTISING_I_302 = 192
+    SYSTEM_PRESENT_BUY_I_302 = 193
+    WINDOW_MEMORIAL_DAY_30MAY = 194
+    WINDOW_INDEPENDENCE_DAY_4JULY = 195
+    WINDOW_REFERRAL_OLD_PLAYER = 196
+    WINDOW_REFERRAL_NEW_PLAYER_MAY_INVITE = 197
+    WINDOW_REFERRAL_NEW_PLAYER_WELCOME = 198
+    WINDOW_ADVERTISING_1_9_5 = 199
+    REFERRAL_EMAIL_SEND_NOTIFICATION = 200
+    WINDOW_ADVERTISING_A6M3 = 201
+    SYSTEM_PRESENT_BUY_A6M3 = 202
+    WINDOW_ADVERTISING_CREW_FREE_EXP = 203
+    REFERRAL_ADVERTISING_OLD_PLAYERS = 210
+    REFERRAL_ADVERTISING_NEW_RECRUIT = 211
+    REFERRAL_ADVERTISING_RECRUIT_UPDATE_STATUS = 212
+    REFERRAL_MSG_NEW_RECRUIT = 213
+    REFERRAL_MSG_COMPLETE_CHECKPOINT = 214
+    REFERRAL_MSG_RECRUIT_BUY_PREMIUM = 215
+    REFERRAL_MSG_RECRUIT_BUY_GOLD = 216
+    REFERRAL_MSG_RECRUIT_PLANE_5LVL = 217
+    REFERRAL_MSG_GET_AWARD_PLANE = 218
+    REFERRAL_MSG_GET_AWARD_FOR_PREMIUM = 219
+    REFERRAL_MSG_GET_AWARD_FOR_GOLD = 220
+    REFERRAL_MSG_RECRUIT_LEFT_DAYS = 221
+    REFERRAL_MSG_RECRUIT_EXPIRED = 222
+    REFERRAL_MSG_RECRUITER_ONLINE = 223
+    REFERRAL_MSG_PLAYER_LEFT_DAYS = 224
+    REFERRAL_MSG_PLAYER_EXPIRED = 225
+    WAR_ACTION_STATE_CHANGE = 235
+    WAR_ACTION_CHANGE_FRACTION = 236
+    WAR_ACTION_BROADCAST_MESSAGE_FIRST = 240
+    WAR_ACTION_WAR_BEGIN = 240
+    WAR_ACTION_FIRST_LOOSE = 241
+    WAR_ACTION_SCORE_LEAD = 242
+    WAR_ACTION_SCORE_EQUALS = 243
+    WAR_ACTION_SCORE_HALF = 244
+    WAR_ACTION_VICTORY_IS_NEAR = 245
+    WAR_ACTION_UNBREAKABLE_SERIES = 250
+    WAR_ACTION_EPIC_AWARD_GAIN = 251
+    WAR_ACTION_HERO_AWARD_GAIN = 252
+    WAR_ACTION_WIN_WITHOUT_LOOSE = 253
+    WAR_ACTION_A_LOT_PLANES_LOOSE = 254
+    WAR_ACTION_WAR_END = 255
+    WAR_ACTION_BROADCAST_MESSAGE_LAST = 260
+    WINDOW_AUTUMN_ASSAULT_AWARD_PLANE = 265
+    WINDOW_AUTUMN_HEAVY_AWARD_PLANE = 266
+    WINDOW_AUTUMN_ADVERTISING_BEFORE_START = 267
+    WINDOW_AUTUMN_ADVERTISING_AFTER_START = 268
+    WINDOW_ADVERTISING_JAPAN_THREAT = 270
+    WINDOW_ADVERTISING_COMPENSATION_PRIZES = 271
+    BUY_PACK = 280
+    BUY_PACK_INFO = 281
+    WINDOW_LTO_FRACNCH = 283
+    ADD_CREW = 284
+    ADD_SLOT = 285
+    WINDOW_ADVERTISING_3YEAR_PLANES = 290
+    WINDOW_WINTER_ADVERTISING = 310
+    WINDOW_WINTER_HS_123_AWARD_PLANE = 311
+    WINDOW_WINTER_P_80_AWARD_PLANE = 312
+    WINDOW_NEW_YEAR_2017_ADVERTISING = 313
+    SECRET_SANTA_ACHIEVEMENT = 315
+
+
+NOT_SEND_TO_CLIENT_MESSAGE_TYPE = [MESSAGE_TYPE.WAR_ACTION_STATE_CHANGE]
+NOT_SAVE_MESSAGE_TYPES = [MESSAGE_TYPE.MOTD]
+HISTORY_MESSAGE_MAX_COUNT = 0
+
+class BATTLE_MESSAGE_TYPE():
+    ENEMY_HERE = 1
+    ENEMY_MY_AIM = 2
+    GOT_IT = 3
+    JOIN_ME = 4
+    MY_LOCATION = 5
+    NEED_SHELTER = 6
+    FAILURE = 7
+    SOS = 8
+    JOIN_ME_ENEMY = 21
+    ENEMY_MY_AIM_ENEMY = 22
+    STARTING_NEED_SHELTER = 23
+
+
+class MESSAGE_GROUP_TYPE():
+    """
+    This consts are used in message grouping logs.
+    They must not conflict with MESSAGE_TYPE enum because MESSAGE_GROUP_TYPE is used as msgType
+    after grouping
+    """
+    COMMON = 1001
+    SERVICE = 1002
+
+
+class BLOCK_TYPE():
+    UNLOCKED = 0
+    IN_BATTLE = 1
+    LOADING_BATTLE = 2
+    NEED_REPAIR = 4
+    NEED_REFILL_BELTS = 8
+    INCOMPLETE_CREW = 16
+    LOCKED = IN_BATTLE | LOADING_BATTLE
+
+
+class BATTLE_TYPE():
+    RANDOM_BATTLE = 0
+    SINGLE_BATTLE = 1
+
+
+CHAT_HISTORY_MAX_COUNT = 15
+
+class KILLED_TYPE():
+    AVATAR = 1
+    TEAM_OBJECT = 2
+
+
+class TEAM_ID():
+    UNDEFINED = -1
+    TEAM_0 = 0
+    TEAM_1 = 1
+    DECORATOR = 2
+    RANGE = (UNDEFINED, TEAM_0, TEAM_1)
+    CHOSEN = (TEAM_0, TEAM_1)
+
+
+class PLANE_LEVELS():
+    UNDEFINED = -1
+    MINIMUM_PLANE_LEVEL = 1
+    MAXIMUM_PLANE_LEVEL = 10
+    RANGE = (UNDEFINED, MINIMUM_PLANE_LEVEL, MAXIMUM_PLANE_LEVEL)
+
+
+class PREBATTLE_TYPE():
+    SQUAD = 1
+    TRAINING = 2
+    COMPANY = 3
+    TOURNAMENT = 4
+    CLAN = 5
+    RANGE = (SQUAD,
+     TRAINING,
+     COMPANY,
+     TOURNAMENT,
+     CLAN)
+
+
+class PREBATTLE_LEVELS_FILTER():
+    ALL = 0
+    CURRENT = 1
+    RANGE = (ALL, CURRENT)
+    PREBATTLE_LEVELS_FILTER_MAP = {ALL: 'all_levels',
+     CURRENT: 'current_level'}
+
+
+class PREBATTLE_FIRE_MODE_FILTER():
+    UNDEFINED = -1
+    REGULAR = 0
+    DISABLED = 1
+    TRANING = 2
+    RANGE = (UNDEFINED,
+     REGULAR,
+     DISABLED,
+     TRANING)
+    PREBATTLE_FIRE_MODE_FILTER_MAP = {UNDEFINED: 'fire_mode_undefined',
+     REGULAR: 'fire_mode_regular',
+     DISABLED: 'fire_mode_disabled',
+     TRANING: 'fire_mode_traning'}
+
+
+class PREBATTLE_PLANES_LEVELS():
+    FIRST = 1
+    SECOND = 2
+    THIRD = 3
+    FOURTH = 4
+    FIFTH = 5
+    SIXTH = 6
+    SEVENTH = 7
+    EIGHT = 8
+    NINTH = 9
+    TENTH = 10
+    RANGE = (FIRST,
+     SECOND,
+     THIRD,
+     FOURTH,
+     FIFTH,
+     SIXTH,
+     SEVENTH,
+     EIGHT,
+     NINTH,
+     TENTH)
+    PREBATTLE_PLANES_LEVELS_MAP = {FIRST: 'I',
+     SECOND: 'II',
+     THIRD: 'III',
+     FOURTH: 'IV',
+     FIFTH: 'V',
+     SIXTH: 'VI',
+     SEVENTH: 'VII',
+     EIGHT: 'VIII',
+     NINTH: 'IX',
+     TENTH: 'X'}
+
+
+class PREBATLE_ACCOUNT_STATUS():
+    READY = 1
+    PLANE_NOT_READY = 2
+    IN_BATTLE = 3
+    DISCONNECTED = 4
+    HAS_CLIENT = (READY, PLANE_NOT_READY)
+
+
+class PREBATLE_DATA():
+    ROOM_INFO = 1
+    TEAM_LIST = 2
+    REMOVE_MEMBER = 3
+    SET_SESSION = 4
+
+
+class UPGRADE_TYPE():
+    """
+    Enum
+    """
+    AIRCRAFT = 'aircraft'
+    ENGINE = 'engine'
+    PLANER = 'planer'
+    TURRET = 'turret'
+    GUN = 'gun'
+    BOMB = 'bomb'
+    ROCKET = 'rocket'
+    MODULES = [ENGINE, PLANER, TURRET]
+    SHELL = [BOMB, ROCKET]
+    WEAPON = [GUN] + SHELL
+    STRING_TO_INT_MAP = {AIRCRAFT: 0,
+     ENGINE: 1,
+     PLANER: 2,
+     TURRET: 3,
+     GUN: 4,
+     BOMB: 5,
+     ROCKET: 6}
+    ICON_PATH_OVERRIDE = {'tinytim': 'icons/modules/modulesIconRocketTinyTim.png'}
+    GUN_ICONS_PATH_INTERVALS = ((0, 14, 'icons/modules/weapMachinegun.png'), (14, 23, 'icons/modules/weapAutocannon_15.png'), (23, 122, 'icons/modules/weapAutocannon_23.png'))
+    ICON_PATH_MAP = {AIRCRAFT: 'icons/modules/modulesIconAircraft.png',
+     ENGINE: 'icons/modules/modulesIconEngine.png',
+     PLANER: 'icons/modules/modulesIconConstruction.png',
+     TURRET: 'icons/modules/modulesIconTurret.png',
+     GUN: 'icons/modules/modulesIconMachinegun.png',
+     BOMB: 'icons/modules/modulesIconBomb.png',
+     ROCKET: 'icons/modules/modulesIconRocket.png'}
+    DESCRIPTION_MAP = {AIRCRAFT: 'aircraft_description',
+     ENGINE: 'engine_description',
+     PLANER: 'planer_description',
+     TURRET: 'turret_description',
+     GUN: 'gun_description',
+     BOMB: 'bomb_description',
+     ROCKET: 'rocket_description'}
+    TTX_ICON_PATH_MAP = {TURRET: 'icons/characteristics/iconCharRing.png',
+     BOMB: 'icons/characteristics/iconCharBomb.png',
+     ROCKET: 'icons/characteristics/iconCharRocket.png'}
+    TITLE_MAP = {ENGINE: 'AVAILABLE_ENGINE',
+     PLANER: 'AVAILABLE_PLANNER',
+     TURRET: 'AVAILABLE_TURRET'}
+
+
+class COMPONENT_TYPE():
+    ROCKETS = 0
+    BOMBS = 1
+    GUNS = 2
+    AMMO = 3
+    AMMOBELT = 4
+
+
+UPGRADE_TYPE_TO_COMPONENT_TYPE = {UPGRADE_TYPE.GUN: COMPONENT_TYPE.GUNS,
+ UPGRADE_TYPE.BOMB: COMPONENT_TYPE.BOMBS,
+ UPGRADE_TYPE.ROCKET: COMPONENT_TYPE.ROCKETS}
+DEFAULT_MODULE_GROUPS_ORDER_BY_TYPE = {UPGRADE_TYPE.PLANER: 0,
+ UPGRADE_TYPE.ENGINE: 1,
+ UPGRADE_TYPE.TURRET: 2,
+ 'slot_0': 3,
+ 'slot_1': 4,
+ 'slot_2': 5,
+ 'slot_3': 6,
+ 'slot_4': 7,
+ 'slot_5': 8,
+ 'slot_6': 9}
+MAX_PARENT_UPGRADES_CHECK_DEPTH = 10
+PREBATTLE_MAPID_UNDEFINED_FILTER = -1
+TRAINING_ROOM_CREATE_DESCRIPTION_LIMIT = 256
+
+class TRAINING_ROOM_REASON():
+    ROOM_DELETED = 0
+    USER_LIMIT = 1
+    NOT_READY = 2
+    ERROR_MESSAGE = ['TRAINING_ROOMS_MSG_ERROR_ROOM_DELETED', 'TRAINING_ROOMS_MSG_ERROR_USER_LIMIT', 'TRAINING_ROOMS_MSG_ERROR_NOT_READY']
+
+
+class TUTORIAL_LESSON_STATUS():
+    CLOSED = 0
+    OPENED = 1
+    PASSED = 2
+
+
+class LESSON_PART_STATE():
+    """
+    Lesson part state enum
+    """
+    START = 0
+    RESTART = 1
+    MAIN = 2
+    INT_TO_STRING_MAP = {START: 'start',
+     RESTART: 'restart',
+     MAIN: 'main'}
+
+
+class EXECUTOR_TYPE():
+    """
+    Operation receiver enum
+    """
+    CELL = 'cell'
+    CLIENT = 'client'
+    BASE = 'base'
+
+
+TUTORIAL_DEFAULT_AIRCRAFT_ID = 3101
+TUTORIAL_ARENA_RESPAWN_TIME = 1
+TUTORIAL_PLAYER_READY_TIMEOUT = 0
+TUTORIAL_AUTOPILOT_HEADER = 'TUTORIAL_AUTOPILOT_HEADER'
+TUTORIAL_AUTOPILOT_MESSAGE = 'TUTORIAL_AUTOPILOT_MESSAGE'
+TUTORIAL_LOADING_MESSAGE = 'LOBBY_LOAD_HANGAR_SPACE_VEHICLE'
+TUTORIAL_START_POSITION_DISPERSION = 1.0
+TUTORIAL_REQUIRED_PREVIOUS_LESSONS = -1
+TUTORIAL_REQUIRED_NO_LESSONS = -2
+BOT_HIDE_POSITION = Math.Vector3(1000, 1000, 1000)
+TutorialHintsInputEnum = {'mouse': 0,
+ 'keyboard': 1,
+ 'gamepad': 2,
+ 'joystick': 3}
+
+class QUEUE_WAIT_TYPE():
+    TUTORIAL = 1
+
+
+TUTORIAL_LESSON_INVITE_OFFSET = 100
+TUTORIAL_LESSON_FORBID_OFFSET = 200
+TUTORIAL_LESSON_INVITE_DISABLED_OFFSET = 100
+TUTORIAL_LESSON_INVITE_SHOW_LOGIN_PASS = 2
+TUTORIAL_LESSON_INVITE_DISABLE_PLANE_LEVEL = 4
+TUTORIAL_LESSON_SECOND_PLANE_LEVEL_ENABLE = 4
+TUTORIAL_LESSON_INVITE_MAX_WAITING_TIME = 5 * 60 * 1000
+TUTORIAL_QUEUE_SHOW_WAITING_AVG_TIME = 1000
+TUTORIAL_BOT_CHECK_DISTANCE = 150 * WORLD_SCALING
+TUTORIAL_MARKER_ARROW_DELAY = 2.0
+TUTORIAL_HINT_FORCE_SHOW_TIME = 3.0
+TUTORIAL_SM_SPEED_COEF = 1.0
+TUTORIAL_RELOAD_SHELLS_DELAY = 2.0
+
+class INPUT_SYSTEM_STATE():
+    KEYBOARD = 1
+    JOYSTICK = 2
+    MOUSE = 3
+    GAMEPAD = 4
+    GAMEPAD_DIRECT_CONTROL = 10
+
+
+INPUT_SYSTEM_PROFILES_LIST = {'joystick': INPUT_SYSTEM_STATE.JOYSTICK,
+ 'mouse_directional': INPUT_SYSTEM_STATE.MOUSE,
+ 'gamepad_direct_control': INPUT_SYSTEM_STATE.GAMEPAD_DIRECT_CONTROL}
+INPUT_SYSTEM_PROFILES_LIST_REVERT = dict([ (value, shellIndex) for shellIndex, value in INPUT_SYSTEM_PROFILES_LIST.items() ])
+
+class BATTLE_MODE():
+    ASSAULT_MODE = 255
+    COMBAT_MODE = 254
+
+
+class CAMOUFLAGE_GROUPS():
+    HULL = 0
+    WINGS = 1
+    NOSE = 2
+
+
+CAMOUFLAGE_GROUP_NAME_TO_ID_MAP = {'camouflage': CAMOUFLAGE_GROUPS.HULL,
+ 'nose': CAMOUFLAGE_GROUPS.NOSE,
+ 'decor': CAMOUFLAGE_GROUPS.WINGS}
+CAMOUFLAGE_GROUP_ID_TO_NAME_MAP = {CAMOUFLAGE_GROUPS.HULL: 'camouflage',
+ CAMOUFLAGE_GROUPS.NOSE: 'nose',
+ CAMOUFLAGE_GROUPS.WINGS: 'decor'}
+
+class CAMOUFLAGE_DURATION():
+    FOREVER = 0
+    WEEK = 1
+    MONTH = 2
+    INSTALL = 3
+
+
+class PLANE_MARKET_STATUS():
+    CLOSED = 0
+    OPENED = 1
+    BOUGHT = 2
+
+
+class PLANE_CLASS():
+    REGULAR = 0
+    ELITE = 1
+    PREMIUM = 2
+
+
+class OB_LOCATION():
+    SERVER = 'server'
+    CLIENT = 'client'
+    MIXED = 'mixed'
+
+
+INVALID_POSITION = 2 ** 15 - 1
+
+class PVE_SCENE_TYPE():
+    INTERCEPTION = 'interception'
+
+
+TURRET_DPS_TO_FIREPOWER_CFC = 8.0
+TURRET_DPS_TO_AIRCRAFT_FIREPOWER_CFC = 0.4
+BULLET_FLY_DIST_CORRECTION = 0.8
+
+class FIRE_POWER():
+    ETALON_DIST_MULTIPLIER = 0.4
+    ETALON_DISPERSION = math.radians(0.7)
+    DISPERSION_POWER = 0.5
+    ETALON_OVERHEAT_TIME = 10.0
+    HEAT_POWER = 0.1
+    ETALON_BULLET_SPEED = 800.0 * WORLD_SCALING
+    BULLET_SPEED_POWER = 0.3
+    ETALON_BULLET_FLY_DIST = 600.0 * WORLD_SCALING
+    BULLET_FLY_DIST_POWER = 0.3
+    INCINERATE_WEIGHT = 0.2
+    SCALE_MULTIPLIER = 0.6
+    CLASS_MULTIPLIER = 1.0
+    ALPHA_STRIKE_INTERVAL = 1.0
+    ALPHA_STRIKE_POWER = 0.5
+    RECOIL_DISPERSION_COEFF = 0.0
+    EXP_PART_COEFF = 2.5
+
+
+class ASSAULT_POWER():
+    ETALON_DIST_MULTIPLIER = 0.5
+    ETALON_DISPERSION = math.radians(0.5)
+    DISPERSION_POWER = 0.2
+    ETALON_OVERHEAT_TIME = 10.0
+    HEAT_POWER = 0.9
+    ETALON_BULLET_SPEED = 800.0 * WORLD_SCALING
+    BULLET_SPEED_POWER = 0.0
+    ETALON_BULLET_FLY_DIST = 900.0 * WORLD_SCALING
+    BULLET_FLY_DIST_POWER = 0.0
+    INCINERATE_WEIGHT = 0.2
+    SCALE_MULTIPLIER = 1.7
+    CLASS_MULTIPLIER = 1.0
+    ALPHA_STRIKE_INTERVAL = 1.0
+    ALPHA_STRIKE_POWER = 1.0
+    RECOIL_DISPERSION_COEFF = 0.5
+    EXP_PART_COEFF = 1.0
+
+
+POWER_TYPE = {'firePower': FIRE_POWER,
+ 'assaultPower': ASSAULT_POWER}
+
+def calculateGunDPS(powerType, shotData, gunDescription, dispersionAngle, recoilDispersion, overheatTime):
+    pType = POWER_TYPE[powerType]
+    avgDispersion = dispersionAngle + recoilDispersion * pType.RECOIL_DISPERSION_COEFF
+    dispersionMultiplierBefore = 2.0 - 5.0 ** (avgDispersion / pType.ETALON_DISPERSION - 1.0)
+    dispersionMultiplierAfter = (pType.ETALON_DISPERSION / avgDispersion) ** 2 if avgDispersion else 0.0
+    IF = dispersionMultiplierBefore if avgDispersion < pType.ETALON_DISPERSION else dispersionMultiplierAfter
+    dispersionMultiplier = IF ** pType.DISPERSION_POWER
+    heatMultiplier = (overheatTime / pType.ETALON_OVERHEAT_TIME) ** pType.HEAT_POWER
+    bulletSpeedMultiplier = (gunDescription.bulletSpeed / pType.ETALON_BULLET_SPEED) ** pType.BULLET_SPEED_POWER
+    bulletMaxDistMultiplier = (gunDescription.bulletFlyDist / pType.ETALON_BULLET_FLY_DIST) ** pType.BULLET_FLY_DIST_POWER
+    alphaStrikeMultiplier = (1.0 + 60.0 / gunDescription.RPM) ** pType.ALPHA_STRIKE_POWER
+    totalDPS = gunDescription.DPS * alphaStrikeMultiplier * dispersionMultiplier * heatMultiplier * bulletMaxDistMultiplier * bulletSpeedMultiplier * pType.CLASS_MULTIPLIER * pType.SCALE_MULTIPLIER
+    return totalDPS
+
+
+FPS_RANGES = [13,
+ 18,
+ 25,
+ 35,
+ 50,
+ 70]
+CUSTOM_PRESET_NAME = 'custom'
+
+class VOIP():
+
+    class CLIENT_REQUESTS:
+        """ Request codes (sent by client to server) """
+        NEED_CHAT_CREDENTIALS = 1
+        CHAT_CREDENTIALS_EXPIRED = 2
+
+        @staticmethod
+        def getConstNameByValue(const):
+            for k, v in VOIP.CLIENT_REQUESTS.__dict__.items():
+                if v == const:
+                    return k
+
+        @staticmethod
+        def isValidConst(const):
+            return VOIP.CLIENT_REQUESTS.getConstNameByValue(const) is not None
+
+    class SERVER_MESSAGES:
+        """ Message codes (sent by server to client) """
+        CHAT_CREDENTIALS = 1
+        CHAT_UNAVAILABLE = 2
+
+        @staticmethod
+        def getConstNameByValue(const):
+            for k, v in VOIP.SERVER_MESSAGES.__dict__.items():
+                if v == const:
+                    return k
+
+        @staticmethod
+        def isValidConst(const):
+            return VOIP.SERVER_MESSAGES.getConstNameByValue(const) is not None
+
+    class CHANNEL_TYPES:
+        """ All possible channel types.
+            For channels which can co-exist, numeric type indices must correspond to channel priorities
+            (0 is the highest priority). Priorities only matter when the player tries to activate push-to-talk
+            for several different channels simultaneously (we can only transmit voice into one channel at a time).
+        """
+        ARENA = 0
+        SQUAD = 1
+        SQUADRON = 2
+        QUANTITY = 2
+
+        @staticmethod
+        def getConstNameByValue(const):
+            for k, v in VOIP.CHANNEL_TYPES.__dict__.items():
+                if v == const:
+                    return k
+
+        @staticmethod
+        def isValidConst(const):
+            return VOIP.CHANNEL_TYPES.getConstNameByValue(const) is not None
+
+    class MEMBER_STATUS_OBSERVER_TYPES:
+        """ Types of GUI entities able to observe and visualize voice chat members' statuses. """
+        LOBBY_SQUAD_PANEL = 0
+        ARENA_HUD = 1
+
+        @staticmethod
+        def getConstNameByValue(const):
+            for k, v in VOIP.MEMBER_STATUS_OBSERVER_TYPES.__dict__.items():
+                if v == const:
+                    return k
+
+        @staticmethod
+        def isValidConst(const):
+            return VOIP.MEMBER_STATUS_OBSERVER_TYPES.getConstNameByValue(const) is not None
+
+
+class AIRCRAFT_CHARACTERISTIC():
+    HEALTH = 1
+    MASS = 2
+    GUNS_FIRE_POWER = 3
+    SPEED = 4
+    MANEUVERABILITY = 5
+    GROUND_MAX_SPEED = 6
+    HEIGHT_MAX_SPEED = 7
+    OPTIMAL_HEIGHT = 8
+    DIVE_SPEED = 9
+    STALL_SPEED = 10
+    RATE_OF_CLIMB = 11
+    AVERAGE_TURN_TIME = 12
+    OPTIMAL_MANEUVER_SPEED = 13
+    ROLL_MANEUVERABILITY = 14
+    WEAPON_LIST = 15
+    CONTROLLABILITY = 16
+    ALT_PERFORMANCE = 17
+
+
+CHARACTERISTICS_LOCALIZATION_MAP = {AIRCRAFT_CHARACTERISTIC.HEALTH: 'MARKET_AIRPLANE_HEALTH',
+ AIRCRAFT_CHARACTERISTIC.MASS: 'MARKET_AIRPLANE_MASS',
+ AIRCRAFT_CHARACTERISTIC.GUNS_FIRE_POWER: 'MARKET_AIRPLANE_GUNS_FIRE_POWER',
+ AIRCRAFT_CHARACTERISTIC.SPEED: 'MARKET_AIRPLANE_SPEED',
+ AIRCRAFT_CHARACTERISTIC.MANEUVERABILITY: 'MARKET_AIRPLANE_MANEUVERABILITY',
+ AIRCRAFT_CHARACTERISTIC.GROUND_MAX_SPEED: 'MARKET_AIRPLANE_GROUND_MAX_SPEED',
+ AIRCRAFT_CHARACTERISTIC.HEIGHT_MAX_SPEED: 'MARKET_AIRPLANE_HEIGHT_MAX_SPEED',
+ AIRCRAFT_CHARACTERISTIC.OPTIMAL_HEIGHT: 'LABEL_OPTIMAL_HEIGHT',
+ AIRCRAFT_CHARACTERISTIC.ALT_PERFORMANCE: 'LOBBY_AIRCRAFT_COMPARISON_LABEL_ALTITUDE',
+ AIRCRAFT_CHARACTERISTIC.DIVE_SPEED: 'LABEL_DIVING_SPEED',
+ AIRCRAFT_CHARACTERISTIC.STALL_SPEED: 'LABEL_STALL_SPEED',
+ AIRCRAFT_CHARACTERISTIC.RATE_OF_CLIMB: 'MARKET_AIRPLANE_RATE_OF_CLIMB',
+ AIRCRAFT_CHARACTERISTIC.AVERAGE_TURN_TIME: 'MARKET_AIRPLANE_FULL_TURN_TIME',
+ AIRCRAFT_CHARACTERISTIC.OPTIMAL_MANEUVER_SPEED: 'LABEL_OPTIMAL_MANEUVERING_SPEED',
+ AIRCRAFT_CHARACTERISTIC.ROLL_MANEUVERABILITY: 'LOBBY_CHARACTERISTICS_ROLL_SPD',
+ AIRCRAFT_CHARACTERISTIC.CONTROLLABILITY: 'LOBBY_CHARACTERISTICS_CONTROLLABILITY'}
+SPECS_KEY_MAP = {AIRCRAFT_CHARACTERISTIC.HEALTH: 'hp',
+ AIRCRAFT_CHARACTERISTIC.MASS: 'mass',
+ AIRCRAFT_CHARACTERISTIC.GUNS_FIRE_POWER: 'dps',
+ AIRCRAFT_CHARACTERISTIC.SPEED: 'speedFactor',
+ AIRCRAFT_CHARACTERISTIC.MANEUVERABILITY: 'maneuverability',
+ AIRCRAFT_CHARACTERISTIC.GROUND_MAX_SPEED: 'speedAtTheGround',
+ AIRCRAFT_CHARACTERISTIC.HEIGHT_MAX_SPEED: 'maxSpeed',
+ AIRCRAFT_CHARACTERISTIC.OPTIMAL_HEIGHT: 'optimalHeight',
+ AIRCRAFT_CHARACTERISTIC.ALT_PERFORMANCE: 'optimalHeight',
+ AIRCRAFT_CHARACTERISTIC.DIVE_SPEED: 'diveSpeed',
+ AIRCRAFT_CHARACTERISTIC.STALL_SPEED: 'stallSpeed',
+ AIRCRAFT_CHARACTERISTIC.RATE_OF_CLIMB: 'rateOfClimbing',
+ AIRCRAFT_CHARACTERISTIC.AVERAGE_TURN_TIME: 'averageTurnTime',
+ AIRCRAFT_CHARACTERISTIC.OPTIMAL_MANEUVER_SPEED: 'optimalManeuverSpeed',
+ AIRCRAFT_CHARACTERISTIC.ROLL_MANEUVERABILITY: 'rollManeuverability',
+ AIRCRAFT_CHARACTERISTIC.CONTROLLABILITY: 'controllability'}
+MAIN_CHARACTERISTICS_LIST = [AIRCRAFT_CHARACTERISTIC.HEALTH,
+ AIRCRAFT_CHARACTERISTIC.GUNS_FIRE_POWER,
+ AIRCRAFT_CHARACTERISTIC.SPEED,
+ AIRCRAFT_CHARACTERISTIC.MANEUVERABILITY,
+ AIRCRAFT_CHARACTERISTIC.ALT_PERFORMANCE]
+ADDITIONAL_CHARACTERISTICS_PARENTS_MAP = {AIRCRAFT_CHARACTERISTIC.MASS: AIRCRAFT_CHARACTERISTIC.HEALTH,
+ AIRCRAFT_CHARACTERISTIC.GROUND_MAX_SPEED: AIRCRAFT_CHARACTERISTIC.SPEED,
+ AIRCRAFT_CHARACTERISTIC.HEIGHT_MAX_SPEED: AIRCRAFT_CHARACTERISTIC.SPEED,
+ AIRCRAFT_CHARACTERISTIC.DIVE_SPEED: AIRCRAFT_CHARACTERISTIC.SPEED,
+ AIRCRAFT_CHARACTERISTIC.STALL_SPEED: AIRCRAFT_CHARACTERISTIC.SPEED,
+ AIRCRAFT_CHARACTERISTIC.RATE_OF_CLIMB: AIRCRAFT_CHARACTERISTIC.SPEED,
+ AIRCRAFT_CHARACTERISTIC.OPTIMAL_MANEUVER_SPEED: AIRCRAFT_CHARACTERISTIC.SPEED,
+ AIRCRAFT_CHARACTERISTIC.AVERAGE_TURN_TIME: AIRCRAFT_CHARACTERISTIC.MANEUVERABILITY,
+ AIRCRAFT_CHARACTERISTIC.ROLL_MANEUVERABILITY: AIRCRAFT_CHARACTERISTIC.MANEUVERABILITY,
+ AIRCRAFT_CHARACTERISTIC.CONTROLLABILITY: AIRCRAFT_CHARACTERISTIC.MANEUVERABILITY,
+ AIRCRAFT_CHARACTERISTIC.WEAPON_LIST: AIRCRAFT_CHARACTERISTIC.GUNS_FIRE_POWER,
+ AIRCRAFT_CHARACTERISTIC.OPTIMAL_HEIGHT: AIRCRAFT_CHARACTERISTIC.ALT_PERFORMANCE}
+CHARACTERISTICS_HINTS_MAP = {AIRCRAFT_CHARACTERISTIC.HEALTH: 'TOOLTIP_HANGAR_DURABILITY',
+ AIRCRAFT_CHARACTERISTIC.GUNS_FIRE_POWER: 'TOOLTIP_HANGAR_FIREPOWER',
+ AIRCRAFT_CHARACTERISTIC.SPEED: 'TOOLTIP_HANGAR_QUICKNESS',
+ AIRCRAFT_CHARACTERISTIC.MANEUVERABILITY: 'TOOLTIP_HANGAR_MANEUVERABILITY',
+ AIRCRAFT_CHARACTERISTIC.ALT_PERFORMANCE: 'TOOLTIP_HANGAR_ALTITUDE'}
+HANGAR_CHARACTERISTICS_LIST = [AIRCRAFT_CHARACTERISTIC.HEALTH,
+ AIRCRAFT_CHARACTERISTIC.GUNS_FIRE_POWER,
+ AIRCRAFT_CHARACTERISTIC.SPEED,
+ AIRCRAFT_CHARACTERISTIC.MANEUVERABILITY,
+ AIRCRAFT_CHARACTERISTIC.ALT_PERFORMANCE]
+GUN_OVERHEATING_TEMPERATURE = 100.0
+GUN_COOLING_HALF_LIFE_TIME = 13
+COOLING_PER_SEC_TEMPERATURE_PRC = 5.0
+WARNING_DISTANCE_TO_MAP_BORDER = 60.0
+RAMMING_DAMAGE_PENALTY_RATE = 0.5
+INVALID_SPECIALIZATION_SKILL_PENALTY = 25
+INVALID_SPECIALIZATION_SKILL_PENALTY_FOR_PREMIUM = 0
+INVALID_ANOTHER_CLASS_SPECIALIZATION_SKILL_PENALTY = 50
+PREMIUM_EXPIRIENCE_BONUS = 1.2
+DAMAGED_CREW_MEMBER_EXP_PENALTY_K = 1.0
+
+class PART_STATS_STATE():
+    GOOD = 1
+    DAMAGED = 2
+    CRIT = 3
+    DESTROYED = 4
+
+
+class OBJ_STATES():
+    GOOD = 0
+    DAMAGED = 1
+    DESTROYED = 2
+
+
+def getPartLogicalState(state):
+    return min(state, PART_STATS_STATE.CRIT) - 1
+
+
+class DB_MODULE_NAMES():
+    AIRCRAFTS = '_aircrafts_db'
+    EVENTS = '_events'
+    BATTLE_BONUSES = '_battlebonuses'
+    ECONOMICS = '_economics'
+    CONSUMABLES = '_consumables_data'
+    EQUIPMENT = '_equipment_data'
+    WEAPONS = '_weapons'
+    CAMOUFLAGES = '_priceSchemes_data'
+    SKINNERBOX = '_skinnerBoxData'
+    WAR_ACTION = '_warAction'
+
+
+class ECONOMICS_PROMO_PARAMS():
+    """
+    Economics promo actions params
+    """
+    FIRST_DAILY_WIN_BONUS_REMAINS = 0
+    FIRST_DAILY_WIN_BONUS_XP_COEFF = 1
+
+
+MAX_BUY_UPGRADE_COUNT_PER_OPERATION = 100
+
+class GAME_OBJECT_TYPE():
+    PLANE = 0
+    COMPOSITE_OBJECT = 1
+    BASE = 2
+    TURRET = 3
+
+
+class DAMAGE_REASON():
+    DESTRUCTION = 0
+    RAMMING = 1
+    FIRING = 2
+    BULLET = 3
+    OBSTACLE = 4
+    TERRAIN = 5
+    WATER = 6
+    COMMON_EXPLOSION = 7
+    ROCKET_EXPLOSION = 8
+    BOMB_EXPLOSION = 9
+    REPAIRING = 10
+    AA_EXPLOSION = 11
+    NONE = 12
+    TREES = 13
+
+
+class KILL_INCRIMENT_TYPE():
+    OBJECT = 0
+    SCORE = 1
+
+
+class BUY_MAIN_SKILL():
+    FREE = 0
+    CREDITS = 1
+    GOLD = 2
+
+
+class CONSUMABLES_FOR_HAND_USE():
+    NON_HAND_USE = 0
+    REPAIRING_MODULES_ENGINE = 1
+    HEALER_HEALTH = 2
+    FIRE_EXTINGUISHERS = 3
+    NO_CONDITION_USE = 4
+    AUTO_USE = 5
+
+
+class PART_FLAGS():
+    FIRE = 1
+    SPARKLERS = 2
+    COLOR_PLUMES = 4
+
+    @staticmethod
+    def getEnum():
+        return filter(lambda v: type(v) == int, PART_FLAGS.__dict__.values())
+
+
+PART_TYPES_TO_ID = {'Hull': 3,
+ 'Engine': 6,
+ 'LeftWing': 0,
+ 'RightWing': 1,
+ 'Tail': 2,
+ 'FuelTank': 7,
+ 'Pilot': 8,
+ 'Gunner1': 9,
+ 'Navigator': 10}
+PART_TYPES_TO_ID_REVERTED = dict([ (value, shellIndex) for shellIndex, value in PART_TYPES_TO_ID.iteritems() ])
+EMPTY_IDTYPELIST = [[None, None]]
+TRAIN_ANOTHER_PLANE_MIN_PRC = [50, 75, 100]
+TRAIN_ANOTHER_PLANE_SAVE_EXP_PRC = [0.8, 0.9, 1.0]
+TRAIN_ANOTHER_PLANE_ANOTHER_CLASS_MODIFIER = 2.0
+
+class STATS_DAILY_KILL():
+    PLANE_KILLS = 0
+    OBJECTS_KILLS = 1
+    PLAYER_WINS = 2
+    GAIN_MEDAL = 3
+    MESSAGE_TEXT = ['OPENBETA_DAILY_BONUS_AIRCRAFTS_KILLED',
+     'OPENBETA_DAILY_BONUS_GROUND_TARGET_DESTROYED',
+     'OPENBETA_DAILY_BONUS_WIN',
+     'MEDAL_GAIN_BONUS']
+    MESSAGE_KEY_NUMBER = ['OPENBETA_DAILY_BONUS_AIRCRAFTS_KILLED_NUMBER_',
+     'OPENBETA_DAILY_BONUS_GROUND_TARGET_DESTROYED_NUMBER_',
+     'OPENBETA_DAILY_BONUS_WIN_NUMBER_',
+     'MEDAL_GAIN_BONUS_NUMBER_']
+
+
+class DOSSIER_TYPE():
+    ACCOUNT = 1
+    PLANE = 2
+    PLANE_PVE = 4
+
+
+DECAL_BY_KILLS = [1,
+ 10,
+ 50,
+ 200,
+ 500,
+ 2000,
+ 10000]
+DECAL_BY_TEAM_OBJECTS_DESTROYED = [1,
+ 10,
+ 50,
+ 200,
+ 500,
+ 2000,
+ 10000]
+
+class WG_GAMES():
+    TANKS = 'wot'
+    WARPLANES = 'wowp'
+    WARSHIPS = 'wows'
+    GENERALS = 'wotg'
+    BLITZ = 'wotblitz'
+    WEB = 'web'
+    ALL = (TANKS,
+     WARPLANES,
+     WARSHIPS,
+     GENERALS,
+     BLITZ,
+     WEB)
+
+
+class TOKEN_TYPE():
+    XMPPCS = 1
+    WGNI = 2
+    WOTG = 3
+    WOTB = 4
+    WOWP = 5
+    SERVICE_NAMES = {XMPPCS: 'xmppcs',
+     WGNI: 'wgni',
+     WOTG: 'wotg',
+     WOTB: 'wotb',
+     WOWP: 'wowp'}
+    COOLDOWNS = {XMPPCS: 'REQUEST_CHAT_TOKEN',
+     WGNI: 'REQUEST_WEB_TOKEN',
+     WOTG: 'REQUEST_TOKEN',
+     WOTB: 'REQUEST_TOKEN',
+     WOWP: 'REQUEST_TOKEN'}
+
+
+class CLAN_MEMBER_FLAGS(object):
+    LEADER = 1
+    VICE_LEADER = 2
+    RECRUITER = 4
+    TREASURER = 8
+    DIPLOMAT = 16
+    COMMANDER = 32
+    PRIVATE = 64
+    RECRUIT = 128
+    STAFF = 256
+    JUNIOR = 512
+    RESERVIST = 1024
+    MAY_CHANGE_SETTINGS = LEADER | VICE_LEADER
+    MAY_EDIT_RECRUIT_PROFILE = LEADER | VICE_LEADER | STAFF | RECRUITER
+    MAY_CHANGE_ROLE = LEADER | VICE_LEADER | STAFF | COMMANDER
+    MAY_CHANGE_COMMANDER = LEADER
+    MAY_HANDLE_INVITES = LEADER | VICE_LEADER | STAFF | RECRUITER
+    MAY_INVITE = LEADER | VICE_LEADER | STAFF | RECRUITER
+    MAY_REMOVE_MEMBERS = LEADER | VICE_LEADER | STAFF
+    MAY_REMOVE_CLAN = LEADER
+    MAY_TRADE = LEADER | VICE_LEADER | TREASURER
+    MAY_EXCHANGE_MONEY = LEADER | VICE_LEADER | STAFF | COMMANDER | DIPLOMAT | TREASURER | RECRUITER | JUNIOR | PRIVATE
+
+
+GAME_OBJECTS_PER_ARENA_LIMIT = 120
+PREMIUM_TIME_LIMIT = 3600 * 24 * 360 * 2
+
+class CAMOUFLAGE_ARENA_TYPE():
+    SUMMER = 1
+    WINTER = 2
+    DESERT = 3
+    MARINE = 4
+    NIGHT = 5
+
+    @staticmethod
+    def getValueByName(name):
+        return CAMOUFLAGE_ARENA_TYPE.__dict__.get(name, None)
+
+
+SKILL_1PRC_BASE_EXP = 2000
+SKILL_INCREMENT_BASE = 2
+SKILL_PRC_TO_PUMP = 50
+SKILL_MIN_PRC = 100 - SKILL_PRC_TO_PUMP
+NEW_MEDAL_DATA = {'count': 0,
+ 'firstTime': 0,
+ 'lastTime': 0}
+NEW_ACHIEVEMENT_DATA = {'count': 0,
+ 'progress': 0,
+ 'firstTime': 0,
+ 'lastTime': 0}
+NEW_RIBBON_DATA = {'count': 0,
+ 'progress': 0,
+ 'firstTime': 0,
+ 'maxProgress': 0,
+ 'lastTime': 0}
+
+class AWARD_DATA_KEYS():
+    COUNT = 0
+    PROGRESS = 1
+    FIRST_TIME = 2
+    MAX_PROGRESS = 3
+    LAST_TIME = 4
+    PLANES = 5
+    convert = {'count': 0,
+     'progress': 1,
+     'firstTime': 2,
+     'maxProgress': 3,
+     'lastTime': 4,
+     'planes': 5}
+
+
+def NEW_AWARD_DATA():
+    return dict(((v, 0 if v != AWARD_DATA_KEYS.PLANES else {}) for v in AWARD_DATA_KEYS.convert.itervalues()))
+
+
+class PAYMENT_TYPE():
+    CREDITS = 0
+    GOLD = 1
+    TICKETS = 2
+
+
+PAYMENT_TYPE_STR = {PAYMENT_TYPE.CREDITS: 'credits',
+ PAYMENT_TYPE.GOLD: 'gold',
+ PAYMENT_TYPE.TICKETS: 'tickets'}
+PLAYER_DOSSIER_CACHE_INVALIDATION_PERIOD = 300
+
+class WALLET_STATUS():
+    DISCONNECTED = 0
+    CONNECTED = 1
+    IS_CONNECTING = 2
+
+
+class CREW_BODY_TYPE():
+    MALE = 0
+    FEMALE = 1
+    UNIQUE = 2
+
+
+CREW_BODY_TYPE_PATH = {CREW_BODY_TYPE.MALE: 'male',
+ CREW_BODY_TYPE.FEMALE: 'female',
+ CREW_BODY_TYPE.UNIQUE: 'unique'}
+MAX_UNIQUE_ID = 1000
+
+class PACK_STATUS():
+    GIFT = 0
+    BOUGHT = 1
+    WIN = 2
+
+
+class BARRACK_KEYS():
+    MEMBER_ID = 0
+    CURRENT_PLANE = 1
+    PLANE_SPECIALIZED_ON = 2
+    SPECIALIZATION = 3
+    BATTLES_COUNT = 4
+    EXPERIENCE = 5
+    FIRST_NAME = 6
+    LAST_NAME = 7
+    PICTURE_INDEX = 8
+    RANKS = 9
+    SKILLS = 10
+    SP_AVAILABLE = 11
+    SUB_SPECIALIZATION = 12
+    BODY_TYPE = 13
+
+
+class PLANE_KEYS():
+    PLANE = 0
+    INSTALLED_GLOBAL_ID = 1
+    CREW = 2
+    ACCELERATED_CREW_PUMPING = 3
+    AUTO_REFILL = 4
+    AUTO_REPAIR = 5
+    BELTS = 6
+    BELTS_AUTO_REFILL = 7
+    BLOCK_TYPE = 8
+    BUY_TIME = 9
+    CONSUMABLES = 10
+    CONSUMABLES_AUTO_REFILL = 11
+    EQUIPMENT = 12
+    IS_PRIMARY = 13
+    LAST_CAMOUFLAGES = 14
+    LAST_GAME_TIME = 15
+    LOST_HIT_POINTS = 16
+    REPAIR_COST = 17
+    SHELLS = 18
+    RENT = 19
+    LAST_MESSAGE_BIRTHDAY = 20
+    LAST_MESSAGE_BIRTHDAY_AD = 21
+
+
+class EXP_KEY():
+    MAIN = 0
+    ABOVE_MAIN = 1
+
+
+from _specializations_data import SpecializationEnum
+CREW_MEMBER = {SpecializationEnum.PILOT: 'Pilot',
+ SpecializationEnum.GUNNER: 'Gunner1'}
+FAM_PIVOT = 1.0
+FAM_SPEED_ETALON_MULT = 1.0
+FAM_CLAMP_MIN = 1.0
+FAM_CLAMP_MAX = 1.0
+MOUSE_INTENSITY_SPLINE_POINT_NUMBER = 5
+MOUSE_INTENSITY_SPLINE_POINT_COUNT = 100
+
+class DEBUG_AVAILABLE_FIGURES():
+    EMPTY = 0
+    CLIENT_CURRENT_RADIUS = 128
+    MOUSE_CAMERA_DIRECTION = 256
+    MOUSE_TARGET_TRACK = 1024
+    ROTATION_LIMIT = 32
+    FIX_ROTATION_LIMIT = 64
+    CELL_TEMP_FIG_HOLDER = 512
+    EXTERNAL_LOCAL_ROTATION_SPEED = 8
+    ROTATION_SPEED = 16
+
+
+class DEBUG_AVAILABLE_PARAMS():
+    EMPTY = 0
+    FM_PARAMS = 1
+    RUDDERS = 2
+    ENGINE = 4
+    SKILL_PARAMS = 8
+    MODIFIERS = 16
+    FORCE_PARAMS = 32
+    MOUSE_PARAMS = 64
+    JOYSTICK_PARAMS = 128
+    CELL_TRASH_HOLDER = 256
+    CLIENT_TRASH_HOLDER = 512
+    CLIENT_CAMERA_PARAM = 1024
+    CELL_DISPERSION = 2048
+
+
+class DEBUG_AVAILABLE_CURVE():
+    EMPTY = 0
+    ACCEL_FROM_SPEED = 1
+    SPEED_FROM_HEIGHT = 2
+    ROTATION_FROM_SPEED = 4
+    C4 = 8
+
+
+FM_DEBUG = {0: DEBUG_AVAILABLE_FIGURES,
+ 1: DEBUG_AVAILABLE_PARAMS,
+ 2: DEBUG_AVAILABLE_CURVE}
+MAX_SENT_PKG_COUNT = 2 ** 32 - 1
+PKG_SEND_INTERVAL = 5
+CANCEL_LOGIN_DLG_MIN_TIME = 17.0
+
+class ACTION_EVENT_TYPE():
+    ACTION = 1
+    BATTLE_QUEST = 2
+    TOKEN_QUEST = 3
+    SUB_QUEST = 31
+    SUB_QUEST_PARENT = 32
+
+
+class TOKEN_QUEST_EVENT():
+    BATTLE = 0
+    LOGIN = 1
+    RESEARCH_MODULE = 2
+    RESEARCH_VEHICLE = 3
+    BUY_MODULE = 4
+    BUY_VEHICLE = 5
+    BUY_PREMIUM = 6
+    DAILY_RESET = 7
+    REFERRAL_RECRUITER = 8
+    CHECK_AFTER_LOGIN = [BATTLE, LOGIN, REFERRAL_RECRUITER]
+
+
+class IGR_TYPE():
+    NONE = 0
+    BASE = 1
+    PREMIUM = 2
+    RANGE = (BASE, PREMIUM)
+
+
+class QUEST_CAMOUFLAGE_FILTER():
+    SINGLE = 0
+    OPEN = 1
+    BUY = 2
+    ALL = 3
+    NAMES = {'SINGLE': SINGLE,
+     'OPEN': OPEN,
+     'BUY': BUY,
+     'ALL': ALL}
+
+
+QUEST_RESULT_LOCALIZATION = {'credits': ('LOBBY_QUESTS_REWARD_CREDITS', 'int'),
+ 'gold': ('LOBBY_MSG_GOLD', 'int'),
+ 'freeXP': ('LOBBY_QUESTS_REWARD_FREE_XP', 'int'),
+ 'tankmenXP': ('LOBBY_QUESTS_REWARD_CREW_XP', 'int'),
+ 'xpFactor': ('LOBBY_QUESTS_REWARD_XP', 'float'),
+ 'creditsFactor': ('LOBBY_QUESTS_REWARD_CREDITS', 'float'),
+ 'freeXPFactor': ('LOBBY_QUESTS_REWARD_FREE_XP', 'float'),
+ 'tankmenXPFactor': ('LOBBY_QUESTS_REWARD_CREW_XP', 'float'),
+ 'dailyXPFactor': ('LOBBY_QUESTS_REWARD_FIRST_VICTORY_XP_BONUS', 'float'),
+ 'slots': ('LOBBY_QUESTS_REWARD_HANGAR_SLOTS', 'int'),
+ 'berths': ('LOBBY_QUESTS_REWARD_BARRACKS_BUNKS', 'int'),
+ 'premium': ('LOBBY_QUESTS_REWARD_PREMIUM_DAYS', 'int'),
+ 'camouflage': ('LOBBY_CONTEXT_MESSAGE_EMBLEM', 'int')}
+
+class QUEST_FOR_PLANES_STATUS():
+    UNAVAILABLE = 0
+    AVAILABLE = 1
+    ACTIVATED = 2
+    COMPLETED = 3
+
+
+class REQUEST_STAT_TYPE_FLAGS():
+    GAME_FPS = 1
+    GAME_PLAYER_CONTROL = 2
+    HANGAR_WAITING_TIME = 4
+
+
+class CLIENT_STATS_TYPE():
+    CLIENT_CONTROL = 1
+    CLIENT_WAITING_TIME = 2
+    CLIENT_STATS_SESSION = [CLIENT_WAITING_TIME]
+    CLIENT_STATS_SESSION = [CLIENT_WAITING_TIME]
+    CLIENT_STATS_SESSION = [CLIENT_WAITING_TIME]
+    CLIENT_STATS_ALL = [CLIENT_CONTROL, CLIENT_WAITING_TIME]
+
+
+class GAME_OPTIONS_STATS_TYPE():
+    GAME_OPTIONS_STATS_INPUT = 10
+    GAME_OPTIONS_STATS_BATTLE = 11
+    GAME_OPTIONS_STATS_GRAPHICS = 12
+    GAME_OPTIONS_STATS_SOUND = 13
+    GAME_OPTIONS_STATS_GAME = 14
+    GAME_OPTIONS_STATS_AUTODETECT = 20
+
+
+class GAME_OPTIONS_STATS():
+    CMD_PRIMARY_FIRE = 1
+    CMD_LAUNCH_ROCKET = 3
+    CMD_LAUNCH_BOMB = 4
+    CMD_FIRE_GROUP_1 = 5
+    CMD_FIRE_GROUP_2 = 6
+    CMD_FIRE_GROUP_3 = 7
+    CMD_PITCH_DOWN = 13
+    CMD_PITCH_UP = 14
+    CMD_ROLL_LEFT = 17
+    CMD_ROLL_RIGHT = 18
+    CMD_TURN_LEFT = 21
+    CMD_TURN_RIGHT = 22
+    CMD_INCREASE_FORCE = 27
+    CMD_ENGINE_OFF = 28
+    CMD_INC_TARGET_FORCE = 30
+    CMD_DEC_TARGET_FORCE = 31
+    CMD_FLAPS_UP = 32
+    CMD_AUTOPILOT = 33
+    CMD_SHOW_PLAYERS_INFO = 35
+    CMD_LOCK_TARGET = 36
+    CMD_LOCK_TARGET_IN_SCREEN_CENTER = 37
+    CMD_NEXT_TARGET = 38
+    CMD_NEXT_TARGET_TEAM_OBJECT = 39
+    CMD_SHOW_CURSOR = 40
+    CMD_SHOW_TEAMS = 41
+    CMD_USE_EQUIPMENT_1 = 42
+    CMD_USE_EQUIPMENT_2 = 43
+    CMD_USE_EQUIPMENT_3 = 44
+    CMD_HELP = 45
+    CMD_BATTLE_MODE = 50
+    CMD_SNIPER_CAMERA = 51
+    CMD_EXTRA_INPUT_MODE = 52
+    CMD_CURSOR_CAMERA = 53
+    CMD_TARGET_CAMERA = 54
+    CMD_BACK_VIEW = 55
+    CMD_CHAT_ON_OFF = 68
+    CMD_PUSH_TO_TALK = 69
+    CMD_PUSH_TO_TALK_SQUAD = 70
+    CMD_TOGGLE_ARENA_VOICE_CHANNEL = 71
+    CMD_F8_CHAT_COMMAND = 72
+    CMD_F9_CHAT_COMMAND = 73
+    CMD_F4_CHAT_COMMAND = 74
+    CMD_F2_CHAT_COMMAND = 75
+    CMD_F3_CHAT_COMMAND = 76
+    CMD_F5_CHAT_COMMAND = 77
+    CMD_F6_CHAT_COMMAND = 78
+    CMD_F7_CHAT_COMMAND = 79
+    CMD_SHOW_MAP = 91
+    CMD_MINIMAP_ZOOM_IN = 92
+    CMD_MINIMAP_ZOOM_OUT = 93
+    CMD_MINIMAP_SIZE_INC = 94
+    CMD_MINIMAP_SIZE_DEC = 95
+    CMD_VISIBILITY_HUD = 98
+    CMD_INTERMISSION_MENU = 108
+    CMD_FREE_VERTICAL_CAM_GAMEPA = 109
+    CMD_FREE_HORIZONTAL_CAM_GAMEPAD = 110
+    CMD_SIDE_VIEW_LEFT = 111
+    CMD_SIDE_VIEW_RIGHT = 112
+    CMD_SIDE_VIEW_UP = 113
+    CMD_SIDE_VIEW_DOWN = 114
+    CMD_SIDE_VIEW_DOWN_LEFT = 115
+    CMD_SIDE_VIEW_DOWN_RIGHT = 116
+    CMD_SIDE_VIEW_UP_LEFT = 117
+    CMD_SIDE_VIEW_UP_RIGHT = 118
+    CMD_SIDE_CAMERA_ALT = 119
+    CMD_FRONT_VIEW = 120
+    CMD_OVERLOOK_MOD = 121
+    CMD_STATIC_MOD = 122
+    CMD_BOMBING_SIGHT = 123
+    CMD_GAMEPAD_PITCH_DOWN = 124
+    CMD_GAMEPAD_PITCH_UP = 125
+    CMD_GAMEPAD_TURN_LEFT = 126
+    CMD_GAMEPAD_TURN_RIGHT = 127
+    METHOD_OF_MIXING = 128
+    ROLL_AXIS = 200
+    INVERT_ROLL = 201
+    ROLL_SENSITIVITY = 202
+    ROLL_DEAD_ZONE = 203
+    ROLL_SMOOTH_WINDOW = 204
+    VERTICAL_AXIS = 205
+    INVERT_VERTICAL = 206
+    VERTICAL_SENSITIVITY = 207
+    VERTICAL_DEAD_ZONE = 208
+    VERTICAL_SMOOTH_WINDOW = 209
+    FORCE_AXIS = 210
+    INVERT_FORCE = 211
+    FORCE_SENSITIVITY = 212
+    FORCE_DEAD_ZONE = 213
+    FORCE_SMOOTH_WINDOW = 214
+    HORIZONTAL_AXIS = 215
+    INVERT_HORIZONTAL = 216
+    HORIZONTAL_SENSITIVITY = 217
+    HORIZONTAL_DEAD_ZONE = 218
+    HORIZONTAL_SMOOTH_WINDOW = 219
+    PRESET = 300
+    CAMERA_TYPE = 301
+    ROLL_SPEED_CFC = 302
+    CAMERA_FLEXIBILITY = 303
+    CAMERA_ROLL_SPEED = 304
+    CAMERA_ANGLE = 305
+    SAFE_ROLL_ON_LOW_ALTITUDE = 306
+    MOUSE_INVERT_VERT = 307
+    EQUALIZER_ZONE_SIZE = 308
+    SHIFT_TURN = 309
+    EQUALIZER_FORCE = 310
+    CAMERA_ACCELERATION = 311
+    AUTOMATIC_FLAPS = 312
+    MOUSE_INTENSITY_SPLINE = 313
+    RADIUS_OF_CONDUCTING = 314
+    POINT_OF_NORMAL_THRUST = 315
+    ALLOW_LEAD = 316
+    INVERT_G_VERTICAL = 317
+    G_VERTICAL_DEAD_ZONE = 318
+    SENSITIVITY = 319
+    INERTIA_CAMERA = 320
+    SLIP_COMPENSATION_VALUE = 321
+    HATKA_MOVE_SPEED = 322
+    INERTIA_CAMERA_ROLL = 323
+    SENSITIVITY_IN_SNIPER_MODE = 324
+    AXIS_X_CURVE = 325
+    AXIS_Y_CURVE = 326
+    AXIS_Z_CURVE = 327
+    FREE_HORIZONTAL_CAM_GAMEPAD_AXIS = 328
+    FREE_HORIZONTAL_CAM_GAMEPAD_DEVICE = 329
+    INVERT_FREE_HORIZONTAL_CAM_GAMEPAD = 330
+    FREE_HORIZONTAL_CAM_GAMEPAD_SENSITIVITY = 331
+    FREE_HORIZONTAL_CAM_GAMEPAD_DEAD_ZONE = 332
+    FREE_VERTICAL_CAM_GAMEPAD_AXIS = 333
+    FREE_VERTICAL_CAM_GAMEPAD_DEVICE = 334
+    INVERT_FREE_VERTICAL_CAM_GAMEPAD = 335
+    FREE_VERTICAL_CAM_GAMEPAD_SENSITIVITY = 336
+    FREE_VERTICAL_CAM_GAMEPAD_DEAD_ZONE = 337
+    COMBAT_INTERFACE_TYPE = 500
+    IS_HORIZON_VISIBLE = 501
+    HORIZON_TYPE = 502
+    IS_TARGET_WINDOW = 503
+    IS_NAVIGATION_WINDOW_RADAR = 504
+    IS_NAVIGATION_WINDOW_MINIMAP = 505
+    IS_SPEEDOMETER_AND_VARIOMETER = 506
+    IS_PLAYERS_LIST = 507
+    PLAYERS_LIST_TYPE = 508
+    HEIGHT_MODE_TYPE = 509
+    COLLISION_WARNING_SYSTEM = 510
+    ALTERNATIVE_COLOR_MODE = 511
+    IS_SNIPER_MODE = 512
+    BLOCK_WIN_BUTTON = 513
+    BLOCK_ALT_TAB = 514
+    IS_CINEMA_CAMERA = 515
+    CAMERA_ZOOM_TYPE = 516
+    CAMERA_EFFECTS_ENABLED = 517
+    PRE_INTRO_ENABLED = 518
+    MAX_MOUSE_COMBAT_FOV = 519
+    COLOR_POINT_INDEX_FP = 520
+    SHOW_ADVANCE_POINT = 521
+    IS_TO_BOUNDARY_FP = 522
+    IS_SIZE_FP = 523
+    IS_BEST_TIME_FP = 524
+    CROSSHAIR_SHAPE = 530
+    CROSSHAIR_COLOR = 531
+    TARGET_AREA_SHAPE = 532
+    TARGET_AREA_COLOR = 533
+    EXTERNAL_AIM_SHAPE = 534
+    CROSSHAIR_TRANSPARENCY = 535
+    TARGET_AREA_TRANSPARENCY = 536
+    EXTERNAL_AIM_TRANSPARENCY = 537
+    ACTIVE_DYNAMIC_AIM = 538
+    SELECTED_MARKERS = 600
+    AIRMARKER_ENEMY_BASIC_DISTANCEVISIBLE = 601
+    AIRMARKER_ENEMY_BASIC_DISTANCEOPACITY = 602
+    AIRMARKER_ENEMY_BASIC_ICONSIZE = 603
+    AIRMARKER_ENEMY_BASIC_SHOWDISTANCETO = 604
+    AIRMARKER_ENEMY_BASIC_SHOWSTRENGTH = 605
+    AIRMARKER_ENEMY_BASIC_TYPESTRENGTH = 606
+    AIRMARKER_ENEMY_BASIC_SHOWMODELNAME = 607
+    AIRMARKER_ENEMY_BASIC_SHOWLEVEL = 608
+    AIRMARKER_ENEMY_BASIC_SHOWPLAYERNAME = 609
+    AIRMARKER_ENEMY_BASIC_SHOWHEIGHT = 610
+    AIRMARKER_ENEMY_BASIC_TYPEHEIGHT = 611
+    AIRMARKER_ENEMY_BASIC_SHOWSHOOTOBJECT = 612
+    AIRMARKER_ENEMY_BASIC_SHOWARMOREDPARTS = 613
+    AIRMARKER_ENEMY_BASIC_SHOWUNARMOREDPARTS = 614
+    AIRMARKER_ENEMY_ALT_DISTANCEVISIBLE = 615
+    AIRMARKER_ENEMY_ALT_DISTANCEOPACITY = 616
+    AIRMARKER_ENEMY_ALT_ICONSIZE = 617
+    AIRMARKER_ENEMY_ALT_SHOWDISTANCETO = 618
+    AIRMARKER_ENEMY_ALT_SHOWSTRENGTH = 619
+    AIRMARKER_ENEMY_ALT_TYPESTRENGTH = 620
+    AIRMARKER_ENEMY_ALT_SHOWMODELNAME = 621
+    AIRMARKER_ENEMY_ALT_SHOWLEVEL = 622
+    AIRMARKER_ENEMY_ALT_SHOWPLAYERNAME = 623
+    AIRMARKER_ENEMY_ALT_SHOWHEIGHT = 624
+    AIRMARKER_ENEMY_ALT_TYPEHEIGHT = 625
+    AIRMARKER_ENEMY_ALT_SHOWSHOOTOBJECT = 626
+    AIRMARKER_ENEMY_ALT_SHOWARMOREDPARTS = 627
+    AIRMARKER_ENEMY_ALT_SHOWUNARMOREDPARTS = 628
+    AIRMARKER_TARGET_BASIC_DISTANCEVISIBLE = 629
+    AIRMARKER_TARGET_BASIC_DISTANCEOPACITY = 630
+    AIRMARKER_TARGET_BASIC_ICONSIZE = 631
+    AIRMARKER_TARGET_BASIC_SHOWDISTANCETO = 632
+    AIRMARKER_TARGET_BASIC_SHOWSTRENGTH = 633
+    AIRMARKER_TARGET_BASIC_TYPESTRENGTH = 634
+    AIRMARKER_TARGET_BASIC_SHOWMODELNAME = 635
+    AIRMARKER_TARGET_BASIC_SHOWLEVEL = 636
+    AIRMARKER_TARGET_BASIC_SHOWPLAYERNAME = 637
+    AIRMARKER_TARGET_BASIC_SHOWHEIGHT = 638
+    AIRMARKER_TARGET_BASIC_TYPEHEIGHT = 639
+    AIRMARKER_TARGET_BASIC_SHOWSHOOTOBJECT = 640
+    AIRMARKER_TARGET_BASIC_SHOWARMOREDPARTS = 641
+    AIRMARKER_TARGET_BASIC_SHOWUNARMOREDPARTS = 642
+    AIRMARKER_TARGET_ALT_DISTANCEVISIBLE = 643
+    AIRMARKER_TARGET_ALT_DISTANCEOPACITY = 644
+    AIRMARKER_TARGET_ALT_ICONSIZE = 645
+    AIRMARKER_TARGET_ALT_SHOWDISTANCETO = 646
+    AIRMARKER_TARGET_ALT_SHOWSTRENGTH = 647
+    AIRMARKER_TARGET_ALT_TYPESTRENGTH = 648
+    AIRMARKER_TARGET_ALT_SHOWMODELNAME = 649
+    AIRMARKER_TARGET_ALT_SHOWLEVEL = 650
+    AIRMARKER_TARGET_ALT_SHOWPLAYERNAME = 651
+    AIRMARKER_TARGET_ALT_SHOWHEIGHT = 652
+    AIRMARKER_TARGET_ALT_TYPEHEIGHT = 653
+    AIRMARKER_TARGET_ALT_SHOWSHOOTOBJECT = 654
+    AIRMARKER_TARGET_ALT_SHOWARMOREDPARTS = 655
+    AIRMARKER_TARGET_ALT_SHOWUNARMOREDPARTS = 656
+    AIRMARKER_FRIENDLY_BASIC_DISTANCEVISIBLE = 657
+    AIRMARKER_FRIENDLY_BASIC_DISTANCEOPACITY = 658
+    AIRMARKER_FRIENDLY_BASIC_ICONSIZE = 659
+    AIRMARKER_FRIENDLY_BASIC_SHOWDISTANCETO = 660
+    AIRMARKER_FRIENDLY_BASIC_SHOWSTRENGTH = 661
+    AIRMARKER_FRIENDLY_BASIC_TYPESTRENGTH = 662
+    AIRMARKER_FRIENDLY_BASIC_SHOWMODELNAME = 663
+    AIRMARKER_FRIENDLY_BASIC_SHOWLEVEL = 664
+    AIRMARKER_FRIENDLY_BASIC_SHOWPLAYERNAME = 665
+    AIRMARKER_FRIENDLY_BASIC_SHOWHEIGHT = 666
+    AIRMARKER_FRIENDLY_BASIC_TYPEHEIGHT = 667
+    AIRMARKER_FRIENDLY_BASIC_SHOWSHOOTOBJECT = 668
+    AIRMARKER_FRIENDLY_BASIC_SHOWARMOREDPARTS = 669
+    AIRMARKER_FRIENDLY_BASIC_SHOWUNARMOREDPARTS = 670
+    AIRMARKER_FRIENDLY_ALT_DISTANCEVISIBLE = 671
+    AIRMARKER_FRIENDLY_ALT_DISTANCEOPACITY = 672
+    AIRMARKER_FRIENDLY_ALT_ICONSIZE = 673
+    AIRMARKER_FRIENDLY_ALT_SHOWDISTANCETO = 674
+    AIRMARKER_FRIENDLY_ALT_SHOWSTRENGTH = 675
+    AIRMARKER_FRIENDLY_ALT_TYPESTRENGTH = 676
+    AIRMARKER_FRIENDLY_ALT_SHOWMODELNAME = 677
+    AIRMARKER_FRIENDLY_ALT_SHOWLEVEL = 678
+    AIRMARKER_FRIENDLY_ALT_SHOWPLAYERNAME = 679
+    AIRMARKER_FRIENDLY_ALT_SHOWHEIGHT = 680
+    AIRMARKER_FRIENDLY_ALT_TYPEHEIGHT = 681
+    AIRMARKER_FRIENDLY_ALT_SHOWSHOOTOBJECT = 682
+    AIRMARKER_FRIENDLY_ALT_SHOWARMOREDPARTS = 683
+    AIRMARKER_FRIENDLY_ALT_SHOWUNARMOREDPARTS = 684
+    AIRMARKER_SQUADS_BASIC_DISTANCEVISIBLE = 685
+    AIRMARKER_SQUADS_BASIC_DISTANCEOPACITY = 686
+    AIRMARKER_SQUADS_BASIC_ICONSIZE = 687
+    AIRMARKER_SQUADS_BASIC_SHOWDISTANCETO = 688
+    AIRMARKER_SQUADS_BASIC_SHOWSTRENGTH = 689
+    AIRMARKER_SQUADS_BASIC_TYPESTRENGTH = 690
+    AIRMARKER_SQUADS_BASIC_SHOWMODELNAME = 691
+    AIRMARKER_SQUADS_BASIC_SHOWLEVEL = 692
+    AIRMARKER_SQUADS_BASIC_SHOWPLAYERNAME = 693
+    AIRMARKER_SQUADS_BASIC_SHOWHEIGHT = 694
+    AIRMARKER_SQUADS_BASIC_TYPEHEIGHT = 695
+    AIRMARKER_SQUADS_BASIC_SHOWSHOOTOBJECT = 696
+    AIRMARKER_SQUADS_BASIC_SHOWARMOREDPARTS = 697
+    AIRMARKER_SQUADS_BASIC_SHOWUNARMOREDPARTS = 698
+    AIRMARKER_SQUADS_ALT_DISTANCEVISIBLE = 699
+    AIRMARKER_SQUADS_ALT_DISTANCEOPACITY = 700
+    AIRMARKER_SQUADS_ALT_ICONSIZE = 701
+    AIRMARKER_SQUADS_ALT_SHOWDISTANCETO = 702
+    AIRMARKER_SQUADS_ALT_SHOWSTRENGTH = 703
+    AIRMARKER_SQUADS_ALT_TYPESTRENGTH = 704
+    AIRMARKER_SQUADS_ALT_SHOWMODELNAME = 705
+    AIRMARKER_SQUADS_ALT_SHOWLEVEL = 706
+    AIRMARKER_SQUADS_ALT_SHOWPLAYERNAME = 707
+    AIRMARKER_SQUADS_ALT_SHOWHEIGHT = 708
+    AIRMARKER_SQUADS_ALT_TYPEHEIGHT = 709
+    AIRMARKER_SQUADS_ALT_SHOWSHOOTOBJECT = 710
+    AIRMARKER_SQUADS_ALT_SHOWARMOREDPARTS = 711
+    AIRMARKER_SQUADS_ALT_SHOWUNARMOREDPARTS = 712
+    GROUNDMARKER_ENEMY_BASIC_DISTANCEVISIBLE = 713
+    GROUNDMARKER_ENEMY_BASIC_DISTANCEOPACITY = 714
+    GROUNDMARKER_ENEMY_BASIC_ICONSIZE = 715
+    GROUNDMARKER_ENEMY_BASIC_SHOWDISTANCETO = 716
+    GROUNDMARKER_ENEMY_BASIC_SHOWSTRENGTH = 717
+    GROUNDMARKER_ENEMY_BASIC_TYPESTRENGTH = 718
+    GROUNDMARKER_ENEMY_BASIC_SHOWMODELNAME = 719
+    GROUNDMARKER_ENEMY_BASIC_SHOWLEVEL = 720
+    GROUNDMARKER_ENEMY_BASIC_SHOWPLAYERNAME = 721
+    GROUNDMARKER_ENEMY_BASIC_SHOWHEIGHT = 722
+    GROUNDMARKER_ENEMY_BASIC_TYPEHEIGHT = 723
+    GROUNDMARKER_ENEMY_BASIC_SHOWSHOOTOBJECT = 724
+    GROUNDMARKER_ENEMY_BASIC_SHOWARMOREDPARTS = 725
+    GROUNDMARKER_ENEMY_BASIC_SHOWUNARMOREDPARTS = 726
+    GROUNDMARKER_ENEMY_ALT_DISTANCEVISIBLE = 727
+    GROUNDMARKER_ENEMY_ALT_DISTANCEOPACITY = 728
+    GROUNDMARKER_ENEMY_ALT_ICONSIZE = 729
+    GROUNDMARKER_ENEMY_ALT_SHOWDISTANCETO = 730
+    GROUNDMARKER_ENEMY_ALT_SHOWSTRENGTH = 731
+    GROUNDMARKER_ENEMY_ALT_TYPESTRENGTH = 732
+    GROUNDMARKER_ENEMY_ALT_SHOWMODELNAME = 733
+    GROUNDMARKER_ENEMY_ALT_SHOWLEVEL = 734
+    GROUNDMARKER_ENEMY_ALT_SHOWPLAYERNAME = 735
+    GROUNDMARKER_ENEMY_ALT_SHOWHEIGHT = 736
+    GROUNDMARKER_ENEMY_ALT_TYPEHEIGHT = 737
+    GROUNDMARKER_ENEMY_ALT_SHOWSHOOTOBJECT = 738
+    GROUNDMARKER_ENEMY_ALT_SHOWARMOREDPARTS = 739
+    GROUNDMARKER_ENEMY_ALT_SHOWUNARMOREDPARTS = 740
+    GROUNDMARKER_TARGET_BASIC_DISTANCEVISIBLE = 741
+    GROUNDMARKER_TARGET_BASIC_DISTANCEOPACITY = 742
+    GROUNDMARKER_TARGET_BASIC_ICONSIZE = 743
+    GROUNDMARKER_TARGET_BASIC_SHOWDISTANCETO = 744
+    GROUNDMARKER_TARGET_BASIC_SHOWSTRENGTH = 745
+    GROUNDMARKER_TARGET_BASIC_TYPESTRENGTH = 746
+    GROUNDMARKER_TARGET_BASIC_SHOWMODELNAME = 747
+    GROUNDMARKER_TARGET_BASIC_SHOWLEVEL = 748
+    GROUNDMARKER_TARGET_BASIC_SHOWPLAYERNAME = 749
+    GROUNDMARKER_TARGET_BASIC_SHOWHEIGHT = 750
+    GROUNDMARKER_TARGET_BASIC_TYPEHEIGHT = 751
+    GROUNDMARKER_TARGET_BASIC_SHOWSHOOTOBJECT = 752
+    GROUNDMARKER_TARGET_BASIC_SHOWARMOREDPARTS = 753
+    GROUNDMARKER_TARGET_BASIC_SHOWUNARMOREDPARTS = 754
+    GROUNDMARKER_TARGET_ALT_DISTANCEVISIBLE = 755
+    GROUNDMARKER_TARGET_ALT_DISTANCEOPACITY = 756
+    GROUNDMARKER_TARGET_ALT_ICONSIZE = 757
+    GROUNDMARKER_TARGET_ALT_SHOWDISTANCETO = 758
+    GROUNDMARKER_TARGET_ALT_SHOWSTRENGTH = 759
+    GROUNDMARKER_TARGET_ALT_TYPESTRENGTH = 760
+    GROUNDMARKER_TARGET_ALT_SHOWMODELNAME = 761
+    GROUNDMARKER_TARGET_ALT_SHOWLEVEL = 762
+    GROUNDMARKER_TARGET_ALT_SHOWPLAYERNAME = 763
+    GROUNDMARKER_TARGET_ALT_SHOWHEIGHT = 764
+    GROUNDMARKER_TARGET_ALT_TYPEHEIGHT = 765
+    GROUNDMARKER_TARGET_ALT_SHOWSHOOTOBJECT = 766
+    GROUNDMARKER_TARGET_ALT_SHOWARMOREDPARTS = 767
+    GROUNDMARKER_TARGET_ALT_SHOWUNARMOREDPARTS = 768
+    GROUNDMARKER_FRIENDLY_BASIC_DISTANCEVISIBLE = 769
+    GROUNDMARKER_FRIENDLY_BASIC_DISTANCEOPACITY = 770
+    GROUNDMARKER_FRIENDLY_BASIC_ICONSIZE = 771
+    GROUNDMARKER_FRIENDLY_BASIC_SHOWDISTANCETO = 772
+    GROUNDMARKER_FRIENDLY_BASIC_SHOWSTRENGTH = 773
+    GROUNDMARKER_FRIENDLY_BASIC_TYPESTRENGTH = 774
+    GROUNDMARKER_FRIENDLY_BASIC_SHOWMODELNAME = 775
+    GROUNDMARKER_FRIENDLY_BASIC_SHOWLEVEL = 776
+    GROUNDMARKER_FRIENDLY_BASIC_SHOWPLAYERNAME = 777
+    GROUNDMARKER_FRIENDLY_BASIC_SHOWHEIGHT = 778
+    GROUNDMARKER_FRIENDLY_BASIC_TYPEHEIGHT = 779
+    GROUNDMARKER_FRIENDLY_BASIC_SHOWSHOOTOBJECT = 780
+    GROUNDMARKER_FRIENDLY_BASIC_SHOWARMOREDPARTS = 781
+    GROUNDMARKER_FRIENDLY_BASIC_SHOWUNARMOREDPARTS = 782
+    GROUNDMARKER_FRIENDLY_ALT_DISTANCEVISIBLE = 783
+    GROUNDMARKER_FRIENDLY_ALT_DISTANCEOPACITY = 784
+    GROUNDMARKER_FRIENDLY_ALT_ICONSIZE = 785
+    GROUNDMARKER_FRIENDLY_ALT_SHOWDISTANCETO = 786
+    GROUNDMARKER_FRIENDLY_ALT_SHOWSTRENGTH = 787
+    GROUNDMARKER_FRIENDLY_ALT_TYPESTRENGTH = 788
+    GROUNDMARKER_FRIENDLY_ALT_SHOWMODELNAME = 789
+    GROUNDMARKER_FRIENDLY_ALT_SHOWLEVEL = 790
+    GROUNDMARKER_FRIENDLY_ALT_SHOWPLAYERNAME = 791
+    GROUNDMARKER_FRIENDLY_ALT_SHOWHEIGHT = 792
+    GROUNDMARKER_FRIENDLY_ALT_TYPEHEIGHT = 793
+    GROUNDMARKER_FRIENDLY_ALT_SHOWSHOOTOBJECT = 794
+    GROUNDMARKER_FRIENDLY_ALT_SHOWARMOREDPARTS = 795
+    GROUNDMARKER_FRIENDLY_ALT_SHOWUNARMOREDPARTS = 796
+    MOUSE_SENSITIVITY = 797
+    MEASUREMENT_SYSTEM = 798
+    IS_CHAT_ENABLED = 799
+    SAVEBATTLEREPLAYS = 800
+    REMOVEBATTLEREPLAYS = 801
+    DAYSFORREMOVEBATTLEREPLAYS = 802
+    IS_FAST_FM_ENABLED = 803
+    MESSAGEFILTERENABLED = 804
+    NOTLISTENTOANONYMOUS = 805
+    DISPLAYIGNOREDCONTATCS = 806
+    DISABLEOFFLINECONTACTS = 807
+    DISPLAYMESSAGETIME = 808
+    IS_HD_CONTENT = 820
+    IS_VIDEO_VSYNC = 821
+    GRAPHICS_WIN32 = 822
+    GS_AUTODETECT_ENABLED = 823
+    WINDOW_MODE = 824
+    GRAPHICS_GAMMA = 825
+    VIDEO_RESOLUTION = 826
+    GRAPHICS_QUALITY_INDEX = 827
+    TEXTURE_QUALITY = 850
+    WATER_QUALITY = 851
+    SHADOWS_QUALITY = 852
+    OBJECT_LOD = 853
+    POSTFX = 854
+    MOTIONBLUR = 855
+    OBJECT_CLIP = 856
+    PARTICLES_QUALITY = 857
+    TREES = 858
+    BACKBUFER_QUALITY = 859
+    TEXTURE_FILTERING = 860
+    FXAA = 861
+    VOLUMETRICCLOUDS = 862
+    IS_VOICE_CHAT_VISIBLE = 900
+    IS_ARENA_VOICE_CHAT_VISIBLE = 901
+    QUALITY_SOUND_INDEX = 902
+    ENABLE_VOICE_CHAT = 903
+    SOUND_SETTINGS_MASTER = 904
+    SOUND_SETTINGS_MUSIC = 905
+    SOUND_SETTINGS_AIRCRAFT = 906
+    SOUND_SETTINGS_SFX = 907
+    SOUND_SETTINGS_VOICE = 908
+    SOUND_PARAMETERS_MASTER = 910
+    SOUND_PARAMETERS_MUSIC = 911
+    SOUND_PARAMETERS_AIRCRAFT = 912
+    SOUND_PARAMETERS_SFX = 913
+    SOUND_PARAMETERS_VOICE = 914
+    VOIP_PARAMETERS_AUTOCONNECTARENACHANNEL = 920
+    VOIP_PARAMETERS_MASTERVOLUME = 921
+    VOIP_PARAMETERS_MICVOLUME = 922
+    VOIP_PARAMETERS_FADEVOLUME = 923
+
+
+GAME_OPTIONS_STATS_AUTODETECT = {'GRAPHICS_DETAILS': 400,
+ 'USER_CHOICE': 401,
+ 'HARDWARES': 402,
+ 'RAITING': 403}
+TURRET_LOCK_TARGET_FROM_SHOOT_K = 1.2
+ZOOM_TYPES_KEYS = ['zoomTableAlt', 'zoomTable']
+
+class BATTLE_RESULT_EVENT_TYPE():
+    PLANE_CAN_BUY = 0
+    PLANE_CAN_RESERCH = 1
+    MODULE_CAN_BUY = 2
+    MODULE_CAN_RESERCH = 3
+    RECORD_WIN_PERCENT = 4
+    RECORD_KILLS = 5
+    RECORD_GROUND_OBJECTS = 6
+    RECORD_EXP = 7
+    RECORD_ACCURACY_PERCENT = 8
+    PILOT_CHANGE_MAIN_SKILL = 20
+    GUNNER_CHANGE_MAIN_SKILL = 21
+    PILOT_COMPLETE_MAIN_SKILL = 22
+    GUNNER_COMPLETE_MAIN_SKILL = 23
+    PILOT_GOT_NEW_SP = 24
+    GUNNER_GOT_NEW_SP = 25
+    PILOT_GOT_FIRST_SP = 26
+    GUNNER_GOT_FIRST_SP = 27
+    PILOT_CHANGE_SP_PROGRESS = 28
+    GUNNER_CHANGE_SP_PROGRESS = 29
+
+
+class ACTION_UI_TYPE():
+    ECONOMIC = 0
+    PREMIUM = 1
+    PLANE_COST_BUY = 2
+    PLANE_COST_BUY_NATION = 3
+    PLANE_COST_BUY_ALL = 4
+    PLANE_COST_BUY_CLASS = 5
+    ITEM_ALL_BELT_COST = 13
+    ITEM_BELT_COST = 14
+    ITEM_CAMOUFLAGE_GROUP_DAY7_COST = 15
+    ITEM_CAMOUFLAGE_GROUP_DAY30_COST = 16
+    ITEM_CAMOUFLAGE_GROUP_CONST_COST = 17
+    ITEM_CONSUMABLE_COST = 18
+    ITEM_EQUIPMENT_COST = 19
+    PLANE_AIRCRAFTXPCOEFF = 20
+    PLANE_AIRCRAFTXPCOEFF_NATION = 21
+    PLANE_AIRCRAFTXPCOEFF_ALL = 22
+    PLANE_AIRCRAFTCREDITSCOEFF = 23
+    PLANE_AIRCRAFTCREDITSCOEFF_NATION = 23
+    PLANE_AIRCRAFTCREDITSCOEFF_ALL = 23
+    CREWSKILLSDROPCOST = 24
+    CREWSPECIALIZATIONRESEARCHCOST = 25
+    ITEM_CONSUMABLE_ALL_COST = 26
+    ITEM_EQUIPMENT_ALL_COST = 27
+
+
+class ACTION_UI_ECONOMIC():
+    BATTLE_RESULT_DEFEATEDBASEXP = 0
+    BATTLE_RESULT_DEFEATEDCREDITSPERLEVEL = 1
+    BATTLE_RESULT_DEFEATEDXPCOEFF = 2
+    BATTLE_RESULT_WINNERBASEXP = 3
+    BATTLE_RESULT_WINNERCREDITSPERLEVEL = 4
+    BATTLE_RESULT_WINNERXPCOEFF = 5
+    BARRACKSLOTS = 6
+    INITIALCREDITS = 20
+    CREDITSCOEFF = 21
+    XPCOEFF = 22
+    XPFIRSTWIN = 23
+    DAILYWINBONUSREMAIN = 24
+    GOLDPRICE = 25
+    EXCHANGEFREEXPRATE = 26
+    CREWPUMPINGCOEFF = 27
+    FREEXPCOEFF = 28
+    SLOTCOST = 29
+    SLOTCOST_TICKETS = 30
+
+
+class NAVIGATION_WINDOWS_TYPES():
+    MINIMAP = 0
+    BIG_MAP = 1
+    RADAR = 2
+
+
+BOT_NAME_PREFFIX = '<'
+BOT_NAME_SUFFIX = '>'
+INTRO_MODE_DEBUG = True
+PLAYER_SCENARIO = 'player_scenario'
+SUPERIORITY_POINTS_GROUPS_MAX = 32
+SUPERIORITY2_BASE_HEALTH = False
+SUPERIORITY2_COLORS = {'green': 1,
+ 'red': 2,
+ 'yellow': 3}
+SUPERIORITY2_LIVES_COUNT = 3
+SUPERIORITY2_BATTLE_LEVEL_COEFS = [25,
+ 25,
+ 30,
+ 30,
+ 60,
+ 60,
+ 60,
+ 60,
+ 60,
+ 60]
+SUPERIORITY2_PLAYERS_COUNT_COEFS = [3,
+ 3,
+ 4,
+ 4,
+ 5,
+ 5,
+ 6,
+ 6,
+ 7,
+ 7,
+ 8,
+ 8,
+ 9,
+ 9,
+ 10]
+SUPERIORITY2_BOT_DATA = [{'plane': 'il-2-1',
+  'globalID': -108304520,
+  'name': 'bot_t0_01',
+  'teamIndex': 0,
+  'spline': 'dota2_T0_BMB01_W01',
+  'speed': 300},
+ {'plane': 'il-2-1',
+  'globalID': -108304520,
+  'name': 'bot_t0_02',
+  'teamIndex': 0,
+  'spline': 'dota2_T0_BMB01_W02',
+  'speed': 300},
+ {'plane': 'il-2-1',
+  'globalID': -108304520,
+  'name': 'bot_t0_03',
+  'teamIndex': 0,
+  'spline': 'dota2_T0_BMB01_W03',
+  'speed': 300},
+ {'plane': 'il-2-1',
+  'globalID': -108304520,
+  'name': 'bot_t1_01',
+  'teamIndex': 1,
+  'spline': 'dota2_T1_BMB01_W01',
+  'speed': 300},
+ {'plane': 'il-2-1',
+  'globalID': -108304520,
+  'name': 'bot_t1_02',
+  'teamIndex': 1,
+  'spline': 'dota2_T1_BMB01_W02',
+  'speed': 300},
+ {'plane': 'il-2-1',
+  'globalID': -108304520,
+  'name': 'bot_t1_03',
+  'teamIndex': 1,
+  'spline': 'dota2_T1_BMB01_W03',
+  'speed': 300}]
+SUPERIORITY2_TEAM_OBJECTS_DOTA = False
+MOVING_OBJ_RANGE = 100
+MOVING_OBJ_DAMAGE_PERCENT = 0.035
+BASE_OBJ_DAMAGE_PERCENT = 0.009
+IS_SUPERIORITY_1_5 = True
+SUPERIORITY_SCORE_PENALTY_COEF = 1.0
+SUPERIORITY_ONE_PLAYER_MODE = False
+MIN_CALIBER = 21
+HEAVY_OBJECT_ABSORPTION = 0.2
+MAX_USELESS_SHOOT_TIME = 2.0
+
+class EFFECTIVE_AGAINST_ARMORED_OBJECTS():
+    NORMAL = -1
+    NOT_EFFECTIVE = 0
+    LOW_EFFECTIVE = 1
+    IS_EFFECTIVE = 2
+
+
+OUTRO_TIME = 4
+OUTRO_TIME_QUIT_DELAY = 1
+GUN_REDUCTION_FROM_DIST_K = 0.9
+
+class TEAM_OBLECTS_PART_TYPES():
+    SIMPLE = 1
+    ARMORED = 2
+    TURRET = 3
+
+
+class RESOURCE_MODIFICATION_ACTION():
+    ACTION_ADDED = 0
+    ACTION_DELETED = 1
+    ACTION_MODIFIED = 2
+
+
+TEAM_OBJECT_PARALLAX_ENABLED = True
+TEAM_OBJECT_AUTO_AIMING_ENABLED = 2
+MIN_SEND_MARKER_MESSAGE_PERIOD = 1.0
+
+class GUICursorStates():
+    NORMAL_ON = 0
+    NORMAL_OFF = 1
+    FRIENDLY = 2
+    ENEMY = 3
+    ALL = (NORMAL_ON,
+     NORMAL_OFF,
+     FRIENDLY,
+     ENEMY)
+
+
+ANIMATION_STATE_HEALTH_K = -1
+FIRST_SWITCH_TO_THE_NEXT_VEHICLE_DELAY = 2
+
+class TURRET_RATION_FOR_EXTREMUM_TARGET_ALTITUDE():
+    MIN = 0.3
+    MAX = 1.0
+
+
+EFFECTS_PART_ID = 255
+
+class FROM_SERVER_TO_CLIENT_EFFECT_PARAM():
+    NON_PARAMS = 0
+    ROTATION = 1
+    GROUNDED = 2
+
+
+class GLOBAL_EFFECTS():
+    FIRE_WORK = 1
+    EXPLOSIVE_CHARACTER = 2
+
+
+class WORLD_EDITOR_TRIGGER_POINT_TAG():
+    ONE_TIME_ACTION = 0
+    INFINITY_ACTIONS = 5
+    ONE_TIME_PER_EACH_OBJECT_ACTION = 6
+
+
+UNDEFINED_PLANE = -1
+PLANE_BIRTHDAY_ENABLED = False
+CLIENT_UPDATE_STATS_PERIOD = 300
+CLIENT_UPDATE_HANGAR_PERIOD = 1.5
+
+class WAITING_INFO_TYPE():
+    ACCOUNT_INIT = 1
+    HANGAR_LOAD = 2
+    PLANE_BUY = 3
+    PLANE_SELL = 4
+    PLANE_RENT = 5
+    MODULE_RESEARCH = 6
+    MODULE_INSTALL = 7
+    EQUIPMENT_INSTALL = 8
+    MAINTENANCE = 9
+    BOOTSTRAP = 10
+    LOGIN = 11
+    MODEL_LOAD = 12
+    HANGAR_ALL_DATA_LOADED = 13
+    HANGAR_MARKET_OPEN = 14
+    MAINTENANCE_OPEN = 15
+    CUSTOMIZATION_OPEN = 16
+    MODULETREE_OPEN = 17
+    CREW_OPEN = 18
+    GUNS_DATA_LOADED = 19
+    GUNS_PAYMENT_TYPE_LOADED = 20
+    GUNS_BELT_CHARACTERISTICS_LOADEDN = 21
+    GUNS_INSTALLED_BELTS_LOADED = 22
+    GUNS_BELT_DATA_LOADED = 23
+    CONSUMABLE_PAYMENT_TYPE_LOADED = 24
+    CONSUMABLE_INSTALLED = 25
+    CONSUMABLE_DATA_LOADED = 26
+    ROCKET_DATA_LOADED = 27
+    BOMBS_DATA_LOADED = 28
+    GARAGE_OPEN = 29
+    TYPE_OPEN_SHOP_STORAGE_TAB_BELTS = 30
+    TYPE_OPEN_SHOP_STORAGE_TAB_SUSPENSIONS = 31
+    TYPE_OPEN_SHOP_STORAGE_TAB_EQUIPMENTT = 32
+    TYPE_OPEN_SHOP_STORAGE_TAB_CONSUMABLE = 33
+    TYPE_OPEN_SHOP_STORAGE_TAB_MODULES = 34
+    TYPE_OPEN_SHOP_STALL_TAB_BELTS = 35
+    TYPE_OPEN_SHOP_STALL_TAB_SUSPENSIONS = 36
+    TYPE_OPEN_SHOP_STALL_TAB_EQUIPMENTT = 37
+    TYPE_OPEN_SHOP_STALL_TAB_CONSUMABLE = 38
+    TYPE_OPEN_SHOP_STALL_TAB_MODULES = 39
+    TYPE_OPEN_SHOP_STORAGE_TAB_PLANES = 40
+    TYPE_OPEN_SHOP_STALL_TAB_PLANES = 41
+    TYPE_BARRACKS_OPENED = 42
+
+    @classmethod
+    def getString(cls, value):
+        return next((k for k, v in cls.__dict__.iteritems() if v == value))
+
+
+PRINT_TURRETS_DATA = False
+NATION_DECAL_ID_DEFAULT = 0
+NATION_DECAL_ID_TRANSPARENT = -1
+
+class AMMOBELT_SPECS():
+
+    class SPEC:
+
+        def __init__(self, name, flag, locTag):
+            self.name = name
+            self.flag = flag
+            self.locTag = locTag
+
+    FIRE_CHANCE = SPEC('fireChanceVisual', 'fireChanceVisualFlag', 'LOBBY_MAINTENANCE_MODULE_PARAMETER_FIRE_CHANSE_1')
+    CRIT_ABILITY = SPEC('critAbilityVisual', 'critAbilityVisualFlag', 'LOBBY_MAINTENANCE_MODULE_PARAMETER_CRIT_ABILITY')
+    ARMORED_DAMAGE_K = SPEC('damageToArmoredPartsVisual', 'damageToArmoredPartsVisualFlag', 'LOBBY_MAINTENANCE_MODULE_PARAMETER_ARMORED_DAMAGE')
+    SPEC_LIST = [FIRE_CHANCE, CRIT_ABILITY, ARMORED_DAMAGE_K]
+
+
+class BOT_DIFFICULTY():
+    RANDOM = -1
+    LOW = 1
+    MEDIUM = 2
+    HIGH = 3
+    ALL = (LOW, MEDIUM, HIGH)
+
+
+BOTS2_ENABLED = True
+DEAD_PILOT_ADD_DISPERSION = math.radians(1.0)
+ALLOW_CREDIT_BUYS = ()
+MEASUREMENT_SYSTEMS = ['METRIC', 'ROYAL']
+
+class BOTS_AUTOFILL():
+    PREDEFINED = 0
+    RANDOM = 1
+    BALANCED = 2
+
+
+class SKILL_EVENT():
+    NONE = 0
+    TIME = 1
+    ENEMY_KILL = 2
+    SHOT = 3
+    HEALTH = 4
+    GET_DAMAGE = 5
+    SOME_TEST = 6
+    PILOT_S_FIREMANUVER_START = 7
+    PILOT_S_FIREMANUVER_END = 8
+    PILOT_S_CRUISEFLIGHT_START = 9
+    PILOT_S_CRUISEFLIGHT_END = 10
+    PILOT_S_DIEHARD_START = 11
+    PILOT_S_DIEHARD_END = 12
+    PILOT_S_BLOODLUST_START = 13
+    PILOT_S_BLOODLUST_END = 14
+    PILOT_S_ALPHASTRIKE_START = 15
+    PILOT_S_ALPHASTRIKE_END = 15
+    PILOT_S_BOOMZOOM_START = 16
+    PILOT_S_BOOMZOOM_END = 17
+    PILOT_S_EVASIONMANUVER_START = 18
+    PILOT_S_EVASIONMANUVER_END = 19
+    GUNNER_PROTECTOR_START = 20
+    GUNNER_PROTECTOR_END = 21
+    PILOT_S_CELESTIAL_FURY_START = 22
+    PILOT_S_CELESTIAL_FURY_END = 23
+    PILOT_HOT_CHICK_START = 24
+    PILOT_HOT_CHICK_END = 25
+
+    @staticmethod
+    def getName(skill_value):
+        for name, v in SKILL_EVENT.__dict__.items():
+            if v == skill_value:
+                return name
+
+
+class GAME_EVENT():
+    ENEMY_KILLED = 0
+
+
+class AUTOSQUAD_STATUS():
+    PAUSE = 0
+    FIND = 1
+    BATTLE = 2
+    LOCKED = 4
+    HIDDEN = BATTLE | LOCKED
+
+
+class AUTOSQUAD_FILTER_MASK():
+    NONE = 0
+    LOW_LEVEL = 1
+    MED_LEVEL = 2
+    HIGH_LEVEL = 4
+    ALL_MASK = [LOW_LEVEL, MED_LEVEL, HIGH_LEVEL]
+    MASK_LEVEL = {LOW_LEVEL: (1, 4),
+     MED_LEVEL: (5, 7),
+     HIGH_LEVEL: (8, 10)}
+    FULL_MASK = LOW_LEVEL | MED_LEVEL | HIGH_LEVEL
+    AUTOCREATE_ORDER = [HIGH_LEVEL, MED_LEVEL, LOW_LEVEL]
+
+
+DEFAULT_WIN_RATE = 50.0
+
+class REFERRAL_EMAIL_ERRORS():
+    SUCCESS = 0
+    EXCEEDED_DAILY_LIMIT = 1
+    SERVER_UNAVAILABLE = 2
+    EMAIL_ALREADY_EXISTS = 3
+    CAN_NOT_INVITE_RECRUIT = 4
+    UNKNOWN_ERROR = 100
+
+
+class FRACTION(object):
+    AUTO = -2
+    UNDEFINED = -1
+    AXIS = 0
+    ALLY = 1
+    ALL = [AXIS, ALLY]
+
+    @classmethod
+    def reverse(cls, fraction):
+        if fraction == cls.ALLY:
+            fraction = cls.AXIS
+        else:
+            fraction = cls.ALLY
+        return fraction
+
+
+class WAR_STATE(object):
+    UNDEFINED = -1
+    OFF = 0
+    PEACE = 1
+    PREPARE = 2
+    WAR = 3
+    WAR_RESULT = 4
+    END = 5
+    ALL = [UNDEFINED,
+     OFF,
+     PEACE,
+     PREPARE,
+     WAR,
+     WAR_RESULT,
+     END]

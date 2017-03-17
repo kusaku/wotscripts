@@ -1,0 +1,17 @@
+# Embedded file name: scripts/client/gui/HtmlMessagerTypes.py
+
+
+class HtmlMessagerTypes:
+    MESSAGE_NEWS = 0
+    MESSAGE_BUY = 1
+    MESSAGE_RESEARCH = 2
+    MESSAGE_WIN = 3
+    MESSAGE_LOSE = 4
+    MESSAGE_DRAW = 5
+    MESSAGE_REBOOT = 6
+    MESSAGE_PRIVATE = 7
+    MESSAGE_REPAIR = 8
+    MESSAGE_SUBSTITUTE_EQUIPMENT = 9
+    MESSAGE_PREMIUM_OPERATIONS = 10
+    MESSAGE_CHAT_LOBBY_DISABLED = 11
+    MESSAGE_CHAT_LOBBY_ENABLED = 12

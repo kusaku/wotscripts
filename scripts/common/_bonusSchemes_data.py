@@ -1,0 +1,238 @@
+# Embedded file name: scripts/common/_bonusSchemes_data.py
+import Math
+import math
+import consts
+true = True
+false = False
+
+class Dummy:
+    pass
+
+
+isServerDatabase = True
+
+class AMMO_TYPE:
+    BALL = 0
+    AP = 1
+    APC = 2
+    I = 3
+    APHC = 4
+    API = 5
+    HEI = 6
+    APHE = 7
+    ALL_TYPES = (BALL,
+     AP,
+     APC,
+     I,
+     APHC,
+     API,
+     HEI,
+     APHE)
+
+
+class ModsTypeEnum:
+    AIR_AGILITY = 0
+    MAX_SPEED = 1
+    WEAPONS_HEATING = 2
+    BOMB_MISSILE_FOCUS = 3
+    TURRET_DELAY = 4
+    GUNNER_ALIVE = 5
+    WEAPONS_FOCUS = 6
+    TURRET_FOCUS = 7
+    TURRET_ANGLE = 8
+    TURRET_RANGE = 9
+    ENGINE_POWER = 10
+    SPEED_AGILITY = 11
+    DAMAGE_AGILITY = 12
+    FIRE_DURATION = 13
+    FIRE_DURATION_PILOT = 14
+    FIRE_DURATION_GUNNER = 15
+    FIRE_DURATION_NAVIGATOR = 16
+    CREW_MEMBER_HP = 17
+    SIGHT_RANGE_PILOT = 18
+    SIGHT_ANGLE_PILOT = 19
+    SIGHT_RANGE_GUNNER = 20
+    SIGHT_ANGLE_GUNNER = 21
+    SIGHT_RANGE_NAVIGATOR = 22
+    SIGHT_ANGLE_NAVIGATOR = 23
+    XP_MODIFIER = 24
+    SYSTEM_HP = 25
+    PILOT_REAR_ARMOR = 26
+    CABIN_ARMOR = 27
+    VITALS_ARMOR = 28
+    FIRE_CHANCE = 29
+    EMERGENCY_POWER = 30
+    EMERGENCY_HEATING = 31
+    HP_RESTORE = 32
+    ENGINE_RESTORE = 33
+    FIRE_EXTINGUISH_MANUAL = 34
+    FIRE_EXTINGUISH_AUTO = 35
+    TEMP_IMMORTAL_CREW = 36
+    BOMB_DAMADGE_REDUCTION = 37
+    FIRE_WORK = 38
+    SPARKLERS = 39
+    COLOR_PLUMES = 40
+    CLEAR_ENGINE_OVERHEAT = 41
+    FREE_FORSAGE = 42
+    CLEAR_GUNS_OVERHEAT = 43
+    FREE_GUNS_FIRING = 44
+    FIRE_IMMUNITY = 45
+    MAIN_HP = 46
+    FIRE_DAMAGE_K = 47
+    DIVE_ACCELERATION = 48
+    ROLL_MAX_SPEED_CFG = 49
+    YAW_MAX_SPEED_CFG = 50
+    PITCH_MAX_SPEED_CFG = 51
+    ACCEL_BRAKE_CFG = 52
+    FAST_ENGINE_COOLING = 53
+    LOCK_ENGINE_POWER = 54
+    AUTO_ENGINE_RESTORE = 55
+    AUTO_AIM = 56
+    FIX_TAIL_AND_WINGS = 57
+    AA_PLANE_DAMAGE_K = 58
+    ECONOMIC_BONUS_XP = 59
+    ECONOMIC_BONUS_FREEXP = 60
+    ECONOMIC_BONUS_CREDITS = 61
+    STEALTH = 62
+    DAMAGE_K = 63
+    ACTIVATE_ROCKET_DETONATOR = 64
+    ROCKET_SPLASH = 65
+    ROCKET_DAMAGE = 66
+    BOMB_SPLASH = 67
+    BOMB_DAMAGE = 68
+    CRIT_WEAKNESS_PILOT = 69
+    CRIT_WEAKNESS_GUNNER = 70
+    EQUIPMENT_EFFECT = 71
+    GUNS_INCFLICT_DAMAGE = 72
+    GUNS_INFLICT_CRIT = 73
+    GUNS_INFLICT_FIRE = 74
+    TURRET_INFLICT_CRIT = 75
+    GUNNER_ENEMYHP_WATCHER = 76
+    GUNNER_BARRAGE_FIRE = 77
+    AUTOAIM_ANGLE = 78
+    GUNNER_BURST_TIME_MODIFIER = 79
+    GUNNER_REDUCTION_TIME = 80
+    VISIBILITY_FACTOR_TO_ENEMY = 81
+    WEP_WORK_TIME = 82
+    EXPLOSIVE_CHARACTER = 83
+    TEAM_OBJ_GUNS_INFLICT_FIRE = 84
+    ALL_TYPES = (AIR_AGILITY,
+     MAX_SPEED,
+     WEAPONS_HEATING,
+     BOMB_MISSILE_FOCUS,
+     TURRET_DELAY,
+     GUNNER_ALIVE,
+     WEAPONS_FOCUS,
+     TURRET_FOCUS,
+     TURRET_ANGLE,
+     TURRET_RANGE,
+     ENGINE_POWER,
+     SPEED_AGILITY,
+     DAMAGE_AGILITY,
+     FIRE_DURATION,
+     FIRE_DURATION_PILOT,
+     FIRE_DURATION_GUNNER,
+     FIRE_DURATION_NAVIGATOR,
+     CREW_MEMBER_HP,
+     SIGHT_RANGE_PILOT,
+     SIGHT_ANGLE_PILOT,
+     SIGHT_RANGE_GUNNER,
+     SIGHT_ANGLE_GUNNER,
+     SIGHT_RANGE_NAVIGATOR,
+     SIGHT_ANGLE_NAVIGATOR,
+     XP_MODIFIER,
+     SYSTEM_HP,
+     PILOT_REAR_ARMOR,
+     CABIN_ARMOR,
+     VITALS_ARMOR,
+     FIRE_CHANCE,
+     EMERGENCY_POWER,
+     EMERGENCY_HEATING,
+     HP_RESTORE,
+     ENGINE_RESTORE,
+     FIRE_EXTINGUISH_MANUAL,
+     FIRE_EXTINGUISH_AUTO,
+     TEMP_IMMORTAL_CREW,
+     BOMB_DAMADGE_REDUCTION,
+     FIRE_WORK,
+     SPARKLERS,
+     COLOR_PLUMES,
+     CLEAR_ENGINE_OVERHEAT,
+     FREE_FORSAGE,
+     CLEAR_GUNS_OVERHEAT,
+     FREE_GUNS_FIRING,
+     FIRE_IMMUNITY,
+     MAIN_HP,
+     FIRE_DAMAGE_K,
+     DIVE_ACCELERATION,
+     ROLL_MAX_SPEED_CFG,
+     YAW_MAX_SPEED_CFG,
+     PITCH_MAX_SPEED_CFG,
+     ACCEL_BRAKE_CFG,
+     FAST_ENGINE_COOLING,
+     LOCK_ENGINE_POWER,
+     AUTO_ENGINE_RESTORE,
+     AUTO_AIM,
+     FIX_TAIL_AND_WINGS,
+     AA_PLANE_DAMAGE_K,
+     ECONOMIC_BONUS_XP,
+     ECONOMIC_BONUS_FREEXP,
+     ECONOMIC_BONUS_CREDITS,
+     STEALTH,
+     DAMAGE_K,
+     ACTIVATE_ROCKET_DETONATOR,
+     ROCKET_SPLASH,
+     ROCKET_DAMAGE,
+     BOMB_SPLASH,
+     BOMB_DAMAGE,
+     CRIT_WEAKNESS_PILOT,
+     CRIT_WEAKNESS_GUNNER,
+     EQUIPMENT_EFFECT,
+     GUNS_INCFLICT_DAMAGE,
+     GUNS_INFLICT_CRIT,
+     GUNS_INFLICT_FIRE,
+     TURRET_INFLICT_CRIT,
+     GUNNER_ENEMYHP_WATCHER,
+     GUNNER_BARRAGE_FIRE,
+     AUTOAIM_ANGLE,
+     GUNNER_BURST_TIME_MODIFIER,
+     GUNNER_REDUCTION_TIME,
+     VISIBILITY_FACTOR_TO_ENEMY,
+     WEP_WORK_TIME,
+     EXPLOSIVE_CHARACTER,
+     TEAM_OBJ_GUNS_INFLICT_FIRE)
+
+
+BonusSchemes = Dummy()
+BonusSchemes.schemes = []
+BonusSchemes.schemes.insert(0, None)
+BonusSchemes.schemes[0] = Dummy()
+BonusSchemes.schemes[0].mods = []
+BonusSchemes.schemes[0].mods.insert(0, None)
+BonusSchemes.schemes[0].mods[0] = Dummy()
+BonusSchemes.schemes[0].mods[0].isActiveForAllMapTypes = false
+BonusSchemes.schemes[0].mods[0].type = ModsTypeEnum.STEALTH
+BonusSchemes.schemes[0].mods[0].value_ = 1.15
+BonusSchemes.schemes[0].name = 'INVISIBILITY'
+BonusSchemes.schemes.insert(1, None)
+BonusSchemes.schemes[1] = Dummy()
+BonusSchemes.schemes[1].mods = []
+BonusSchemes.schemes[1].mods.insert(0, None)
+BonusSchemes.schemes[1].mods[0] = Dummy()
+BonusSchemes.schemes[1].mods[0].isActiveForAllMapTypes = true
+BonusSchemes.schemes[1].mods[0].type = ModsTypeEnum.MAX_SPEED
+BonusSchemes.schemes[1].mods[0].value_ = 1.05
+BonusSchemes.schemes[1].name = 'I-180-3'
+BonusSchemesDB = None
+
+def initDB():
+    global BonusSchemesDB
+    if BonusSchemesDB is None:
+        BonusSchemesDB = dict()
+        for bonusScheme in BonusSchemes.schemes:
+            BonusSchemesDB[bonusScheme.name] = bonusScheme.mods
+
+    return
+
+
+initDB()
