@@ -1,5 +1,6 @@
 # Embedded file name: scripts/client/AvatarInputHandler/AimingSystems/__init__.py
 import math
+from functools import wraps
 import BigWorld
 import Math
 from Math import Vector3
@@ -161,6 +162,18 @@ def getDesiredShotPoint(start, dir, onlyOnGround = False, isStrategicMode = Fals
     return g_desiredShotPoint
 
 
+def _trackcalls(func):
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        wrapper.has_been_called = True
+        return func(*args, **kwargs)
+
+    wrapper.has_been_called = False
+    return wrapper
+
+
+@_trackcalls
 def shootInSkyPoint(startPos, dir):
     dirFromCam = dir
     start = startPos

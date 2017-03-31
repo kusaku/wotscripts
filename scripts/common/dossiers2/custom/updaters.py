@@ -9,9 +9,9 @@ from dossiers2.common.updater_utils import addBlock, removeBlock, addRecords, re
 import dossiers2.custom.tankmen_dossier1_updater
 from VersionUpdater import VersionUpdaterBase
 from wotdecorators import singleton
-ACCOUNT_DOSSIER_VERSION = 102
+ACCOUNT_DOSSIER_VERSION = 103
 ACCOUNT_DOSSIER_UPDATE_FUNCTION_TEMPLATE = '__updateFromAccountDossier%d'
-VEHICLE_DOSSIER_VERSION = 94
+VEHICLE_DOSSIER_VERSION = 95
 VEHICLE_DOSSIER_UPDATE_FUNCTION_TEMPLATE = '__updateFromVehicleDossier%d'
 TANKMAN_DOSSIER_VERSION = 66
 TANKMAN_DOSSIER_UPDATE_FUNCTION_TEMPLATE = '__updateFromTankmanDossier%d'
@@ -1929,6 +1929,72 @@ def __updateFromAccountDossier101(compDescr):
     return (102, updateCtx['dossierCompDescr'])
 
 
+def __updateFromAccountDossier102(compDescr):
+    blocksLayout = ['a15x15',
+     'a15x15_2',
+     'clan',
+     'clan2',
+     'company',
+     'company2',
+     'a7x7',
+     'achievements',
+     'vehTypeFrags',
+     'a15x15Cut',
+     'rareAchievements',
+     'total',
+     'a7x7Cut',
+     'max15x15',
+     'max7x7',
+     'achievements7x7',
+     'historical',
+     'maxHistorical',
+     'historicalAchievements',
+     'historicalCut',
+     'uniqueAchievements',
+     'fortBattles',
+     'maxFortBattles',
+     'fortBattlesCut',
+     'fortSorties',
+     'maxFortSorties',
+     'fortSortiesCut',
+     'fortBattlesInClan',
+     'maxFortBattlesInClan',
+     'fortSortiesInClan',
+     'maxFortSortiesInClan',
+     'fortMisc',
+     'fortMiscInClan',
+     'fortAchievements',
+     'singleAchievements',
+     'clanAchievements',
+     'rated7x7',
+     'maxRated7x7',
+     'achievementsRated7x7',
+     'rated7x7Cut',
+     'globalMapMiddle',
+     'globalMapChampion',
+     'globalMapAbsolute',
+     'maxGlobalMapMiddle',
+     'maxGlobalMapChampion',
+     'maxGlobalMapAbsolute',
+     'globalMapCommonCut',
+     'fallout',
+     'falloutCut',
+     'maxFallout',
+     'falloutAchievements']
+    updateCtx = {'dossierCompDescr': compDescr,
+     'blockSizeFormat': 'H',
+     'versionFormat': 'H',
+     'blocksLayout': blocksLayout}
+    getHeader(updateCtx)
+    modes = ('a15x15_2', 'clan2', 'company2', 'a7x7', 'historical', 'fortBattles', 'fortSorties', 'rated7x7', 'fallout', 'globalMapMiddle', 'globalMapChampion', 'globalMapAbsolute')
+    for mode in modes:
+        recordsFormat = [('battlesOnStunningVehicles', 'I'), ('stunNum', 'I'), ('damageAssistedStun', 'I')]
+        addRecords(updateCtx, mode, recordsFormat, {})
+
+    setVersion(updateCtx, 103)
+    return (103, updateCtx['dossierCompDescr'])
+
+
 def __updateFromVehicleDossier64(compDescr):
     blocksLayout = ['a15x15',
      'a15x15_2',
@@ -3188,6 +3254,54 @@ def __updateFromVehicleDossier93(compDescr):
     addBlock(updateCtx, 'falloutAchievements')
     setVersion(updateCtx, 94)
     return (94, updateCtx['dossierCompDescr'])
+
+
+def __updateFromVehicleDossier94(compDescr):
+    blocksLayout = ['a15x15',
+     'a15x15_2',
+     'clan',
+     'clan2',
+     'company',
+     'company2',
+     'a7x7',
+     'achievements',
+     'vehTypeFrags',
+     'total',
+     'max15x15',
+     'max7x7',
+     'inscriptions',
+     'emblems',
+     'camouflages',
+     'compensation',
+     'achievements7x7',
+     'historical',
+     'maxHistorical',
+     'uniqueAchievements',
+     'fortBattles',
+     'maxFortBattles',
+     'fortSorties',
+     'maxFortSorties',
+     'fortAchievements',
+     'singleAchievements',
+     'clanAchievements',
+     'rated7x7',
+     'maxRated7x7',
+     'globalMapCommon',
+     'maxGlobalMapCommon',
+     'fallout',
+     'maxFallout']
+    updateCtx = {'dossierCompDescr': compDescr,
+     'blockSizeFormat': 'H',
+     'versionFormat': 'H',
+     'blocksLayout': blocksLayout}
+    getHeader(updateCtx)
+    modes = ('a15x15_2', 'clan2', 'company2', 'a7x7', 'historical', 'fortBattles', 'fortSorties', 'rated7x7', 'globalMapCommon', 'fallout')
+    for mode in modes:
+        recordsFormat = [('battlesOnStunningVehicles', 'I'), ('stunNum', 'I'), ('damageAssistedStun', 'I')]
+        addRecords(updateCtx, mode, recordsFormat, {})
+
+    setVersion(updateCtx, 95)
+    return (95, updateCtx['dossierCompDescr'])
 
 
 def __bootstrapTankmanDossierFrom(ver, compDescr):

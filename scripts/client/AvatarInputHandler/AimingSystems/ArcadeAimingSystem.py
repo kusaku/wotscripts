@@ -63,7 +63,7 @@ class ArcadeAimingSystem(IAimingSystem):
         self.__cursor.base = vehicleMProv
         self.__cursor.heightAboveBase = heightAboveTarget
         self.__cursor.focusRadius = focusRadius
-        self.__idealMatrix = self._matrix
+        self.__idealMatrix = Matrix(self._matrix)
         self.__shotPointCalculator = ShotPointCalculatorPlanar() if enableSmartShotPointCalc else None
         return
 

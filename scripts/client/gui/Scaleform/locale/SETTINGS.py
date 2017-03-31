@@ -439,6 +439,7 @@ class SETTINGS(object):
     KEYBOARD_KEYSBLOCKS_COMMAND_LOCK_TARGET = '#settings:keyboard/keysBlocks/command/lock_target'
     KEYBOARD_KEYSBLOCKS_COMMAND_LOCK_TARGET_OFF = '#settings:keyboard/keysBlocks/command/lock_target_off'
     KEYBOARD_KEYSBLOCKS_COMMAND_ALTERNATE_MODE = '#settings:keyboard/keysBlocks/command/alternate_mode'
+    KEYBOARD_KEYSBLOCKS_COMMAND_TRAJECTORY_VIEW = '#settings:keyboard/keysBlocks/command/trajectory_view'
     KEYBOARD_KEYSBLOCKS_COMMAND_RELOADPARTIALCLIP = '#settings:keyboard/keysBlocks/command/reloadPartialClip'
     KEYBOARD_KEYSBLOCKS_GROUP_EQUIPMENT = '#settings:keyboard/keysBlocks/group/equipment'
     KEYBOARD_KEYSBLOCKS_COMMAND_ITEM01 = '#settings:keyboard/keysBlocks/command/item01'
@@ -477,6 +478,7 @@ class SETTINGS(object):
     MOUSE_SENSITIVITY_MAIN = '#settings:mouse/sensitivity/main'
     MOUSE_SENSITIVITY_SNIPER = '#settings:mouse/sensitivity/sniper'
     MOUSE_SENSITIVITY_ART = '#settings:mouse/sensitivity/art'
+    MOUSE_SENSITIVITY_ART2 = '#settings:mouse/sensitivity/art2'
     MOUSE_STARTDIST = '#settings:mouse/startDist'
     MOUSE_SENSITIVITY_INVERTATIONHOR = '#settings:mouse/sensitivity/invertationHor'
     MOUSE_SENSITIVITY_INVERTATIONVERT = '#settings:mouse/sensitivity/invertationVert'
@@ -702,6 +704,7 @@ class SETTINGS(object):
      KEYBOARD_KEYSBLOCKS_COMMAND_LOCK_TARGET,
      KEYBOARD_KEYSBLOCKS_COMMAND_LOCK_TARGET_OFF,
      KEYBOARD_KEYSBLOCKS_COMMAND_ALTERNATE_MODE,
+     KEYBOARD_KEYSBLOCKS_COMMAND_TRAJECTORY_VIEW,
      KEYBOARD_KEYSBLOCKS_COMMAND_RELOADPARTIALCLIP,
      KEYBOARD_KEYSBLOCKS_COMMAND_ITEM01,
      KEYBOARD_KEYSBLOCKS_COMMAND_ITEM02,

@@ -13,9 +13,9 @@ class BattleDamageLogPanelMeta(BaseDAAPIComponent):
         if self._isDAAPIInited():
             return self.flashObject.as_setSettingsDamageLogComponent(isVisible, isColorBlind)
 
-    def as_summaryStatsS(self, damage, blocked, assist):
+    def as_summaryStatsS(self, damage, blocked, assist, stun):
         if self._isDAAPIInited():
-            return self.flashObject.as_summaryStats(damage, blocked, assist)
+            return self.flashObject.as_summaryStats(damage, blocked, assist, stun)
 
     def as_updateSummaryDamageValueS(self, value):
         if self._isDAAPIInited():
@@ -28,6 +28,10 @@ class BattleDamageLogPanelMeta(BaseDAAPIComponent):
     def as_updateSummaryAssistValueS(self, value):
         if self._isDAAPIInited():
             return self.flashObject.as_updateSummaryAssistValue(value)
+
+    def as_updateSummaryStunValueS(self, value):
+        if self._isDAAPIInited():
+            return self.flashObject.as_updateSummaryStunValue(value)
 
     def as_detailStatsTopS(self, isVisible, isShortMode, messages):
         """

@@ -35,6 +35,10 @@ class ConsumablesPanelMeta(BaseDAAPIComponent):
         if self._isDAAPIInited():
             return self.flashObject.as_setCoolDownPosAsPercent(idx, percent)
 
+    def as_setCoolDownTimeSnapshotS(self, idx, time, isBaseTime, isFlash):
+        if self._isDAAPIInited():
+            return self.flashObject.as_setCoolDownTimeSnapshot(idx, time, isBaseTime, isFlash)
+
     def as_addShellSlotS(self, idx, keyCode, sfKeyCode, quantity, clipCapacity, shellIconPath, noShellIconPath, tooltipText):
         if self._isDAAPIInited():
             return self.flashObject.as_addShellSlot(idx, keyCode, sfKeyCode, quantity, clipCapacity, shellIconPath, noShellIconPath, tooltipText)
@@ -47,9 +51,9 @@ class ConsumablesPanelMeta(BaseDAAPIComponent):
         if self._isDAAPIInited():
             return self.flashObject.as_setCurrentShell(idx)
 
-    def as_addEquipmentSlotS(self, idx, keyCode, sfKeyCode, tag, quantity, timeRemaining, iconPath, tooltipText):
+    def as_addEquipmentSlotS(self, idx, keyCode, sfKeyCode, tag, quantity, timeRemaining, reloadingTime, iconPath, tooltipText):
         if self._isDAAPIInited():
-            return self.flashObject.as_addEquipmentSlot(idx, keyCode, sfKeyCode, tag, quantity, timeRemaining, iconPath, tooltipText)
+            return self.flashObject.as_addEquipmentSlot(idx, keyCode, sfKeyCode, tag, quantity, timeRemaining, reloadingTime, iconPath, tooltipText)
 
     def as_showEquipmentSlotsS(self, show):
         if self._isDAAPIInited():
@@ -82,6 +86,18 @@ class ConsumablesPanelMeta(BaseDAAPIComponent):
     def as_showOrdersSlotsS(self, show):
         if self._isDAAPIInited():
             return self.flashObject.as_showOrdersSlots(show)
+
+    def as_setGlowS(self, idx, isGreen):
+        if self._isDAAPIInited():
+            return self.flashObject.as_setGlow(idx, isGreen)
+
+    def as_hideGlowS(self, idx):
+        if self._isDAAPIInited():
+            return self.flashObject.as_hideGlow(idx)
+
+    def as_handleAsReplayS(self):
+        if self._isDAAPIInited():
+            return self.flashObject.as_handleAsReplay()
 
     def as_isVisibleS(self):
         if self._isDAAPIInited():

@@ -17,7 +17,7 @@ else:
     IS_BASEAPP = BigWorld.component in ('base', 'service')
     IS_WEB = False
 
-CURRENT_REALM = 'RU'
+CURRENT_REALM = 'CT'
 DEFAULT_LANGUAGE = 'ru'
 AUTH_REALM = 'RU'
 IS_DEVELOPMENT = CURRENT_REALM == 'DEV'
@@ -684,6 +684,17 @@ if not sum([IS_CHINA, IS_KOREA, IS_SINGAPORE]) <= 1:
         COOLDOWN = 6
         EXHAUSTED = 255
 
+        @classmethod
+        def toString(cls, value):
+            return {0: 'notrunning',
+             cls.DEPLOYING: 'deploying',
+             cls.UNAVAILABLE: 'unavailable',
+             cls.READY: 'ready',
+             cls.PREPARING: 'preparing',
+             cls.ACTIVE: 'active',
+             cls.COOLDOWN: 'cooldown',
+             cls.EXHAUSTED: 'exhausted'}.get(value)
+
 
     class DEVELOPMENT_INFO:
         ATTACK_RESULT = 1
@@ -791,6 +802,7 @@ if not sum([IS_CHINA, IS_KOREA, IS_SINGAPORE]) <= 1:
         CHASSIS_DAMAGED_BY_RAMMING = 524288
         ATTACK_IS_DIRECT_PROJECTILE = 1048576
         ATTACK_IS_EXTERNAL_EXPLOSION = 2097152
+        STUN_STARTED = 4194304
         IS_ANY_DAMAGE_MASK = MATERIAL_WITH_POSITIVE_DF_PIERCED_BY_PROJECTILE | MATERIAL_WITH_POSITIVE_DF_PIERCED_BY_EXPLOSION | DEVICE_PIERCED_BY_PROJECTILE | DEVICE_PIERCED_BY_EXPLOSION
         IS_ANY_PIERCING_MASK = IS_ANY_DAMAGE_MASK | ARMOR_WITH_ZERO_DF_PIERCED_BY_PROJECTILE | ARMOR_WITH_ZERO_DF_PIERCED_BY_EXPLOSION
 
@@ -1762,6 +1774,9 @@ class AVATAR_SUBFILTERS(object):
     CAMERA_ARCADE_SHOT_POINT = 1
     CAMERA_SNIPER_ROTATION = 2
     CAMERA_STRATEGIC_SHOT_POINT = 3
+    CAMERA_ARTY_SHOT_POINT = 4
+    CAMERA_ARTY_TRANSLATION = 5
+    CAMERA_ARTY_ROTATION = 6
 
 
 class FILTER_INTERPOLATION_TYPE(object):
@@ -1773,3 +1788,17 @@ class FILTER_INTERPOLATION_TYPE(object):
 
 def getArenaStartTime(arenaUniqueID):
     return arenaUniqueID & 4294967295L
+
+
+class PIERCING_POWER(object):
+    PIERCING_POWER_LAW_POINT = 100.0
+    PIERCING_POWER_LAW_DIST = 400.0
+
+    @staticmethod
+    def computePiercingPowerAtDist(piercingPower, dist, maxDist):
+        pFirst, pLast = piercingPower
+        if dist <= PIERCING_POWER.PIERCING_POWER_LAW_POINT:
+            return pFirst
+        if dist < maxDist + 4.0:
+            return max(0.0, pFirst + (pLast - pFirst) * (dist - PIERCING_POWER.PIERCING_POWER_LAW_POINT) / PIERCING_POWER.PIERCING_POWER_LAW_DIST)
+        return 0.0

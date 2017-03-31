@@ -43,7 +43,7 @@ class ICamera(object):
     def setUserConfigValue(self, name, value):
         pass
 
-    def update(self):
+    def update(self, dx, dy, dz, updatedByKeyboard):
         pass
 
     def autoUpdate(self):

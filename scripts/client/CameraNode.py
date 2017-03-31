@@ -1,5 +1,6 @@
 # Embedded file name: scripts/client/CameraNode.py
 import BigWorld
+import mods
 
 class CameraNode(BigWorld.UserDataObject):
 

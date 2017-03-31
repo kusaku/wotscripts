@@ -16,7 +16,7 @@ class StaticSceneBoundEffects(object):
             elem['effectsPlayer'].stop()
             model = elem['model']
             if model is not None:
-                BigWorld.delModel(model)
+                BigWorld.player().delModel(model)
             del self._models[id]
 
         return
@@ -24,7 +24,7 @@ class StaticSceneBoundEffects(object):
     def addNew(self, position, effectsList, keyPoints, callbackOnStop, **args):
         model = helpers.newFakeModel()
         model.position = position
-        BigWorld.addModel(model)
+        BigWorld.player().addModel(model)
         dir = args.get('dir', None)
         if dir is not None:
             model.rotate(dir.yaw, (0.0, 1.0, 0.0))
@@ -41,7 +41,7 @@ class StaticSceneBoundEffects(object):
         if self._models.has_key(effectID):
             desc = self._models[effectID]
             desc['effectsPlayer'].stop()
-            BigWorld.delModel(desc['model'])
+            BigWorld.player().delModel(desc['model'])
             del self._models[effectID]
 
     def __callbackBeforeDestroy(self, effectID, callbackOnStop):

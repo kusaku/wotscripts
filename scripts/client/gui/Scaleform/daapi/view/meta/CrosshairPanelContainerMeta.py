@@ -96,3 +96,11 @@ class CrosshairPanelContainerMeta(BaseDAAPIComponent):
     def as_setNetTypeS(self, netType):
         if self._isDAAPIInited():
             return self.flashObject.as_setNetType(netType)
+
+    def as_showHintS(self, key, messageLeft, messageRight, offsetX, offsetY):
+        if self._isDAAPIInited():
+            return self.flashObject.as_showHint(key, messageLeft, messageRight, offsetX, offsetY)
+
+    def as_hideHintS(self):
+        if self._isDAAPIInited():
+            return self.flashObject.as_hideHint()

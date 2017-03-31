@@ -25,6 +25,7 @@ class OptionalDevice(object):
         section = section['script']
         self._vehWeightFraction, self._weight = _readWeight(xmlCtx, section)
         self._maxWeightChange = 0.0
+        self._stunResistanceEffect, self._stunResistanceDuration = _readStun(xmlCtx, section)
         self._readConfig(xmlCtx, section)
 
     def weightOnVehicle(self, vehicleDescr):
@@ -83,6 +84,9 @@ class StaticFactorDevice(OptionalDevice):
             attrDict[attrName] = int(val * self.__factor)
         else:
             attrDict[attrName] = val * self.__factor
+        miscAttrs = vehicleDescr.miscAttrs
+        miscAttrs['stunResistanceEffect'] += self._stunResistanceEffect
+        miscAttrs['stunResistanceDuration'] += self._stunResistanceDuration
 
     def _readConfig(self, xmlCtx, section):
         self.__factor = _xml.readPositiveFloat(xmlCtx, section, 'factor')
@@ -103,6 +107,9 @@ class StaticAdditiveDevice(OptionalDevice):
             attrDict[attrName] = int(val + self.__value)
         else:
             attrDict[attrName] = val + self.__value
+        miscAttrs = vehicleDescr.miscAttrs
+        miscAttrs['stunResistanceEffect'] += self._stunResistanceEffect
+        miscAttrs['stunResistanceDuration'] += self._stunResistanceDuration
 
     def _readConfig(self, xmlCtx, section):
         self.__value = _xml.readFloat(xmlCtx, section, 'value')
@@ -155,6 +162,8 @@ class EnhancedSuspension(OptionalDevice):
         miscAttrs = vehicleDescr.miscAttrs
         miscAttrs['chassisHealthFactor'] *= self.__chassisHealthFactor
         miscAttrs['vehicleByChassisDamageFactor'] *= self.__vehicleByChassisDamageFactor
+        miscAttrs['stunResistanceEffect'] += self._stunResistanceEffect
+        miscAttrs['stunResistanceDuration'] += self._stunResistanceDuration
 
 
 class Grousers(OptionalDevice):
@@ -177,6 +186,8 @@ class AntifragmentationLining(OptionalDevice):
         miscAttrs = vehicleDescr.miscAttrs
         miscAttrs['antifragmentationLiningFactor'] *= self.__antifragmentationLiningFactor
         miscAttrs['crewChanceToHitFactor'] *= 1.0 - self.__increaseCrewChanceToEvadeHit
+        miscAttrs['stunResistanceEffect'] += self._stunResistanceEffect
+        miscAttrs['stunResistanceDuration'] += self._stunResistanceDuration
 
     def _readConfig(self, xmlCtx, section):
         reader = partial(_xml.readPositiveFloat, xmlCtx, section)
@@ -195,6 +206,8 @@ class Equipment(object):
     def init(self, xmlCtx, section):
         self.__readBasicConfig(xmlCtx, section)
         self._readConfig((xmlCtx, 'script'), section['script'])
+        self.stunResistanceEffect, self.stunResistanceDuration = _readStun(xmlCtx, section['script'])
+        self.reuseCount, self.cooldownSeconds = _readReuseParams(xmlCtx, section['script'])
 
     def checkCompatibilityWithVehicle(self, vehicleDescr):
         if self.__vehicleFilter is None:
@@ -520,3 +533,12 @@ def _readWeight(xmlCtx, section):
 
 
 _readTags = vehicles._readTags
+
+def _readStun(xmlCtx, scriptSection):
+    stunResistanceEffect = _xml.readFraction(xmlCtx, scriptSection, 'stunResistanceEffect') if scriptSection.has_key('stunResistanceEffect') else 0.0
+    stunResistanceDuration = _xml.readFraction(xmlCtx, scriptSection, 'stunResistanceDuration') if scriptSection.has_key('stunResistanceDuration') else 0.0
+    return (stunResistanceEffect, stunResistanceDuration)
+
+
+def _readReuseParams(xmlCtx, scriptSection):
+    return (_xml.readInt(xmlCtx, scriptSection, 'reuseCount', minVal=-1) if scriptSection.has_key('reuseCount') else 0, _xml.readInt(xmlCtx, scriptSection, 'cooldownSeconds', minVal=0) if scriptSection.has_key('cooldownSeconds') else 0)

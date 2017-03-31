@@ -330,3 +330,15 @@ def getDistanceToGunMarker(avatar = None):
             return 0.0
 
         return (ownPosition - Math.Vector3(*gunPosition)).length
+
+
+def isVehicleStunned():
+    """
+    Checking stun crew on vehicle
+    :return: bool, if crew on vehicle has stun - True, otherwise - False
+    """
+    attachedVehicle = BigWorld.player().getVehicleAttached()
+    if attachedVehicle is not None:
+        return attachedVehicle.stunInfo > 0.0
+    else:
+        return False

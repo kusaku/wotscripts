@@ -3,7 +3,7 @@ from constants import IS_RENTALS_ENABLED
 from gui.Scaleform.daapi.view.lobby.store.tabs import StoreItemsTab, StoreModuleTab, StoreVehicleTab, StoreShellTab, StoreArtefactTab, StoreOptionalDeviceTab, StoreEquipmentTab
 from gui.Scaleform.locale.MENU import MENU
 from gui.shared.gui_items import GUI_ITEM_TYPE
-from gui.shared.gui_items.Vehicle import Vehicle
+from gui.shared.gui_items.Vehicle import Vehicle, getVehicleStateIcon
 from gui.shared.tooltips.formatters import packItemActionTooltipData
 from gui.shared.utils.requesters.ItemsRequester import REQ_CRITERIA
 from helpers.i18n import makeString
@@ -98,6 +98,11 @@ class InventoryVehicleTab(InventoryItemsTab, StoreVehicleTab):
             statusMessage = makeString('#menu:store/vehicleStates/%s' % state)
             disable = not item.canSell
         return (statusMessage, disable)
+
+    def _getStatusImg(self, item):
+        if item.isUnlocked:
+            return getVehicleStateIcon(item.getState()[0])
+        return ''
 
     def _getItemStatusLevel(self, item):
         return item.getState()[1]

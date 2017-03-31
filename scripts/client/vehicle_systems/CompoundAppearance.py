@@ -8,10 +8,8 @@ from VehicleAppearance import VehicleDamageState, _setupVehicleFashion, setupSpl
 from vehicle_systems.components.CrashedTracks import CrashedTrackController
 from debug_utils import *
 from vehicle_systems.tankStructure import VehiclePartsTuple, TankNodeNames
-from constants import VEHICLE_SIEGE_STATE
 import constants
-from OcclusionDecal import OcclusionDecal
-from ShadowForwardDecal import ShadowForwardDecal
+from vehicle_systems.components.vehicleDecal import VehicleDecal
 from helpers.CallbackDelayer import CallbackDelayer
 from helpers import bound_effects
 from helpers.EffectsList import EffectsListPlayer, SpecialKeyPointNames
@@ -145,8 +143,7 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
         self.__prevVelocity = None
         self.__prevTime = None
         self.__isPillbox = False
-        self.__chassisOcclusionDecal = OcclusionDecal()
-        self.__chassisShadowForwardDecal = ShadowForwardDecal()
+        self.__chassisDecal = VehicleDecal(self)
         self.__splodge = None
         self.__vehicleStickers = None
         self.onModelChanged = Event()
@@ -242,9 +239,8 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
                 self.__inSpeedTreeCollision = True
                 BigWorld.setSpeedTreeCollisionBody(self.__compoundModel.getBoundsForPart(TankPartIndexes.HULL))
             self.__linkCompound()
-            self.__chassisShadowForwardDecal.attach(self.__typeDesc, self.__compoundModel)
             if not isObserver:
-                self.__chassisOcclusionDecal.attach(self.__typeDesc, self.__compoundModel)
+                self.__chassisDecal.attach()
             self.__createStickers()
             if self.__currentDamageState.isCurrentModelDamaged:
                 self.__attachStickers(items.vehicles.g_cache.commonConfig['miscParams']['damageStickerAlpha'], True)
@@ -286,8 +282,7 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
                 self.fashion.deactivate()
             self.__stopSystems()
             super(CompoundAppearance, self).deactivate()
-            self.__chassisOcclusionDecal.detach()
-            self.__chassisShadowForwardDecal.detach()
+            self.__chassisDecal.detach()
             self.__vibrationsCtrl = None
             if self.__inSpeedTreeCollision:
                 BigWorld.setSpeedTreeCollisionBody(None)
@@ -427,10 +422,8 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
         if self.__crashedTracksCtrl is not None:
             self.__crashedTracksCtrl.destroy()
             self.__crashedTracksCtrl = None
-        self.__chassisOcclusionDecal.destroy()
-        self.__chassisOcclusionDecal = None
-        self.__chassisShadowForwardDecal.destroy()
-        self.__chassisShadowForwardDecal = None
+        self.__chassisDecal.destroy()
+        self.__chassisDecal = None
         self.__compoundModel = None
         CallbackDelayer.destroy(self)
         return
@@ -475,6 +468,7 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
             self.__crashedTracksCtrl = None
         else:
             self.__crashedTracksCtrl = CrashedTrackController(self.__typeDesc, self.__fashion)
+        self.__chassisDecal.create()
         return
 
     def showStickers(self, show):
@@ -515,7 +509,7 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
                 self.processVehicleDeath(currentState)
                 self.__requestModelsRefresh()
             elif not vehicle.isCrewActive:
-                self.__stopEngineAudition()
+                self.__onCrewKilled()
         return
 
     @ComponentSystem.groupCall
@@ -761,10 +755,13 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
         self.__effectsPlayer = None
         return
 
-    def __stopEngineAudition(self):
+    def __onCrewKilled(self):
         if self.engineAudition is not None:
             self.engineAudition.destroy()
             self.engineAudition = None
+        if self.customEffectManager is not None:
+            self.customEffectManager.destroy()
+            self.customEffectManager = None
         return
 
     def __calcIsUnderwater(self):
