@@ -373,10 +373,6 @@ class ConsumablesPanel(ConsumablesPanelMeta, BattleGUIKeyHandler):
                 self.as_setItemTimeQuantityInSlotS(idx, quantity, currentTime, maxTime)
                 self.__updateOrderSlot(idx, item)
             else:
-                if not quantity:
-                    soundName = 'battle_equipment_%d' % intCD
-                    if soundName in EquipmentSound.getSounds():
-                        SoundGroups.g_instance.playSound2D(soundName)
                 self.as_setItemTimeQuantityInSlotS(idx, quantity, currentTime, maxTime)
                 self.onPopUpClosed()
                 if item.isReusable:
@@ -479,6 +475,11 @@ class ConsumablesPanel(ConsumablesPanelMeta, BattleGUIKeyHandler):
     def __onVehicleStateUpdated(self, state, value):
         if state == VEHICLE_VIEW_STATE.SWITCHING:
             self.__reset()
+            return
+        elif state == VEHICLE_VIEW_STATE.DESTROYED:
+            self.__clearAllEquipmentGlow()
+            return
+        elif self.__cds.count(None) == PANEL_MAX_LENGTH:
             return
         else:
             ctrl = self.sessionProvider.shared.equipments

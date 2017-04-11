@@ -731,7 +731,7 @@ class _TrajectoryControlMode(_GunControlMode):
 
     def __switchToNextControlMode(self):
         if GUI_SETTINGS.spgAlternativeAimingCameraEnabled:
-            pos = self._cam.aimingSystem.getDesiredShotPoint()
+            pos = self._cam.aimingSystem.planePosition
             if pos is None:
                 pos = self._gunMarker.getPosition()
             source = self._cam.camera
@@ -739,6 +739,8 @@ class _TrajectoryControlMode(_GunControlMode):
             self._aih.onControlModeChanged(self._nextControlMode, preferredPos=pos, aimingMode=self._aimingMode, saveDist=True)
             self.__interpolator.enable(source, self._aih.ctrl.camera.camera, sourceFov, BigWorld.projection().fov)
             ArcadeControlMode.strategicControlMode = self._nextControlMode
+            isStrategicMode = ArcadeControlMode.strategicControlMode == CTRL_MODE_NAME.STRATEGIC
+            self.__trajectoryDrawer.setStrategicMode(isStrategicMode)
             return True
         else:
             return False

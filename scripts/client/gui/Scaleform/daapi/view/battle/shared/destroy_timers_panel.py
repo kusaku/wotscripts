@@ -407,7 +407,7 @@ class DestroyTimersPanel(DestroyTimersPanelMeta):
             self.__hideDeathZoneTimer(value)
         elif state == VEHICLE_VIEW_STATE.STUN:
             self.__showStunTimer(value)
-        elif state == VEHICLE_VIEW_STATE.DESTROYED:
+        elif state in (VEHICLE_VIEW_STATE.DESTROYED, VEHICLE_VIEW_STATE.CREW_DEACTIVATED):
             self.__hideAll()
 
     def __onCameraChanged(self, ctrlMode, vehicleID = None):

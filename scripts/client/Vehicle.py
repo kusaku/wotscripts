@@ -653,10 +653,7 @@ class Vehicle(BigWorld.Entity, VehicleObserver):
         if not self.isPlayerVehicle:
             ctrl = self.guiSessionProvider.shared.feedback
             if ctrl is not None:
-                ctrl.invalidateStun(self.id, 0)
                 ctrl.setVehicleState(self.id, _GUI_EVENT_ID.VEHICLE_DEAD, isDeadStarted)
-        else:
-            self.guiSessionProvider.invalidateVehicleState(VEHICLE_VIEW_STATE.STUN, 0)
         TriggersManager.g_manager.fireTrigger(TRIGGER_TYPE.VEHICLE_DESTROYED, vehicleId=self.id)
         bwfilter = self.filter
         if hasattr(bwfilter, 'velocityErrorCompensation'):

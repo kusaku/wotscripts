@@ -3,7 +3,6 @@ import constants
 from constants import PREBATTLE_TYPE
 from UnitBase import UNIT_SLOT, CLIENT_UNIT_CMD, INV_ID_CLEAR_VEHICLE
 from unit_roster_config import UnitRosterSlot
-import BigWorld
 from debug_utils import *
 
 class UNIT_API:
@@ -138,9 +137,11 @@ class UnitClientAPI(object):
         if constants.IS_DEVELOPMENT:
             return self._doUnitCmd(CLIENT_UNIT_CMD.SET_UNIT_DEV_MODE, int(isDevMode))
 
-    def startBattle(self, vehInvID = 0, gameplaysMask = None):
+    def startBattle(self, vehInvID = 0, gameplaysMask = None, arenaTypeID = 0):
         if gameplaysMask is not None:
             self.setGameplaysMask(gameplaysMask)
+        if arenaTypeID != 0:
+            self.setArenaType(arenaTypeID)
         return self._doUnitCmd(CLIENT_UNIT_CMD.START_UNIT_BATTLE, vehInvID)
 
     def stopBattle(self):
@@ -160,6 +161,9 @@ class UnitClientAPI(object):
 
     def setGameplaysMask(self, gameplaysMask):
         return self._doUnitCmd(CLIENT_UNIT_CMD.SET_GAMEPLAYS_MASK, gameplaysMask)
+
+    def setArenaType(self, arenaTypeID):
+        return self._doUnitCmd(CLIENT_UNIT_CMD.SET_ARENA_TYPE, arenaTypeID)
 
     def setRatedBattle(self, isRatedBattle = True):
         return self._doUnitCmd(CLIENT_UNIT_CMD.SET_RATED_BATTLE, int(isRatedBattle))

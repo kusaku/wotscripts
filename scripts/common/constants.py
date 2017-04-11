@@ -676,6 +676,7 @@ if not sum([IS_CHINA, IS_KOREA, IS_SINGAPORE]) <= 1:
 
 
     class EQUIPMENT_STAGES:
+        NOT_RUNNING = 0
         DEPLOYING = 1
         UNAVAILABLE = 2
         READY = 3

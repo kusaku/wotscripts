@@ -9,7 +9,7 @@ class LoaderManagerMeta(BaseDAAPIModule):
     @extends BaseDAAPIModule
     """
 
-    def viewLoaded(self, name, view):
+    def viewLoaded(self, alias, name, view):
         """
         :param view: Represented by IView (AS)
         """

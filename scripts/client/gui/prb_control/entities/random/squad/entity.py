@@ -73,6 +73,7 @@ class RandomSquadEntity(SquadEntity):
     def __init__(self):
         self._isBalancedSquad = False
         self._isSPGForbidden = False
+        self._mapID = 0
         super(RandomSquadEntity, self).__init__(FUNCTIONAL_FLAG.RANDOM, PREBATTLE_TYPE.SQUAD)
 
     def init(self, ctx = None):
@@ -111,6 +112,16 @@ class RandomSquadEntity(SquadEntity):
             g_eventDispatcher.showUnitWindow(self._prbType)
             return SelectResult(True)
         return super(RandomSquadEntity, self).doSelectAction(action)
+
+    def doAction(self, action = None):
+        self._mapID = 0 if action is None else action.mapID
+        super(RandomSquadEntity, self).doAction(action)
+        return
+
+    def doBattleQueue(self, ctx, callback = None):
+        ctx.mapID = self._mapID
+        self._mapID = 0
+        super(RandomSquadEntity, self).doBattleQueue(ctx, callback)
 
     def isBalancedSquadEnabled(self):
         """

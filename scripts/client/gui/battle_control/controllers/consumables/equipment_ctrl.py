@@ -189,8 +189,9 @@ class _EquipmentItem(object):
         return 'avatar' in self._descriptor.tags
 
     def _soundUpdate(self, prevQuantity, quantity):
-        if quantity == 0 and prevQuantity != quantity:
-            EquipmentSound.playSound(self._descriptor.compactDescr)
+        if prevQuantity > quantity:
+            if self._stage != EQUIPMENT_STAGES.NOT_RUNNING:
+                EquipmentSound.playSound(self._descriptor.compactDescr)
         if self.becomeReady:
             EquipmentSound.playReady(self)
 
