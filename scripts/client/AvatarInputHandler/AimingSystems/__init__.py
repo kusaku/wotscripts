@@ -16,6 +16,13 @@ class IAimingSystem(object):
     def __init__(self):
         self._matrix = mathUtils.createIdentityMatrix()
 
+    @property
+    def aimMatrix(self):
+        """Returns reference of matrix that containing transformation of player aiming.
+        But it may not consider collision with game objects and camera transformation equals
+        aim transformation by default."""
+        return self._matrix
+
     def destroy(self):
         pass
 

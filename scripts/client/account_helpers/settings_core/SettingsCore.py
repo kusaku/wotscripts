@@ -227,6 +227,9 @@ class SettingsCore(ISettingsCore):
         self.__options.init()
         AccountSettings.onSettingsChanging += self.__onAccountSettingsChanging
         self.interfaceScale.init()
+        overrideSetting = self.options.getSetting(settings_constants.GRAPHICS.VIDEO_MODE)
+        BigWorld.wg_setSavePreferencesCallback(overrideSetting._savePrefsCallback)
+        LOG_DEBUG('SettingsCore is created')
 
     def fini(self):
         if self.__options is not None:

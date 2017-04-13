@@ -1,10 +1,10 @@
 # Embedded file name: scripts/client/vehicle_systems/CompoundAppearance.py
-import functools
 import random
 import math
 from AvatarInputHandler.aih_constants import ShakeReason
 import Math
 from VehicleAppearance import VehicleDamageState, _setupVehicleFashion, setupSplineTracks, VehicleAppearance
+from vehicle_systems.stricted_loading import makeCallbackWeak
 from vehicle_systems.components.CrashedTracks import CrashedTrackController
 from debug_utils import *
 from vehicle_systems.tankStructure import VehiclePartsTuple, TankNodeNames
@@ -594,7 +594,7 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
     def __requestModelsRefresh(self):
         currentModelState = self.__currentDamageState.modelState
         assembler = model_assembler.prepareCompoundAssembler(self.__typeDesc, currentModelState, self.__vehicle.spaceID, self.__vehicle.isTurretDetached)
-        BigWorld.loadResourceListBG((assembler,), functools.partial(self.__onModelsRefresh, currentModelState))
+        BigWorld.loadResourceListBG((assembler,), makeCallbackWeak(self.__onModelsRefresh, currentModelState))
 
     def __onModelsRefresh(self, modelState, resourceList):
         if not self.damageState.isCurrentModelDamaged:

@@ -669,6 +669,7 @@ class _TrajectoryControlMode(_GunControlMode):
             self._aih.switchAutorotation()
             return True
         elif cmdMap.isFired(CommandMapping.CMD_CM_ALTERNATE_MODE, key) and isDown:
+            self.__interpolator.disable()
             pos = self._cam.aimingSystem.getDesiredShotPoint()
             if pos is None:
                 pos = self._gunMarker.getPosition()

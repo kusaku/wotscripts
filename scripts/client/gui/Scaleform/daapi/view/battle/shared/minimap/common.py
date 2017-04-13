@@ -83,6 +83,9 @@ class SimplePlugin(IPlugin):
     def _isInArcadeMode(self):
         return self._ctrlMode in (CTRL_MODE_NAME.ARCADE, CTRL_MODE_NAME.SNIPER)
 
+    def _isInArtyMode(self):
+        return self._ctrlMode == CTRL_MODE_NAME.ARTY
+
     def _isInPostmortemMode(self):
         return self._ctrlMode == CTRL_MODE_NAME.POSTMORTEM
 

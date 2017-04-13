@@ -97,7 +97,10 @@ class PersonalEntriesPlugin(common.SimplePlugin):
     def updateControlMode(self, mode, vehicleID):
         super(PersonalEntriesPlugin, self).updateControlMode(mode, vehicleID)
         activateID = self.__cameraIDs[_S_NAME.ARCADE_CAMERA]
-        if self._isInStrategicMode():
+        if self._isInArtyMode():
+            activateID = self.__cameraIDs[_S_NAME.STRATEGIC_CAMERA]
+            matrix = matrix_factory.makeArtyAimPointMatrix()
+        elif self._isInStrategicMode():
             activateID = self.__cameraIDs[_S_NAME.STRATEGIC_CAMERA]
             matrix = matrix_factory.makeStrategicCameraMatrix()
         elif self._isInArcadeMode():
