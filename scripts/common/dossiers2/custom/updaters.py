@@ -1,15 +1,15 @@
 # Embedded file name: scripts/common/dossiers2/custom/updaters.py
 import sys
 import struct
-import constants
 from functools import partial
 from dossiers2.common.updater_utils import getNewStaticSizeBlockValues, getStaticSizeBlockRecordValues
 from dossiers2.common.updater_utils import getNewBinarySetBlockValues, setStaticSizeBlockRecordValues
-from dossiers2.common.updater_utils import addBlock, removeBlock, addRecords, removeRecords, setVersion, getHeader
+from dossiers2.common.updater_utils import addBlock, removeBlock, addRecords, removeRecords
+from dossiers2.common.updater_utils import setVersion, getHeader, getBlockSize
 import dossiers2.custom.tankmen_dossier1_updater
 from VersionUpdater import VersionUpdaterBase
 from wotdecorators import singleton
-ACCOUNT_DOSSIER_VERSION = 103
+ACCOUNT_DOSSIER_VERSION = 104
 ACCOUNT_DOSSIER_UPDATE_FUNCTION_TEMPLATE = '__updateFromAccountDossier%d'
 VEHICLE_DOSSIER_VERSION = 95
 VEHICLE_DOSSIER_UPDATE_FUNCTION_TEMPLATE = '__updateFromVehicleDossier%d'
@@ -1993,6 +1993,74 @@ def __updateFromAccountDossier102(compDescr):
 
     setVersion(updateCtx, 103)
     return (103, updateCtx['dossierCompDescr'])
+
+
+def __updateFromAccountDossier103(compDescr):
+    blocksLayout = ['a15x15',
+     'a15x15_2',
+     'clan',
+     'clan2',
+     'company',
+     'company2',
+     'a7x7',
+     'achievements',
+     'vehTypeFrags',
+     'a15x15Cut',
+     'rareAchievements',
+     'total',
+     'a7x7Cut',
+     'max15x15',
+     'max7x7',
+     'achievements7x7',
+     'historical',
+     'maxHistorical',
+     'historicalAchievements',
+     'historicalCut',
+     'uniqueAchievements',
+     'fortBattles',
+     'maxFortBattles',
+     'fortBattlesCut',
+     'fortSorties',
+     'maxFortSorties',
+     'fortSortiesCut',
+     'fortBattlesInClan',
+     'maxFortBattlesInClan',
+     'fortSortiesInClan',
+     'maxFortSortiesInClan',
+     'fortMisc',
+     'fortMiscInClan',
+     'fortAchievements',
+     'singleAchievements',
+     'clanAchievements',
+     'rated7x7',
+     'maxRated7x7',
+     'achievementsRated7x7',
+     'rated7x7Cut',
+     'globalMapMiddle',
+     'globalMapChampion',
+     'globalMapAbsolute',
+     'maxGlobalMapMiddle',
+     'maxGlobalMapChampion',
+     'maxGlobalMapAbsolute',
+     'globalMapCommonCut',
+     'fallout',
+     'falloutCut',
+     'maxFallout',
+     'falloutAchievements']
+    updateCtx = {'dossierCompDescr': compDescr,
+     'blockSizeFormat': 'H',
+     'versionFormat': 'H',
+     'blocksLayout': blocksLayout}
+    getHeader(updateCtx)
+    for blockName, expectedFormat in (('fortBattlesInClan', '<IIIIIIIIIIIIIIIIIIIIIIIIIIIII'), ('fortSortiesInClan', '<IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII')):
+        currentSize = getBlockSize(updateCtx, blockName)
+        expectedSize = struct.calcsize(expectedFormat)
+        if currentSize < expectedSize:
+            recordsFormat = [('battlesOnStunningVehicles', 'I'), ('stunNum', 'I'), ('damageAssistedStun', 'I')]
+            addRecords(updateCtx, blockName, recordsFormat, {})
+
+    setVersion(updateCtx, 104)
+    return (104, updateCtx['dossierCompDescr'])
 
 
 def __updateFromVehicleDossier64(compDescr):
