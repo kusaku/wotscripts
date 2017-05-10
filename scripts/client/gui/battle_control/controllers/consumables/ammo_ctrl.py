@@ -14,7 +14,7 @@ from gui.shared.utils.decorators import ReprInjector
 from items import vehicles
 from math import fabs
 import BattleReplay
-__all__ = ('AmmoController', 'AmmoReplayRecord', 'AmmoReplayPlayer')
+__all__ = ('AmmoController', 'AmmoReplayPlayer')
 _ClipBurstSettings = namedtuple('_ClipBurstSettings', 'size interval')
 
 class _GunSettings(namedtuple('_GunSettings', 'clip burst shots reloadEffect')):

@@ -2,12 +2,6 @@
 from gui.Scaleform.framework.entities.BaseDAAPIComponent import BaseDAAPIComponent
 
 class DamagePanelMeta(BaseDAAPIComponent):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends BaseDAAPIComponent
-    """
 
     def clickToTankmanIcon(self, entityName):
         self._printOverrideError('clickToTankmanIcon')
@@ -18,6 +12,9 @@ class DamagePanelMeta(BaseDAAPIComponent):
     def clickToFireIcon(self):
         self._printOverrideError('clickToFireIcon')
 
+    def clickToStunTimer(self):
+        self._printOverrideError('clickToStunTimer')
+
     def getTooltipData(self, entityName, state):
         self._printOverrideError('getTooltipData')
 
@@ -26,6 +23,10 @@ class DamagePanelMeta(BaseDAAPIComponent):
             return self.flashObject.as_setPlayerInfo(playerName, clanName, regionName, vehicleTypeName)
 
     def as_setupS(self, healthStr, progress, indicatorType, crewLayout, yawLimits, hasTurretRotator, isAutoRotationOn):
+        """
+        :param crewLayout: Represented by Array (AS)
+        :param yawLimits: Represented by Array (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_setup(healthStr, progress, indicatorType, crewLayout, yawLimits, hasTurretRotator, isAutoRotationOn)
 

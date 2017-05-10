@@ -2,12 +2,13 @@
 import BigWorld
 from account_helpers import isPremiumAccount
 from adisp import async
-from gui.shared.money import Money
+from gui.shared.money import Money, Currency
 from gui.shared.utils.requesters.abstract import AbstractSyncDataRequester
 from helpers import time_utils, dependency
 from skeletons.gui.game_control import IWalletController
+from skeletons.gui.shared.utils.requesters import IStatsRequester
 
-class StatsRequester(AbstractSyncDataRequester):
+class StatsRequester(AbstractSyncDataRequester, IStatsRequester):
     wallet = dependency.descriptor(IWalletController)
 
     @async
@@ -36,15 +37,22 @@ class StatsRequester(AbstractSyncDataRequester):
         return max(self.actualGold, 0)
 
     @property
+    def crystal(self):
+        """
+        @return: account crystals balance as positive value
+        """
+        return max(self.actualCrystal, 0)
+
+    @property
     def money(self):
-        return Money(credits=self.credits, gold=self.gold)
+        return Money(credits=self.credits, gold=self.gold, crystal=self.crystal)
 
     @property
     def actualCredits(self):
         """
         @return: account credits actual balance
         """
-        return self.getCacheValue('credits', 0)
+        return self.getCacheValue(Currency.CREDITS, 0)
 
     @property
     def actualGold(self):
@@ -52,12 +60,19 @@ class StatsRequester(AbstractSyncDataRequester):
         @return: account gold actual balance
         """
         if self.mayConsumeWalletResources or not self.wallet.useGold:
-            return self.getCacheValue('gold', 0)
+            return self.getCacheValue(Currency.GOLD, 0)
         return 0
 
     @property
+    def actualCrystal(self):
+        """
+        @return: account crystals actual balance
+        """
+        return self.getCacheValue(Currency.CRYSTAL, 0)
+
+    @property
     def actualMoney(self):
-        return Money(credits=self.actualCredits, gold=self.actualGold)
+        return Money(credits=self.actualCredits, gold=self.actualGold, crystal=self.actualCrystal)
 
     @property
     def freeXP(self):

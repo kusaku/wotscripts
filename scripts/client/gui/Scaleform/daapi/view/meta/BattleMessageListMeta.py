@@ -1,13 +1,7 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/meta/BattleMessageListMeta.py
-from gui.Scaleform.framework.entities.BaseDAAPIModule import BaseDAAPIModule
+from gui.Scaleform.framework.entities.BaseDAAPIComponent import BaseDAAPIComponent
 
-class BattleMessageListMeta(BaseDAAPIModule):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends BaseDAAPIModule
-    """
+class BattleMessageListMeta(BaseDAAPIComponent):
 
     def onRefreshComplete(self):
         self._printOverrideError('onRefreshComplete')

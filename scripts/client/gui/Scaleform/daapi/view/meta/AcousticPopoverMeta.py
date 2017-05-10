@@ -2,12 +2,6 @@
 from gui.Scaleform.daapi.view.lobby.popover.SmartPopOverView import SmartPopOverView
 
 class AcousticPopoverMeta(SmartPopOverView):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends SmartPopOverView
-    """
 
     def onActionStart(self, actionID):
         self._printOverrideError('onActionStart')
@@ -23,10 +17,16 @@ class AcousticPopoverMeta(SmartPopOverView):
             return self.flashObject.as_setData(data)
 
     def as_onItemPlayS(self, itemsID):
+        """
+        :param itemsID: Represented by Array (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_onItemPlay(itemsID)
 
     def as_onItemSelectS(self, itemsID):
+        """
+        :param itemsID: Represented by Array (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_onItemSelect(itemsID)
 

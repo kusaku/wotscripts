@@ -2,12 +2,6 @@
 from gui.Scaleform.daapi.view.lobby.rally.BaseRallyRoomView import BaseRallyRoomView
 
 class CyberSportUnitMeta(BaseRallyRoomView):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends BaseRallyRoomView
-    """
 
     def toggleFreezeRequest(self):
         self._printOverrideError('toggleFreezeRequest')
@@ -28,6 +22,9 @@ class CyberSportUnitMeta(BaseRallyRoomView):
         self._printOverrideError('lockSlotRequest')
 
     def as_updateSlotSettingsS(self, value):
+        """
+        :param value: Represented by Array (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_updateSlotSettings(value)
 
@@ -40,6 +37,9 @@ class CyberSportUnitMeta(BaseRallyRoomView):
             return self.flashObject.as_openSlot(slotIdx, canBeTaken, slotsLabel, compatibleVehiclesCount)
 
     def as_lockUnitS(self, isLocked, slotsLabel):
+        """
+        :param slotsLabel: Represented by Array (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_lockUnit(isLocked, slotsLabel)
 

@@ -1,13 +1,12 @@
 # Embedded file name: scripts/client/AvatarPositionControl.py
+import weakref
 from AvatarInputHandler import mathUtils
 import BigWorld
 import Math
 from Event import Event
 import constants
-import weakref
 import BattleReplay
-from debug_utils import *
-import time
+from debug_utils import LOG_DEBUG
 from helpers.CallbackDelayer import CallbackDelayer
 
 def logFunc(func):

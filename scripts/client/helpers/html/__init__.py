@@ -20,5 +20,5 @@ def translation(text):
         result = _getText_re.sub(_search, text)
     except re.error:
         LOG_CURRENT_EXCEPTION()
-    finally:
-        return result
+
+    return result

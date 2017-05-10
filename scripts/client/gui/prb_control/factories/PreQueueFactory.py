@@ -13,8 +13,9 @@ from gui.prb_control.entities.fallout.pre_queue.entity import falloutQueueTypeFa
 from gui.prb_control.entities.random.pre_queue.entity import RandomEntity, RandomEntryPoint
 from gui.prb_control.entities.sandbox.pre_queue.entity import SandboxEntity, SandboxEntryPoint
 from gui.prb_control.entities.tutorial.pre_queue.entity import TutorialEntity, TutorialEntryPoint
+from gui.prb_control.entities.ranked.pre_queue.entity import RankedEntity, RankedEntryPoint, RankedForcedEntryPoint
 from gui.prb_control.items import FunctionalState
-from gui.prb_control.settings import FUNCTIONAL_FLAG as _FLAG, FUNCTIONAL_FLAG
+from gui.prb_control.settings import FUNCTIONAL_FLAG as _FLAG
 from gui.prb_control.settings import PREBATTLE_ACTION_NAME, CTRL_ENTITY_TYPE
 from gui.prb_control.storages import prequeue_storage_getter
 __all__ = ('PreQueueFactory',)
@@ -22,13 +23,16 @@ _SUPPORTED_QUEUES = {QUEUE_TYPE.RANDOMS: RandomEntity,
  QUEUE_TYPE.FALLOUT_CLASSIC: FalloutClassicEntity,
  QUEUE_TYPE.FALLOUT_MULTITEAM: FalloutMultiTeamEntity,
  QUEUE_TYPE.TUTORIAL: TutorialEntity,
- QUEUE_TYPE.SANDBOX: SandboxEntity}
+ QUEUE_TYPE.SANDBOX: SandboxEntity,
+ QUEUE_TYPE.RANKED: RankedEntity}
 _SUPPORTED_ENTRY_BY_ACTION = {PREBATTLE_ACTION_NAME.RANDOM: RandomEntryPoint,
  PREBATTLE_ACTION_NAME.FALLOUT: NoFalloutEntryPoint,
  PREBATTLE_ACTION_NAME.FALLOUT_CLASSIC: FalloutClassicEntryPoint,
  PREBATTLE_ACTION_NAME.FALLOUT_MULTITEAM: FalloutMultiTeamEntryPoint,
  PREBATTLE_ACTION_NAME.BATTLE_TUTORIAL: TutorialEntryPoint,
- PREBATTLE_ACTION_NAME.SANDBOX: SandboxEntryPoint}
+ PREBATTLE_ACTION_NAME.SANDBOX: SandboxEntryPoint,
+ PREBATTLE_ACTION_NAME.RANKED: RankedEntryPoint,
+ PREBATTLE_ACTION_NAME.RANKED_FORCED: RankedForcedEntryPoint}
 
 class PreQueueFactory(ControlFactory):
     """
@@ -46,6 +50,13 @@ class PreQueueFactory(ControlFactory):
     def pveStorage(self):
         """
         Decorated property getter for PvE storage.
+        """
+        return None
+
+    @prequeue_storage_getter(QUEUE_TYPE.RANKED)
+    def rankedStorage(self):
+        """
+        Decorated property getter for ranked storage.
         """
         return None
 
@@ -73,7 +84,7 @@ class PreQueueFactory(ControlFactory):
     def createStateEntity(self, entity):
         return FunctionalState(CTRL_ENTITY_TYPE.PREQUEUE, entity.getEntityType(), True, entity.isInQueue(), funcFlags=entity.getFunctionalFlags())
 
-    def createLeaveCtx(self, flags = FUNCTIONAL_FLAG.UNDEFINED, entityType = 0):
+    def createLeaveCtx(self, flags = _FLAG.UNDEFINED, entityType = 0):
         return LeavePreQueueCtx(waitingID='prebattle/leave', flags=flags, entityType=entityType)
 
     def __createByAccountState(self, ctx):
@@ -140,5 +151,7 @@ class PreQueueFactory(ControlFactory):
             return falloutQueueTypeFactory(self.falloutStorage.getBattleType())
         elif self.pveStorage.isModeSelected():
             return SandboxEntity()
+        elif self.rankedStorage.isModeSelected():
+            return RankedEntity()
         else:
             return None

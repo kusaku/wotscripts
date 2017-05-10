@@ -1,12 +1,11 @@
 # Embedded file name: scripts/client/gui/Scaleform/genConsts/TEXT_MANAGER_STYLES.py
-
+"""
+This file was generated using the wgpygen.
+Please, don't edit this file manually.
+"""
 
 class TEXT_MANAGER_STYLES(object):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    """
+    SUPER_PROMO_TITLE = 'superPromoTitle'
     PROMO_TITLE = 'promoTitle'
     PROMO_SUB_TITLE = 'promoSubTitle'
     HIGH_TITLE = 'highTitle'
@@ -17,6 +16,7 @@ class TEXT_MANAGER_STYLES(object):
     MAIN_TEXT = 'mainText'
     STANDARD_TEXT = 'standardText'
     DISABLED_TEXT = 'disabledText'
+    HIGHLIGHT_TEXT = 'highlightText'
     SUCCESS_TEXT = 'successText'
     ALERT_TEXT = 'alertText'
     ERROR_TEXT = 'errorText'
@@ -38,3 +38,5 @@ class TEXT_MANAGER_STYLES(object):
     VEHICLE_STATUS_CRITICAL_TEXT = 'vehicleStatusCriticalText'
     VEHICLE_NAME = 'vehicleName'
     PREMIUM_VEHICLE_NAME = 'premiumVehicleName'
+    MISSION_STATUS_UNAVAILABLE = 'missionStatusUnavailable'
+    MISSION_STATUS_AVAILABLE = 'missionStatusAvailable'

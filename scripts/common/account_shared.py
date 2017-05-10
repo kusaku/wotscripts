@@ -339,8 +339,8 @@ def getClientMainVersion():
         _, mainVersion, _ = parsedVersion
     except:
         LOG_ERROR('Can not read or parse client-server version')
-    finally:
-        return mainVersion
+
+    return mainVersion
 
 
 def readClientServerVersion():

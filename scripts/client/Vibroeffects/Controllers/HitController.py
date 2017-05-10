@@ -1,10 +1,6 @@
 # Embedded file name: scripts/client/Vibroeffects/Controllers/HitController.py
-import BigWorld
-import Math
 from constants import VEHICLE_HIT_EFFECT as HIT_EFFECT
-from debug_utils import *
 from OnceController import OnceController
-import math
 
 class HitController:
 

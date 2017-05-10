@@ -1,6 +1,5 @@
 # Embedded file name: scripts/client/gui/shared/stronghold/stronghold_provider.py
 from adisp import process
-from gui.LobbyContext import g_lobbyContext
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui import DialogsInterface
 from gui.wgnc.proxy_data import ShowInBrowserItem
@@ -11,6 +10,8 @@ from gui.prb_control.settings import FUNCTIONAL_FLAG
 from gui.prb_control.entities.base.ctx import LeavePrbAction
 from gui.prb_control.entities.listener import IGlobalListener
 from gui.clans.clan_helpers import isStrongholdsEnabled
+from helpers import dependency
+from skeletons.gui.lobby_context import ILobbyContext
 
 class ClientStrongholdProvider(IGlobalListener):
     """
@@ -18,6 +19,7 @@ class ClientStrongholdProvider(IGlobalListener):
     Check server settings for isStrongholdsEnabled flag change
     and if flag disabled - leave unit and show info popup if possible
     """
+    lobbyContext = dependency.descriptor(ILobbyContext)
 
     def __init__(self):
         super(ClientStrongholdProvider, self).__init__()
@@ -29,7 +31,7 @@ class ClientStrongholdProvider(IGlobalListener):
 
     def start(self):
         self.startGlobalListening()
-        g_lobbyContext.getServerSettings().onServerSettingsChange += self.__onServerSettingChanged
+        self.lobbyContext.getServerSettings().onServerSettingsChange += self.__onServerSettingChanged
         g_eventBus.addListener(events.StrongholdEvent.STRONGHOLD_ACTIVATED, self.__onStrongholdsActivate, EVENT_BUS_SCOPE.FORT)
         g_eventBus.addListener(events.StrongholdEvent.STRONGHOLD_DEACTIVATED, self.__onStrongholdsDeactivate, EVENT_BUS_SCOPE.FORT)
         from gui.Scaleform.daapi.view.lobby.strongholds import createStrongholdsWebHandlers
@@ -38,7 +40,7 @@ class ClientStrongholdProvider(IGlobalListener):
 
     def stop(self):
         self.stopGlobalListening()
-        g_lobbyContext.getServerSettings().onServerSettingsChange -= self.__onServerSettingChanged
+        self.lobbyContext.getServerSettings().onServerSettingsChange -= self.__onServerSettingChanged
         g_eventBus.removeListener(events.StrongholdEvent.STRONGHOLD_ACTIVATED, self.__onStrongholdsActivate, EVENT_BUS_SCOPE.FORT)
         g_eventBus.removeListener(events.StrongholdEvent.STRONGHOLD_DEACTIVATED, self.__onStrongholdsDeactivate, EVENT_BUS_SCOPE.FORT)
         ShowInBrowserItem.removeWebHandler('stronghold')

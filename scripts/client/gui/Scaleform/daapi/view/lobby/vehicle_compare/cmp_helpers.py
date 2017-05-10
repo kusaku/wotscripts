@@ -3,15 +3,16 @@ import operator
 import time
 from gui.Scaleform.daapi.view.lobby.vehicle_compare.cmp_top_modules import TopModulesChecker
 from gui.game_control.veh_comparison_basket import PARAMS_AFFECTED_TANKMEN_SKILLS
+from helpers import dependency
 from items import tankmen, vehicles
 from debug_utils import LOG_WARNING
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui.Scaleform.framework import ViewTypes
 from gui.Scaleform.framework.managers.containers import POP_UP_CRITERIA
 from gui.app_loader.loader import g_appLoader
-from gui.shared.ItemsCache import g_itemsCache
 from gui.shared.gui_items import GUI_ITEM_TYPE_NAMES, GUI_ITEM_TYPE
 from gui.shared.gui_items.Tankman import Tankman
+from skeletons.gui.shared import IItemsCache
 MODULES_INSTALLING_ORDER = (GUI_ITEM_TYPE.CHASSIS,
  GUI_ITEM_TYPE.TURRET,
  GUI_ITEM_TYPE.GUN,
@@ -91,15 +92,17 @@ def getVehicleCrewSkills(vehicle):
         return outcome
 
 
-def getVehCrewInfo(vehIntCD):
+@dependency.replace_none_kwargs(itemsCache=IItemsCache)
+def getVehCrewInfo(vehIntCD, itemsCache = None):
     levelsByIndexes = {}
     nativeVehiclesByIndexes = {}
-    hangarVehicle = g_itemsCache.items.getItemByCD(vehIntCD)
-    raise hangarVehicle.itemTypeID == GUI_ITEM_TYPE.VEHICLE or AssertionError
-    for roleIdx, tankmen in hangarVehicle.crew:
-        if tankmen:
-            levelsByIndexes[roleIdx] = int(tankmen.roleLevel)
-            nativeVehiclesByIndexes[roleIdx] = g_itemsCache.items.getItemByCD(tankmen.vehicleNativeDescr.type.compactDescr)
+    hangarVehicle = itemsCache is not None and itemsCache.items.getItemByCD(vehIntCD)
+    if not hangarVehicle.itemTypeID == GUI_ITEM_TYPE.VEHICLE:
+        raise AssertionError
+        for roleIdx, tankmen in hangarVehicle.crew:
+            if tankmen:
+                levelsByIndexes[roleIdx] = int(tankmen.roleLevel)
+                nativeVehiclesByIndexes[roleIdx] = itemsCache.items.getItemByCD(tankmen.vehicleNativeDescr.type.compactDescr)
 
     return (levelsByIndexes, nativeVehiclesByIndexes)
 
@@ -108,7 +111,8 @@ def createTankmans(crewData):
     return map(lambda strCD: (strCD[0], Tankman(strCD[1]) if strCD[1] else None), crewData)
 
 
-def installEquipmentOnVehicle(vehicle, intCD, slotIndex):
+@dependency.replace_none_kwargs(itemsCache=IItemsCache)
+def installEquipmentOnVehicle(vehicle, intCD, slotIndex, itemsCache = None):
     """
     Installs equipement on the provided vehicle in particular slot
     :param vehicle: target Vehicle
@@ -116,7 +120,10 @@ def installEquipmentOnVehicle(vehicle, intCD, slotIndex):
     :param slotIndex: 0, 1, 2 - indexes
     :return:
     """
-    equipment = g_itemsCache.items.getItemByCD(int(intCD)) if intCD else None
+    if intCD and itemsCache is not None:
+        equipment = itemsCache.items.getItemByCD(int(intCD))
+    else:
+        equipment = None
     if not (equipment and equipment.itemTypeID == GUI_ITEM_TYPE.EQUIPMENT):
         raise AssertionError('Invalid type of item: {}'.format(equipment.itemTypeID))
         success, reason = equipment.mayInstall(vehicle, slotIndex)

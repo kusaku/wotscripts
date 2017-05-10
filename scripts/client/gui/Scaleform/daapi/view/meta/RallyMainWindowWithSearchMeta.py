@@ -2,12 +2,6 @@
 from gui.Scaleform.daapi.view.lobby.rally.BaseRallyMainWindow import BaseRallyMainWindow
 
 class RallyMainWindowWithSearchMeta(BaseRallyMainWindow):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends BaseRallyMainWindow
-    """
 
     def onAutoMatch(self, value, values):
         self._printOverrideError('onAutoMatch')
@@ -36,3 +30,15 @@ class RallyMainWindowWithSearchMeta(BaseRallyMainWindow):
     def as_hideAutoSearchS(self):
         if self._isDAAPIInited():
             return self.flashObject.as_hideAutoSearch()
+
+    def as_changeAutoSearchMainLabelS(self, value):
+        if self._isDAAPIInited():
+            return self.flashObject.as_changeAutoSearchMainLabel(value)
+
+    def as_changeAutoSearchTimeDirectionS(self, value):
+        if self._isDAAPIInited():
+            return self.flashObject.as_changeAutoSearchTimeDirection(value)
+
+    def as_changeAutoSearchCountDownSecondsS(self, value):
+        if self._isDAAPIInited():
+            return self.flashObject.as_changeAutoSearchCountDownSeconds(value)

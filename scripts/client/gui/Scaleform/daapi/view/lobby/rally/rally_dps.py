@@ -1,8 +1,8 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/rally/rally_dps.py
 import BigWorld
 from gui.prb_control import prbEntityProperty
+from helpers import dependency
 from debug_utils import LOG_ERROR
-from gui.LobbyContext import g_lobbyContext
 from gui.Scaleform.daapi.view.lobby.rally.vo_converters import makePlayerVO, makeUnitShortVO, makeSortiePlayerVO, makeStaticFormationPlayerVO, makeClanBattlePlayerVO
 from gui.Scaleform.daapi.view.lobby.rally.data_providers import BaseRallyListDataProvider
 from gui.Scaleform.framework.entities.DAAPIDataProvider import DAAPIDataProvider
@@ -17,6 +17,7 @@ from messenger import g_settings
 from messenger.m_constants import PROTO_TYPE
 from messenger.storage import storage_getter
 from messenger.proto import proto_getter
+from skeletons.gui.lobby_context import ILobbyContext
 
 class CandidatesDataProvider(DAAPIDataProvider):
 
@@ -167,6 +168,7 @@ class StaticFormationCandidatesDP(CandidatesDataProvider):
 
 
 class ManualSearchDataProvider(BaseRallyListDataProvider):
+    lobbyContext = dependency.descriptor(ILobbyContext)
 
     @prbEntityProperty
     def prbEntity(self):
@@ -179,7 +181,7 @@ class ManualSearchDataProvider(BaseRallyListDataProvider):
         self.clear()
         userGetter = storage_getter('users')().getUser
         colorGetter = g_settings.getColorScheme('rosters').getColors
-        pNameGetter = g_lobbyContext.getPeripheryName
+        pNameGetter = self.lobbyContext.getPeripheryName
         ratingFormatter = BigWorld.wg_getIntegralFormat
         self._selectedIdx = -1
         for unitItem in result:

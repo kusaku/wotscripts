@@ -2,7 +2,6 @@
 from functools import partial
 import weakref
 import BigWorld
-from AvatarInputHandler import AvatarInputHandler
 from account_helpers.settings_core.settings_constants import DAMAGE_INDICATOR, GRAPHICS
 from gui.battle_control.battle_constants import HIT_INDICATOR_MAX_ON_SCREEN, BATTLE_CTRL_ID
 from gui.battle_control.view_components import IViewComponentsController
@@ -170,6 +169,7 @@ class HitDirectionController(IViewComponentsController):
         self.settingsCore.onSettingsChanged -= self.__onSettingsChanged
         handler = avatar_getter.getInputHandler()
         if handler is not None:
+            from AvatarInputHandler import AvatarInputHandler
             if isinstance(handler, AvatarInputHandler):
                 handler.onPostmortemKillerVision -= self.__onPostmortemKillerVision
         g_eventBus.removeListener(GameEvent.GUI_VISIBILITY, self.__handleGUIVisibility, scope=EVENT_BUS_SCOPE.BATTLE)
@@ -202,6 +202,7 @@ class HitDirectionController(IViewComponentsController):
         proxy = weakref.proxy(self.__ui)
         handler = avatar_getter.getInputHandler()
         if handler is not None:
+            from AvatarInputHandler import AvatarInputHandler
             if isinstance(handler, AvatarInputHandler):
                 handler.onPostmortemKillerVision += self.__onPostmortemKillerVision
         for hit in self.__pull:

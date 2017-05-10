@@ -2,12 +2,6 @@
 from gui.Scaleform.framework.entities.abstract.AbstractWindowView import AbstractWindowView
 
 class ReferralManagementWindowMeta(AbstractWindowView):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends AbstractWindowView
-    """
 
     def onInvitesManagementLinkClick(self):
         self._printOverrideError('onInvitesManagementLinkClick')
@@ -24,7 +18,7 @@ class ReferralManagementWindowMeta(AbstractWindowView):
 
     def as_setTableDataS(self, referrals):
         """
-        :param referrals: Represented by DataProvider (AS)
+        :param referrals: Represented by DataProvider.<ReferralsTableRendererVO> (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_setTableData(referrals)

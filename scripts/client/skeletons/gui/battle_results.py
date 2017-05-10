@@ -1,9 +1,10 @@
 # Embedded file name: scripts/client/skeletons/gui/battle_results.py
-
+from Event import Event
 
 class IBattleResultsService(object):
     """Service to provide access to battle results."""
     __slots__ = ()
+    onResultPosted = None
 
     def init(self):
         """Initialization of service."""

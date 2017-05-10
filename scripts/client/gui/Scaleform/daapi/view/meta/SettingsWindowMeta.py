@@ -2,12 +2,6 @@
 from gui.Scaleform.framework.entities.abstract.AbstractWindowView import AbstractWindowView
 
 class SettingsWindowMeta(AbstractWindowView):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends AbstractWindowView
-    """
 
     def applySettings(self, settings, isCloseWnd):
         self._printOverrideError('applySettings')
@@ -53,6 +47,9 @@ class SettingsWindowMeta(AbstractWindowView):
             return self.flashObject.as_setData(settingsData)
 
     def as_setCaptureDevicesS(self, captureDeviceIdx, devicesData):
+        """
+        :param devicesData: Represented by DataProvider (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_setCaptureDevices(captureDeviceIdx, devicesData)
 
@@ -85,6 +82,9 @@ class SettingsWindowMeta(AbstractWindowView):
             return self.flashObject.as_isPresetApplied()
 
     def as_setCountersDataS(self, tabsList):
+        """
+        :param tabsList: Represented by Array (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_setCountersData(tabsList)
 

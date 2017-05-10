@@ -22,6 +22,6 @@ class SandboxActionsValidator(PreQueueActionsValidator):
     Sandbox actions validation class
     """
 
-    def __init__(self, entity):
-        super(SandboxActionsValidator, self).__init__(entity)
-        self.addValidator(SandboxVehicleValidator(entity))
+    def _createVehiclesValidator(self, entity):
+        baseValidator = super(SandboxActionsValidator, self)._createVehiclesValidator(entity)
+        return ActionsValidatorComposite(entity, [baseValidator, SandboxVehicleValidator(entity)])

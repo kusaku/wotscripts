@@ -2,12 +2,6 @@
 from gui.Scaleform.daapi.view.lobby.profile.ProfileAchievementSection import ProfileAchievementSection
 
 class ProfileSummaryMeta(ProfileAchievementSection):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends ProfileAchievementSection
-    """
 
     def getPersonalScoreWarningText(self, data):
         self._printOverrideError('getPersonalScoreWarningText')

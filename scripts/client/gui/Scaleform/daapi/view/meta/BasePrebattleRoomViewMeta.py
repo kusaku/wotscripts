@@ -2,12 +2,6 @@
 from gui.Scaleform.daapi.view.lobby.rally.AbstractRallyView import AbstractRallyView
 
 class BasePrebattleRoomViewMeta(AbstractRallyView):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends AbstractRallyView
-    """
 
     def requestToReady(self, value):
         self._printOverrideError('requestToReady')
@@ -41,7 +35,7 @@ class BasePrebattleRoomViewMeta(AbstractRallyView):
 
     def as_setRosterListS(self, team, assigned, rosters):
         """
-        :param rosters: Represented by DataProvider (AS)
+        :param rosters: Represented by DataProvider.<PlayerPrbInfoVO> (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_setRosterList(team, assigned, rosters)

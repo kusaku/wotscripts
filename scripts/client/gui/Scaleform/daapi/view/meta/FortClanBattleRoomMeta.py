@@ -2,12 +2,6 @@
 from gui.Scaleform.daapi.view.lobby.rally.BaseRallyRoomView import BaseRallyRoomView
 
 class FortClanBattleRoomMeta(BaseRallyRoomView):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends BaseRallyRoomView
-    """
 
     def onTimerAlert(self):
         self._printOverrideError('onTimerAlert')
@@ -59,6 +53,9 @@ class FortClanBattleRoomMeta(BaseRallyRoomView):
             return self.flashObject.as_setDirection(value, animationNotAvailable)
 
     def as_setReservesEnabledS(self, data):
+        """
+        :param data: Represented by Array (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_setReservesEnabled(data)
 

@@ -2,12 +2,6 @@
 from gui.Scaleform.daapi.view.meta.WrapperViewMeta import WrapperViewMeta
 
 class PopOverViewMeta(WrapperViewMeta):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends WrapperViewMeta
-    """
 
     def as_setArrowDirectionS(self, value):
         if self._isDAAPIInited():

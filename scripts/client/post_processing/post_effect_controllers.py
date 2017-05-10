@@ -1,10 +1,7 @@
 # Embedded file name: scripts/client/post_processing/post_effect_controllers.py
 import BigWorld
-import Math
 import Event
 from PostProcessing.Effects import DepthOfField
-from PostProcessing.Effects import *
-from debug_utils import *
 
 class _PostProcessingEvents(object):
 

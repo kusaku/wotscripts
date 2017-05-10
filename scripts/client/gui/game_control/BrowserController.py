@@ -74,7 +74,7 @@ class BrowserController(IBrowserController):
 
     @async
     @process
-    def load(self, url = None, title = None, showActionBtn = True, showWaiting = True, browserID = None, isAsync = False, browserSize = None, isDefault = True, callback = None, showCloseBtn = False, useBrowserWindow = True, isModal = False, showCreateWaiting = False, handlers = None, showBrowserCallback = None):
+    def load(self, url = None, title = None, showActionBtn = True, showWaiting = True, browserID = None, isAsync = False, browserSize = None, isDefault = True, callback = None, showCloseBtn = False, useBrowserWindow = True, isModal = False, showCreateWaiting = False, handlers = None, showBrowserCallback = None, isSolidBorder = False):
         if showCreateWaiting:
             Waiting.show('browser/init')
         url = yield self.__urlMacros.parse(url or GUI_SETTINGS.browser.url)
@@ -101,7 +101,8 @@ class BrowserController(IBrowserController):
          'alias': VIEW_ALIAS.BROWSER_WINDOW_MODAL if isModal else VIEW_ALIAS.BROWSER_WINDOW,
          'showCreateWaiting': showCreateWaiting,
          'handlers': handlers,
-         'showBrowserCallback': showBrowserCallback}
+         'showBrowserCallback': showBrowserCallback,
+         'isSolidBorder': isSolidBorder}
         texture = browserID not in self.__browsers and browserID not in self.__pendingBrowsers and self._BROWSER_TEXTURE
         app = g_appLoader.getApp()
         if not app:

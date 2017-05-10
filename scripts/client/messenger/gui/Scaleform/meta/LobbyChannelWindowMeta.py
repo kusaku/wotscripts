@@ -2,12 +2,6 @@
 from messenger.gui.Scaleform.view.lobby.SimpleChannelWindow import SimpleChannelWindow
 
 class LobbyChannelWindowMeta(SimpleChannelWindow):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends SimpleChannelWindow
-    """
 
     def as_getMembersDPS(self):
         if self._isDAAPIInited():

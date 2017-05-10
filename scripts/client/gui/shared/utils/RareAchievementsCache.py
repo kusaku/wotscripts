@@ -3,7 +3,7 @@ from functools import partial
 import ResMgr
 import re
 import Event
-from debug_utils import *
+from debug_utils import LOG_WARNING, LOG_CURRENT_EXCEPTION, LOG_DEBUG
 from helpers import i18n, getClientLanguage
 from account_helpers.rare_achievements import getRareAchievementImage, getRareAchievementImageBig, getRareAchievementText
 

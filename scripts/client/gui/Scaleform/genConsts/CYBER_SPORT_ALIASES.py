@@ -1,12 +1,10 @@
 # Embedded file name: scripts/client/gui/Scaleform/genConsts/CYBER_SPORT_ALIASES.py
-
+"""
+This file was generated using the wgpygen.
+Please, don't edit this file manually.
+"""
 
 class CYBER_SPORT_ALIASES(object):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    """
     CYBER_SPORT_WINDOW_UI = 'CyberSportMainWindow.swf'
     CYBER_SPORT_WINDOW_PY = 'cyberSport/unitWindow'
     ROSTER_SLOT_SETTINGS_WINDOW_UI = 'rosterSlotSettingsWindow.swf'

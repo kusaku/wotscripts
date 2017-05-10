@@ -1,5 +1,5 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/server_events/QuestsSeasonAwardsWindow.py
-from gui.Scaleform.daapi.view.lobby.server_events import events_helpers
+from gui.Scaleform.daapi.view.lobby.server_events import old_events_helpers
 from helpers.i18n import makeString as _ms
 from gui.shared import event_dispatcher as shared_events
 from gui.shared.formatters import icons
@@ -45,7 +45,7 @@ class QuestsSeasonAwardsWindow(QuestsSeasonAwardsWindowMeta):
     def __setData(self):
         tabID = self.__questsType
         awards = []
-        cache = events_helpers.getPotapovQuestsCache(tabID)
+        cache = old_events_helpers.getPotapovQuestsCache(tabID)
         for tile in cache.getTiles().itervalues():
             extraAward = self.__packFemaleTankmanAward()
             basicAward = self.__packBasicAward(tile)

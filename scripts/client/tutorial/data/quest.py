@@ -1,5 +1,5 @@
 # Embedded file name: scripts/client/tutorial/data/quest.py
-from gui.Scaleform.daapi.view.lobby.server_events.events_helpers import EVENT_STATUS
+from gui.server_events.events_helpers import EVENT_STATUS
 from tutorial.data.has_id import HasID
 from tutorial.data.chapter import Chapter
 

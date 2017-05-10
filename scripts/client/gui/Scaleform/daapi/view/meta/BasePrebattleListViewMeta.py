@@ -2,12 +2,6 @@
 from gui.Scaleform.daapi.view.lobby.rally.AbstractRallyView import AbstractRallyView
 
 class BasePrebattleListViewMeta(AbstractRallyView):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends AbstractRallyView
-    """
 
     def as_getSearchDPS(self):
         if self._isDAAPIInited():

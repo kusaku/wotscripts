@@ -2,12 +2,6 @@
 from gui.Scaleform.framework.entities.View import View
 
 class StoreViewMeta(View):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends View
-    """
 
     def onClose(self):
         self._printOverrideError('onClose')
@@ -15,9 +9,12 @@ class StoreViewMeta(View):
     def onTabChange(self, tabId):
         self._printOverrideError('onTabChange')
 
-    def as_showStorePageS(self, viewAlias):
+    def onBackButtonClick(self):
+        self._printOverrideError('onBackButtonClick')
+
+    def as_showStorePageS(self, tabId):
         if self._isDAAPIInited():
-            return self.flashObject.as_showStorePage(viewAlias)
+            return self.flashObject.as_showStorePage(tabId)
 
     def as_initS(self, data):
         """
@@ -25,3 +22,11 @@ class StoreViewMeta(View):
         """
         if self._isDAAPIInited():
             return self.flashObject.as_init(data)
+
+    def as_showBackButtonS(self, label, description):
+        if self._isDAAPIInited():
+            return self.flashObject.as_showBackButton(label, description)
+
+    def as_hideBackButtonS(self):
+        if self._isDAAPIInited():
+            return self.flashObject.as_hideBackButton()

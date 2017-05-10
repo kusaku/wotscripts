@@ -1,10 +1,10 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/hangar/carousels/fallout/slot_data_provider.py
-from gui.shared.formatters import icons
-from gui.shared.formatters import text_styles
-from gui.shared.gui_items.Vehicle import Vehicle
 from gui.Scaleform.framework.entities.DAAPIDataProvider import SortableDAAPIDataProvider
 from gui.Scaleform.locale.FALLOUT import FALLOUT
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
+from gui.shared.formatters import icons
+from gui.shared.formatters import text_styles
+from gui.shared.gui_items.Vehicle import Vehicle
 from helpers import i18n, int2roman
 
 def _getStatusString(vState):
@@ -18,6 +18,8 @@ def _getStatusString(vState):
 
 
 class SlotDataProvider(SortableDAAPIDataProvider):
+    """ This class provides data for the slots upon carousel in the fallout mode.
+    """
 
     def __init__(self, falloutCtrl, itemsCache):
         super(SlotDataProvider, self).__init__()

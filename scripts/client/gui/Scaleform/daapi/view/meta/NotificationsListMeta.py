@@ -2,12 +2,6 @@
 from gui.Scaleform.daapi.view.lobby.popover.SmartPopOverView import SmartPopOverView
 
 class NotificationsListMeta(SmartPopOverView):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends SmartPopOverView
-    """
 
     def onClickAction(self, typeID, entityID, action):
         self._printOverrideError('onClickAction')
@@ -47,5 +41,8 @@ class NotificationsListMeta(SmartPopOverView):
             return self.flashObject.as_updateMessage(messageData)
 
     def as_updateCountersS(self, counts):
+        """
+        :param counts: Represented by Array (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_updateCounters(counts)

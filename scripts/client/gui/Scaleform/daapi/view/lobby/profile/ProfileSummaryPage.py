@@ -1,7 +1,6 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/profile/ProfileSummaryPage.py
 from gui.Scaleform.daapi.view.lobby.profile.ProfileSummary import ProfileSummary
 from gui.Scaleform.locale.PROFILE import PROFILE
-from gui.shared import g_itemsCache
 
 class ProfileSummaryPage(ProfileSummary):
 
@@ -15,4 +14,4 @@ class ProfileSummaryPage(ProfileSummary):
         return outcome
 
     def getGlobalRating(self, userName):
-        return g_itemsCache.items.stats.globalRating
+        return self.itemsCache.items.stats.globalRating

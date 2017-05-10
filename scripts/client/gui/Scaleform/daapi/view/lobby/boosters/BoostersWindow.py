@@ -6,6 +6,7 @@ from gui.Scaleform.genConsts.TEXT_ALIGN import TEXT_ALIGN
 from helpers.i18n import makeString as _ms
 from gui.Scaleform.daapi.view.meta.BoostersWindowMeta import BoostersWindowMeta
 from gui.goodies.goodie_items import MAX_ACTIVE_BOOSTERS_COUNT, BOOSTER_QUALITY_NAMES
+from gui.shared import event_bus_handlers, events, EVENT_BUS_SCOPE
 from gui.shared.formatters import text_styles
 from gui.Scaleform.locale.MENU import MENU
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
@@ -34,6 +35,7 @@ class BoostersWindow(BoostersWindowMeta):
     Window which contains boosters tabs and filters.
     :param ctx: context which contains tabID - tab index
     """
+    __metaclass__ = event_bus_handlers.EventBusListener
 
     def __init__(self, ctx = None):
         super(BoostersWindow, self).__init__()
@@ -180,3 +182,7 @@ class BoostersWindow(BoostersWindowMeta):
         if self.__qualities or self.__boosterTypes:
             return '%s/%s' % (current, total)
         return '%s' % current
+
+    @event_bus_handlers.eventBusHandler(events.HideWindowEvent.HIDE_BOOSTERS_WINDOW, EVENT_BUS_SCOPE.LOBBY)
+    def __handleBoostersWindowClose(self, _):
+        self.destroy()

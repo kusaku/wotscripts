@@ -5,6 +5,7 @@ from ItemRestore import RESTORE_VEHICLE_TYPE
 from adisp import async
 from gui.shared.utils.requesters.abstract import AbstractSyncDataRequester
 from helpers import time_utils
+from skeletons.gui.shared.utils.requesters import IRecycleBinRequester
 _VehicleRestoreInfo = namedtuple('_VehicleRestoreInfo', ('restoreType', 'changedAt', 'restoreDuration', 'restoreCooldown'))
 
 class VehicleRestoreInfo(_VehicleRestoreInfo):
@@ -73,7 +74,7 @@ class VehicleRestoreInfo(_VehicleRestoreInfo):
         return 0
 
 
-class RecycleBinRequester(AbstractSyncDataRequester):
+class RecycleBinRequester(AbstractSyncDataRequester, IRecycleBinRequester):
 
     @property
     def recycleBin(self):

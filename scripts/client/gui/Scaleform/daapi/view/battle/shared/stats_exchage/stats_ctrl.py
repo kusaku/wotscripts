@@ -2,7 +2,6 @@
 import BigWorld
 from account_helpers.settings_core.settings_constants import GAME
 from account_helpers.settings_core.settings_constants import GRAPHICS
-from gui.LobbyContext import g_lobbyContext
 from gui.Scaleform.daapi.view.meta.BattleStatisticDataControllerMeta import BattleStatisticDataControllerMeta
 from gui.Scaleform.daapi.view.battle.shared.stats_exchage import broker
 from gui.battle_control.arena_info import team_overrides
@@ -15,6 +14,7 @@ from helpers import dependency
 from messenger.proto.events import g_messengerEvents
 from skeletons.account_helpers.settings_core import ISettingsCore
 from skeletons.gui.battle_session import IBattleSessionProvider
+from skeletons.gui.lobby_context import ILobbyContext
 _BOOL_SETTING_TO_BIT = ((GAME.PLAYERS_PANELS_SHOW_LEVELS, PERSONAL_STATUS.IS_VEHICLE_LEVEL_SHOWN), (GAME.SHOW_VEHICLES_COUNTER, PERSONAL_STATUS.IS_VEHICLE_COUNTER_SHOWN), (GRAPHICS.COLOR_BLIND, PERSONAL_STATUS.IS_COLOR_BLIND))
 
 def _makePersonalStatusFromSettingsStorage(settingsCore):
@@ -47,6 +47,7 @@ def _createExchangeCtx(battleCtx):
 class BattleStatisticsDataController(BattleStatisticDataControllerMeta, IVehiclesAndPersonalInvitationsController):
     sessionProvider = dependency.descriptor(IBattleSessionProvider)
     settingsCore = dependency.descriptor(ISettingsCore)
+    lobbyContext = dependency.descriptor(ILobbyContext)
 
     def __init__(self):
         super(BattleStatisticsDataController, self).__init__()
@@ -142,7 +143,7 @@ class BattleStatisticsDataController(BattleStatisticDataControllerMeta, IVehicle
         exchange.addSortIDs(arenaDP, False, True)
         data = exchange.get(forced=True)
         if data:
-            self.as_setVehiclesStatsS(data)
+            self.as_setFragsS(data)
 
     def addVehicleInfo(self, vo, arenaDP):
         """New vehicle is added to arena.
@@ -356,7 +357,7 @@ class BattleStatisticsDataController(BattleStatisticDataControllerMeta, IVehicle
          'battleTypeFrameLabel': self._battleCtx.getArenaFrameLabel(),
          'allyTeamName': self._battleCtx.getTeamName(enemy=False),
          'enemyTeamName': self._battleCtx.getTeamName(enemy=True)}
-        settings = g_lobbyContext.getServerSettings()
+        settings = self.lobbyContext.getServerSettings()
         if settings is not None and settings.isPotapovQuestEnabled():
             info = self._battleCtx.getQuestInfo()
             if info is not None:

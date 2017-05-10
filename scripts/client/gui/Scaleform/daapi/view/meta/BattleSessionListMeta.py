@@ -2,12 +2,6 @@
 from gui.Scaleform.framework.entities.abstract.AbstractWindowView import AbstractWindowView
 
 class BattleSessionListMeta(AbstractWindowView):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends AbstractWindowView
-    """
 
     def requestToJoinTeam(self, prbID, prbType):
         self._printOverrideError('requestToJoinTeam')
@@ -17,7 +11,7 @@ class BattleSessionListMeta(AbstractWindowView):
 
     def as_refreshListS(self, data):
         """
-        :param data: Represented by DataProvider (AS)
+        :param data: Represented by DataProvider.<BSListRendererVO> (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_refreshList(data)

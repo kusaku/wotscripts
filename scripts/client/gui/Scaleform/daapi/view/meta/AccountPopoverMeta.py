@@ -2,12 +2,6 @@
 from gui.Scaleform.daapi.view.lobby.popover.SmartPopOverView import SmartPopOverView
 
 class AccountPopoverMeta(SmartPopOverView):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends SmartPopOverView
-    """
 
     def openBoostersWindow(self, slotId):
         self._printOverrideError('openBoostersWindow')
@@ -26,6 +20,9 @@ class AccountPopoverMeta(SmartPopOverView):
 
     def openReferralManagement(self):
         self._printOverrideError('openReferralManagement')
+
+    def openBadgesWindow(self):
+        self._printOverrideError('openBadgesWindow')
 
     def as_setDataS(self, data):
         """

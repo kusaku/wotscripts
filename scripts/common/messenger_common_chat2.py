@@ -2,6 +2,7 @@
 from collections import namedtuple
 from constants import IS_CLIENT, IS_CHINA
 from string import Template
+_g_id = None
 
 def _makeID(start = None, range = None):
     global _g_id
@@ -222,5 +223,5 @@ def canResolveMucRoomsOfService(service):
         canResolve = True
     except:
         pass
-    finally:
-        return canResolve
+
+    return canResolve

@@ -5,12 +5,12 @@ import operator
 import BigWorld
 import time
 from ClientUnit import ClientUnit
-from ConnectionManager import connectionManager
 from constants import FORT_BUILDING_TYPE, FORT_BUILDING_TYPE_NAMES, FORT_ORDER_TYPE, FORT_MAX_LEVEL_RANGE, FORT_MIN_ATTACK_LEVEL, FORT_MAX_ATTACK_LEVEL
 import Event
 from FortifiedRegionBase import FortifiedRegionBase, FORT_STATE, FORT_EVENT_TYPE, NOT_ACTIVATED, FORT_ATK_IDX
 from debug_utils import LOG_ERROR, LOG_CURRENT_EXCEPTION
 import fortified_regions
+from helpers import dependency
 from shared_utils import CONST_CONTAINER, findFirst
 from gui.Scaleform.locale.FORTIFICATIONS import FORTIFICATIONS
 from gui.shared.fortifications import getDirectionFromDirPos
@@ -21,6 +21,7 @@ from gui.shared.gui_items.dossier import FortDossier
 from gui.prb_control.prb_getters import getUnitMgrID
 from helpers import time_utils, i18n
 from items import vehicles
+from skeletons.connection_mgr import IConnectionManager
 UNIT_MGR_ID_CHR = '<qH'
 
 class BUILDING_UPDATE_REASON(CONST_CONTAINER):
@@ -69,6 +70,7 @@ def getBattleEquipmentByOrderID(orderID, level):
 
 class ClientFortifiedRegion(FortifiedRegionBase):
     DEF_RES_STEP = 1
+    connectionMgr = dependency.descriptor(IConnectionManager)
 
     def __init__(self, account = None):
         self.__account = account
@@ -541,8 +543,8 @@ class ClientFortifiedRegion(FortifiedRegionBase):
             if availableTime is None or availableTime <= enemyDefHourTimestamp:
                 hasAvailableDirections = True
 
-                def filterAttacks(item):
-                    if enemyDefHourTimestamp <= item.getStartTime() <= enemyDefHourTimestamp + time_utils.ONE_HOUR and direction == item.getDirection() and not item.isEnded():
+                def filterAttacks(item, requiredDirection = direction):
+                    if enemyDefHourTimestamp <= item.getStartTime() <= enemyDefHourTimestamp + time_utils.ONE_HOUR and requiredDirection == item.getDirection() and not item.isEnded():
                         return True
                     return False
 
@@ -570,7 +572,7 @@ class ClientFortifiedRegion(FortifiedRegionBase):
             return self.__buildBattle(battleID, itemData)
 
     def getActiveConsumables(self):
-        key = (getUnitMgrID(), connectionManager.peripheryID)
+        key = (getUnitMgrID(), self.connectionMgr.peripheryID)
         if key in self.consumables:
             consumablesByRev = self.consumables[key]
             revs = consumablesByRev.keys()

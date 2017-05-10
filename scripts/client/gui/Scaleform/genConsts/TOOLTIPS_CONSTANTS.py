@@ -1,12 +1,10 @@
 # Embedded file name: scripts/client/gui/Scaleform/genConsts/TOOLTIPS_CONSTANTS.py
-
+"""
+This file was generated using the wgpygen.
+Please, don't edit this file manually.
+"""
 
 class TOOLTIPS_CONSTANTS(object):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    """
     DEFAULT = 'default'
     TANKMAN = 'tankman'
     CONTACT = 'contact'
@@ -31,6 +29,7 @@ class TOOLTIPS_CONSTANTS(object):
     DIRECT_MODULE = 'directModule'
     RESERVE_MODULE = 'reserveModule'
     PREVIEW_MODULE = 'previewModule'
+    BATTLE_BOOSTER = 'battleBooster'
     SHOP_VEHICLE = 'shopVehicle'
     AWARD_VEHICLE = 'awardVehicle'
     SHOP_SHELL = 'shopShell'
@@ -53,6 +52,7 @@ class TOOLTIPS_CONSTANTS(object):
     TECH_CUSTOMIZATION_ITEM = 'techCustomizationItem'
     TECH_CUSTOMIZATION_BONUS = 'techCustomizationBonus'
     VEHICLE_FILTER = 'vehicleFilter'
+    LADDER = 'ladder'
     CLAN_INFO = 'clanInfo'
     CLAN_COMMON_INFO = 'clanCommonInfo'
     FORT_WRONG_TIME = 'fortWrongTime'
@@ -70,6 +70,11 @@ class TOOLTIPS_CONSTANTS(object):
     SORTIE_DIVISION = 'sortieDivision'
     QUESTS_PREVIEW = 'questsPreview'
     PERSONAL_QUESTS_PREVIEW = 'presonalQuestsPreview'
+    SHEDULE_QUEST = 'scheduleQuest'
+    MISSION_VEHICLE = 'missionVehicle'
+    MISSION_VEHICLE_TYPE = 'missionVehicleType'
+    ADDITIONAL_AWARDS = 'additionalAwards'
+    UNAVAILABLE_QUEST = 'unavailibleQuest'
     ACTION_PRICE = 'actionPrice'
     SPECIAL = 'special'
     SIMPLE = 'simple'
@@ -99,6 +104,7 @@ class TOOLTIPS_CONSTANTS(object):
     CLAN_PROFILE_REQUEST_ACCPETED = 'clanProfileRequestAccepted'
     CLAN_PROFILE_REQUEST_DECLINED = 'clanProfileRequestDeclined'
     CLAN_PROFILE_REQUEST_EXPIRED = 'clanProfileRequestExpired'
+    LADDER_REGULATIONS = 'ladderRegulations'
     PRIVATE_QUESTS_FEMALE_TANKMAN_AWARD = 'femaleTankmanPersonalQuestAward'
     PRIVATE_QUESTS_TOKENS_AWARD = 'tokensPersonalQuestAward'
     BOOSTERS_BOOSTER_INFO = 'boostersBoosterInfo'
@@ -116,8 +122,14 @@ class TOOLTIPS_CONSTANTS(object):
     TRADE_IN = 'tradeIn'
     TRADE_IN_PRICE = 'ToolTipTradeInPriceUI'
     SELECTED_VEHICLE_TRADEOFF = 'selectedVehicleTradeOff'
+    SINGAPORE_WALLET_STATS = 'Stats'
     GOLD_STATS = 'goldStats'
     CREDITS_STATS = 'creditsStats'
+    CRYSTAL_INFO = 'crystalInfo'
+    RANKED_BATTLES_RANK = 'rankedBattlesRank'
+    RANKED_STEP = 'rankedStep'
+    RANKED_CALENDAR_DAY_INFO = 'rankedCalendarDayInfo'
+    RANKED_SELECTOR_INFO = 'rankedSelectorInfo'
     BLOCKS_DEFAULT_UI = 'ToolTipInblocksDefaultUI'
     TANKMEN_UI = 'ToolTipTankmenUI'
     TANKMEN_SKILL_UI = 'ToolTipSkillUI'
@@ -152,6 +164,7 @@ class TOOLTIPS_CONSTANTS(object):
     PRIVATE_QUESTS_UI = 'ToolTipPrivateQuestsUI'
     COLUMN_FIELDS_UI = 'ToolTipColumnFieldsUI'
     MAP_SMALL_UI = 'ToolTipMapSmallUI'
+    LADDER_UI = 'ToolTipLadderUI'
     FORT_DIVISION_UI = 'ToolTipFortDivisionUI'
     FORT_SORTIE_UI = 'ToolTipFortSortieUI'
     FORT_SORTIE_TIME_LIMIT_UI = 'ToolTipInblocksDefaultUI'
@@ -170,6 +183,7 @@ class TOOLTIPS_CONSTANTS(object):
     HANGAR_TUTORIAL_AMMUNITION_UI = 'ToolTipInblocksDefaultUI'
     HANGAR_TUTORIAL_EQUPMENT_UI = 'ToolTipInblocksDefaultUI'
     ENVIRONMENT_UI = 'TooltipEnvironmentUI'
+    LADDER_REGULATIONS_UI = 'ToolTipLadderRegulationsUI'
     CLAN_COMMON_INFO_UI = 'ToolTipClanCommonInfoUI'
     SETTINGS_MINIMAP_CIRCLES = 'SettingsMinimapCircles'
     SETTINGS_MINIMAP_CIRCLES_UI = 'ToolTipInblocksDefaultUI'
@@ -188,10 +202,11 @@ class TOOLTIPS_CONSTANTS(object):
     SETTINGS_KEY_RELOAD_UI = 'ToolTipInblocksDefaultUI'
     VEH_CMP_CUSTOMIZATION = 'vehCmpCustomiztion'
     VEH_CMP_CUSTOMIZATION_UI = 'ToolTipInblocksDefaultUI'
-    SETTINGS_KEY_RELOAD_UI_ = 'ToolTipInblocksDefaultUI'
     SETTINGS_KEY_SWITCH_MODE = 'SettingKeySwitchMode'
     SETTINGS_KEY_SWITCH_MODE_UI = 'ToolTipInblocksDefaultUI'
     VEH_CMP_SKILLS = 'vehCmpSkills'
     VEH_CMP_SKILLS_UI = 'ToolTipInblocksDefaultUI'
     TANKMAN_SKILL_EXTENDED = 'tankmanSkillExtended'
     TANKMAN_SKILL_EXTENDED_UI = 'ToolTipInblocksDefaultUI'
+    MISSIONS_TOKEN = 'missionsToken'
+    MISSIONS_TOKEN_UI = 'ToolTipInblocksDefaultUI'

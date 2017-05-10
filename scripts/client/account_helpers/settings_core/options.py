@@ -9,6 +9,7 @@ from collections import namedtuple
 import math
 import weakref
 from AvatarInputHandler.aih_constants import CTRL_MODE_NAME
+import random
 import GUI
 from AvatarInputHandler.cameras import FovExtended
 import BigWorld
@@ -47,7 +48,6 @@ from gui import GUI_SETTINGS
 from gui.shared.utils import graphics, functions
 from gui.shared.utils.graphics import g_monitorSettings
 from gui.shared.utils.key_mapping import getScaleformKey, getBigworldKey, getBigworldNameFromKey
-from ConnectionManager import connectionManager
 from gui.Scaleform.locale.SETTINGS import SETTINGS
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.shared.formatters import icons
@@ -55,6 +55,7 @@ from gui.shared.utils.functions import makeTooltip
 from messenger.m_constants import PROTO_TYPE
 from messenger.proto import proto_getter
 from skeletons.account_helpers.settings_core import ISettingsCore
+from skeletons.connection_mgr import IConnectionManager
 from skeletons.gui.clans import IClanController
 from skeletons.gui.sounds import ISoundsController
 
@@ -1135,17 +1136,10 @@ class ResolutionSetting(PreferencesSetting):
 
         return res
 
-    def _setAspectRatio(self):
-        R = self._storage.resolution
-        wd, ht = R
-        aspectRatio = float(wd) / ht
-        BigWorld.changeFullScreenAspectRatio(aspectRatio)
-
     def _set(self, value):
         resolution = self._getResolutions()[int(value)]
         self._storage.resolution = resolution
         self._lastSelectedVideoMode = resolution
-        self._setAspectRatio()
         FovExtended.instance().refreshFov()
 
     def _savePrefsCallback(self, prefsRoot):
@@ -1529,11 +1523,12 @@ class MouseSetting(ControlSetting):
      CTRL_MODE_NAME.STRATEGIC: (StrategicCamera.getCameraAsSettingsHolder, 'strategicMode/camera'),
      CTRL_MODE_NAME.ARTY: (ArtyCamera.getCameraAsSettingsHolder, 'artyMode/camera')}
 
-    def __init__(self, mode, setting, default, isPreview = False):
+    def __init__(self, mode, setting, default, isPreview = False, masterSwitch = ''):
         super(MouseSetting, self).__init__(isPreview)
         self.mode = mode
         self.setting = setting
         self.default = default
+        self.masterSwitch = masterSwitch
         self.__aihSection = ResMgr.openSection(_INPUT_HANDLER_CFG)
 
     def getCamera(self):
@@ -1552,18 +1547,23 @@ class MouseSetting(ControlSetting):
         return self.default
 
     def _get(self):
-        camera = self.getCamera()
-        if camera is not None:
-            return camera.getUserConfigValue(self.setting)
+        if self._isDisabledByMasterSwitch():
+            return
         else:
+            camera = self.getCamera()
+            if camera is not None:
+                return camera.getUserConfigValue(self.setting)
             return self.default
 
     def _set(self, value):
-        camera = self.getCamera()
-        if camera is None:
-            LOG_WARNING('Error while applying mouse settings: empty camera', self.mode, self.setting)
+        if self._isDisabledByMasterSwitch():
+            LOG_WARNING('Mouse setting is disabled', self.mode, self.setting)
             return
         else:
+            camera = self.getCamera()
+            if camera is None:
+                LOG_WARNING('Error while applying mouse settings: empty camera', self.mode, self.setting)
+                return
             camera.setUserConfigValue(self.setting, value)
             if not self._isControlModeAccessible():
                 camera.writeUserPreferences()
@@ -1572,11 +1572,14 @@ class MouseSetting(ControlSetting):
     def _isControlModeAccessible(self):
         return BigWorld.player() is not None and hasattr(BigWorld.player(), 'inputHandler') and hasattr(BigWorld.player().inputHandler, 'ctrls')
 
+    def _isDisabledByMasterSwitch(self):
+        return self.masterSwitch and not GUI_SETTINGS.lookup(self.masterSwitch)
+
 
 class MouseSensitivitySetting(MouseSetting):
 
-    def __init__(self, mode):
-        super(MouseSensitivitySetting, self).__init__(mode, 'sensitivity', 1.0)
+    def __init__(self, mode, masterSwitch = ''):
+        super(MouseSensitivitySetting, self).__init__(mode, 'sensitivity', 1.0, masterSwitch=masterSwitch)
 
 
 class DynamicFOVMultiplierSetting(MouseSetting):
@@ -2132,7 +2135,10 @@ class DetectionAlertSound(AccountSetting):
     def _getOptions(self):
         options = []
         for sample in self._WWISE_EVENTS:
-            options.append('#settings:sound/{}/{}'.format(SOUND.DETECTION_ALERT_SOUND, sample))
+            option = {'label': '#settings:sound/{}/{}'.format(SOUND.DETECTION_ALERT_SOUND, sample)}
+            if sample == 'sixthSense':
+                option.update(tooltip='#settings:sounds/sixthSense')
+            options.append(option)
 
         return options
 
@@ -2210,7 +2216,8 @@ class AltVoicesSetting(StorageDumpSetting):
     def playPreview(self, sound):
         if len(self.__previewNations) and self.__previewSound == sound:
             nation = self.__previewNations.pop()
-            SoundGroups.g_instance.soundModes.setCurrentNation(nation)
+            genderSwitch = random.choice(SoundGroups.CREW_GENDER_SWITCHES.GENDER_ALL)
+            SoundGroups.g_instance.soundModes.setCurrentNation(nation, genderSwitch)
             sound.play()
 
     def isOptionEnabled(self):
@@ -2236,7 +2243,12 @@ class AltVoicesSetting(StorageDumpSetting):
         self.clearPreviewSound()
 
     def _getOptions(self):
-        return [ sm.description for sm in self.__getSoundModesList() ]
+        options = []
+        for sm in self.__getSoundModesList():
+            options.append({'label': sm.description,
+             'tooltip': '#settings:sounds/altVoice/{}'.format(sm.name)})
+
+        return options
 
     def getDefaultValue(self):
         modes = self.__getSoundModesList()
@@ -2354,12 +2366,17 @@ class ReplaySetting(StorageAccountSetting):
 
 class InterfaceScaleSetting(UserPrefsFloatSetting):
     settingsCore = dependency.descriptor(ISettingsCore)
+    connectionMgr = dependency.descriptor(IConnectionManager)
 
     def __init__(self, sectionName = None, isPreview = False):
         super(InterfaceScaleSetting, self).__init__(sectionName, isPreview)
         self.__interfaceScale = 0
-        connectionManager.onDisconnected += self.onDisconnected
-        connectionManager.onConnected += self.onConnected
+        self.connectionMgr.onDisconnected += self.onDisconnected
+        self.connectionMgr.onConnected += self.onConnected
+
+    def fini(self):
+        self.connectionMgr.onDisconnected -= self.onDisconnected
+        self.connectionMgr.onConnected -= self.onConnected
 
     def get(self):
         self.__checkAndCorrectScaleValue(self.__interfaceScale)

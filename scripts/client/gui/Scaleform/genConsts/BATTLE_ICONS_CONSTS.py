@@ -1,12 +1,10 @@
 # Embedded file name: scripts/client/gui/Scaleform/genConsts/BATTLE_ICONS_CONSTS.py
-
+"""
+This file was generated using the wgpygen.
+Please, don't edit this file manually.
+"""
 
 class BATTLE_ICONS_CONSTS(object):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    """
     FOLLOW_ME = 'Followme'
     STOP = 'Stop'
     TURN_BACK = 'Turnback'

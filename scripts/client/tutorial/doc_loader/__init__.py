@@ -45,10 +45,8 @@ def clearChapterData(chapter):
 
 
 def getQuestsDescriptor():
-    global _questsDescriptor
-    if _questsDescriptor is None:
-        _questsDescriptor = loadDescriptorData(settings.TUTORIAL_SETTINGS.QUESTS)
-    return _questsDescriptor
-
-
-_questsDescriptor = None
+    setting = settings.TUTORIAL_SETTINGS.QUESTS
+    if setting.enabled:
+        return loadDescriptorData(setting)
+    else:
+        return None

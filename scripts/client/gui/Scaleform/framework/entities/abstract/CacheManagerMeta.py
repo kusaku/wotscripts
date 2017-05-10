@@ -1,13 +1,7 @@
 # Embedded file name: scripts/client/gui/Scaleform/framework/entities/abstract/CacheManagerMeta.py
-from gui.Scaleform.framework.entities.BaseDAAPIModule import BaseDAAPIModule
+from gui.Scaleform.framework.entities.BaseDAAPIComponent import BaseDAAPIComponent
 
-class CacheManagerMeta(BaseDAAPIModule):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends BaseDAAPIModule
-    """
+class CacheManagerMeta(BaseDAAPIComponent):
 
     def getSettings(self):
         self._printOverrideError('getSettings')

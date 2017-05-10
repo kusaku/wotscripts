@@ -13,13 +13,13 @@ from account_helpers.AccountSettings import AccountSettings, CURRENT_VEHICLE
 from gui.ClientUpdateManager import g_clientUpdateManager
 from gui import g_tankActiveCamouflage
 from gui.shared.utils.requesters import REQ_CRITERIA
-from gui.shared import g_itemsCache
 from gui.shared.formatters import icons
 from gui.shared.gui_items import GUI_ITEM_TYPE
 from gui.shared.gui_items.Vehicle import Vehicle
 from gui.Scaleform.locale.MENU import MENU
 from gui.Scaleform.Waiting import Waiting
 from skeletons.gui.game_control import IIGRController, IRentalsController, IFalloutController
+from skeletons.gui.shared import IItemsCache
 _MODULES_NAMES = ('turret',
  'chassis',
  'engine',
@@ -32,6 +32,7 @@ def _getHangarSpace():
 
 
 class _CachedVehicle(object):
+    itemsCache = dependency.descriptor(IItemsCache)
 
     def __init__(self):
         self._eManager = EventManager()
@@ -191,7 +192,7 @@ class _CurrentVehicle(_CachedVehicle):
     @property
     def item(self):
         if self.__vehInvID > 0:
-            return g_itemsCache.items.getVehicle(self.__vehInvID)
+            return self.itemsCache.items.getVehicle(self.__vehInvID)
         else:
             return None
 
@@ -262,9 +263,9 @@ class _CurrentVehicle(_CachedVehicle):
         return self.isPresent() and self.item.isFalloutOnly()
 
     def selectVehicle(self, vehInvID = 0):
-        vehicle = g_itemsCache.items.getVehicle(vehInvID)
+        vehicle = self.itemsCache.items.getVehicle(vehInvID)
         if vehicle is None:
-            invVehs = g_itemsCache.items.getVehicles(criteria=REQ_CRITERIA.INVENTORY)
+            invVehs = self.itemsCache.items.getVehicles(criteria=REQ_CRITERIA.INVENTORY)
 
             def notEvent(x, y):
                 if x.isOnlyForEventBattles and not y.isOnlyForEventBattles:
@@ -284,7 +285,7 @@ class _CurrentVehicle(_CachedVehicle):
         self._selectVehicle(0)
 
     def getDossier(self):
-        return g_itemsCache.items.getVehicleDossier(self.item.intCD)
+        return self.itemsCache.items.getVehicleDossier(self.item.intCD)
 
     def getHangarMessage(self):
         if not self.isPresent():
@@ -300,7 +301,7 @@ class _CurrentVehicle(_CachedVehicle):
             return (state, message, stateLvl)
         if self.falloutCtrl and self.falloutCtrl.isSelected():
             if not self.item.isFalloutAvailable or self.item.getCustomState() == Vehicle.VEHICLE_STATE.UNSUITABLE_TO_QUEUE:
-                message = i18n.makeString('#menu:tankCarousel/vehicleStates/%s' % Vehicle.VEHICLE_STATE.NOT_SUITABLE)
+                message = i18n.makeString(MENU.tankcarousel_vehiclestates(Vehicle.VEHICLE_STATE.UNSUITABLE_TO_QUEUE))
                 return (state, message, Vehicle.VEHICLE_STATE_LEVEL.WARNING)
         message = '#menu:currentVehicleStatus/' + state
         return (state, message, stateLvl)
@@ -342,7 +343,7 @@ class _CurrentVehicle(_CachedVehicle):
                     vehCompDescr = roster[BigWorld.player().id].get('vehCompDescr', '')
                     if len(vehCompDescr):
                         vehDescr = vehicles.VehicleDescr(vehCompDescr)
-                        vehicle = g_itemsCache.items.getItemByCD(vehDescr.type.compactDescr)
+                        vehicle = self.itemsCache.items.getItemByCD(vehDescr.type.compactDescr)
                         if vehicle is not None:
                             return vehicle.invID
 
@@ -393,7 +394,7 @@ class _CurrentPreviewVehicle(_CachedVehicle):
     @property
     def invID(self):
         if self.isPresent():
-            vehicle = g_itemsCache.items.getItemByCD(self.item.intCD)
+            vehicle = self.itemsCache.items.getItemByCD(self.item.intCD)
             return vehicle.invID
         return 0
 
@@ -405,7 +406,7 @@ class _CurrentPreviewVehicle(_CachedVehicle):
 
     def onInventoryUpdate(self, invDiff):
         if self.isPresent():
-            vehicle = g_itemsCache.items.getItemByCD(self.item.intCD)
+            vehicle = self.itemsCache.items.getItemByCD(self.item.intCD)
             if vehicle.isInInventory:
                 self.selectNoVehicle()
                 self.onVehicleInventoryChanged()
@@ -422,7 +423,7 @@ class _CurrentPreviewVehicle(_CachedVehicle):
 
     @process
     def installComponent(self, newId):
-        newComponentItem = g_itemsCache.items.getItemByCD(newId)
+        newComponentItem = self.itemsCache.items.getItemByCD(newId)
         Waiting.show('applyModule')
         conflictedEqs = newComponentItem.getConflictedEquipments(self.item)
         result = yield getPreviewInstallerProcessor(self.item, newComponentItem, conflictedEqs).request()
@@ -457,7 +458,7 @@ class _CurrentPreviewVehicle(_CachedVehicle):
 
     def __getPreviewVehicle(self, vehicleCD):
         if vehicleCD is not None:
-            vehicle = g_itemsCache.items.getStockVehicle(vehicleCD, useInventory=True)
+            vehicle = self.itemsCache.items.getStockVehicle(vehicleCD, useInventory=True)
             if vehicle:
                 vehicle.crew = vehicle.getPerfectCrew()
                 return vehicle

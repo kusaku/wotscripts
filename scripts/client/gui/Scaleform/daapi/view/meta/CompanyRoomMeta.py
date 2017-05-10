@@ -2,12 +2,6 @@
 from gui.Scaleform.daapi.view.lobby.prb_windows.BasePrebattleRoomView import BasePrebattleRoomView
 
 class CompanyRoomMeta(BasePrebattleRoomView):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends BasePrebattleRoomView
-    """
 
     def requestToAssign(self, pID):
         self._printOverrideError('requestToAssign')
@@ -43,6 +37,9 @@ class CompanyRoomMeta(BasePrebattleRoomView):
         self._printOverrideError('canChangeDivision')
 
     def as_setDivisionsListS(self, data, selected):
+        """
+        :param data: Represented by DataProvider (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_setDivisionsList(data, selected)
 

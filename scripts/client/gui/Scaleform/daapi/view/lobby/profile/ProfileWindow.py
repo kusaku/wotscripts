@@ -1,23 +1,26 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/profile/ProfileWindow.py
 from adisp import process
-from gui.LobbyContext import g_lobbyContext
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui.Scaleform.daapi.view.meta.ProfileWindowMeta import ProfileWindowMeta
 from gui.Scaleform.daapi.view.lobby.profile.ProfileUtils import getProfileCommonInfo
 from gui.Scaleform.locale.PROFILE import PROFILE
 from gui.Scaleform.locale.WAITING import WAITING
+from helpers import dependency
 from helpers.i18n import makeString
 from gui.clans.clan_helpers import ClanListener, showClanInviteSystemMsg
 from gui.clans.contexts import CreateInviteCtx
-from gui.shared import g_itemsCache
 from PlayerEvents import g_playerEvents
 from messenger import g_settings
 from messenger.m_constants import PROTO_TYPE
 from messenger.proto import proto_getter
 from messenger.proto.events import g_messengerEvents
 from messenger.storage import storage_getter
+from skeletons.gui.lobby_context import ILobbyContext
+from skeletons.gui.shared import IItemsCache
 
 class ProfileWindow(ProfileWindowMeta, ClanListener):
+    itemsCache = dependency.descriptor(IItemsCache)
+    lobbyContext = dependency.descriptor(ILobbyContext)
 
     def __init__(self, ctx = None):
         super(ProfileWindow, self).__init__()
@@ -39,7 +42,7 @@ class ProfileWindow(ProfileWindowMeta, ClanListener):
         self.stopClanListening()
         g_messengerEvents.users.onUserActionReceived -= self._onUserActionReceived
         g_playerEvents.onDossiersResync -= self.__dossierResyncHandler
-        g_itemsCache.items.unloadUserDossier(self.__databaseID)
+        self.itemsCache.items.unloadUserDossier(self.__databaseID)
         super(ProfileWindow, self)._dispose()
 
     def __checkUserRosterInfo(self):
@@ -54,7 +57,7 @@ class ProfileWindow(ProfileWindowMeta, ClanListener):
         return
 
     def __updateAddToClanBtn(self):
-        clanDBID, clanInfo = g_itemsCache.items.getClanInfo(self.__databaseID)
+        clanDBID, clanInfo = self.itemsCache.items.getClanInfo(self.__databaseID)
         isEnabled = self.clansCtrl.isAvailable()
         if isEnabled and clanInfo is None:
             profile = self.clansCtrl.getAccountProfile()
@@ -66,7 +69,7 @@ class ProfileWindow(ProfileWindowMeta, ClanListener):
         return
 
     def __isEnabledInRoaming(self, dbID):
-        roaming = g_lobbyContext.getServerSettings().roaming
+        roaming = self.lobbyContext.getServerSettings().roaming
         if g_settings.server.XMPP.isEnabled():
             isEnabled = roaming.isSameRealm(dbID)
         else:
@@ -89,11 +92,11 @@ class ProfileWindow(ProfileWindowMeta, ClanListener):
         self.__updateUserInfo()
 
     def __updateUserInfo(self):
-        dossier = g_itemsCache.items.getAccountDossier(self.__databaseID)
-        clanDBID, clanInfo = g_itemsCache.items.getClanInfo(self.__databaseID)
+        dossier = self.itemsCache.items.getAccountDossier(self.__databaseID)
+        clanDBID, clanInfo = self.itemsCache.items.getClanInfo(self.__databaseID)
         info = getProfileCommonInfo(self.__userName, dossier.getDossierDescr())
         clanAbbrev = clanInfo[1] if clanInfo is not None else None
-        self.as_setInitDataS({'fullName': g_lobbyContext.getPlayerFullName(info['name'], clanAbbrev=clanAbbrev, regionCode=g_lobbyContext.getRegionCode(self.__databaseID))})
+        self.as_setInitDataS({'fullName': self.lobbyContext.getPlayerFullName(info['name'], clanAbbrev=clanAbbrev, regionCode=self.lobbyContext.getRegionCode(self.__databaseID))})
         return
 
     def registerFlashComponent(self, component, alias, *args):

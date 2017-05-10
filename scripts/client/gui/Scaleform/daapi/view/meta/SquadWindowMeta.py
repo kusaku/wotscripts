@@ -2,12 +2,6 @@
 from gui.Scaleform.daapi.view.lobby.rally.BaseRallyMainWindow import BaseRallyMainWindow
 
 class SquadWindowMeta(BaseRallyMainWindow):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends BaseRallyMainWindow
-    """
 
     def as_setComponentIdS(self, componentId):
         if self._isDAAPIInited():

@@ -11,15 +11,16 @@ from gui.clans.users import UserCache
 from gui.clans.clan_helpers import ClanCache, CachedValue
 from adisp import async, process
 from gui import SystemMessages
-from gui.LobbyContext import g_lobbyContext
 from gui.ClientUpdateManager import g_clientUpdateManager
 from gui.clans import formatters as clan_formatters, items
 from gui.clans.states import ClanUndefinedState
 from gui.clans.subscriptions import ClansListeners
 from gui.wgnc.settings import WGNC_DATA_PROXY_TYPE
 from gui.wgnc import g_wgncEvents
+from helpers import dependency
 from shared_utils import CONST_CONTAINER
 from skeletons.gui.clans import IClanController
+from skeletons.gui.lobby_context import ILobbyContext
 
 def _showError(result, ctx):
     i18nMsg = clan_formatters.getRequestErrorMsg(result, ctx)
@@ -223,6 +224,10 @@ class _ClanDossier(object):
         self.__doRequest(contexts.ClanFavouriteAttributesCtx(self.__clanDbID), callback)
 
     @async
+    def requestRankedPosition(self, callback):
+        self.__doRequest(contexts.RankedPositionCtx(), callback)
+
+    @async
     def __requestClanRatings(self, callback):
         self.__doRequest(contexts.ClanRatingsCtx([self.__clanDbID]), callback)
 
@@ -415,6 +420,7 @@ class _ClanDossier(object):
 
 
 class ClanController(ClansListeners, IClanController):
+    lobbyContext = dependency.descriptor(ILobbyContext)
 
     def __init__(self):
         super(ClanController, self).__init__()
@@ -433,7 +439,7 @@ class ClanController(ClansListeners, IClanController):
             self.__profile.resync(force=True)
 
     def simEnableClan(self, enable):
-        settings = g_lobbyContext.getServerSettings()
+        settings = self.lobbyContext.getServerSettings()
         clanSettings = {'clanProfile': {'isEnabled': enable,
                          'gateUrl': settings.clanProfile.getGateUrl()}}
         settings.update(clanSettings)
@@ -498,7 +504,7 @@ class ClanController(ClansListeners, IClanController):
 
     @async
     @process
-    def sendRequest(self, ctx, callback, allowDelay = None):
+    def sendRequest(self, ctx, callback = None, allowDelay = None):
         result = yield self.__state.sendRequest(ctx, allowDelay=allowDelay)
         if self.__profile is not None:
             self.__profile.processRequestResponse(ctx, result)
@@ -511,7 +517,7 @@ class ClanController(ClansListeners, IClanController):
         return self.__state.getStateID()
 
     def isEnabled(self):
-        settings = g_lobbyContext.getServerSettings()
+        settings = self.lobbyContext.getServerSettings()
         if settings is not None:
             return settings.clanProfile.isEnabled()
         else:

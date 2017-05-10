@@ -2,14 +2,8 @@
 from gui.Scaleform.framework.entities.BaseDAAPIComponent import BaseDAAPIComponent
 
 class StoreComponentMeta(BaseDAAPIComponent):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends BaseDAAPIComponent
-    """
 
-    def requestTableData(self, nation, type, filters):
+    def requestTableData(self, nation, actionsSelected, type, filters):
         self._printOverrideError('requestTableData')
 
     def requestFilterData(self, filterType):
@@ -24,9 +18,12 @@ class StoreComponentMeta(BaseDAAPIComponent):
     def onAddVehToCompare(self, itemCD):
         self._printOverrideError('onAddVehToCompare')
 
-    def as_setNationsS(self, nations):
+    def as_initFiltersDataS(self, nations, actionsFilterName):
+        """
+        :param nations: Represented by Array (AS)
+        """
         if self._isDAAPIInited():
-            return self.flashObject.as_setNations(nations)
+            return self.flashObject.as_initFiltersData(nations, actionsFilterName)
 
     def as_completeInitS(self):
         if self._isDAAPIInited():
@@ -38,7 +35,7 @@ class StoreComponentMeta(BaseDAAPIComponent):
 
     def as_setFilterTypeS(self, data):
         """
-        :param data: Represented by ShopNationFilterData (AS)
+        :param data: Represented by ShopNationFilterDataVo (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_setFilterType(data)
@@ -57,6 +54,14 @@ class StoreComponentMeta(BaseDAAPIComponent):
         if self._isDAAPIInited():
             return self.flashObject.as_setFilterOptions(data)
 
+    def as_scrollPositionS(self, index):
+        if self._isDAAPIInited():
+            return self.flashObject.as_scrollPosition(index)
+
     def as_setVehicleCompareAvailableS(self, value):
         if self._isDAAPIInited():
             return self.flashObject.as_setVehicleCompareAvailable(value)
+
+    def as_setActionAvailableS(self, value):
+        if self._isDAAPIInited():
+            return self.flashObject.as_setActionAvailable(value)

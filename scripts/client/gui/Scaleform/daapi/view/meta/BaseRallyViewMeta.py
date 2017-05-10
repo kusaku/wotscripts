@@ -2,12 +2,6 @@
 from gui.Scaleform.daapi.view.lobby.rally.AbstractRallyView import AbstractRallyView
 
 class BaseRallyViewMeta(AbstractRallyView):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends AbstractRallyView
-    """
 
     def as_setCoolDownS(self, value, requestId):
         if self._isDAAPIInited():

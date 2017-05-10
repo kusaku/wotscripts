@@ -1,13 +1,7 @@
 # Embedded file name: scripts/client/gui/Scaleform/framework/entities/abstract/ContainerManagerMeta.py
-from gui.Scaleform.framework.entities.BaseDAAPIModule import BaseDAAPIModule
+from gui.Scaleform.framework.entities.BaseDAAPIComponent import BaseDAAPIComponent
 
-class ContainerManagerMeta(BaseDAAPIModule):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends BaseDAAPIModule
-    """
+class ContainerManagerMeta(BaseDAAPIComponent):
 
     def isModalViewsIsExists(self):
         self._printOverrideError('isModalViewsIsExists')
@@ -19,13 +13,9 @@ class ContainerManagerMeta(BaseDAAPIModule):
         if self._isDAAPIInited():
             return self.flashObject.as_getView(name)
 
-    def as_showS(self, name, x, y):
+    def as_showS(self, name, x = 0, y = 0):
         if self._isDAAPIInited():
             return self.flashObject.as_show(name, x, y)
-
-    def as_hideS(self, name):
-        if self._isDAAPIInited():
-            return self.flashObject.as_hide(name)
 
     def as_registerContainerS(self, type, name):
         if self._isDAAPIInited():

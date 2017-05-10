@@ -1,7 +1,5 @@
 # Embedded file name: scripts/client/Vibroeffects/Controllers/OnceController.py
-import BigWorld
 from Vibroeffects import VibroManager
-from debug_utils import *
 
 class OnceController:
 

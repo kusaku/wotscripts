@@ -1,12 +1,10 @@
 # Embedded file name: scripts/client/gui/Scaleform/genConsts/EVENT_LOG_CONSTANTS.py
-
+"""
+This file was generated using the wgpygen.
+Please, don't edit this file manually.
+"""
 
 class EVENT_LOG_CONSTANTS(object):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    """
     SST_EVENT_LOG = 0
     SST_TOOLTIP = 2
     SST_VIEWSTACK = 4

@@ -1,18 +1,9 @@
 # Embedded file name: scripts/client/gui/Scaleform/framework/entities/abstract/LoaderManagerMeta.py
-from gui.Scaleform.framework.entities.BaseDAAPIModule import BaseDAAPIModule
+from gui.Scaleform.framework.entities.BaseDAAPIComponent import BaseDAAPIComponent
 
-class LoaderManagerMeta(BaseDAAPIModule):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends BaseDAAPIModule
-    """
+class LoaderManagerMeta(BaseDAAPIComponent):
 
     def viewLoaded(self, alias, name, view):
-        """
-        :param view: Represented by IView (AS)
-        """
         self._printOverrideError('viewLoaded')
 
     def viewLoadError(self, alias, name, text):

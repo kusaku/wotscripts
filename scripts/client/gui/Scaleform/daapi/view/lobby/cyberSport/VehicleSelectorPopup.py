@@ -6,11 +6,13 @@ from gui.Scaleform.daapi.view.lobby.rally.vo_converters import makeVehicleVO
 from gui.Scaleform.daapi.view.meta.VehicleSelectorPopupMeta import VehicleSelectorPopupMeta
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
-from gui.shared.ItemsCache import g_itemsCache
 from gui.shared.events import CSVehicleSelectEvent, HideWindowEvent
 from gui.shared.utils.requesters import REQ_CRITERIA
+from helpers import dependency
+from skeletons.gui.shared import IItemsCache
 
 class VehicleSelectorPopup(VehicleSelectorPopupMeta, VehicleSelectorBase):
+    itemsCache = dependency.descriptor(IItemsCache)
 
     def __init__(self, ctx = None):
         super(VehicleSelectorPopup, self).__init__()
@@ -67,11 +69,11 @@ class VehicleSelectorPopup(VehicleSelectorPopupMeta, VehicleSelectorBase):
 
     def updateData(self):
         if not self.getFilters().get('compatibleOnly', True) or self.__vehicles is None:
-            vehicleVOs = self._updateData(g_itemsCache.items.getVehicles(REQ_CRITERIA.INVENTORY))
+            vehicleVOs = self._updateData(self.itemsCache.items.getVehicles(REQ_CRITERIA.INVENTORY))
         else:
             vehicleVOs = self._updateData(self.__vehicles)
         if self.__selectedVehicles is not None:
-            vehicleGetter = g_itemsCache.items.getItemByCD
+            vehicleGetter = self.itemsCache.items.getItemByCD
             selected = [ makeVehicleVO(vehicleGetter(int(item))) for item in self.__selectedVehicles ]
         else:
             selected = None

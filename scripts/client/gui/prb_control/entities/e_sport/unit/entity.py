@@ -11,7 +11,6 @@ from gui.prb_control.entities.base.unit.listener import IUnitIntroListener
 from gui.prb_control.entities.e_sport.unit.actions_handler import ESportActionsHandler
 from gui.prb_control.items import SelectResult
 from gui.prb_control.settings import PREBATTLE_ACTION_NAME, FUNCTIONAL_FLAG
-from gui.shared import g_itemsCache
 from gui.shared.utils.requesters import REQ_CRITERIA
 
 class ESportIntroEntry(UnitIntroEntryPoint):
@@ -101,13 +100,13 @@ class ESportIntroEntity(UnitIntroEntity):
         """
         accSettings = dict(AccountSettings.getSettings('unitWindow'))
         vehicles = accSettings.get(section, [])
-        items = g_itemsCache.items
+        items = self.itemsCache.items
         if vehicles or not useAll:
             selectedVehicles = []
             for vehCD in vehicles:
                 vehCD = int(vehCD)
                 if items.doesVehicleExist(vehCD):
-                    vehicle = g_itemsCache.items.getItemByCD(vehCD)
+                    vehicle = self.itemsCache.items.getItemByCD(vehCD)
                     if vehicle.isInInventory:
                         selectedVehicles.append(vehCD)
                 else:
@@ -115,7 +114,7 @@ class ESportIntroEntity(UnitIntroEntity):
 
         else:
             criteria = REQ_CRITERIA.INVENTORY
-            selectedVehicles = [ k for k, v in g_itemsCache.items.getVehicles(criteria).iteritems() if v.level in self._rosterSettings.getLevelsRange() ]
+            selectedVehicles = [ k for k, v in self.itemsCache.items.getVehicles(criteria).iteritems() if v.level in self._rosterSettings.getLevelsRange() ]
         return selectedVehicles
 
     def setSelectedVehicles(self, section, vehicles):

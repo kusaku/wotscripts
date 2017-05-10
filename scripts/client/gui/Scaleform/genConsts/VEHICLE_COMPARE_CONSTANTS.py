@@ -1,12 +1,10 @@
 # Embedded file name: scripts/client/gui/Scaleform/genConsts/VEHICLE_COMPARE_CONSTANTS.py
-
+"""
+This file was generated using the wgpygen.
+Please, don't edit this file manually.
+"""
 
 class VEHICLE_COMPARE_CONSTANTS(object):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    """
     VEHICLE_CMP_ADD_VEHICLE_POPOVER = 'VehicleCompareAddVehiclePopover'
     VEHICLE_MODULES_VIEW = 'VehicleModulesView'
     VEHICLE_CONFIGURATOR_VIEW = 'VehicleCompareConfiguratorView'

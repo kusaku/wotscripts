@@ -1,12 +1,10 @@
 # Embedded file name: scripts/client/gui/Scaleform/genConsts/PROFILE_DROPDOWN_KEYS.py
-
+"""
+This file was generated using the wgpygen.
+Please, don't edit this file manually.
+"""
 
 class PROFILE_DROPDOWN_KEYS(object):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    """
     ALL = 'all'
     FALLOUT = 'fallout'
     HISTORICAL = 'historical'
@@ -19,3 +17,4 @@ class PROFILE_DROPDOWN_KEYS(object):
     FORTIFICATIONS_BATTLES = 'fortifications/battles'
     FORTIFICATIONS_SORTIES = 'fortifications/sorties'
     COMPANY = 'company'
+    RANKED = 'ranked'

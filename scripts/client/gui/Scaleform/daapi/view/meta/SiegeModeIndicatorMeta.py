@@ -2,12 +2,6 @@
 from gui.Scaleform.framework.entities.BaseDAAPIComponent import BaseDAAPIComponent
 
 class SiegeModeIndicatorMeta(BaseDAAPIComponent):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends BaseDAAPIComponent
-    """
 
     def as_switchSiegeStateS(self, totalTime, leftTime, siegeState, engineState, isSmooth):
         if self._isDAAPIInited():

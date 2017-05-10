@@ -14,15 +14,17 @@ from gui.Scaleform.locale.CYBERSPORT import CYBERSPORT
 from gui.prb_control.entities.base.unit.ctx import AssignUnitCtx, CloseSlotUnitCtx, LockUnitCtx, KickPlayerUnitCtx, ChangeCommentUnitCtx, ChangeOpenedUnitCtx, SetRostersSlotsUnitCtx, SetVehicleUnitCtx, RosterSlotCtx
 from gui.prb_control.settings import CTRL_ENTITY_TYPE, REQUEST_TYPE
 from gui.shared import events
-from gui.shared.ItemsCache import g_itemsCache
 from gui.shared.event_bus import EVENT_BUS_SCOPE
 from gui.shared.formatters import text_styles
 from gui.shared.utils.requesters.ItemsRequester import REQ_CRITERIA
+from helpers import dependency
 from helpers import i18n
 from messenger.gui.Scaleform.view.lobby import MESSENGER_VIEW_ALIAS
 from messenger.proto.events import g_messengerEvents
+from skeletons.gui.shared import IItemsCache
 
 class BaseRallyRoomView(BaseRallyRoomViewMeta):
+    itemsCache = dependency.descriptor(IItemsCache)
 
     def __init__(self):
         super(BaseRallyRoomView, self).__init__()
@@ -184,10 +186,11 @@ class BaseRallyRoomView(BaseRallyRoomViewMeta):
         slotIdx = playerInfo.slotIdx
         vehicles = playerInfo.getSlotsToVehicles(True).get(slotIdx)
         if vehicles is not None:
-            vehicles = g_itemsCache.items.getVehicles(REQ_CRITERIA.VEHICLE.SPECIFIC_BY_CD(vehicles))
+            vehicles = self.itemsCache.items.getVehicles(REQ_CRITERIA.VEHICLE.SPECIFIC_BY_CD(vehicles))
         self.fireEvent(events.LoadViewEvent(CYBER_SPORT_ALIASES.VEHICLE_SELECTOR_POPUP_PY, ctx={'isMultiSelect': False,
          'vehicles': vehicles,
          'infoText': self._getVehicleSelectorDescription(),
+         'selectedVehicles': self._getVehicleSelectorVehicles(),
          'section': 'cs_unit_view_vehicle',
          'levelsRange': levelsRange}), scope=EVENT_BUS_SCOPE.LOBBY)
         return
@@ -195,9 +198,6 @@ class BaseRallyRoomView(BaseRallyRoomViewMeta):
     def chooseVehicleRequest(self):
         levelsRange = self.prbEntity.getRosterSettings().getLevelsRange()
         self._chooseVehicleRequest(levelsRange)
-
-    def _getVehicleSelectorDescription(self):
-        return ''
 
     def inviteFriendRequest(self):
         self.fireEvent(events.LoadViewEvent(PREBATTLE_ALIASES.SEND_INVITES_WINDOW_PY, ctx={'prbName': 'unit',
@@ -274,6 +274,17 @@ class BaseRallyRoomView(BaseRallyRoomViewMeta):
     def isPlayerInSlot(self, databaseID = None):
         pInfo = self.prbEntity.getPlayerInfo(dbID=databaseID)
         return pInfo.isInSlot
+
+    def _getVehicleSelectorDescription(self):
+        return ''
+
+    def _getVehicleSelectorVehicles(self):
+        selected = []
+        for vInfo in self.prbEntity.getVehiclesInfo():
+            if not vInfo.isEmpty():
+                selected.append(vInfo.vehTypeCD)
+
+        return selected
 
     def __getRosterSlotCtx(self, item):
         if item is None:

@@ -2,12 +2,6 @@
 from gui.Scaleform.framework.entities.View import View
 
 class CustomizationMainViewMeta(View):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends View
-    """
 
     def showBuyWindow(self):
         self._printOverrideError('showBuyWindow')

@@ -3,7 +3,7 @@ import weakref
 import zlib
 import cPickle
 import AccountCommands
-from debug_utils import *
+from debug_utils import LOG_CODEPOINT_WARNING, LOG_CURRENT_EXCEPTION
 
 class SimpleStreamResponseHandler(object):
 

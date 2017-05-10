@@ -80,7 +80,6 @@ class DictPacker(object):
         for index, metaEntry in enumerate(metaData):
             try:
                 name, transportType, default, packer, aggFunc = metaEntry
-                default = copy.deepcopy(default)
                 v = dataDict.get(name, default)
                 if v is None:
                     pass
@@ -107,9 +106,8 @@ class DictPacker(object):
             for index, meta in enumerate(self._metaData):
                 val = dataList[index + 1]
                 name, _, default, packer, aggFunc = meta
-                default = copy.deepcopy(default)
                 if val is None:
-                    val = default
+                    val = copy.deepcopy(default)
                 elif packer is not None:
                     val = packer.unpack(val)
                 ret[name] = val

@@ -1,13 +1,7 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/meta/BattleStatisticDataControllerMeta.py
-from gui.Scaleform.framework.entities.BaseDAAPIModule import BaseDAAPIModule
+from gui.Scaleform.framework.entities.BaseDAAPIComponent import BaseDAAPIComponent
 
-class BattleStatisticDataControllerMeta(BaseDAAPIModule):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends BaseDAAPIModule
-    """
+class BattleStatisticDataControllerMeta(BaseDAAPIComponent):
 
     def onRefreshComplete(self):
         self._printOverrideError('onRefreshComplete')
@@ -16,26 +10,26 @@ class BattleStatisticDataControllerMeta(BaseDAAPIModule):
         if self._isDAAPIInited():
             return self.flashObject.as_refresh()
 
-    def as_setVehiclesDataS(self, data):
+    def as_setVehiclesDataS(self, vehData):
         """
-        :param data: Represented by DAAPIVehiclesDataVO (AS)
+        :param vehData: Represented by DAAPIVehiclesDataVO (AS)
         """
         if self._isDAAPIInited():
-            return self.flashObject.as_setVehiclesData(data)
+            return self.flashObject.as_setVehiclesData(vehData)
 
-    def as_addVehiclesInfoS(self, data):
+    def as_addVehiclesInfoS(self, vehInfo):
         """
-        :param data: Represented by DAAPIVehiclesDataVO (AS)
+        :param vehInfo: Represented by DAAPIVehiclesDataVO (AS)
         """
         if self._isDAAPIInited():
-            return self.flashObject.as_addVehiclesInfo(data)
+            return self.flashObject.as_addVehiclesInfo(vehInfo)
 
-    def as_updateVehiclesInfoS(self, data):
+    def as_updateVehiclesInfoS(self, upVehInfo):
         """
-        :param data: Represented by DAAPIVehiclesDataVO (AS)
+        :param upVehInfo: Represented by DAAPIVehiclesDataVO (AS)
         """
         if self._isDAAPIInited():
-            return self.flashObject.as_updateVehiclesInfo(data)
+            return self.flashObject.as_updateVehiclesInfo(upVehInfo)
 
     def as_updateVehicleStatusS(self, data):
         """
@@ -44,12 +38,12 @@ class BattleStatisticDataControllerMeta(BaseDAAPIModule):
         if self._isDAAPIInited():
             return self.flashObject.as_updateVehicleStatus(data)
 
-    def as_setVehiclesStatsS(self, data):
+    def as_setFragsS(self, data):
         """
         :param data: Represented by DAAPIVehiclesStatsVO (AS)
         """
         if self._isDAAPIInited():
-            return self.flashObject.as_setVehiclesStats(data)
+            return self.flashObject.as_setFrags(data)
 
     def as_updateVehiclesStatsS(self, data):
         """
@@ -97,6 +91,6 @@ class BattleStatisticDataControllerMeta(BaseDAAPIModule):
         if self._isDAAPIInited():
             return self.flashObject.as_setPersonalStatus(bitmask)
 
-    def as_updatePersonalStatusS(self, added, removed):
+    def as_updatePersonalStatusS(self, added = 0, removed = 0):
         if self._isDAAPIInited():
             return self.flashObject.as_updatePersonalStatus(added, removed)

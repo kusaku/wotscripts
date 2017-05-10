@@ -295,7 +295,6 @@ def disabled_if(checker, msg = ''):
         @wraps(func)
         def wrapped(*args, **kwargs):
             if checker():
-                LOG_DEBUG_DEV('Method ({}) disabled. {} ', func.__name__, msg)
                 return disabled(func)
             return func(*args, **kwargs)
 

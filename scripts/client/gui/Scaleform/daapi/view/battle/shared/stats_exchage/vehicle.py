@@ -10,7 +10,7 @@ class ISortedIDsComposer(object):
 
 
 class VehiclesSortedIDsComposer(broker.SingleSideComposer, ISortedIDsComposer):
-    __slots__ = ()
+    __slots__ = ('_items',)
 
     def __init__(self, voField = 'vehiclesIDs', sortKey = vos_collections.VehicleInfoSortKey):
         super(VehiclesSortedIDsComposer, self).__init__(voField=voField, sortKey=sortKey)
@@ -23,6 +23,7 @@ class VehiclesSortedIDsComposer(broker.SingleSideComposer, ISortedIDsComposer):
 
 
 class AllySortedIDsComposer(VehiclesSortedIDsComposer):
+    __slots__ = ()
 
     def addSortIDs(self, isEnemy, arenaDP):
         raise not isEnemy or AssertionError
@@ -31,6 +32,7 @@ class AllySortedIDsComposer(VehiclesSortedIDsComposer):
 
 
 class EnemySortedIDsComposer(VehiclesSortedIDsComposer):
+    __slots__ = ()
 
     def addSortIDs(self, isEnemy, arenaDP):
         raise isEnemy or AssertionError
@@ -103,7 +105,7 @@ class VehicleInfoComponent(broker.ExchangeComponent):
         playerVO = vInfoVO.player
         accountDBID = playerVO.accountDBID
         parts = self._ctx.getPlayerFullName(vInfoVO)
-        return self._data.update({'accountDBID': accountDBID,
+        data = {'accountDBID': accountDBID,
          'playerName': parts.playerName,
          'playerFullName': parts.playerFullName,
          'playerStatus': overrides.getPlayerStatus(vInfoVO),
@@ -122,7 +124,10 @@ class VehicleInfoComponent(broker.ExchangeComponent):
          'isObserver': vInfoVO.isObserver(),
          'vehicleAction': overrides.getAction(vInfoVO),
          'isVehiclePremiumIgr': vTypeVO.isPremiumIGR,
-         'teamColor': overrides.getColorScheme()})
+         'teamColor': overrides.getColorScheme()}
+        if vInfoVO.ranked.selectedBadge:
+            data['badgeType'] = 'badge_{}'.format(vInfoVO.ranked.selectedBadge)
+        return self._data.update(data)
 
 
 class VehicleStatusComponent(broker.ExchangeComponent):

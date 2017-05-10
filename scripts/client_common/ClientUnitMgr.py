@@ -228,9 +228,11 @@ class ClientUnitBrowser(object):
         self.__account.enqueueUnitAssembler(vehTypes)
 
     def _search(self, vehInvIDs = []):
-        from gui.shared import g_itemsCache
+        from helpers import dependency
+        from skeletons.gui.shared import IItemsCache
+        itemsCache = dependency.instance(IItemsCache)
         for vehInvID in vehInvIDs:
-            vehicle = g_itemsCache.items.getVehicle(vehInvID)
+            vehicle = itemsCache.items.getVehicle(vehInvID)
             LOG_DEBUG('vehicle[%s]=%r' % (vehInvID, vehicle))
 
     def stopSearch(self):

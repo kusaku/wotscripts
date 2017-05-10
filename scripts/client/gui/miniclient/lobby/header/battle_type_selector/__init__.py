@@ -2,6 +2,7 @@
 import pointcuts as _pointcuts
 
 def configure_pointcuts():
+    _pointcuts.RankedBattle()
     _pointcuts.CommandBattle()
     _pointcuts.SortieBattle()
     _pointcuts.TrainingBattle()

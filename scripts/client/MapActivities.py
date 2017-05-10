@@ -1,4 +1,5 @@
 # Embedded file name: scripts/client/MapActivities.py
+import sys
 import BigWorld
 import ResMgr
 import PlayerEvents
@@ -6,7 +7,7 @@ import math
 import random
 import SoundGroups
 from constants import ARENA_PERIOD
-from debug_utils import *
+from debug_utils import LOG_ERROR, LOG_CURRENT_EXCEPTION
 from helpers.PixieBG import PixieBG
 
 class Timer:

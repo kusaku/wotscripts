@@ -8,7 +8,7 @@ from constants import CLAN_MEMBER_FLAGS
 
 class StrongholdPermissions(UnitPermissions):
 
-    def __init__(self, roles = 0, flags = UNIT_FLAGS.DEFAULT, isCurrentPlayer = False, isPlayerReady = False, hasLockedState = False, clanRoles = None, strongholdRoles = None, isLegionary = False, isInSlot = False, canStealLeadership = False, isFreezed = False):
+    def __init__(self, roles = UNIT_ROLE.DEFAULT, flags = UNIT_FLAGS.DEFAULT, isCurrentPlayer = False, isPlayerReady = False, hasLockedState = False, clanRoles = None, strongholdRoles = None, isLegionary = False, isInSlot = False, canStealLeadership = False, isFreezed = False):
         super(StrongholdPermissions, self).__init__(roles, flags, isCurrentPlayer, isPlayerReady, hasLockedState)
         self._clanRoles = clanRoles
         self._strongholdRoles = strongholdRoles

@@ -1,6 +1,6 @@
 # Embedded file name: scripts/client/helpers/bound_effects.py
+import BigWorld
 import helpers
-from debug_utils import *
 from functools import partial
 from helpers.EffectsList import EffectsListPlayer
 

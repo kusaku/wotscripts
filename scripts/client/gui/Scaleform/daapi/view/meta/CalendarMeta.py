@@ -2,12 +2,6 @@
 from gui.Scaleform.framework.entities.BaseDAAPIComponent import BaseDAAPIComponent
 
 class CalendarMeta(BaseDAAPIComponent):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends BaseDAAPIComponent
-    """
 
     def onMonthChanged(self, rawDate):
         self._printOverrideError('onMonthChanged')
@@ -28,14 +22,10 @@ class CalendarMeta(BaseDAAPIComponent):
 
     def as_updateMonthEventsS(self, items):
         """
-        :param items: Represented by Array (AS)
+        :param items: Represented by Array.<Object> (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_updateMonthEvents(items)
-
-    def as_setCalendarMessageS(self, message):
-        if self._isDAAPIInited():
-            return self.flashObject.as_setCalendarMessage(message)
 
     def as_setMinAvailableDateS(self, rawDate):
         if self._isDAAPIInited():
@@ -44,3 +34,14 @@ class CalendarMeta(BaseDAAPIComponent):
     def as_setMaxAvailableDateS(self, rawDate):
         if self._isDAAPIInited():
             return self.flashObject.as_setMaxAvailableDate(rawDate)
+
+    def as_setHighlightedDaysS(self, hightlightedTimestamps):
+        """
+        :param hightlightedTimestamps: Represented by Array (AS)
+        """
+        if self._isDAAPIInited():
+            return self.flashObject.as_setHighlightedDays(hightlightedTimestamps)
+
+    def as_setDayTooltipTypeS(self, tooltipType):
+        if self._isDAAPIInited():
+            return self.flashObject.as_setDayTooltipType(tooltipType)

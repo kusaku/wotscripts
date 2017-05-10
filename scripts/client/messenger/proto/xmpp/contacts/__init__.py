@@ -1,5 +1,4 @@
 # Embedded file name: scripts/client/messenger/proto/xmpp/contacts/__init__.py
-from ConnectionManager import connectionManager
 from PlayerEvents import g_playerEvents
 from constants import IS_IGR_ENABLED
 from helpers import dependency
@@ -24,6 +23,7 @@ from messenger.proto.xmpp.log_output import g_logOutput, CLIENT_LOG_AREA as _LOG
 from messenger.proto.xmpp.xmpp_constants import XMPP_ITEM_TYPE, CONTACT_LIMIT, CONTACT_ERROR_ID, LIMIT_ERROR_ID
 from messenger.storage import storage_getter
 from predefined_hosts import g_preDefinedHosts
+from skeletons.connection_mgr import IConnectionManager
 from skeletons.gui.battle_session import IBattleSessionProvider
 from skeletons.gui.game_control import IIGRController
 _MAX_TRIES_FAILED_IN_LOBBY = 2
@@ -33,6 +33,7 @@ class _UserPresence(ClientHolder):
     __slots__ = ('__scope',)
     igrCtrl = dependency.descriptor(IIGRController)
     sessionProvider = dependency.descriptor(IBattleSessionProvider)
+    connectionMgr = dependency.descriptor(IConnectionManager)
 
     def __init__(self):
         super(_UserPresence, self).__init__()
@@ -78,7 +79,7 @@ class _UserPresence(ClientHolder):
 
     def __createQuery(self, presence):
         query = PresenceQuery(presence)
-        item = g_preDefinedHosts.byName(connectionManager.serverUserName)
+        item = g_preDefinedHosts.byName(self.connectionMgr.serverUserName)
         if item.url:
             query.setGameServerHost(item.url)
         if self.__scope == MESSENGER_SCOPE.BATTLE and presence == PRESENCE.DND:

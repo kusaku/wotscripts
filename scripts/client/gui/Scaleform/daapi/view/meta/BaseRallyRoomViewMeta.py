@@ -2,12 +2,6 @@
 from gui.Scaleform.daapi.view.lobby.rally.BaseRallyView import BaseRallyView
 
 class BaseRallyRoomViewMeta(BaseRallyView):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends BaseRallyView
-    """
 
     def assignSlotRequest(self, slotIndex, playerId):
         self._printOverrideError('assignSlotRequest')
@@ -44,6 +38,9 @@ class BaseRallyRoomViewMeta(BaseRallyView):
             return self.flashObject.as_updateRally(rally)
 
     def as_setMembersS(self, hasRestrictions, slots):
+        """
+        :param slots: Represented by Array (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_setMembers(hasRestrictions, slots)
 
@@ -78,6 +75,9 @@ class BaseRallyRoomViewMeta(BaseRallyView):
             return self.flashObject.as_getCandidatesDP()
 
     def as_highlightSlotsS(self, slotsIdx):
+        """
+        :param slotsIdx: Represented by Array (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_highlightSlots(slotsIdx)
 

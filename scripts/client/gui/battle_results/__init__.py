@@ -12,4 +12,4 @@ def getBattleResultsServiceConfig(manager):
     """
     instance = BattleResultsService()
     instance.init()
-    manager.bindInstance(IBattleResultsService, instance, finalizer='fini')
+    manager.addInstance(IBattleResultsService, instance, finalizer='fini')

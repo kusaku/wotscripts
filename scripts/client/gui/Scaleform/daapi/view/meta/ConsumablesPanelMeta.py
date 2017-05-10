@@ -2,12 +2,6 @@
 from gui.Scaleform.framework.entities.BaseDAAPIComponent import BaseDAAPIComponent
 
 class ConsumablesPanelMeta(BaseDAAPIComponent):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends BaseDAAPIComponent
-    """
 
     def onClickedToSlot(self, keyCode):
         self._printOverrideError('onClickedToSlot')
@@ -16,6 +10,9 @@ class ConsumablesPanelMeta(BaseDAAPIComponent):
         self._printOverrideError('onPopUpClosed')
 
     def as_setKeysToSlotsS(self, slots):
+        """
+        :param slots: Represented by Array (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_setKeysToSlots(slots)
 
@@ -60,6 +57,9 @@ class ConsumablesPanelMeta(BaseDAAPIComponent):
             return self.flashObject.as_showEquipmentSlots(show)
 
     def as_expandEquipmentSlotS(self, idx, slots):
+        """
+        :param slots: Represented by Array (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_expandEquipmentSlot(idx, slots)
 

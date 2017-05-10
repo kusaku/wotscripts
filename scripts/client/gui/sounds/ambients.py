@@ -30,7 +30,7 @@ def _getViewSoundEnv(view):
     """
     if hasattr(view, '__sound_env__'):
         return getattr(view, '__sound_env__')
-    elif isinstance(view, WindowViewMeta) and view.as_isModalS():
+    elif isinstance(view, WindowViewMeta) and view.isViewModal():
         return ModalWindowEnv
     else:
         return None
@@ -497,8 +497,9 @@ class GuiAmbientsCtrl(object):
         g_appLoader.onGUISpaceEntered -= self.__onGUISpaceEntered
         g_appLoader.onGUISpaceLeft -= self.__onGUISpaceLeft
         self.stopAllSounds()
-        self._clearSoundEnv(self._spaceEnv)
-        self._spaceEnv = None
+        if self._spaceEnv is not None:
+            self._clearSoundEnv(self._spaceEnv)
+            self._spaceEnv = None
         self._soundsCtrl = None
         return
 

@@ -2,12 +2,6 @@
 from gui.Scaleform.framework.entities.abstract.AbstractPopOverView import AbstractPopOverView
 
 class SmartPopOverViewMeta(AbstractPopOverView):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends AbstractPopOverView
-    """
 
     def as_setPositionKeyPointS(self, valX, valY):
         if self._isDAAPIInited():

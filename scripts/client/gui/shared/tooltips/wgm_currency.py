@@ -6,12 +6,14 @@ from gui.shared.utils.requesters import wgm_balance_info_requester
 from gui.shared.tooltips import formatters
 from gui.shared.formatters import text_styles
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
-from gui.shared import g_itemsCache
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
+from helpers import dependency
+from skeletons.gui.shared import IItemsCache
 _WAITING_FOR_DATA = ''
 _UNKNOWN_VALUE = '-'
 
 class _WGMCurrencyTooltip(DynamicBlocksTooltipData):
+    itemsCache = dependency.descriptor(IItemsCache)
 
     def __init__(self, ctx):
         super(_WGMCurrencyTooltip, self).__init__(ctx, TOOLTIPS_CONSTANTS.BLOCKS_DEFAULT_UI)
@@ -42,9 +44,9 @@ class _WGMCurrencyTooltip(DynamicBlocksTooltipData):
         if isVisible and self.isWGMAvailable():
             self.__requester.requestInfo(lambda result: self.__onDataResponse(result))
 
-    @staticmethod
-    def isWGMAvailable():
-        return g_itemsCache.items.stats.mayConsumeWalletResources
+    @classmethod
+    def isWGMAvailable(cls):
+        return cls.itemsCache.items.stats.mayConsumeWalletResources
 
     def __onDataResponse(self, data):
         if self.__data is None or self.__checkDiff(self.__data, data):
@@ -80,7 +82,7 @@ class WGMGoldCurrencyTooltip(_WGMCurrencyTooltip):
 
     def __getGoldTotal(self):
         if self.isWGMAvailable():
-            return BigWorld.wg_getIntegralFormat(g_itemsCache.items.stats.gold)
+            return BigWorld.wg_getIntegralFormat(self.itemsCache.items.stats.gold)
         return _UNKNOWN_VALUE
 
 
@@ -105,5 +107,5 @@ class WGMCreditsCurrencyTooltip(_WGMCurrencyTooltip):
 
     def __getCreditsTotal(self):
         if self.isWGMAvailable():
-            return BigWorld.wg_getIntegralFormat(g_itemsCache.items.stats.credits)
+            return BigWorld.wg_getIntegralFormat(self.itemsCache.items.stats.credits)
         return _UNKNOWN_VALUE

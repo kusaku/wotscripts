@@ -2,12 +2,6 @@
 from gui.Scaleform.daapi.view.lobby.popover.SmartPopOverView import SmartPopOverView
 
 class BattleTypeSelectPopoverMeta(SmartPopOverView):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends SmartPopOverView
-    """
 
     def selectFight(self, actionName):
         self._printOverrideError('selectFight')
@@ -20,7 +14,7 @@ class BattleTypeSelectPopoverMeta(SmartPopOverView):
 
     def as_updateS(self, items, isShowDemonstrator, demonstratorEnabled):
         """
-        :param items: Represented by DataProvider (AS)
+        :param items: Represented by DataProvider.<ItemSelectorRendererVO> (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_update(items, isShowDemonstrator, demonstratorEnabled)

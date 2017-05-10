@@ -1,11 +1,12 @@
 # Embedded file name: scripts/client/gui/game_control/battle_availability.py
 import Event
 from debug_utils import LOG_DEBUG
+from helpers import dependency
 from helpers import time_utils
-from ConnectionManager import connectionManager
 from gui.ClientUpdateManager import g_clientUpdateManager
-from gui.LobbyContext import g_lobbyContext
 from gui.shared.utils.scheduled_notifications import Notifiable, SimpleNotifier
+from skeletons.connection_mgr import IConnectionManager
+from skeletons.gui.lobby_context import ILobbyContext
 
 def isHourInForbiddenList(hours, currUtcTimeHour = None):
     if currUtcTimeHour is not None:
@@ -84,6 +85,8 @@ def getUpdatePeriods(forbiddenUTCHours, localTimestamp = None):
 
 
 class BattleAvailabilityController(Notifiable):
+    lobbyContext = dependency.descriptor(ILobbyContext)
+    connectionMgr = dependency.descriptor(IConnectionManager)
 
     def __init__(self, notifierClass = None):
         super(BattleAvailabilityController, self).__init__(self)
@@ -172,14 +175,14 @@ class SortiesCurfewController(BattleAvailabilityController):
         LOG_DEBUG('Sorties controller has been successfully stopped')
 
     def getForbiddenHours(self):
-        servSettings = g_lobbyContext.getServerSettings()
+        servSettings = self.lobbyContext.getServerSettings()
         if servSettings:
             return servSettings.getForbiddenSortieHours()
         return []
 
     def isServerAvailable(self):
-        servSettings = g_lobbyContext.getServerSettings()
-        if servSettings and connectionManager.peripheryID in servSettings.getForbiddenSortiePeripheryIDs():
+        servSettings = self.lobbyContext.getServerSettings()
+        if servSettings and self.connectionMgr.peripheryID in servSettings.getForbiddenSortiePeripheryIDs():
             return False
         return True
 

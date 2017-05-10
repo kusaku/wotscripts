@@ -2,12 +2,6 @@
 from gui.Scaleform.daapi.view.dialogs.SimpleDialog import SimpleDialog
 
 class IconDialogMeta(SimpleDialog):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends SimpleDialog
-    """
 
     def as_setIconS(self, path):
         if self._isDAAPIInited():

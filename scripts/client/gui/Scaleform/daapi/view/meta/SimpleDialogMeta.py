@@ -2,12 +2,6 @@
 from gui.Scaleform.framework.entities.abstract.AbstractWindowView import AbstractWindowView
 
 class SimpleDialogMeta(AbstractWindowView):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends AbstractWindowView
-    """
 
     def onButtonClick(self, buttonId):
         self._printOverrideError('onButtonClick')
@@ -21,6 +15,9 @@ class SimpleDialogMeta(AbstractWindowView):
             return self.flashObject.as_setTitle(title)
 
     def as_setButtonsS(self, buttonNames):
+        """
+        :param buttonNames: Represented by Array (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_setButtons(buttonNames)
 

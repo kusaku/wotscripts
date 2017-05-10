@@ -1,12 +1,10 @@
 # Embedded file name: scripts/client/gui/Scaleform/genConsts/VEHPREVIEW_CONSTANTS.py
-
+"""
+This file was generated using the wgpygen.
+Please, don't edit this file manually.
+"""
 
 class VEHPREVIEW_CONSTANTS(object):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    """
     CREW_INFO_LINKAGE = 'VehPreviewCrewInfoUI'
     FACT_SHEET_LINKAGE = 'VehPreviewFactSheetUI'
     INFO_PANEL_LINKAGES = [CREW_INFO_LINKAGE, FACT_SHEET_LINKAGE]

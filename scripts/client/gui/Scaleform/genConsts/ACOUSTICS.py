@@ -1,12 +1,10 @@
 # Embedded file name: scripts/client/gui/Scaleform/genConsts/ACOUSTICS.py
-
+"""
+This file was generated using the wgpygen.
+Please, don't edit this file manually.
+"""
 
 class ACOUSTICS(object):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    """
     TYPE_AUTO = 'auto'
     TYPE_ACOUSTICS = 'acoustics'
     TYPE_HEADPHONES = 'headphones'

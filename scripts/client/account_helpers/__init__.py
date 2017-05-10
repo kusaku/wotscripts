@@ -62,4 +62,4 @@ def getAccountHelpersConfig(manager):
     :param manager: helpers.dependency.DependencyManager.
     """
     from account_helpers import settings_core
-    manager.install(settings_core.getSettingsCoreConfig)
+    manager.addConfig(settings_core.getSettingsCoreConfig)

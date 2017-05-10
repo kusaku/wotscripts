@@ -6,6 +6,7 @@ from account_helpers import getAccountDatabaseID
 from adisp import async, process
 from constants import CLAN_MEMBER_FLAGS
 from debug_utils import LOG_ERROR
+from helpers import dependency
 from helpers import html
 from gui.clans.formatters import getClanRoleString
 from gui.shared.fortifications.fort_provider import ClientFortProvider
@@ -14,6 +15,7 @@ from gui.shared.utils import code2str
 from messenger.ext import passCensor
 from messenger.proto.events import g_messengerEvents
 from messenger.storage import storage_getter
+from skeletons.gui.shared import IItemsCache
 
 class ClanInfo(namedtuple('ClanInfo', ['clanName',
  'clanAbbrev',
@@ -35,6 +37,7 @@ class ClanInfo(namedtuple('ClanInfo', ['clanName',
 
 
 class _ClanCache(object):
+    itemsCache = dependency.descriptor(IItemsCache)
 
     def __init__(self):
         self.__waitForSync = False
@@ -89,8 +92,7 @@ class _ClanCache(object):
 
     @property
     def clanDBID(self):
-        from gui.shared import g_itemsCache
-        return g_itemsCache.items.stats.clanDBID
+        return self.itemsCache.items.stats.clanDBID
 
     @property
     def isInClan(self):
@@ -108,8 +110,7 @@ class _ClanCache(object):
 
     @property
     def clanInfo(self):
-        from gui.shared import g_itemsCache
-        info = g_itemsCache.items.stats.clanInfo
+        info = self.itemsCache.items.stats.clanInfo
         if info and len(info) > 1:
             return info
         else:

@@ -6,23 +6,26 @@ import BigWorld
 import Event
 from account_helpers.AccountSettings import AccountSettings, LAST_RESTORE_NOTIFICATION
 from gui import SystemMessages
-from gui.shared.ItemsCache import g_itemsCache
 from gui.shared.gui_items import GUI_ITEM_TYPE
 from gui.shared.money import Money
 from gui.shared.utils.requesters.ItemsRequester import REQ_CRITERIA
 from gui.shared.utils.scheduled_notifications import Notifiable, PeriodicNotifier
+from helpers import dependency
 from helpers import time_utils
 from skeletons.gui.game_control import IRestoreController
+from skeletons.gui.shared import IItemsCache
 DEFAULT_MAX_TANKMEN_BUFFER_LENGTH = 100
 
-def getTankmenRestoreInfo(tankman):
-    config = g_itemsCache.items.shop.tankmenRestoreConfig
+@dependency.replace_none_kwargs(itemsCache=IItemsCache)
+def getTankmenRestoreInfo(tankman, itemsCache = None):
+    config = itemsCache.items.shop.tankmenRestoreConfig
     dismissalLength = time_utils.getTimeDeltaTilNow(tankman.dismissedAt)
     price = config.cost if dismissalLength >= config.freeDuration else Money()
-    return (price, config.creditsDuration - dismissalLength)
+    return (price, config.billableDuration - dismissalLength)
 
 
 class RestoreController(IRestoreController, Notifiable):
+    itemsCache = dependency.descriptor(IItemsCache)
 
     def __init__(self):
         """
@@ -42,11 +45,11 @@ class RestoreController(IRestoreController, Notifiable):
         return
 
     def init(self):
-        g_itemsCache.onSyncCompleted += self._update
+        self.itemsCache.onSyncCompleted += self._update
         self.addNotificator(PeriodicNotifier(self.__getClosestTankmanUpdateTime, self.__updateTankmenList))
 
     def onLobbyInited(self, _):
-        self.__tankmanLiveTime = g_itemsCache.items.shop.tankmenRestoreConfig.creditsDuration
+        self.__tankmanLiveTime = self.itemsCache.items.shop.tankmenRestoreConfig.billableDuration
         if self.__restoreNotifyTimeCallback is None:
             self.__startRestoreTimeNotifyCallback()
         self.__checkLimitedRestoreNotification()
@@ -64,7 +67,7 @@ class RestoreController(IRestoreController, Notifiable):
     def fini(self):
         self._stop()
         self.clearNotification()
-        g_itemsCache.onSyncCompleted -= self._update
+        self.itemsCache.onSyncCompleted -= self._update
         super(RestoreController, self).fini()
 
     def getMaxTankmenBufferLength(self):
@@ -107,9 +110,9 @@ class RestoreController(IRestoreController, Notifiable):
         return
 
     def _update(self, _, invalidItems):
-        restoreConfig = g_itemsCache.items.shop.tankmenRestoreConfig
+        restoreConfig = self.itemsCache.items.shop.tankmenRestoreConfig
         self.__maxTankmenBufferLength = restoreConfig.limit
-        self.__tankmanLiveTime = restoreConfig.creditsDuration
+        self.__tankmanLiveTime = restoreConfig.billableDuration
         if invalidItems == {} or any([ tmanID < 0 for tmanID in invalidItems.get(GUI_ITEM_TYPE.TANKMAN, []) ]):
             self.__updateTankmenList()
         self.__clearRestoreTimeNotifyCallback()
@@ -118,7 +121,7 @@ class RestoreController(IRestoreController, Notifiable):
     def __startRestoreTimeNotifyCallback(self):
         self.__vehiclesForUpdate = []
         criteria = REQ_CRITERIA.CUSTOM(lambda item: item.hasRestoreCooldown() or item.hasLimitedRestore())
-        restoreVehicles = g_itemsCache.items.getVehicles(criteria).values()
+        restoreVehicles = self.itemsCache.items.getVehicles(criteria).values()
         notificationList = []
         for vehicle in restoreVehicles:
             if vehicle.hasRestoreCooldown():
@@ -158,7 +161,7 @@ class RestoreController(IRestoreController, Notifiable):
         return
 
     def __updateTankmenList(self):
-        tankmen = g_itemsCache.items.getTankmen(REQ_CRITERIA.TANKMAN.DISMISSED).values()
+        tankmen = self.itemsCache.items.getTankmen(REQ_CRITERIA.TANKMAN.DISMISSED).values()
         self.__tankmenList = sorted(tankmen, key=operator.attrgetter('dismissedAt'), reverse=True)
         self.startNotification()
         self.onTankmenBufferUpdated()
@@ -172,7 +175,7 @@ class RestoreController(IRestoreController, Notifiable):
 
     def __checkLimitedRestoreNotification(self):
         criteria = REQ_CRITERIA.CUSTOM(lambda item: item.hasLimitedRestore())
-        vehicles = g_itemsCache.items.getVehicles(criteria).values()
+        vehicles = self.itemsCache.items.getVehicles(criteria).values()
         lastRestoreNotification = AccountSettings.getSettings(LAST_RESTORE_NOTIFICATION)
         if lastRestoreNotification is None:
             showMessage = True

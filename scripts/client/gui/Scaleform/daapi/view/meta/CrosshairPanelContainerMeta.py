@@ -1,21 +1,7 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/meta/CrosshairPanelContainerMeta.py
-from gui.Scaleform.framework.entities.BaseDAAPIComponent import BaseDAAPIComponent
+from gui.Scaleform.daapi.view.meta.DAAPISimpleContainerMeta import DAAPISimpleContainerMeta
 
-class CrosshairPanelContainerMeta(BaseDAAPIComponent):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends BaseDAAPIComponent
-    """
-
-    def as_populateS(self):
-        if self._isDAAPIInited():
-            return self.flashObject.as_populate()
-
-    def as_disposeS(self):
-        if self._isDAAPIInited():
-            return self.flashObject.as_dispose()
+class CrosshairPanelContainerMeta(DAAPISimpleContainerMeta):
 
     def as_setSettingsS(self, data):
         if self._isDAAPIInited():
@@ -49,7 +35,7 @@ class CrosshairPanelContainerMeta(BaseDAAPIComponent):
         if self._isDAAPIInited():
             return self.flashObject.as_setHealth(percent)
 
-    def as_setAmmoStockS(self, quantity, quantityInClip, isLow, clipState, clipReloaded):
+    def as_setAmmoStockS(self, quantity, quantityInClip, isLow, clipState, clipReloaded = False):
         if self._isDAAPIInited():
             return self.flashObject.as_setAmmoStock(quantity, quantityInClip, isLow, clipState, clipReloaded)
 

@@ -77,3 +77,10 @@ class TeamItemSortKey(_VehicleSortKey):
         if result:
             return -result
         return cmp(self.info.player.name, other.info.player.name)
+
+
+class VehicleXpSortKey(_VehicleSortKey):
+    __slots__ = ()
+
+    def _cmp(self, other):
+        return cmp(other.info.xp, self.info.xp)

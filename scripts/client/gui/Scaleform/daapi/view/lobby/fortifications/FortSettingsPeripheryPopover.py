@@ -1,5 +1,5 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/fortifications/FortSettingsPeripheryPopover.py
-from ConnectionManager import connectionManager
+from helpers import dependency
 from predefined_hosts import g_preDefinedHosts
 from adisp import process
 from gui.Scaleform.daapi.view.lobby.fortifications.fort_utils.FortViewHelper import FortViewHelper
@@ -7,8 +7,10 @@ from gui.Scaleform.daapi.view.meta.FortSettingsPeripheryPopoverMeta import FortS
 from gui.Scaleform.locale.FORTIFICATIONS import FORTIFICATIONS
 from gui.shared.fortifications.context import PeripheryCtx
 from helpers import i18n
+from skeletons.connection_mgr import IConnectionManager
 
 class FortSettingsPeripheryPopover(FortSettingsPeripheryPopoverMeta, FortViewHelper):
+    connectionMgr = dependency.descriptor(IConnectionManager)
 
     def __init__(self, _ = None):
         super(FortSettingsPeripheryPopover, self).__init__()
@@ -53,9 +55,9 @@ class FortSettingsPeripheryPopover(FortSettingsPeripheryPopoverMeta, FortViewHel
             result.append({'id': peripheryID,
              'label': name})
 
-        if connectionManager.peripheryID == 0:
+        if self.connectionMgr.peripheryID == 0:
             result.append({'id': 0,
-             'label': connectionManager.serverUserName})
+             'label': self.connectionMgr.serverUserName})
         return result
 
     def __getCurrentServer(self):

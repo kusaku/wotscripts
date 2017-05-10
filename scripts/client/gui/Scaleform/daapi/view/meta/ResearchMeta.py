@@ -2,12 +2,6 @@
 from gui.Scaleform.daapi.view.lobby.techtree.ResearchView import ResearchView
 
 class ResearchMeta(ResearchView):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    @extends ResearchView
-    """
 
     def requestNationData(self):
         self._printOverrideError('requestNationData')
@@ -39,6 +33,9 @@ class ResearchMeta(ResearchView):
             return self.flashObject.as_setFreeXP(freeXP)
 
     def as_setInstalledItemsS(self, data):
+        """
+        :param data: Represented by Array (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_setInstalledItems(data)
 
