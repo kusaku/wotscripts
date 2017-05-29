@@ -153,7 +153,7 @@ class RankedBattlesView(LobbySubView, RankedBattlesViewMeta):
                 else:
                     description = text_styles.standard(RANKED_BATTLES.RANKEDBATTLEVIEW_PROGRESSBLOCK_CURRENTRANK)
             elif isMaster:
-                description = text_styles.standard(_ms(RANKED_BATTLES.RANKEDBATTLEVIEW_PROGRESSBLOCK_VEHICLERANK, vehicle=rank.getVehicle().userName))
+                description = text_styles.standard(rank.getUserName())
         else:
             imageSmall = rank.getIcon('small')
             isTransparent = True

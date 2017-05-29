@@ -457,10 +457,11 @@ class CustomUserCMHandler(BaseUserCMHandler):
 
     def _addCustomInfo(self, options):
         customOptions = []
-        for id, label, enabled in self.__customOptions:
-            customOptions.append(self._makeItem(id, label, optInitData={'enabled': enabled}))
+        if self.__customOptions:
+            for id, label, enabled in self.__customOptions:
+                customOptions.append(self._makeItem(id, label, optInitData={'enabled': enabled}))
 
-        customOptions.append(self._makeSeparator())
+            customOptions.append(self._makeSeparator())
         return customOptions + options
 
     def _excludeOptions(self, options):

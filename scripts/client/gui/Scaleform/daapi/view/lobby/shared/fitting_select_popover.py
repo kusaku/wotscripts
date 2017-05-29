@@ -88,7 +88,10 @@ def _extendByBattleBoosterData(targetData, module, vehicle):
         highlight = SLOT_HIGHLIGHT_TYPES.BATTLE_BOOSTER if skillLearnt else SLOT_HIGHLIGHT_TYPES.BATTLE_BOOSTER_CREW_REPLACE
         _extendHighlightData(targetData, highlight)
     else:
-        targetData['notAffectedTTC'] = not module.isAffectsOnVehicle(vehicle)
+        if getattr(BigWorld.player(), 'isLongDisconnectedFromCenter', False):
+            targetData['notAffectedTTC'] = False
+        else:
+            targetData['notAffectedTTC'] = not module.isAffectsOnVehicle(vehicle)
         targetData['desc'] = text_styles.main(module.getOptDeviceBoosterDescription(vehicle, text_styles.bonusAppliedText))
         _extendHighlightData(targetData, SLOT_HIGHLIGHT_TYPES.BATTLE_BOOSTER)
     targetData['count'] = module.inventoryCount
@@ -247,14 +250,17 @@ class HangarFittingSelectPopover(CommonFittingSelectPopover):
     def __init__(self, ctx = None):
         data_ = ctx['data']
         slotType = data_.slotType
-        slotIndex = data_.slotIndex
+        self.__slotIndex = data_.slotIndex
         if g_currentPreviewVehicle.isPresent():
-            logicProvider = _PreviewLogicProvider(slotType, slotIndex)
+            logicProvider = _PreviewLogicProvider(slotType, self.__slotIndex)
             vehicle = g_currentPreviewVehicle.item
         else:
-            logicProvider = _HangarLogicProvider(slotType, slotIndex)
+            logicProvider = _HangarLogicProvider(slotType, self.__slotIndex)
             vehicle = g_currentVehicle.item
         super(HangarFittingSelectPopover, self).__init__(vehicle, logicProvider, ctx)
+
+    def _getSlotIndex(self):
+        return self.__slotIndex
 
 
 class OptionalDeviceSelectPopover(HangarFittingSelectPopover):
@@ -262,6 +268,10 @@ class OptionalDeviceSelectPopover(HangarFittingSelectPopover):
     _TABS = [{'label': MENU.OPTIONALDEVICESELECTPOPOVER_TABS_SIMPLE,
       'id': 'simpleOptDevices'}, {'label': MENU.OPTIONALDEVICESELECTPOPOVER_TABS_DELUXE,
       'id': 'deluxeOptDevices'}]
+
+    def __init__(self, ctx = None):
+        self.__initialLoad = True
+        super(OptionalDeviceSelectPopover, self).__init__(ctx)
 
     def listOverlayClosed(self):
         self.__setHintVisited()
@@ -279,6 +289,14 @@ class OptionalDeviceSelectPopover(HangarFittingSelectPopover):
     def _getInitialTabIndex(self):
         if self.__isHintVisible():
             self._saveTabIndex(_POPOVER_SECOND_TAB_IDX)
+        if self.__initialLoad:
+            self.__initialLoad = False
+            installedDevice = self._getVehicle().optDevices[self._getSlotIndex()]
+            if installedDevice:
+                if installedDevice.isDeluxe():
+                    return _POPOVER_SECOND_TAB_IDX
+                else:
+                    return _POPOVER_FIRST_TAB_IDX
         return self.__class__._TAB_IDX
 
     def _prepareInitialData(self):
@@ -309,6 +327,10 @@ class BattleBoosterSelectPopover(HangarFittingSelectPopover):
       'id': 'boostersForAmmunition'}, {'label': MENU.BOOSTERSELECTPOPOVER_TABS_FORCREW,
       'id': 'boostersForCrew'}]
 
+    def __init__(self, ctx = None):
+        self.__initialLoad = True
+        super(BattleBoosterSelectPopover, self).__init__(ctx)
+
     @decorators.process('loadStats')
     def setAutoRearm(self, autoRearm):
         vehicle = self._getVehicle()
@@ -332,6 +354,18 @@ class BattleBoosterSelectPopover(HangarFittingSelectPopover):
          FITTING_TYPES.BOOSTER_FITTING_RENDERER_DATA_CLASS_NAME,
          FITTING_TYPES.LARGE_POPOVER_WIDTH,
          MENU.BOOSTERSELECTPOPOVER_TITLE)
+
+    def _getInitialTabIndex(self):
+        if self.__initialLoad:
+            self.__initialLoad = False
+            vehicle = g_currentVehicle.item
+            battleBooster = vehicle.battleBooster if vehicle is not None else None
+            if battleBooster:
+                if battleBooster.isCrewBooster():
+                    return _POPOVER_SECOND_TAB_IDX
+                else:
+                    return _POPOVER_FIRST_TAB_IDX
+        return self.__class__._TAB_IDX
 
 
 class PopoverLogicProvider(object):
@@ -484,8 +518,10 @@ class _HangarLogicProvider(PopoverLogicProvider):
         priceValue = price.get(currency)
         if module.itemTypeID == GUI_ITEM_TYPE.OPTIONALDEVICE and not isInstalled and module.hasSimilarDevicesInstalled(self._vehicle):
             isFit, reason = False, GUI_ITEM_PURCHASE_CODE.ITEM_IS_DUPLICATED
+            _, purchaseReason = module.mayPurchase(stats['money'])
+            isEnoughCurrency = not GUI_ITEM_PURCHASE_CODE.isMoneyError(purchaseReason)
         elif isBought:
-            isFit, reason = True, ''
+            isFit, reason = True, GUI_ITEM_PURCHASE_CODE.OK
         else:
             isFit, reason = module.mayPurchase(stats['money'])
             if not isFit:

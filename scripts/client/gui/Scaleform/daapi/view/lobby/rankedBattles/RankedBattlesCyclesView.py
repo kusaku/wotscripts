@@ -2,7 +2,7 @@
 from CurrentVehicle import g_currentVehicle
 from gui.Scaleform.daapi import LobbySubView
 from gui.Scaleform.daapi.view.meta.RankedBattlesCyclesViewMeta import RankedBattlesCyclesViewMeta
-from gui.Scaleform.genConsts.BLOCKS_TOOLTIP_TYPES import BLOCKS_TOOLTIP_TYPES
+from gui.Scaleform.genConsts.TEXT_ALIGN import TEXT_ALIGN
 from gui.Scaleform.genConsts.RANKEDBATTLES_ALIASES import RANKEDBATTLES_ALIASES
 from gui.Scaleform.locale.RANKED_BATTLES import RANKED_BATTLES
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
@@ -188,7 +188,7 @@ class RankedBattlesCyclesView(LobbySubView, RankedBattlesCyclesViewMeta):
         else:
             receivedStr = ''
             rankAwards = rank.getAwardsVOs()
-        if rank.isMax():
+        if rank.isMax() and rank.getID() != 1:
             rankDescr = text_styles.main(RANKED_BATTLES.RANKEDBATTLEVIEW_PROGRESSBLOCK_BESTRANK)
         else:
             rankDescr = ''
@@ -264,14 +264,14 @@ class RankedBattlesCyclesView(LobbySubView, RankedBattlesCyclesViewMeta):
         vehBonuses = self.__extractBonusesForAwardRibbon([vehicleQuest] if vehicleQuest else [])
         mastersCount = self.rankedController.getVehicleMastersCount(cycle.ID)
         for imgSource, bonusInfo in vehBonuses.iteritems():
-            if imgSource in bonusesDict:
-                bonusesDict[imgSource]['count'] += bonusInfo['count'] * mastersCount
-            else:
+            if imgSource not in bonusesDict:
                 bonusesDict[imgSource] = bonusInfo
+            bonusesDict[imgSource]['count'] += bonusInfo['count'] * mastersCount
 
         result = self.rankedController.getCycleRewards(cycle.ID)
         for bonusVO in bonusesDict.values():
             bonusVO['label'] = text_styles.hightlight('x{}'.format(bonusVO.pop('count')))
+            bonusVO['align'] = TEXT_ALIGN.RIGHT
             result.append(bonusVO)
 
         return result

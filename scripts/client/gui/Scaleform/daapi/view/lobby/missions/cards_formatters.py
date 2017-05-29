@@ -98,10 +98,10 @@ class MixedBonusAndPostBattleCondFormatter(object):
         for pCondGroup in postBattleConditions:
             for bCondGroup in bonusConditions:
                 if battleCountCondition is not None:
-                    battleCondFormatter = BattlesCountFormatter(bool(pCondGroup))
-                    conditions = battleCondFormatter.format(battleCountCondition, event)
+                    conditions = []
                     conditions.extend(pCondGroup)
                     conditions.extend(bCondGroup)
+                    conditions.extend(BattlesCountFormatter(bool(pCondGroup)).format(battleCountCondition, event))
                 else:
                     conditions = pCondGroup + bCondGroup
                 if not conditions:

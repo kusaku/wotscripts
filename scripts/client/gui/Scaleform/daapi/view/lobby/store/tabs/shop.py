@@ -22,7 +22,10 @@ class ShopItemsTab(StoreItemsTab):
         return item.defaultAltPrice or item.defaultPrice
 
     def _getItemActionData(self, item):
-        return getActionPriceData(item)
+        actionData = None
+        if item.actionPrc != 0:
+            actionData = getActionPriceData(item)
+        return actionData
 
     def _getRequestCriteria(self, invVehicles):
         return REQ_CRITERIA.EMPTY | ~REQ_CRITERIA.HIDDEN
@@ -152,6 +155,12 @@ class ShopVehicleTab(ShopItemsTab, StoreVehicleTab):
         else:
             disabled = not self._isPurchaseEnabled(item, money)
         return (statusMessage, disabled)
+
+    def _getDiscountCriteria(self):
+        if self._actionsSelected:
+            return REQ_CRITERIA.VEHICLE.DISCOUNT_RENT_OR_BUY
+        else:
+            return REQ_CRITERIA.EMPTY
 
 
 class ShopRestoreVehicleTab(ShopVehicleTab):

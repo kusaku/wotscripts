@@ -1,7 +1,7 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/missions/conditions_formatters/postbattle.py
 from debug_utils import LOG_WARNING, LOG_ERROR
 from dossiers2.custom.records import DB_ID_TO_RECORD
-from gui.Scaleform.daapi.view.lobby.missions.conditions_formatters import CONDITION_ICON, POSSIBLE_BATTLE_RESUTLS_KEYS, BATTLE_RESULTS_KEYS, SimpleMissionsFormatter, MissionsVehicleListFormatter, MissionsBattleConditionsFormatter, FormattableField, FORMATTER_IDS, packDescriptionField, COMPLEX_CONDITION_BLOCK
+from gui.Scaleform.daapi.view.lobby.missions.conditions_formatters import CONDITION_ICON, POSSIBLE_BATTLE_RESUTLS_KEYS, BATTLE_RESULTS_KEYS, SimpleMissionsFormatter, MissionsVehicleListFormatter, MissionsBattleConditionsFormatter, FormattableField, FORMATTER_IDS, packDescriptionField
 from gui.Scaleform.genConsts.MISSIONS_ALIASES import MISSIONS_ALIASES
 from gui.Scaleform.genConsts.TOOLTIPS_CONSTANTS import TOOLTIPS_CONSTANTS
 from gui.Scaleform.locale.QUESTS import QUESTS
@@ -72,6 +72,10 @@ class _ClanKillsFormatter(SimpleMissionsFormatter):
     def _getIconKey(cls, condition = None):
         return CONDITION_ICON.KILL_VEHICLES
 
+    @classmethod
+    def _getTitle(cls, *args, **kwargs):
+        return FormattableField(FORMATTER_IDS.SIMPLE_TITLE, (i18n.makeString(QUESTS.DETAILS_CONDITIONS_CLANKILLS_TITLE),))
+
 
 class _WinFormatter(SimpleMissionsFormatter):
     """
@@ -86,6 +90,10 @@ class _WinFormatter(SimpleMissionsFormatter):
     def _getIconKey(cls, condition = None):
         return CONDITION_ICON.WIN
 
+    @classmethod
+    def _getTitle(cls, *args, **kwargs):
+        return FormattableField(FORMATTER_IDS.SIMPLE_TITLE, (i18n.makeString(QUESTS.DETAILS_CONDITIONS_WIN_TITLE),))
+
 
 class _SurviveFormatter(SimpleMissionsFormatter):
     """
@@ -99,6 +107,10 @@ class _SurviveFormatter(SimpleMissionsFormatter):
     @classmethod
     def _getIconKey(cls, condition = None):
         return CONDITION_ICON.SURVIVE
+
+    @classmethod
+    def _getTitle(cls, *args, **kwargs):
+        return FormattableField(FORMATTER_IDS.SIMPLE_TITLE, (i18n.makeString(QUESTS.DETAILS_CONDITIONS_ALIVE_TITLE),))
 
 
 class _AchievementsFormatter(SimpleMissionsFormatter):
@@ -122,6 +134,10 @@ class _AchievementsFormatter(SimpleMissionsFormatter):
                   'list': achievementsList,
                   'icon': RES_ICONS.get90ConditionIcon(self._getIconKey()),
                   'description': i18n.makeString(QUESTS.DETAILS_CONDITIONS_ACHIEVEMENTS)}})
+
+    @classmethod
+    def _getTitle(cls, *args, **kwargs):
+        return FormattableField(FORMATTER_IDS.SIMPLE_TITLE, (i18n.makeString(QUESTS.DETAILS_CONDITIONS_ACHIEVEMENTS_TITLE),))
 
 
 class _VehiclesKillFormatter(MissionsVehicleListFormatter):
@@ -159,15 +175,22 @@ class _BattleResultsFormatter(SimpleMissionsFormatter):
     """
 
     @classmethod
-    def _getTitle(cls, value, relation, relationI18nType):
-        if value is None:
+    def _getTitle(cls, condition):
+        label, relation, relationI18nType, value = getResultsData(condition)
+        topRangeUpper, topRangeLower = condition.getMaxRange()
+        if topRangeLower < TOP_RANGE_LOWEST:
+            return FormattableField(FORMATTER_IDS.SIMPLE_TITLE, (i18n.makeString(QUESTS.DETAILS_CONDITIONS_TOP_TITLE, value=topRangeLower),))
+        elif value is None:
             return super(_BattleResultsFormatter, cls)._getTitle()
+        elif condition.keyName == 'markOfMastery':
+            return FormattableField(FORMATTER_IDS.SIMPLE_TITLE, (value,))
         else:
             return FormattableField(FORMATTER_IDS.RELATION, (value, relation, relationI18nType))
+            return
 
     def _packGui(self, condition):
         label, relation, relationI18nType, value = getResultsData(condition)
-        return formatters.packMissionIconCondition(self._getTitle(value, relation, relationI18nType), MISSIONS_ALIASES.NONE, packDescriptionField(label), self._getIconKey(condition))
+        return formatters.packMissionIconCondition(self._getTitle(condition), MISSIONS_ALIASES.NONE, packDescriptionField(label), self._getIconKey(condition))
 
     @classmethod
     def _getIconKey(cls, condition = None):

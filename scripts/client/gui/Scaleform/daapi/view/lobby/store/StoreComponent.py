@@ -96,6 +96,7 @@ class StoreComponent(LobbySubView, StoreComponentMeta):
         self.rentals.onRentChangeNotify += self._onTableUpdate
         self.restore.onRestoreChangeNotify += self._onTableUpdate
         self.__populateFilters()
+        self.as_completeInitS()
 
     def _dispose(self):
         """
@@ -245,7 +246,6 @@ class StoreComponent(LobbySubView, StoreComponentMeta):
         self.as_setFilterTypeS(self.__filterHash)
         self.as_setSubFilterS(self.__subFilter)
         self.__updateFilterOptions(itemType)
-        self.as_completeInitS()
         return
 
     def __onInventoryUpdate(self, *args):

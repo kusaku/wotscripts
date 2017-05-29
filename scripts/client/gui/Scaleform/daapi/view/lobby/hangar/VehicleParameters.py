@@ -9,6 +9,7 @@ from gui.Scaleform.framework.entities.DAAPIDataProvider import SortableDAAPIData
 from gui.shared.items_parameters.params_helper import VehParamsBaseGenerator, getParameters, getCommonParam, SimplifiedBarVO
 from helpers import dependency
 from skeletons.gui.shared import IItemsCache
+from gui.shared.items_parameters.comparator import PARAM_STATE
 
 class VehicleParameters(VehicleParametersMeta):
 
@@ -104,9 +105,13 @@ class _VehParamsGenerator(VehParamsBaseGenerator):
     def _makeSimpleParamBottomVO(self, param, vehIntCD = None):
         stockParams = getParameters(self.itemsCache.items.getStockVehicle(vehIntCD))
         data = getCommonParam(HANGAR_ALIASES.VEH_PARAM_RENDERER_STATE_SIMPLE_BOTTOM, param.name)
+        delta = 0
+        state, diff = param.state
+        if state == PARAM_STATE.WORSE:
+            delta = abs(diff)
         data.update({'isEnabled': True,
          'tooltip': self._tooltipType,
-         'indicatorVO': SimplifiedBarVO(value=param.value, markerValue=stockParams[param.name], useAnim=self.useAnim)})
+         'indicatorVO': SimplifiedBarVO(value=param.value, delta=delta, markerValue=stockParams[param.name], useAnim=self.useAnim)})
         return data
 
     def _getAdvancedParamTooltip(self, param):

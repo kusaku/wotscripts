@@ -10,6 +10,8 @@ from gui import makeHtmlString
 from gui.Scaleform.genConsts.BOOSTER_CONSTANTS import BOOSTER_CONSTANTS
 from gui.Scaleform.genConsts.CUSTOMIZATION_ITEM_TYPE import CUSTOMIZATION_ITEM_TYPE
 from gui.Scaleform.genConsts.TOOLTIPS_CONSTANTS import TOOLTIPS_CONSTANTS
+from gui.Scaleform.genConsts.TEXT_ALIGN import TEXT_ALIGN
+from gui.Scaleform.locale.BADGE import BADGE
 from gui.Scaleform.locale.QUESTS import QUESTS
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
@@ -108,7 +110,8 @@ class SimpleBonus(object):
     def getRankedAwardVOs(self, iconSize = 'small', withCounts = False):
         itemInfo = {'imgSource': self.getIconBySize(iconSize),
          'label': self.getIconLabel(),
-         'tooltip': self.getTooltip()}
+         'tooltip': self.getTooltip(),
+         'align': TEXT_ALIGN.CENTER}
         if withCounts:
             if isinstance(self._value, int):
                 itemInfo['count'] = self._value
@@ -251,7 +254,7 @@ class PremiumDaysBonus(IntegralBonus):
         return True
 
     def getCarouselList(self, isReceived = False):
-        return [{'imgSource': RES_ICONS.getPremiumCarouselIcon(self._value),
+        return [{'imgSource': RES_ICONS.getPremiumBonusesSmallIcon(self._value),
           'tooltip': self.getTooltip()}]
 
     def getIconBySize(self, size):
@@ -440,8 +443,9 @@ class ItemsBonus(SimpleBonus):
         result = []
         for item, count in self.getItems().iteritems():
             itemInfo = {'imgSource': item.getBonusIcon(iconSize),
-             'label': text_styles.hightlight('x{}'.format(count)),
-             'tooltip': self.makeItemTooltip(item)}
+             'label': text_styles.stats('x{}'.format(count)),
+             'tooltip': self.makeItemTooltip(item),
+             'align': TEXT_ALIGN.RIGHT}
             if withCounts:
                 itemInfo['count'] = count
             result.append(itemInfo)
@@ -540,7 +544,8 @@ class GoodiesBonus(SimpleBonus):
         for booster, count in self.getBoosters().iteritems():
             if booster is not None:
                 itemData = {'imgSource': RES_ICONS.getBonusIcon(iconSize, booster.boosterGuiType),
-                 'label': text_styles.hightlight('x{}'.format(count))}
+                 'label': text_styles.hightlight('x{}'.format(count)),
+                 'align': TEXT_ALIGN.RIGHT}
                 itemData.update(self.__itemTooltip(booster))
                 if withCounts:
                     itemData['count'] = count
@@ -636,6 +641,7 @@ class VehiclesBonus(SimpleBonus):
         for vehicle, vehInfo in self.getVehicles():
             vehicleVO = self.__getVehicleVO(vehicle, vehInfo, partial(RES_ICONS.getBonusIcon, iconSize))
             vehicleVO.update({'label': self.getIconLabel()})
+            vehicleVO['align'] = TEXT_ALIGN.RIGHT
             if withCounts:
                 vehicleVO['count'] = 1
             result.append(vehicleVO)
@@ -755,9 +761,9 @@ class DossierBonus(SimpleBonus):
          'small': BADGES_ICONS.X48}
         for (block, record), value in self.getRecords().iteritems():
             if block == BADGES_BLOCK:
-                header = i18n.makeString('#badge:badge_{}'.format(record))
-                body = i18n.makeString('#badge:badge_{}_descr'.format(record))
-                note = i18n.makeString('#badge:badge_note')
+                header = i18n.makeString(BADGE.badgeName(record))
+                body = i18n.makeString(BADGE.badgeDescriptor(record))
+                note = i18n.makeString(BADGE.BADGE_NOTE)
                 badgeVO = {'imgSource': getBadgeIconPath(badgesIconSizes[iconSize], record),
                  'label': '',
                  'tooltip': makeTooltip(header, body, note)}
@@ -980,7 +986,8 @@ class CustomizationsBonus(SimpleBonus):
         for item, data in zip(self.getCustomizations(), self.getList(defaultSize=128)):
             count = item.get('value', 1)
             itemData = {'imgSource': RES_ICONS.getBonusIcon(iconSize, item.get('custType')),
-             'label': text_styles.hightlight('x{}'.format(count))}
+             'label': text_styles.hightlight('x{}'.format(count)),
+             'align': TEXT_ALIGN.RIGHT}
             itemData.update(self.__itemTooltip(data, isReceived=False))
             if withCounts:
                 itemData['count'] = count

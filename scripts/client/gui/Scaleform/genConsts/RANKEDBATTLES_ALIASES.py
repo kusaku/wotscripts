@@ -59,7 +59,8 @@ class RANKEDBATTLES_ALIASES(object):
     STATE_STAGE_EARNED_TOP12 = 'stage_earned_top12'
     STATE_STAGE_EARNED_TOP3 = 'stage_earned_top3'
     STATE_STAGE_LOST = 'stage_lost'
-    STATE_STAGE_NOT_EARNED = 'stage_not_earned'
+    STATE_STAGE_NOT_EARNED_TOP3 = 'stage_not_earned_top3'
+    STATE_STAGE_NOT_EARNED_TOP12 = 'stage_not_earned_top12'
     STATE_RANK1_EARNED_TOP12 = 'rank1_earned_top12'
     STATE_RANK2_EARNED_TOP12 = 'rank2_earned_top12'
     STATE_RANK3_EARNED_TOP12 = 'rank3_earned_top12'
@@ -111,6 +112,14 @@ class RANKEDBATTLES_ALIASES(object):
     @classmethod
     def getStateRankLost(cls, rank):
         name = 'STATE_RANK{}_LOST'.format(rank)
+        outcome = getattr(cls, name, None)
+        if outcome is None:
+            LOG_WARNING('Class constant "{}" not found'.format(name))
+        return outcome
+
+    @classmethod
+    def getStateStageNotEarned(cls, top):
+        name = 'STATE_STAGE_NOT_EARNED_TOP{}'.format(top)
         outcome = getattr(cls, name, None)
         if outcome is None:
             LOG_WARNING('Class constant "{}" not found'.format(name))

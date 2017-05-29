@@ -187,9 +187,9 @@ class RegularVehicleStatValuesBlock(base.StatsBlock):
                 showStunNum = self.__rawStunNum > 0
             if showStunNum and field == 'stunNum' or showStunNum and field == 'damageAssistedStun' or field not in _STAT_STUN_FIELD_NAMES:
                 value = component.getVO()
-            if self._isPersonal and field in _STAT_VALUES_VO_REPLACER:
-                field = _STAT_VALUES_VO_REPLACER[field]
-            vo.append(style.makeStatValue(field, value))
+                if self._isPersonal and field in _STAT_VALUES_VO_REPLACER:
+                    field = _STAT_VALUES_VO_REPLACER[field]
+                vo.append(style.makeStatValue(field, value))
 
         return vo
 

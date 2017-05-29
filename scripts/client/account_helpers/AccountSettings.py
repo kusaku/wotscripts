@@ -441,7 +441,7 @@ def _unpack(value):
 
 class AccountSettings(object):
     onSettingsChanging = Event.Event()
-    version = 30
+    version = 31
     __cache = {'login': None,
      'section': None}
     __isFirstRun = True
@@ -789,6 +789,11 @@ class AccountSettings(object):
                         if filterName in ('shop_vehicle', 'inventory_vehicle', 'shop_current', 'inventory_current', 'shop_tradeInVehicle', 'shop_restoreVehicle'):
                             defaults = DEFAULT_VALUES[KEY_FILTERS][filterName]
                             accFilters.write(filterName, base64.b64encode(pickle.dumps(defaults)))
+
+            if currVersion < 31:
+                for _, section in _filterAccountSection(ads):
+                    accSettings = AccountSettings.__readSection(section, KEY_SETTINGS)
+                    accSettings.deleteSection(NEW_SETTINGS_COUNTER)
 
             ads.writeInt('version', AccountSettings.version)
         return

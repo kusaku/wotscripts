@@ -17,6 +17,7 @@ import ResMgr
 import cameras
 import constants
 import control_modes
+import CommandMapping
 from AvatarInputHandler import aih_global_binding, aih_constants, gun_marker_ctrl
 from AvatarInputHandler.AimingSystems.SniperAimingSystem import SniperAimingSystem
 from AvatarInputHandler import AimingSystems
@@ -215,6 +216,8 @@ class AvatarInputHandler(CallbackDelayer, ComponentSystem):
         if isRepeat:
             return False
         elif self.__isStarted and self.__isDetached:
+            if CommandMapping.g_instance.isFired(CommandMapping.CMD_CM_LOCK_TARGET, key):
+                return self.__curCtrl.handleKeyEvent(isDown, key, mods, event)
             return BigWorld.player().handleKey(isDown, key, mods)
         elif not self.__isStarted or self.__isDetached:
             return False

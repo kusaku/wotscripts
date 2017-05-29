@@ -84,6 +84,9 @@ class ServerEventAbstract(object):
     def getType(self):
         return self._data.get('type', 0)
 
+    def getBattleTypeName(self):
+        return 'random'
+
     def getStartTime(self):
         if 'startTime' in self._data:
             return time_utils.makeLocalServerTime(self._data['startTime'])
@@ -498,6 +501,9 @@ class RankedQuest(Quest):
 
     def isBooby(self):
         return self.__rankedData['subtype'] == 'booby'
+
+    def getBattleTypeName(self):
+        return 'ranked'
 
     def _bonusDecorator(self, bonus):
         if bonus.getName() == 'oneof':
@@ -971,7 +977,7 @@ class PotapovQuest(Quest):
     def getTankmanBonus(self):
         for isMainBonus in (True, False):
             for bonus in self.getBonuses(isMain=isMainBonus):
-                if bonus.getName() == 'tankmen':
+                if bonus.getName() == 'potapovTankmen':
                     return (bonus, isMainBonus)
 
         return (None, None)

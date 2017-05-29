@@ -73,6 +73,10 @@ class _RankedWidgetSoundManager(object):
         self.__sound = None
         return
 
+    def playInstantSound(self, eventName, caller):
+        if not self.__callerBlocked(caller):
+            SoundGroups.g_instance.playSound2D(eventName)
+
     def __initBlockingSounds(self):
         self.__blockingSounds = {k:self._STEP_CHANGED_EVENTS for k in self._RANK_CHANGED_SOUNDS}
         stepUnchangedStates = (RANKEDBATTLES_ALIASES.STEP_NOT_RECEIVED_STATE,)
@@ -104,7 +108,7 @@ class RankedBattlesWidget(RankedBattlesWidgetMeta):
         self._soundMgr.play()
 
     def onSoundTrigger(self, triggerName):
-        SoundGroups.g_instance.playSound2D(triggerName)
+        self._soundMgr.playInstantSound(triggerName, self._soundCallerType)
 
     def onWidgetClick(self):
         self.fireEvent(events.LoadViewEvent(RANKEDBATTLES_ALIASES.RANKED_BATTLES_VIEW_ALIAS), EVENT_BUS_SCOPE.LOBBY)
@@ -207,7 +211,17 @@ class RankedBattlesWidget(RankedBattlesWidgetMeta):
             state = RANKEDBATTLES_ALIASES.RANK_IDLE_STATE
             nextRank = ranks[currentRankID + 1]
             steps = self._buildProgress(nextRank)
+            showText = True
+            for step in steps:
+                if step['state'] in [RANKEDBATTLES_ALIASES.STEP_JUST_LOST_STATE, RANKEDBATTLES_ALIASES.STEP_JUST_RECEIVED_STATE, RANKEDBATTLES_ALIASES.STEP_JUST_RECEIVED_SHORT_STATE]:
+                    showText = False
+
             countText = nextRank.getProgress().getUserStr()
+            if self._isHuge():
+                if not showText:
+                    countText = ''
+                else:
+                    countText = text_styles.stats(_ms(RANKED_BATTLES.RANKEDBATTLESWIDGET_NOCHANGES))
             rankLeftVO = self._buildRankVO(currentRank, True)
             rankRightVO = self._buildRankVO(nextRank)
             return self._buildVO(state, rankLeftVO=rankLeftVO, rankRightVO=rankRightVO, steps=steps, countText=countText)

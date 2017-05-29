@@ -67,17 +67,18 @@ def showMission(eventID, eventType = None):
     quest = quests.get(eventID)
     if eventType is not None and eventType == constants.EVENT_TYPE.POTAPOV_QUEST:
         showEventsWindow(eventID, eventType)
-    elif formatters.isMarathon(quest.getGroupID()):
-        groups = eventsCache.getGroups()
-        group = groups.get(quest.getGroupID())
-        groupContent = group.getGroupContent(quests)
-        mainQuest = group.getMainQuest(groupContent)
-        if mainQuest and quest.getID() != mainQuest.getID():
-            showMissionsMarathons(eventID=quest.getID(), groupID=group.getID(), anchor=group.getID())
+    elif quest is not None:
+        if formatters.isMarathon(quest.getGroupID()):
+            groups = eventsCache.getGroups()
+            group = groups.get(quest.getGroupID())
+            groupContent = group.getGroupContent(quests)
+            mainQuest = group.getMainQuest(groupContent)
+            if mainQuest and quest.getID() != mainQuest.getID():
+                showMissionsMarathons(eventID=quest.getID(), groupID=group.getID(), anchor=group.getID())
+            else:
+                showMissionsMarathons(anchor=group.getID())
         else:
-            showMissionsMarathons(anchor=group.getID())
-    else:
-        showMissionsCategories(eventID=quest.getID(), groupID=quest.getGroupID(), anchor=quest.getGroupID())
+            showMissionsCategories(eventID=quest.getID(), groupID=quest.getGroupID(), anchor=quest.getGroupID())
     return
 
 

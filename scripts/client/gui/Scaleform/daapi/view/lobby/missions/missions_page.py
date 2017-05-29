@@ -4,6 +4,7 @@ from CurrentVehicle import g_currentVehicle
 from account_helpers import AccountSettings
 from account_helpers.AccountSettings import MISSIONS_PAGE
 from async import async, await
+from debug_utils import LOG_DEBUG
 from gui.ClientUpdateManager import g_clientUpdateManager
 from gui.Scaleform.daapi import LobbySubView
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
@@ -45,6 +46,7 @@ class MissionsPage(LobbySubView, MissionsPageMeta):
         self.__filterData = AccountSettings.getFilter(MISSIONS_PAGE)
         self.__eventID = None
         self.__groupID = None
+        self.__needToScroll = False
         self.__builders = {QUESTS_ALIASES.MISSIONS_MARATHONS_VIEW_PY_ALIAS: group_packers.MarathonsGroupsFinder(),
          QUESTS_ALIASES.MISSIONS_CATEGORIES_VIEW_PY_ALIAS: group_packers.QuestsGroupsFinder(),
          QUESTS_ALIASES.CURRENT_VEHICLE_MISSIONS_VIEW_PY_ALIAS: group_packers.VehicleGroupFinder()}
@@ -113,6 +115,15 @@ class MissionsPage(LobbySubView, MissionsPageMeta):
                 self.__currentTabAlias = QUESTS_ALIASES.MISSIONS_CATEGORIES_VIEW_PY_ALIAS
         self.__eventID = ctx.get('eventID')
         self.__groupID = ctx.get('groupID')
+        self.__needToScroll = self.__groupID is not None
+        self.__scrollToGroup()
+        return
+
+    def __scrollToGroup(self):
+        if self.__eventID and self.__groupID and self.__needToScroll and self.currentTab is not None:
+            self.currentTab.as_scrollToItemS('blockId', self.__groupID)
+            self.__needToScroll = False
+        return
 
     def __getHeaderTabsData(self):
         tabs = [{'alias': QUESTS_ALIASES.MISSIONS_MARATHONS_VIEW_PY_ALIAS,
@@ -130,6 +141,7 @@ class MissionsPage(LobbySubView, MissionsPageMeta):
             self.currentTab.markVisited()
             self.__updateFilterLabel()
             self.__updateHeader()
+            self.__scrollToGroup()
         return
 
     def __updateFilterLabel(self):
@@ -351,6 +363,13 @@ class _GroupedQuestsProvider(ListDAAPIDataProvider):
 
     def emptyItem(self):
         return None
+
+    def getItemIndexHandler(self, fieldName, value):
+        for index, item in enumerate(self.__list):
+            if item[fieldName] == value:
+                return index
+
+        return -1
 
     def clear(self):
         self.__list = []

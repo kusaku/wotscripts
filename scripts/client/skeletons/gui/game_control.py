@@ -554,6 +554,9 @@ class IRankedBattlesController(IGameController):
     def getCurrentCycleID(self):
         raise NotImplementedError
 
+    def getSeasonPassed(self):
+        raise NotImplementedError
+
     def getPreviousSeason(self):
         raise NotImplementedError
 

@@ -75,7 +75,7 @@ class RankInfoHelper(object):
      RANK_CHANGE_STATES.RANK_LOST: (True, False, RANKEDBATTLES_ALIASES.getStateRankLost),
      RANK_CHANGE_STATES.STEP_EARNED: (False, True, RANKEDBATTLES_ALIASES.getStateStageEarned),
      RANK_CHANGE_STATES.STEP_LOST: (False, False, RANKEDBATTLES_ALIASES.STATE_STAGE_LOST),
-     RANK_CHANGE_STATES.NOTHING_CHANGED: (False, False, RANKEDBATTLES_ALIASES.STATE_STAGE_NOT_EARNED)}
+     RANK_CHANGE_STATES.NOTHING_CHANGED: (False, True, RANKEDBATTLES_ALIASES.getStateStageNotEarned)}
 
     def __init__(self, reusable):
         self.__reusable = reusable

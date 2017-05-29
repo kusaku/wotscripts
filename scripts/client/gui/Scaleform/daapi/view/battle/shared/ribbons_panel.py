@@ -102,6 +102,7 @@ def _receivedRamRibbonFormatter(ribbon, arenaDP, updater):
     vehicleName, vehicleClassTag = _getVehicleData(arenaDP, ribbon.getVehicleID())
     if arenaDP.getPlayerVehicleID() == ribbon.getVehicleID():
         vehicleName = ''
+        vehicleClassTag = ''
     updater(ribbonID=ribbon.getID(), ribbonType=ribbon.getType(), vehName=vehicleName, vehType=vehicleClassTag, leftFieldStr=BigWorld.wg_getIntegralFormat(ribbon.getExtraValue()))
 
 

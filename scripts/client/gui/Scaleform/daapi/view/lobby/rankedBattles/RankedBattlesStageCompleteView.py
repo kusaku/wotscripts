@@ -2,6 +2,7 @@
 from gui.Scaleform.daapi.view.lobby.rankedBattles.finish_awards_view import FinishAwardsView
 from gui.Scaleform.daapi.view.meta.RankedBattlesStageCompleteViewMeta import RankedBattlesStageCompleteViewMeta
 from gui.Scaleform.locale.RANKED_BATTLES import RANKED_BATTLES
+from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.shared.formatters import text_styles
 from gui.shared.money import Currency
 from helpers import i18n
@@ -16,7 +17,6 @@ class RankedBattlesStageCompleteView(RankedBattlesStageCompleteViewMeta, FinishA
 
     def closeView(self):
         self.destroy()
-        self._closeCallback()
 
     def onSoundTrigger(self, triggerName):
         self._playSound(triggerName)
@@ -43,8 +43,13 @@ class RankedBattlesStageCompleteView(RankedBattlesStageCompleteViewMeta, FinishA
              'scoresTitle': text_styles.highlightText(i18n.makeString(RANKED_BATTLES.SEASONCOMPLETE_SCORESEARNED, scores=text_styles.bonusLocalText(cycle.points))),
              'congratulationTitle': i18n.makeString(RANKED_BATTLES.SEASONCOMPLETE_STAGECOMPLETE, stage=cycle.ordinalNumber),
              'awards': self._packAwards(),
-             'nextButtonLabel': RANKED_BATTLES.AWARDS_YES})
+             'nextButtonLabel': RANKED_BATTLES.AWARDS_YES,
+             'bgSource': RES_ICONS.MAPS_ICONS_RANKEDBATTLES_BG_RANK_BLUR})
         return
+
+    def _dispose(self):
+        super(RankedBattlesStageCompleteView, self)._dispose()
+        self._closeCallback()
 
     def _boxAnimationData(self):
         return ('wood', self._quest.getRank())

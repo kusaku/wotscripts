@@ -7,7 +7,7 @@ from gui import makeHtmlString
 from gui.Scaleform.daapi.view.lobby.missions.conditions_formatters import packTokenProgress, packText, getSeparator, intersperse
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.server_events.cond_formatters.formatters import ConditionFormatter, ConditionsFormatter
-from gui.server_events.conditions import GROUP_TYPE
+from gui.server_events.conditions import GROUP_TYPE, AndGroup
 from gui.server_events.formatters import TOKEN_SIZES
 from gui.shared.formatters import text_styles, icons
 from helpers import int2roman, dependency
@@ -32,6 +32,36 @@ def relate(relation, value, label):
     return '{}{}'.format(label, rlabel)
 
 
+def prepareAccountConditionsGroup(conditions, event):
+    """
+    Create union AND group condition for account requirements component
+    contains account requirements and some specific vehicle requirements,
+    which may be displayed in account requirements component WOTD-84729
+    Wrap vehicle requirement in vehicle condition adapter, that check available for all suitable vehicles
+    """
+    group = AndGroup()
+    group.add(conditions.getConditions())
+    group.add(_getAdapter(event.vehicleReqs.getConditions(), event.vehicleReqs.getSuitableVehicles()))
+    return group
+
+
+def _isVehicleConditionAvailable(condition, suitableVehicles):
+    for vehicle in suitableVehicles:
+        if condition.isAvailable(vehicle):
+            return True
+
+    return False
+
+
+def _getAdapter(condition, suitableVehicles):
+    if condition.getName() == GROUP_TYPE.AND:
+        return VehicleGroupAndAdapter(condition, suitableVehicles)
+    elif condition.getName() == GROUP_TYPE.OR:
+        return VehicleGroupOrAdapter(condition, suitableVehicles)
+    else:
+        return VehicleConditionAdapter(condition, suitableVehicles)
+
+
 class RecursiveFormatter(ConditionsFormatter):
     """ Formatter meant to be called recursively by itself.
     
@@ -52,8 +82,72 @@ class RecursiveFormatter(ConditionsFormatter):
         return result
 
 
+class VehicleConditionAdapter(object):
+    """
+    Adapter for vehicle requirements
+    Work as vehicle condition, but overrides isAvailable method in which check condition for all suitable vehicles
+    """
+
+    def __init__(self, condition, suitableVehicles):
+        self._condition = condition
+        self._suitableVehicles = suitableVehicles
+
+    def isAvailable(self):
+        return _isVehicleConditionAvailable(self._condition, self._suitableVehicles)
+
+    def getName(self):
+        return self._condition.getName()
+
+    def getValue(self):
+        return self._condition.getValue()
+
+
+class VehicleGroupAdapter(VehicleConditionAdapter):
+    """
+    Adapter for vehicle requirements group
+    Work as logical conditions group,
+    but overrides isAvailable method in which check condition for all suitable vehicles
+    """
+
+    def isEmpty(self):
+        return not len(self._condition.items)
+
+    def getSortedItems(self):
+        return [ _getAdapter(condition, self._suitableVehicles) for condition in self._condition.getSortedItems() ]
+
+
+class VehicleGroupOrAdapter(VehicleGroupAdapter):
+    """
+    Adapter for OR vehicles conditions logical group
+    """
+
+    def isAvailable(self, *args, **kwargs):
+        for cond in self._condition.items:
+            if _isVehicleConditionAvailable(cond, self._suitableVehicles):
+                return True
+
+        return False
+
+
+class VehicleGroupAndAdapter(VehicleGroupAdapter):
+    """
+    Adapter for AND vehicles conditions logical group
+    """
+
+    def isAvailable(self, *args, **kwargs):
+        res = True
+        for cond in self._condition.items:
+            res = _isVehicleConditionAvailable(cond, self._suitableVehicles)
+            if not res:
+                return res
+
+        return res
+
+
 class AccountRequirementsFormatter(ConditionsFormatter):
-    """ Formatter for the account requirements block in the detailed quest window.
+    """
+    Formatter for the account requirements block and some vehicles conditions block in the detailed quest window.
+    Display vehicles conditions in account requirements block was additional UX request
     """
 
     def __init__(self):
@@ -64,7 +158,7 @@ class AccountRequirementsFormatter(ConditionsFormatter):
     def format(self, conditions, event):
         if event.isGuiDisabled():
             return {}
-        group = conditions.getConditions()
+        group = prepareAccountConditionsGroup(conditions, event)
         formatter = self._getGroupFormatter(group)
         requirements, passed, total = formatter.format(group, event)
         conclusion = formatter.conclusion(group, event, passed, total)
@@ -108,7 +202,8 @@ class SingleGroupFormatter(ConditionsFormatter):
          'GR': GlobalRatingRequirementFormatter(),
          'accountDossier': AccountDossierRequirementFormatter(),
          'vehiclesUnlocked': VehiclesRequirementFormatter(),
-         'vehiclesOwned': VehiclesRequirementFormatter()})
+         'vehiclesOwned': VehiclesRequirementFormatter(),
+         'hasReceivedMultipliedXP': HasReceivedMultipliedXPFormatter()})
 
     def conclusion(self, group, event, passed, total):
         """ Format the requirement header.
@@ -161,7 +256,8 @@ class RecursiveGroupFormatter(RecursiveFormatter):
          'GR': GlobalRatingRequirementFormatter(),
          'accountDossier': AccountDossierRequirementFormatter(),
          'vehiclesUnlocked': VehiclesRequirementFormatter(),
-         'vehiclesOwned': VehiclesRequirementFormatter()}, gatheringFormatters={'token': TokenGatheringRequirementFormatter})
+         'vehiclesOwned': VehiclesRequirementFormatter(),
+         'hasReceivedMultipliedXP': HasReceivedMultipliedXPFormatter()}, gatheringFormatters={'token': TokenGatheringRequirementFormatter})
 
     def conclusion(self, group, event, passed, total):
         """ Format the requirement header.
@@ -209,8 +305,8 @@ class RecursiveGroupFormatter(RecursiveFormatter):
                     branch = []
                 if branch:
                     total += 1
-                if condition.isAvailable():
-                    passed += 1
+                    if condition.isAvailable():
+                        passed += 1
             if branch:
                 self._iconize(condition.isAvailable(), isNested, branch)
                 result.extend(branch)
@@ -256,7 +352,8 @@ class TQRecursiveGroupFormatter(RecursiveGroupFormatter):
          'GR': GlobalRatingRequirementFormatter(),
          'accountDossier': AccountDossierRequirementFormatter(),
          'vehiclesUnlocked': VehiclesRequirementFormatter(),
-         'vehiclesOwned': VehiclesRequirementFormatter()})
+         'vehiclesOwned': VehiclesRequirementFormatter(),
+         'hasReceivedMultipliedXP': HasReceivedMultipliedXPFormatter()})
 
 
 class PremiumAccountFormatter(ConditionFormatter):
@@ -371,6 +468,22 @@ class VehiclesRequirementFormatter(ConditionFormatter):
             names = [ vehicle.userName for vehicle in condition.getVehiclesList() ]
             result.append(packText(style('{}: {}'.format(label, ', '.join(names)))))
         return result
+
+
+class HasReceivedMultipliedXPFormatter(ConditionFormatter):
+    """
+    Formatter for hasReceivedMultipliedXP vehicle requirement
+    Although hasReceivedMultipliedXP is vehicle requirement,
+    it is display in account requirement component WOTD-84729
+    """
+    itemsCache = dependency.descriptor(IItemsCache)
+
+    @classmethod
+    def format(cls, condition, event, styler):
+        style = styler(condition.isAvailable())
+        key = '#quests:details/requirements/vehicle/%s' % ('receivedMultXp' if condition.getValue() else 'notReceivedMultXp')
+        label = ms(key, mult=cls.itemsCache.items.shop.dailyXPFactor)
+        return [packText(style(label))]
 
 
 class AccountDossierRequirementFormatter(ConditionFormatter):

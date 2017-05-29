@@ -238,7 +238,9 @@ class UnavailableQuestTooltipData(BlocksTooltipData):
         items = super(UnavailableQuestTooltipData, self)._packBlocks()
         accountRequirementsFormatter = MissionsAccountRequirementsFormatter()
         requirements = accountRequirementsFormatter.format(quest.accountReqs, quest)
-        items.extend(self._getListBlock(TOOLTIPS.QUESTS_UNAVAILABLE_REQUIREMENT_HEADER, self._getList(requirements)))
+        reqList = self._getList(requirements)
+        if len(reqList) > 0:
+            items.extend(self._getListBlock(TOOLTIPS.QUESTS_UNAVAILABLE_REQUIREMENT_HEADER, reqList))
         if not (quest.vehicleReqs.isAnyVehicleAcceptable() or len(quest.vehicleReqs.getSuitableVehicles()) > 0):
             items.extend(self._notVehicle())
         items.append(self._getBootom())

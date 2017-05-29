@@ -644,7 +644,11 @@ class StrongholdEntity(UnitEntity):
         peripheryStartTimeUTC = baseTimeUTC.replace(hour=peripheryStartTimeUTC.tm_hour, minute=peripheryStartTimeUTC.tm_min, second=0, microsecond=0)
         peripheryEndTimeUTC = baseTimeUTC.replace(hour=peripheryEndTimeUTC.tm_hour, minute=peripheryEndTimeUTC.tm_min, second=0, microsecond=0)
         if peripheryStartTimeUTC > peripheryEndTimeUTC:
-            peripheryEndTimeUTC += datetime.timedelta(days=1)
+            shiftedStartTimeUTC = peripheryStartTimeUTC - datetime.timedelta(days=1)
+            if shiftedStartTimeUTC <= baseTimeUTC <= peripheryEndTimeUTC:
+                peripheryStartTimeUTC = shiftedStartTimeUTC
+            else:
+                peripheryEndTimeUTC += datetime.timedelta(days=1)
         if baseTimeUTC > peripheryEndTimeUTC and baseTimeUTC > peripheryStartTimeUTC:
             peripheryEndTimeUTC += datetime.timedelta(days=1)
             peripheryStartTimeUTC += datetime.timedelta(days=1)

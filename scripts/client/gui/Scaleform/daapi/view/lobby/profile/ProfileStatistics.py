@@ -1,7 +1,6 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/profile/ProfileStatistics.py
 from collections import namedtuple
 from debug_utils import LOG_ERROR
-from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui.Scaleform.daapi.view.lobby.profile.profile_statistics_vos import getStatisticsVO
 from gui.Scaleform.daapi.view.meta.ProfileStatisticsMeta import ProfileStatisticsMeta
 from gui.Scaleform.genConsts.PROFILE_DROPDOWN_KEYS import PROFILE_DROPDOWN_KEYS
@@ -47,8 +46,7 @@ class ProfileStatistics(ProfileStatisticsMeta):
             self.__ctx = {}
 
         super(ProfileStatistics, self).__init__(*args)
-        self.__rankedSeason = None
-        return
+        self.__rankedSeason = _RANKED_SEASONS_KEYS.all
 
     def setSeason(self, seasonId):
         if self._battlesType == PROFILE_DROPDOWN_KEYS.RANKED:
@@ -59,10 +57,6 @@ class ProfileStatistics(ProfileStatisticsMeta):
         self._setInitData()
 
     def _populate(self):
-        if self.__hasRankedSeasonsHistory():
-            self.__rankedSeason = _RANKED_SEASONS_KEYS[0]
-        else:
-            self.__rankedSeason = _RANKED_SEASONS_KEYS.current
         super(ProfileStatistics, self)._populate()
         self._setInitData()
 
@@ -131,7 +125,14 @@ class ProfileStatistics(ProfileStatisticsMeta):
             vo['seasonEnabled'] = True
 
     def __hasRankedSeasonsHistory(self):
-        return len(self.lobbyContext.getServerSettings().rankedBattles.seasons) > 1
+        """
+        We have the ranked history only in two cases:
+        1) The number of passed seasons >= 2
+        2) The number of passed seasons == 1 and there is an active current Season
+        :return: boolean result
+        """
+        passedSeasons = len(self.rankedController.getSeasonPassed())
+        return passedSeasons > 1 or passedSeasons == 1 and self.rankedController.getCurrentSeason() is not None
 
     def showPlayersStats(self):
         self.rankedController.openWebLeaguePage()

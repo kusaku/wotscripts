@@ -17,8 +17,8 @@ _EMPTY_BADGE_ID = '0'
 def _makeBadgeVO(badgeID, enabled, selected):
     return {'id': int(badgeID),
      'icon': settings.getBadgeIconPath(settings.BADGES_ICONS.X80, badgeID) if badgeID != _EMPTY_BADGE_ID else '',
-     'title': text_styles.stats('#badge:badge_{}'.format(badgeID)),
-     'description': text_styles.main('#badge:badge_{}_descr'.format(badgeID)),
+     'title': text_styles.stats(BADGE.badgeName(badgeID)),
+     'description': text_styles.main(BADGE.badgeDescriptor(badgeID)),
      'enabled': enabled,
      'selected': selected}
 

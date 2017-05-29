@@ -87,11 +87,12 @@ class _MissionsCarouselDataProvider(CarouselDataProvider):
     def _buildVehicle(self, vehicle):
         vehicleVO = super(_MissionsCarouselDataProvider, self)._buildVehicle(vehicle)
         vehicleVO.update(isUseRightBtn=False)
+        xpFactor = self._itemsCache.items.shop.dailyXPFactor
         if vehicle.isInInventory:
             for condition in self.__extraConditions:
                 isOk, reason = condition.isAvailableReason(vehicle)
                 if not isOk:
-                    smallStatus, largeStatus = getStatusStrings(reason, ctx={'factor': vehicle.dailyXPFactor})
+                    smallStatus, largeStatus = getStatusStrings(reason, ctx={'factor': xpFactor})
                     vehicleVO.update(smallInfoText=smallStatus, infoText=largeStatus, lockBackground=True, clickEnabled=False, infoImgSrc='', isCritInfo=False)
                     break
             else:
@@ -180,7 +181,7 @@ class MissionsVehicleSelector(MissionsVehicleSelectorMeta):
         suitableVehicles = self.__carousel.getSuitableVehicles()
         if suitableVehicles and vehicle and vehicle.intCD in suitableVehicles:
             selectedVeh = getVehicleDataVO(vehicle)
-            selectedVeh.update({'tooltip': TOOLTIPS.MISSIONS_VEHICLE_SELECTOR})
+            selectedVeh.update({'tooltip': TOOLTIPS.MISSIONS_VEHICLE_SELECTOR_LIST})
             status = text_styles.statInfo(QUESTS.MISSIONS_VEHICLESELECTOR_STATUS_SELECTED)
         elif suitableVehicles:
             label = QUESTS.MISSIONS_VEHICLESELECTOR_STATUS_SELECT
@@ -188,7 +189,7 @@ class MissionsVehicleSelector(MissionsVehicleSelectorMeta):
             selectedVeh = {'buyTank': True,
              'iconSmall': RES_ICONS.MAPS_ICONS_LIBRARY_EMPTY_SELECTION,
              'smallInfoText': style(label),
-             'tooltip': TOOLTIPS.MISSIONS_VEHICLE_SELECTOR}
+             'tooltip': TOOLTIPS.MISSIONS_VEHICLE_SELECTOR_SELECT}
             status = ''
         else:
             label = QUESTS.MISSIONS_VEHICLESELECTOR_STATUS_LIST
@@ -196,7 +197,7 @@ class MissionsVehicleSelector(MissionsVehicleSelectorMeta):
             selectedVeh = {'buyTank': True,
              'iconSmall': RES_ICONS.MAPS_ICONS_LIBRARY_EMPTY_SELECTION,
              'smallInfoText': style(label),
-             'tooltip': TOOLTIPS.MISSIONS_VEHICLE_SELECTOR}
+             'tooltip': TOOLTIPS.MISSIONS_VEHICLE_SELECTOR_LIST}
             status = text_styles.critical(QUESTS.MISSIONS_VEHICLESELECTOR_STATUS_NOTAVAILABLE)
         selectedVeh.update(isUseRightBtn=False)
         suitableVehiclesCount = self.__carousel.getSuitableVehiclesCount()

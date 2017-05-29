@@ -421,6 +421,8 @@ class _RankedItem(_SelectorItem):
         vo = super(_RankedItem, self).getVO()
         if self.rankedController.isAvailable():
             vo['specialBgIcon'] = RES_ICONS.MAPS_ICONS_BUTTONS_FALLOUTSELECTORRENDERERBGEVENT
+        else:
+            vo['specialBgIcon'] = RES_ICONS.MAPS_ICONS_BUTTONS_RANKEDSELECTORSEASONDISABLEDBG
         return vo
 
     def getFormattedLabel(self):

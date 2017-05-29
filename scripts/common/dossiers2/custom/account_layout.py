@@ -502,7 +502,8 @@ FALLOUT_ACHIEVEMENTS_BLOCK_LAYOUT = ['shoulderToShoulder',
  'unreachable',
  'champion',
  'bannerman',
- 'falloutDieHard']
+ 'falloutDieHard',
+ 'deleted']
 _falloutAchievementsPopUps = ['shoulderToShoulder',
  'aloneInTheField',
  'fallenFlags',

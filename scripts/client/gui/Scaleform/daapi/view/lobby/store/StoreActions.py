@@ -11,16 +11,6 @@ from skeletons.gui.server_events import IEventsCache
 class StoreActions(StoreActionsViewMeta):
     eventsCache = dependency.descriptor(IEventsCache)
 
-    def _populate(self):
-        super(StoreActions, self)._populate()
-        self._actionsBuilder = ActionsBuilder()
-        self.eventsCache.onSyncCompleted += self.__onEventUpdate
-        self.__update()
-
-    def _dispose(self):
-        self.eventsCache.onSyncCompleted -= self.__onEventUpdate
-        super(StoreActions, self)._dispose()
-
     def actionSelect(self, triggerChainID):
         """
         run tutorial sales chain for selected action
@@ -40,6 +30,16 @@ class StoreActions(StoreActionsViewMeta):
                     showMission(quest)
                     break
 
+    def _populate(self):
+        super(StoreActions, self)._populate()
+        self._actionsBuilder = ActionsBuilder()
+        self.eventsCache.onSyncCompleted += self.__onEventUpdate
+        self.__update()
+
+    def _dispose(self):
+        self.eventsCache.onSyncCompleted -= self.__onEventUpdate
+        super(StoreActions, self)._dispose()
+
     @classmethod
     def _getActions(cls):
 
@@ -58,5 +58,5 @@ class StoreActions(StoreActionsViewMeta):
         Waiting.hide('updateShop')
         self.as_setDataS(self._actionsBuilder.format(*self._getActions()))
 
-    def __onEventUpdate(self, *args):
+    def __onEventUpdate(self, *_):
         self.__update()

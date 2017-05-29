@@ -38,13 +38,13 @@ _gold_bonus_list = ('slotsPrices',
 class ActionInfo(EventInfoModel):
     """Data model for action card on action store view
     """
-    __slots__ = ('event', 'discount', 'priority', '_id', '_maxDiscount', '_packedDiscounts')
 
     def __init__(self, event, actionData):
         super(ActionInfo, self).__init__(event)
         self.discount = actionData.discountObj
         self.priority = actionData.priority
         self.uiDecoration = actionData.uiDecoration
+        self._compositionType = None
         self._id = ''
         self._maxDiscount = None
         self._packedDiscounts = None
@@ -113,14 +113,12 @@ class ActionInfo(EventInfoModel):
         discountValue = self._getAutoDescriptionData(useBigIco)
         return self._getShortDescription(self.discount.getParamName(), discount=discountValue)
 
-    def getAdditionalDescription(self, useBigIco = False):
+    def getAdditionalDescription(self, useBigIco = False, forHeroCard = False):
         """Additional description, automatically showed for hero card
         on hover show for normal cards
-        :param useBigIco: use big or small currency icons
-        :return: i18n formatted text
         """
         discount = self._getAdditionalDescriptionData(useBigIco)
-        return self._getFullDescription(self.discount.getParamName(), discount)
+        return self._getFullDescription(self.discount.getParamName(), discount, forHeroCard=forHeroCard)
 
     def getComingSoonDescription(self):
         pass
@@ -140,8 +138,8 @@ class ActionInfo(EventInfoModel):
         return False
 
     def getDiscount(self):
-        """Calculate action discount
-        :return: formatted text with discount info or empty string if can't calculate
+        """Returns string with discount or empty string if can't calculate
+        Is used on red label on action cards
         """
         discount = self._getMaxDiscount()
         if discount:
@@ -196,6 +194,19 @@ class ActionInfo(EventInfoModel):
          'timeLeft': self._getActiveTimeDateText(),
          'isShowTimeIco': self._showTimerIco()}
 
+    def setComposition(self, compositionType):
+        self._compositionType = compositionType
+
+    def getMaxDiscountValue(self):
+        """
+        Always returns int, if maxDiscount is None, 0 is returned
+        """
+        maxDiscount = self._getMaxDiscount()
+        if maxDiscount is not None:
+            return maxDiscount.discountValue
+        else:
+            return 0
+
     def _showTimerIco(self):
         """Show timer icon when action comes to end
         :return:
@@ -209,30 +220,32 @@ class ActionInfo(EventInfoModel):
         timeStr = self._getActiveDateTimeString()
         return text_styles.stats(timeStr)
 
-    @classmethod
-    def _getAutoDescription(cls, stepName):
+    def _getAutoDescription(self, stepName):
         """Card description text
         Used only for coming soon cards
         :param stepName: step name
         :return: i18n description string
         """
-        formatter = 'auto/{}'.format(stepName)
+        formatter = 'auto/{}'.format(self.__modifyName(stepName))
         return i18n.makeString(QUESTS.getActionDescription(formatter))
 
-    @classmethod
-    def _getFullDescription(cls, stepName, discount = None):
-        formatter = 'full/{}'.format(stepName)
-        return i18n.makeString(QUESTS.getActionDescription(formatter), discount=discount)
+    def _getFullDescription(self, stepName, discount = None, forHeroCard = False):
+        modifiedStepName = self.__modifyName(stepName)
+        locKey = None
+        if forHeroCard:
+            locKey = QUESTS.getActionDescription('hero/full/{}'.format(modifiedStepName))
+        if locKey is None:
+            locKey = QUESTS.getActionDescription('full/{}'.format(modifiedStepName))
+        return i18n.makeString(locKey, discount=discount)
 
-    @classmethod
-    def _getShortDescription(cls, stepName, **kwargs):
+    def _getShortDescription(self, stepName, **kwargs):
         """Card description text
         Used for small cards
         :param stepName: step name
         :param kwargs: dict params for text
         :return: i18n description string
         """
-        formatter = 'short/{}'.format(stepName)
+        formatter = 'short/{}'.format(self.__modifyName(stepName))
         return i18n.makeString(QUESTS.getActionDescription(formatter), **kwargs)
 
     @classmethod
@@ -288,14 +301,18 @@ class ActionInfo(EventInfoModel):
         :param useBigIco: big/small icon in text
         :return: i18n string
         """
-        return 0
+        return self._getAdditionalDescriptionData(useBigIco)
 
     def _getAdditionalDescriptionData(self, useBigIco = False):
         """format string with short description about action
         :param useBigIco: big/small icon in text
         :return: i18n string
         """
-        return 0
+        discount = self._getMaxDiscount()
+        if discount:
+            return formatPercentValue(discount.discountValue)
+        else:
+            return None
 
     def _formatFinishTime(self):
         """Format string with finish time for action
@@ -316,6 +333,9 @@ class ActionInfo(EventInfoModel):
             return '{} {}'.format(text_styles.main(i18n.makeString(QUESTS.ACTION_TIME_LEFT)), fmt)
         return self._formatFinishTime()
 
+    def __modifyName(self, stepName):
+        return self._compositionType or stepName
+
 
 class EconomicsActionsInfo(ActionInfo):
     """Economics actions
@@ -330,9 +350,6 @@ class EconomicsActionsInfo(ActionInfo):
         return self.discount.getParamName()
 
     def getDiscount(self):
-        """Calculate action discount
-        :return: formatted text with discount info or '' if can't calculate
-        """
         paramName = self.discount.getParamName()
         if 'winXPFactorMode' in paramName:
             discount = self.__handleWinXPFactorMode()
@@ -347,9 +364,10 @@ class EconomicsActionsInfo(ActionInfo):
     def getActionBtnLabel(self):
         """Get formatted button text
         """
-        if self.discount.getParamName() in ('clanCreationCost',):
+        discountParamName = self.discount.getParamName()
+        if discountParamName in ('clanCreationCost',):
             return ''
-        if _PREMIUM_PACKET in self.discount.getParamName():
+        if _PREMIUM_PACKET in discountParamName:
             isPremium = getEconomicalStatsDict().get('isPremium', False)
             if isPremium:
                 return self._getButtonName('{}/continue'.format(_PREMIUM_PACKET))
@@ -371,11 +389,12 @@ class EconomicsActionsInfo(ActionInfo):
         """
         paramName = self.discount.getParamName()
         if 'exchangeRate' in paramName:
-            discountValue = self.__getExchangeRateBonusIco()
+            discountValue = self.__getExchangeRateBonusIco(useBigIco)
         elif paramName in ('freeXPConversionDiscrecity', 'freeXPToTManXPRate'):
-            discountValue = self.getDiscount()
+            discount = self._getMaxDiscount()
+            discountValue = formatMultiplierValue(discount.discountValue)
         else:
-            discountValue = self._getAdditionalDescriptionData(useBigIco=True)
+            discountValue = self._getAdditionalDescriptionData(useBigIco)
         return discountValue
 
     def _getAdditionalDescriptionData(self, useBigIco = False):
@@ -445,7 +464,7 @@ class VehPriceActionInfo(ActionInfo):
             return self._getShortDescription(paramName, **values)
         return ''
 
-    def getAdditionalDescription(self, useBigIco = False):
+    def getAdditionalDescription(self, useBigIco = False, forHeroCard = False):
         """Format table description
         :return: formatted text
         """
@@ -517,11 +536,11 @@ class VehRentActionInfo(VehPriceActionInfo):
         """
         return 'vehicleRentPrice'
 
-    def getAdditionalDescription(self, useBigIco = False):
+    def getAdditionalDescription(self, useBigIco = False, forHeroCard = False):
         """Format table description
         :return: formatted text
         """
-        return self._getFullDescription(self.discount.getParamName())
+        return self._getFullDescription(self.discount.getParamName(), forHeroCard=forHeroCard)
 
     def getTableData(self):
         """If card contains tabled data, format and return data
@@ -537,7 +556,7 @@ class EquipmentActionInfo(ActionInfo):
         """
         return 'equipmentPrice'
 
-    def getAdditionalDescription(self, useBigIco = False):
+    def getAdditionalDescription(self, useBigIco = False, forHeroCard = False):
         """Format table description
         """
         equipCount = len(self._getPackedDiscounts())
@@ -570,7 +589,7 @@ class OptDeviceActionInfo(ActionInfo):
         """
         return 'optionalDevicePrice'
 
-    def getAdditionalDescription(self, useBigIco = False):
+    def getAdditionalDescription(self, useBigIco = False, forHeroCard = False):
         """Format table description
         :return: formatted text
         """
@@ -613,12 +632,12 @@ class CamouflagePriceActionInfo(ActionInfo):
         """
         return 'camouflagePacketInfCostMultiplier'
 
-    def getAdditionalDescription(self, useBigIco = False):
+    def getAdditionalDescription(self, useBigIco = False, forHeroCard = False):
         """Format table description
         """
         fmtList = self._getAdditionalDescriptionData()
         discountValue = fmtList[0]['discount'] if fmtList else None
-        return self._getFullDescription(self.discount.getParamName(), discountValue)
+        return self._getFullDescription(self.discount.getParamName(), discountValue, forHeroCard=forHeroCard)
 
     def getAutoDescription(self, useBigIco = False):
         """Return text description on hover for small card
@@ -633,7 +652,7 @@ class CamouflagePriceActionInfo(ActionInfo):
     def _getAdditionalDescriptionData(self, useBigIco = False):
         vehicles = self._getPackedDiscounts()
         res = []
-        for _, data in vehicles.iteritems():
+        for data in vehicles.itervalues():
             veh = data.discountName
             item = {'title': veh.shortUserName,
              'discount': formatPercentValue(data.discountValue)}
@@ -650,7 +669,7 @@ class InscriptionPriceActionInfo(ActionInfo):
         """
         return 'inscriptionPacketInfCostMultiplier'
 
-    def getAdditionalDescription(self, useBigIco = False):
+    def getAdditionalDescription(self, useBigIco = False, forHeroCard = False):
         """Format table description
         """
         inscriptionsCount = len(self._getPackedDiscounts())
@@ -692,7 +711,7 @@ class BoosterPriceActionInfo(ActionInfo):
         """
         return 'goodiePrice'
 
-    def getAdditionalDescription(self, useBigIco = False):
+    def getAdditionalDescription(self, useBigIco = False, forHeroCard = False):
         """Format table description
         """
         boostersCount = len(self._getPackedDiscounts())
@@ -711,7 +730,7 @@ class BoosterPriceActionInfo(ActionInfo):
             busterName = i18n.makeString(QUESTS.getActionDescription(formatter))
             busterSmallIcon = RES_ICONS.getBusterSmallIcon(guiType)
             item = {'icon': busterSmallIcon,
-             'vehTypeIcon': '',
+             'additionalIcon': '',
              'title': busterName,
              'discount': formatStrDiscount(data),
              'price': self._formatPriceIcon(booster, False)}
@@ -722,17 +741,12 @@ class BoosterPriceActionInfo(ActionInfo):
     def __sortBoosters(self):
 
         def __sortByNameFunc(item):
-            raise item.discountName or AssertionError
-            raise item.discountName.userName or AssertionError
             return item.discountName.userName
 
         def __sortByParams(item):
-            raise item.discountName or AssertionError
-            raise item.discountName.buyPrice or AssertionError
-            raise item.discountValue or AssertionError
             booster = item.discountName
-            dscnt = item.discountValue
-            return (dscnt, (booster.buyPrice.gold, booster.buyPrice.credits))
+            discount = item.discountValue
+            return (discount, (booster.buyPrice.gold, booster.buyPrice.credits))
 
         discountItems = self._getPackedDiscounts()
         return sorted(sorted(discountItems.values(), key=__sortByNameFunc), key=__sortByParams, reverse=True)[:3]
@@ -784,7 +798,7 @@ class ComingSoonActionInfo(ActionInfo):
     def getAutoDescription(self, useBigIco = False):
         pass
 
-    def getAdditionalDescription(self, useBigIco = False):
+    def getAdditionalDescription(self, useBigIco = False, forHeroCard = False):
         pass
 
     def getComingSoonDescription(self):
@@ -817,7 +831,7 @@ class ComingSoonActionInfo(ActionInfo):
         :return: str
         """
         paramName = self.__name
-        if 'Economics' in paramName:
+        if 'Economics' in paramName or 'set_TradeInParams' in paramName:
             paramName = self.__params[0] if self.__params else ''
         if paramName.endswith(_MULTIPLIER):
             paramName = paramName[:-len(_MULTIPLIER)]
@@ -897,12 +911,16 @@ _PARAM_TO_IMG_DICT = {'exchangeRate': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_CONVE
  'set_VehRentPrice': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_TANK_CLOCK,
  'mul_VehRentPriceAll': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_TANK_CLOCK,
  'mul_VehRentPriceNation': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_TANK_CLOCK,
+ 'equipment/goldPrice': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_CONSUMABLES,
+ 'equipment/creditsPrice': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_CONSUMABLES,
  'mul_EquipmentPriceAll': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_CONSUMABLES,
  'mul_EquipmentPrice': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_CONSUMABLES,
  'set_EquipmentPrice': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_CONSUMABLES,
  'mul_OptionalDevicePriceAll': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_EQUIPMENT,
  'mul_OptionalDevicePrice': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_EQUIPMENT,
  'set_OptionalDevicePrice': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_EQUIPMENT,
+ 'shell/goldPrice': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_SHELLS,
+ 'shell/creditsPrice': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_SHELLS,
  'mul_ShellPriceAll': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_SHELLS,
  'mul_ShellPriceNation': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_SHELLS,
  'mul_ShellPrice': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_SHELLS,

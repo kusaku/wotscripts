@@ -1,7 +1,7 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/meta/RankedBattlesSeasonCompleteViewMeta.py
-from gui.Scaleform.framework.entities.View import View
+from gui.Scaleform.daapi.view.meta.WrapperViewMeta import WrapperViewMeta
 
-class RankedBattlesSeasonCompleteViewMeta(View):
+class RankedBattlesSeasonCompleteViewMeta(WrapperViewMeta):
 
     def closeView(self):
         self._printOverrideError('closeView')

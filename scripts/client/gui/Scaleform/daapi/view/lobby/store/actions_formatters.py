@@ -1,11 +1,13 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/store/actions_formatters.py
 from operator import methodcaller
+from gui.Scaleform.daapi.view.lobby.store.action_composer import ActionComposer
 from gui.Scaleform.daapi.view.lobby.store.actions_helpers import getActionInfoData, getAnnouncedActionInfo
 from gui.Scaleform.genConsts.STORE_CONSTANTS import STORE_CONSTANTS
 from gui.Scaleform.locale.MENU import MENU
 from gui.Scaleform.locale.QUESTS import QUESTS
 from gui.server_events.settings import visitEventGUI
 from helpers import i18n
+from shared_utils import findFirst
 __LOWER_BETTER_STEPS = ('set_EconomicsPrices', 'mul_EconomicsPrices', 'mul_GoodiePrice', 'mul_GoodiePriceAll', 'set_GoodiePrice', 'mul_CamouflagePriceFactor', 'mul_EmblemPriceFactorByGroups', 'mul_EquipmentPrice', 'mul_EquipmentPriceAll', 'set_EquipmentPrice', 'mul_HornPrice', 'mul_HornPriceAll', 'set_HornPrice', 'mul_OptionalDevicePrice', 'mul_OptionalDevicePriceAll', 'set_OptionalDevicePrice', 'cond_ShellGoldPrice', 'mul_ShellPrice', 'mul_ShellPriceAll', 'mul_ShellPriceNation', 'set_ShellPrice', 'cond_VehPrice', 'mul_VehPrice', 'mul_VehPriceAll', 'mul_VehPriceNation', 'set_VehPrice', 'cond_VehRentPrice', 'mul_VehRentPrice', 'mul_VehRentPriceAll', 'mul_VehRentPriceNation')
 __MORE_BETTER_STEPS = ('set_EconomicsParams', 'mul_EconomicsParams')
 _INTERSECTED_ACTIONS_LIST = __LOWER_BETTER_STEPS + __MORE_BETTER_STEPS
@@ -107,17 +109,23 @@ class ActionCardFormatter(object):
 
     def _getTableData(self):
         raise self.discount or AssertionError
-        return {'descr': self.discount.getAdditionalDescription(useBigIco=False),
+        return {'descr': self._getDescription(),
          'tableOffers': self.discount.getTableData()}
 
     def _getExtras(self):
         return {}
+
+    def _getDescription(self):
+        return self.discount.getAdditionalDescription(useBigIco=False)
 
 
 class HeroCardFormatter(ActionCardFormatter):
 
     def _getExtras(self, *args, **kwargs):
         return {'linkage': STORE_CONSTANTS.ACTION_CARD_HERO_LINKAGE}
+
+    def _getDescription(self):
+        return self.discount.getAdditionalDescription(useBigIco=False, forHeroCard=True)
 
 
 class NormalCardFormatter(ActionCardFormatter):
@@ -171,41 +179,37 @@ class ActionsBuilder(object):
         """
         visibleCards = {_VISIBLE_CARDS.ACTIONS: [],
          _VISIBLE_CARDS.ANNOUNCED: []}
+        composer = ActionComposer()
         if actions:
-            affectedActions = []
+            affectedActions = set()
             actionEntities = entities.get('actionEntities', None)
             actionNames = entities.get('actions', None)
             actionSteps = entities.get('steps', None)
             if actionEntities and actionNames and actionSteps:
-                for _, item in actionEntities.items():
-                    checkValue = (actionNames[item[0]], actionSteps[item[1]])
-                    if checkValue not in affectedActions:
-                        affectedActions.append(checkValue)
+                for name, step, _ in actionEntities.values():
+                    affectedActions.add((actionNames[name], actionSteps[step]))
 
             for action in actions:
-                actionInfoList = []
-                actionInfoList.extend(getActionInfoData(action))
-                for actionInfo in actionInfoList:
+                for actionInfo in getActionInfoData(action):
                     if actionInfo.visualPriority not in _ACTIONS_PRIORITY_LEVEL.ALL_VISIBLE:
                         continue
                     aiName = actionInfo.event.getID()
                     aiStep = actionInfo.discount.getName()
-                    aiDiscount = actionInfo.isDiscountVisible()
-                    if not aiDiscount:
+                    if not actionInfo.isDiscountVisible():
                         continue
                     if aiStep in _INTERSECTED_ACTIONS_LIST:
                         if (aiName, aiStep) in affectedActions:
-                            visibleCards[_VISIBLE_CARDS.ACTIONS].append(actionInfo)
+                            composer.add(actionInfo)
                     else:
-                        visibleCards[_VISIBLE_CARDS.ACTIONS].append(actionInfo)
+                        composer.add(actionInfo)
 
-            visibleCards[_VISIBLE_CARDS.ACTIONS] = sorted(visibleCards[_VISIBLE_CARDS.ACTIONS], key=methodcaller('getFinishTime'))
-            visibleCards[_VISIBLE_CARDS.ANNOUNCED] = sorted(visibleCards[_VISIBLE_CARDS.ANNOUNCED], key=methodcaller('getStartTime'))
         for announce in announced:
             infoList = getAnnouncedActionInfo(announce)
             if infoList:
                 visibleCards[_VISIBLE_CARDS.ANNOUNCED].append(infoList)
 
+        visibleCards[_VISIBLE_CARDS.ACTIONS] = sorted(composer.getActions(), key=methodcaller('getFinishTime'))
+        visibleCards[_VISIBLE_CARDS.ANNOUNCED] = sorted(visibleCards[_VISIBLE_CARDS.ANNOUNCED], key=methodcaller('getStartTime'))
         return visibleCards
 
     def createLayoutTemplate(self, allCards):
@@ -268,7 +272,7 @@ class ActionsBuilder(object):
     def getSuitableFormatter(self, discount):
         priority = discount.visualPriority
         if priority in _ACTIONS_PRIORITY_MAPPING:
-            return self.__formatters[_ACTIONS_PRIORITY_MAPPING[priority]].format(discount)
+            return self.__formatters[_ACTIONS_PRIORITY_MAPPING[priority]]
         else:
             return None
 
@@ -281,9 +285,9 @@ class ActionsBuilder(object):
             result = []
             if discounts:
                 for discount in discounts:
-                    info = self.getSuitableFormatter(discount)
-                    if info:
-                        result.append(info)
+                    formatter = self.getSuitableFormatter(discount)
+                    if formatter:
+                        result.append(formatter.format(discount))
 
             cards[field] = result or None
 
@@ -291,15 +295,15 @@ class ActionsBuilder(object):
             cards[_ltf.HEROCARD] = cards[_ltf.HEROCARD][0]
         if cards[_ltf.COMINGSOON]:
             cards[_ltf.COMINGSOON] = cards[_ltf.COMINGSOON][0]
-        if not cards[_ltf.HEROCARD] and not cards[_ltf.COLUMNLEFT] and not cards[_ltf.COLUMNRIGHT] and not cards[_ltf.COMINGSOON]:
+        if not any(cards.values()):
             template[_ltf.CARDS] = None
         return template
 
     def markVisited(self, actionID):
         cards = self.__visibleCards[_VISIBLE_CARDS.ACTIONS]
-        visitedCard = filter(lambda x: x.getID() == actionID, cards)
+        visitedCard = findFirst(lambda x: x.getID() == actionID, cards)
         if visitedCard:
-            visitEventGUI(visitedCard[0])
+            visitEventGUI(visitedCard)
 
     def __setVisualPriority(self, items, priority):
         """Set new visual priority according template rules"""

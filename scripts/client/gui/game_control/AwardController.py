@@ -836,6 +836,6 @@ class RankedQuestsHandler(MultiTypeServiceChannelHandler):
             self.__unlock()
         return
 
-    @staticmethod
-    def __showBoobyAwardWindow(quest):
+    def __showBoobyAwardWindow(self, quest):
         quests_events.showRankedBoobyAward(quest)
+        self.__unlock()

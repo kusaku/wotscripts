@@ -346,10 +346,10 @@ class VehicleRank(Rank):
         return RES_ICONS.getRankedBoxIcon(size, boxType, '_opened' if isOpened else '', self.__accTopRankID)
 
     def getUserName(self):
-        if self.isAcquired():
-            nameKey = RANKED_BATTLES.RANKEDBATTLEVIEW_PROGRESSBLOCK_VEHICLERANK
-        else:
+        if self.getSerialID() > 1:
             nameKey = RANKED_BATTLES.RANKEDBATTLEVIEW_PROGRESSBLOCK_VEHICLEBONUSRANK
+        else:
+            nameKey = RANKED_BATTLES.RANKEDBATTLEVIEW_PROGRESSBLOCK_VEHICLERANK
         return i18n.makeString(nameKey, vehicle=self.__vehicle.shortUserName)
 
     def isRewardClaimed(self):

@@ -558,6 +558,7 @@ class MESSENGER(object):
     SERVICECHANNELMESSAGES_FORT_PROM_RESOURCE_WITHDRAWN = '#messenger:serviceChannelMessages/fort/PROM_RESOURCE_WITHDRAWN'
     SERVICECHANNELMESSAGES_FORT_RESERVES_EARNED = '#messenger:serviceChannelMessages/fort/RESERVES_EARNED'
     SERVICECHANNELMESSAGES_FORT_RESERVES_WITHDRAWN = '#messenger:serviceChannelMessages/fort/RESERVES_WITHDRAWN'
+    SERVICECHANNELMESSAGES_BADGEACHIEVEMENT = '#messenger:serviceChannelMessages/badgeAchievement'
     COMMAND_SUCCESS_USERBAN = '#messenger:command/success/USERBAN'
     COMMAND_SUCCESS_USERUNBAN = '#messenger:command/success/USERUNBAN'
     CHAT_ERROR_NOT_ALLOWED = '#messenger:chat_error/NOT_ALLOWED'

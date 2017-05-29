@@ -1,11 +1,11 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/missions/conditions_formatters/tooltips.py
 from constants import EVENT_TYPE
-from gui.Scaleform.daapi.view.lobby.missions.conditions_formatters import packText, getSeparator, intersperse
-from gui.Scaleform.daapi.view.lobby.missions.conditions_formatters.requirements import PremiumAccountFormatter, InClanRequirementFormatter, IgrTypeRequirementFormatter, GlobalRatingRequirementFormatter, AccountDossierRequirementFormatter, VehiclesRequirementFormatter
+from gui.Scaleform.daapi.view.lobby.missions.conditions_formatters import packText, getSeparator, intersperse, requirements
+from gui.Scaleform.daapi.view.lobby.missions.conditions_formatters.requirements import prepareAccountConditionsGroup
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
-from gui.shared.formatters import text_styles
-from gui.server_events.conditions import GROUP_TYPE
 from gui.server_events.cond_formatters.formatters import ConditionFormatter, ConditionsFormatter
+from gui.server_events.conditions import GROUP_TYPE
+from gui.shared.formatters import text_styles
 from helpers import dependency
 from helpers.i18n import makeString as _ms
 from skeletons.gui.server_events import IEventsCache
@@ -20,18 +20,19 @@ class MissionsAccountRequirementsFormatter(ConditionsFormatter):
 
     def __init__(self):
         super(MissionsAccountRequirementsFormatter, self).__init__({'token': _TokenRequirementFormatter(),
-         'premiumAccount': PremiumAccountFormatter(),
-         'inClan': InClanRequirementFormatter(),
-         'igrType': IgrTypeRequirementFormatter(),
-         'GR': GlobalRatingRequirementFormatter(),
-         'accountDossier': AccountDossierRequirementFormatter(),
-         'vehiclesUnlocked': VehiclesRequirementFormatter(),
-         'vehiclesOwned': VehiclesRequirementFormatter()})
+         'premiumAccount': requirements.PremiumAccountFormatter(),
+         'inClan': requirements.InClanRequirementFormatter(),
+         'igrType': requirements.IgrTypeRequirementFormatter(),
+         'GR': requirements.GlobalRatingRequirementFormatter(),
+         'accountDossier': requirements.AccountDossierRequirementFormatter(),
+         'vehiclesUnlocked': requirements.VehiclesRequirementFormatter(),
+         'vehiclesOwned': requirements.VehiclesRequirementFormatter(),
+         'hasReceivedMultipliedXP': requirements.HasReceivedMultipliedXPFormatter()})
 
     def format(self, conditions, event):
         if event.isGuiDisabled():
             return {}
-        group = conditions.getConditions()
+        group = prepareAccountConditionsGroup(conditions, event)
         requirements = self._format(group, event)
         return requirements
 
@@ -41,15 +42,17 @@ class MissionsAccountRequirementsFormatter(ConditionsFormatter):
         result = []
         separator = getSeparator(group.getName())
         for condition in group.getSortedItems():
+            branch = []
             if not condition.isAvailable():
                 conditionName = condition.getName()
                 if conditionName in GROUP_TYPE.ALL():
                     branch = self._format(condition, event, isNested=True)
                 else:
                     fmt = self.getConditionFormatter(conditionName)
-                    branch = fmt.format(condition, event, reqStyle)
+                    if fmt:
+                        branch = fmt.format(condition, event, reqStyle)
                 result.extend(branch)
-                if not isNested:
+                if not isNested and branch:
                     branch[0].update(bullet=TOOLTIPS.QUESTS_UNAVAILABLE_BULLET)
 
         if separator:

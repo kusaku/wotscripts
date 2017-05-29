@@ -405,9 +405,7 @@ class ArenaPeriodPlayer(ArenaPeriodController):
         return
 
     def _updateCountdown(self, timeLeft):
-        if self.__replay is not None and not self.__replay.isTimeWarpInProgress:
-            super(ArenaPeriodPlayer, self)._updateCountdown(timeLeft)
-        return
+        super(ArenaPeriodPlayer, self)._updateCountdown(timeLeft)
 
     def _updateSound(self, timeLeft):
         if timeLeft and not self.__replay.playbackSpeed == 0:

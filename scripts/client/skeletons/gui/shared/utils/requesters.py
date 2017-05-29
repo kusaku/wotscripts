@@ -75,7 +75,7 @@ class IStatsRequester(IRequester):
 
     @property
     def mayConsumeWalletResources(self):
-        """Getd wallet resources available flag."""
+        """Gets wallet resources available flag."""
         raise NotImplementedError
 
     @property

@@ -85,7 +85,7 @@ class RankedBattlesController(IRankedBattlesController):
             return None
             return None
 
-    def getPreviousSeason(self):
+    def getSeasonPassed(self):
         now = time_utils.getServerRegionalTime()
         settings = self.__getSettings()
         seasonsPassed = []
@@ -94,6 +94,10 @@ class RankedBattlesController(IRankedBattlesController):
             if now > endSeason:
                 seasonsPassed.append((seasonID, endSeason))
 
+        return seasonsPassed
+
+    def getPreviousSeason(self):
+        seasonsPassed = self.getSeasonPassed()
         if seasonsPassed:
             seasonID, _ = max(seasonsPassed, key=operator.itemgetter(1))
             return self.getSeason(seasonID)
@@ -250,9 +254,12 @@ class RankedBattlesController(IRankedBattlesController):
     @async
     @process
     def getLeagueData(self, callback):
-        result = yield self.clansController.getClanDossier().requestRankedPosition()
-        if result is not None:
-            result = result.get('results', {})
+        if self.clansController.getAccountProfile():
+            result = yield self.clansController.getClanDossier().requestRankedPosition()
+            if result is not None:
+                result = result.get('results')
+        else:
+            result = None
         callback(result)
         return
 

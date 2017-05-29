@@ -168,6 +168,7 @@ class _ReceivedHitVehicleVOBuilder(_VehicleVOBuilder):
         super(_ReceivedHitVehicleVOBuilder, self)._populateVO(vehicleVO, info, arenaDP)
         if info.getArenaVehicleID() == arenaDP.getPlayerVehicleID() and info.isRam():
             vehicleVO.vehicleName = ''
+            vehicleVO.vehicleTypeImg = ''
 
 
 class _ShellVOModel(_VOModel):

@@ -6,6 +6,7 @@ from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui.Scaleform.daapi.view.meta.RankedBattlesWelcomeViewMeta import RankedBattlesWelcomeViewMeta
 from gui.Scaleform.locale.RANKED_BATTLES import RANKED_BATTLES
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
+from gui.ranked_battles.constants import SOUND
 from gui.shared import events, EVENT_BUS_SCOPE
 from gui.shared.formatters import text_styles
 from gui.shared.utils.functions import makeTooltip
@@ -23,14 +24,15 @@ class RankedBattlesWelcomeView(LobbySubView, RankedBattlesWelcomeViewMeta):
         self.__close()
 
     def onCloseBtnClick(self):
-        self.onAnimationFinished()
+        self.onAnimationFinished(False)
         self.__close()
 
     def onNextBtnClick(self):
         self.__close()
 
-    def onAnimationFinished(self):
-        self.soundManager.stopAllSounds()
+    def onAnimationFinished(self, forced):
+        if forced:
+            self.soundManager.playSound(SOUND.ANIMATION_WINDOW_CLOSED)
         filters = self.__getFilters()
         filters['isRankedWelcomeViewShowed'] = True
         self.__setFilters(filters)

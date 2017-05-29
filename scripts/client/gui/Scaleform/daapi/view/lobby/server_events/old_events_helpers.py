@@ -75,7 +75,7 @@ class _EventInfo(EventInfoModel):
             for cond in self.event.bonusCond.getConditions().items:
                 if isinstance(cond, conditions._Cumulativable):
                     for groupByKey, (curProg, totalProg, diff, _) in cond.getProgressPerGroup(pCur, pPrev).iteritems():
-                        label = cond.getUserString()
+                        label = cond.getUserString(battleTypeName=self.event.getBattleTypeName())
                         if not diff or not label:
                             continue
                         index += 1
@@ -441,7 +441,8 @@ def getBoosterQuests():
     lobbyContext = dependency.instance(ILobbyContext)
     hasTopVehicle = len(itemsCache.items.getVehicles(FALLOUT_QUESTS_CRITERIA.TOP_VEHICLE))
     isFalloutQuestEnabled = lobbyContext.getServerSettings().isFalloutQuestEnabled()
-    return eventsCache.getAllQuests(lambda q: q.isAvailable()[0] and not q.isCompleted() and len(q.getBonuses('goodies')) and not (q.getType() == EVENT_TYPE.POTAPOV_QUEST and q.getPQType().branch == PQ_BRANCH.FALLOUT and (not isFalloutQuestEnabled or not hasTopVehicle)), includePotapovQuests=True)
+    excludedQuests = (EVENT_TYPE.RANKED_QUEST,)
+    return eventsCache.getAllQuests(lambda q: q.isAvailable()[0] and not q.isCompleted() and len(q.getBonuses('goodies')) and not (q.getType() == EVENT_TYPE.POTAPOV_QUEST and q.getPQType().branch == PQ_BRANCH.FALLOUT and (not isFalloutQuestEnabled or not hasTopVehicle)) and q.getType() not in excludedQuests, includePotapovQuests=True)
 
 
 class _PotapovDependenciesResolver(object):

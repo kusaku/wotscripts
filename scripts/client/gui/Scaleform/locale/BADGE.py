@@ -3,6 +3,7 @@
 This file was generated using the wgpygen.
 Please, don't edit this file manually.
 """
+from debug_utils import LOG_WARNING
 
 class BADGE(object):
     ACCOUNTPOPOVER_BADGE_TOOLTIP = '#badge:accountPopover/badge/tooltip'
@@ -36,3 +37,52 @@ class BADGE(object):
     BADGE_NOTE = '#badge:badge_note'
     TITLETEXT = '#badge:titleText'
     DESCTEXT = '#badge:descText'
+    BADGE_ENUM = (BADGE_0,
+     BADGE_0_DESCR,
+     BADGE_1,
+     BADGE_1_DESCR,
+     BADGE_2,
+     BADGE_2_DESCR,
+     BADGE_3,
+     BADGE_3_DESCR,
+     BADGE_4,
+     BADGE_4_DESCR,
+     BADGE_5,
+     BADGE_5_DESCR,
+     BADGE_6,
+     BADGE_6_DESCR,
+     BADGE_7,
+     BADGE_7_DESCR,
+     BADGE_8,
+     BADGE_8_DESCR,
+     BADGE_9,
+     BADGE_9_DESCR,
+     BADGE_NOTE)
+    BADGE_ALL_DESCR_ENUM = (BADGE_0_DESCR,
+     BADGE_1_DESCR,
+     BADGE_2_DESCR,
+     BADGE_3_DESCR,
+     BADGE_4_DESCR,
+     BADGE_5_DESCR,
+     BADGE_6_DESCR,
+     BADGE_7_DESCR,
+     BADGE_8_DESCR,
+     BADGE_9_DESCR)
+
+    @classmethod
+    def badgeName(cls, key0):
+        outcome = '#badge:badge_{}'.format(key0)
+        if outcome not in cls.BADGE_ENUM:
+            LOG_WARNING('Localization key "{}" not found'.format(outcome))
+            return None
+        else:
+            return outcome
+
+    @classmethod
+    def badgeDescriptor(cls, key0):
+        outcome = '#badge:badge_{}_descr'.format(key0)
+        if outcome not in cls.BADGE_ALL_DESCR_ENUM:
+            LOG_WARNING('Localization key "{}" not found'.format(outcome))
+            return None
+        else:
+            return outcome

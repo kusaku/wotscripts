@@ -58,6 +58,7 @@ class DISCOUNT_TYPE(CONST_CONTAINER):
     XP = 'xp'
     FREE_XP = 'freeXp'
     MULTIPLIER = 'multiplier'
+    TRADE_IN_PERCENT = 'trade_in_percent'
 
 
 class PROGRESS_BAR_TYPE(CONST_CONTAINER):
@@ -307,8 +308,12 @@ def formatDiscount(discountVal, discountType):
 
 def formatStrDiscount(discountVal):
     dt = discountVal.discountType
-    if dt == DISCOUNT_TYPE.PERCENT:
-        return '{} {}'.format(i18n.makeString(QUESTS.ACTION_DISCOUNT_DISCOUNTTEXT), i18n.makeString(QUESTS.ACTION_DISCOUNT_PERCENT, value=discountVal.discountValue))
+    if dt == DISCOUNT_TYPE.PERCENT or dt == DISCOUNT_TYPE.TRADE_IN_PERCENT:
+        if dt == DISCOUNT_TYPE.PERCENT:
+            txtKey = QUESTS.ACTION_DISCOUNT_DISCOUNTTEXT
+        else:
+            txtKey = QUESTS.ACTION_DISCOUNT_TRADEINLABELTEXT
+        return '{} {}'.format(i18n.makeString(txtKey), i18n.makeString(QUESTS.ACTION_DISCOUNT_PERCENT, value=discountVal.discountValue))
     if dt == DISCOUNT_TYPE.MULTIPLIER:
         return i18n.makeString(QUESTS.ACTION_DISCOUNT_MODIFIER, count=discountVal.discountValue)
     if dt == DISCOUNT_TYPE.GOLD:

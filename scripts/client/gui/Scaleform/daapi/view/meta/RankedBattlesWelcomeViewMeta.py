@@ -12,7 +12,7 @@ class RankedBattlesWelcomeViewMeta(View):
     def onEscapePress(self):
         self._printOverrideError('onEscapePress')
 
-    def onAnimationFinished(self):
+    def onAnimationFinished(self, forced):
         self._printOverrideError('onAnimationFinished')
 
     def onSoundTrigger(self, trigerName):

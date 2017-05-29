@@ -5,6 +5,8 @@ from gui.ranked_battles.constants import SOUND
 from gui.server_events.bonuses import getBonusObj
 from helpers import dependency
 from skeletons.gui.game_control import IRankedBattlesController
+from gui.shared.money import Currency
+_INVISIBLE_AWARDS = (Currency.CRYSTAL,)
 
 class FinishAwardsView(object):
     rankedController = dependency.descriptor(IRankedBattlesController)
@@ -23,9 +25,10 @@ class FinishAwardsView(object):
     def _packAwards(self):
         result = []
         for name, value in self._awards.iteritems():
-            bonus = getBonusObj(self._quest, name, value)
-            if bonus is not None:
-                result.extend(bonus.getRankedAwardVOs('big'))
+            if name not in _INVISIBLE_AWARDS:
+                bonus = getBonusObj(self._quest, name, value)
+                if bonus is not None:
+                    result.extend(bonus.getRankedAwardVOs('big'))
 
         return result
 

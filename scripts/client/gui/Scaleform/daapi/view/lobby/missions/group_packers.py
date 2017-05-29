@@ -4,7 +4,6 @@ import BigWorld
 from CurrentVehicle import g_currentVehicle
 from Event import EventManager, Event
 from constants import EVENT_TYPE
-from debug_utils import LOG_DEBUG
 from gui.Scaleform.daapi.view.lobby.missions.awards_formatters import MarathonAwardComposer
 from gui.Scaleform.daapi.view.lobby.missions.conditions_formatters.tokens import TokensMarathonFormatter
 from gui.Scaleform.daapi.view.lobby.missions.missions_helper import getMissionInfoData
@@ -128,7 +127,7 @@ class _EventsBlockBuilder(object):
         for group in self._cache.itervalues():
             resultExtend(group.values())
 
-        return sorted(result, key=lambda i: i.getSortPriority(), reverse=True)
+        return sorted(result, key=lambda e: e.getSortPriority(), reverse=True)
 
 
 class VehicleGroupFinder(_EventsBlockBuilder):
@@ -338,6 +337,9 @@ class _GroupedEventsBlockInfo(_MinimizableEventsBlockInfo):
         super(_GroupedEventsBlockInfo, self).__init__()
         self._group = group
 
+    def getSortPriority(self):
+        return (2, self._group.getPriority())
+
     def buildEventsBlockData(self, srvEvents, filterFunc):
         self._suitableEvents = self.findEvents(srvEvents)
         self._events = filter(filterFunc, self._suitableEvents)
@@ -385,9 +387,6 @@ class _GroupedQuestsBlockInfo(_GroupedEventsBlockInfo):
         super(_GroupedQuestsBlockInfo, self).__init__(group)
         self.__totalQuestsCount = 0
         self.__completedQuestsCount = 0
-
-    def getSortPriority(self):
-        return (2, self._group.getPriority())
 
     @classmethod
     def _getGuiLinkages(cls):

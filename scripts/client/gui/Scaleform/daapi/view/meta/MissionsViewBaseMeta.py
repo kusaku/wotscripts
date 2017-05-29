@@ -31,3 +31,7 @@ class MissionsViewBaseMeta(BaseDAAPIComponent):
     def as_setWaitingVisibleS(self, visible):
         if self._isDAAPIInited():
             return self.flashObject.as_setWaitingVisible(visible)
+
+    def as_scrollToItemS(self, idFieldName, itemId):
+        if self._isDAAPIInited():
+            return self.flashObject.as_scrollToItem(idFieldName, itemId)

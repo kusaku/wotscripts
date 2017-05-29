@@ -238,7 +238,8 @@ FALLOUT_ACHIEVEMENTS_BLOCK_LAYOUT = ['shoulderToShoulder',
  'unreachable',
  'champion',
  'bannerman',
- 'falloutDieHard']
+ 'falloutDieHard',
+ 'deleted']
 _falloutAchievementsPopUps = ['falloutDieHard']
 _falloutAchievementsBlockBuilder = StaticSizeBlockBuilder('falloutAchievements', FALLOUT_ACHIEVEMENTS_BLOCK_LAYOUT, {}, _falloutAchievementsPopUps)
 _playerInscriptionsBlockBuilder = ListBlockBuilder('inscriptions', 'H', {})

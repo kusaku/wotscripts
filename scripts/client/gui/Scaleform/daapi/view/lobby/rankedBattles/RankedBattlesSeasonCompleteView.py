@@ -16,18 +16,22 @@ class RankedBattlesSeasonCompleteView(RankedBattlesSeasonCompleteViewMeta, Finis
         FinishAwardsView.__init__(self, ctx)
 
     def closeView(self):
-        self.__close()
+        self.destroy()
 
     def onSoundTrigger(self, triggerName):
         self._playSound(triggerName)
 
     def showRating(self):
         self.rankedController.openWebLeaguePage()
-        self.__close()
+        self.destroy()
 
     def _populate(self):
         super(RankedBattlesSeasonCompleteView, self)._populate()
         self.__setData()
+
+    def _dispose(self):
+        super(RankedBattlesSeasonCompleteView, self)._dispose()
+        self._closeCallback()
 
     @process
     def __setData(self):
@@ -54,13 +58,10 @@ class RankedBattlesSeasonCompleteView(RankedBattlesSeasonCompleteViewMeta, Finis
              'currencyValue': str(crystalsCount),
              'congratulationTitle': RANKED_BATTLES.SEASONCOMPLETE_SEASONRESULTS,
              'nextButtonLabel': RANKED_BATTLES.AWARDS_YES,
-             'awards': self._packAwards()})
+             'awards': self._packAwards(),
+             'bgSource': RES_ICONS.MAPS_ICONS_RANKEDBATTLES_BG_RANK_BLUR})
         return
 
     def _boxAnimationData(self):
         _, cohortNumber, _ = ranked_helpers.getRankedDataFromTokenQuestID(self._quest.getID())
         return ('metal', cohortNumber)
-
-    def __close(self):
-        self.destroy()
-        self._closeCallback()

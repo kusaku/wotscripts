@@ -386,6 +386,7 @@ class RES_ICONS(object):
     MAPS_ICONS_BUTTONS_PLAYERS = '../maps/icons/buttons/Players.png'
     MAPS_ICONS_BUTTONS_PREMIUM = '../maps/icons/buttons/premium.png'
     MAPS_ICONS_BUTTONS_PREVIOUSPAGE = '../maps/icons/buttons/previousPage.png'
+    MAPS_ICONS_BUTTONS_RANKEDSELECTORSEASONDISABLEDBG = '../maps/icons/buttons/rankedSelectorSeasonDisabledBG.png'
     MAPS_ICONS_BUTTONS_REFILL_ACCOUNT = '../maps/icons/buttons/refill_account.png'
     MAPS_ICONS_BUTTONS_REFRESH = '../maps/icons/buttons/refresh.png'
     MAPS_ICONS_BUTTONS_REMOVE = '../maps/icons/buttons/remove.png'
@@ -801,12 +802,6 @@ class RES_ICONS(object):
     MAPS_ICONS_LIBRARY_BONUSES_DEFAULT = '../maps/icons/library/bonuses/default.png'
     MAPS_ICONS_LIBRARY_BONUSES_EMBLEMS = '../maps/icons/library/bonuses/emblems.png'
     MAPS_ICONS_LIBRARY_BONUSES_INSCRIPTIONS = '../maps/icons/library/bonuses/inscriptions.png'
-    MAPS_ICONS_LIBRARY_BONUSES_PREMIUM_1 = '../maps/icons/library/bonuses/premium_1.png'
-    MAPS_ICONS_LIBRARY_BONUSES_PREMIUM_180 = '../maps/icons/library/bonuses/premium_180.png'
-    MAPS_ICONS_LIBRARY_BONUSES_PREMIUM_3 = '../maps/icons/library/bonuses/premium_3.png'
-    MAPS_ICONS_LIBRARY_BONUSES_PREMIUM_30 = '../maps/icons/library/bonuses/premium_30.png'
-    MAPS_ICONS_LIBRARY_BONUSES_PREMIUM_360 = '../maps/icons/library/bonuses/premium_360.png'
-    MAPS_ICONS_LIBRARY_BONUSES_PREMIUM_7 = '../maps/icons/library/bonuses/premium_7.png'
     MAPS_ICONS_LIBRARY_BONUSES_SLOTS = '../maps/icons/library/bonuses/slots.png'
     MAPS_ICONS_LIBRARY_BONUSES_TANKMEN = '../maps/icons/library/bonuses/tankmen.png'
     MAPS_ICONS_LIBRARY_BONUSES_TANKMENXP = '../maps/icons/library/bonuses/tankmenXP.png'
@@ -2041,6 +2036,7 @@ class RES_ICONS(object):
     MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_7 = '../maps/icons/tankmen/icons/barracks/japan-7.png'
     MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_8 = '../maps/icons/tankmen/icons/barracks/japan-8.png'
     MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_9 = '../maps/icons/tankmen/icons/barracks/japan-9.png'
+    MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_CARISA_CONTZEN = '../maps/icons/tankmen/icons/barracks/japan-Carisa_Contzen.png'
     MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_FEMALE_1 = '../maps/icons/tankmen/icons/barracks/japan-female-1.png'
     MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_FEMALE_10 = '../maps/icons/tankmen/icons/barracks/japan-female-10.png'
     MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_FEMALE_11 = '../maps/icons/tankmen/icons/barracks/japan-female-11.png'
@@ -2053,6 +2049,15 @@ class RES_ICONS(object):
     MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_FEMALE_7 = '../maps/icons/tankmen/icons/barracks/japan-female-7.png'
     MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_FEMALE_8 = '../maps/icons/tankmen/icons/barracks/japan-female-8.png'
     MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_FEMALE_9 = '../maps/icons/tankmen/icons/barracks/japan-female-9.png'
+    MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_GUNNER = '../maps/icons/tankmen/icons/barracks/japan-Gunner.png'
+    MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_GUNNER_1 = '../maps/icons/tankmen/icons/barracks/japan-Gunner_1.png'
+    MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_GUSURG = '../maps/icons/tankmen/icons/barracks/japan-Gusurg.png'
+    MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_ISARA_GUNTHER = '../maps/icons/tankmen/icons/barracks/japan-Isara_Gunther.png'
+    MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_KREIS_CZHERNY = '../maps/icons/tankmen/icons/barracks/japan-Kreis_Czherny.png'
+    MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_LOADER = '../maps/icons/tankmen/icons/barracks/japan-Loader.png'
+    MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_LOADER_2 = '../maps/icons/tankmen/icons/barracks/japan-Loader_2.png'
+    MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_RADIO_OPERATOR = '../maps/icons/tankmen/icons/barracks/japan-Radio_operator.png'
+    MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_WELKIN_GUNTHER = '../maps/icons/tankmen/icons/barracks/japan-Welkin_Gunther.png'
     MAPS_ICONS_TANKMEN_ICONS_BARRACKS_SWEDEN_1 = '../maps/icons/tankmen/icons/barracks/sweden-1.png'
     MAPS_ICONS_TANKMEN_ICONS_BARRACKS_SWEDEN_10 = '../maps/icons/tankmen/icons/barracks/sweden-10.png'
     MAPS_ICONS_TANKMEN_ICONS_BARRACKS_SWEDEN_11 = '../maps/icons/tankmen/icons/barracks/sweden-11.png'
@@ -2477,6 +2482,7 @@ class RES_ICONS(object):
     MAPS_ICONS_TANKMEN_ICONS_BIG_JAPAN_7 = '../maps/icons/tankmen/icons/big/japan-7.png'
     MAPS_ICONS_TANKMEN_ICONS_BIG_JAPAN_8 = '../maps/icons/tankmen/icons/big/japan-8.png'
     MAPS_ICONS_TANKMEN_ICONS_BIG_JAPAN_9 = '../maps/icons/tankmen/icons/big/japan-9.png'
+    MAPS_ICONS_TANKMEN_ICONS_BIG_JAPAN_CARISA_CONTZEN = '../maps/icons/tankmen/icons/big/japan-Carisa_Contzen.png'
     MAPS_ICONS_TANKMEN_ICONS_BIG_JAPAN_FEMALE_1 = '../maps/icons/tankmen/icons/big/japan-female-1.png'
     MAPS_ICONS_TANKMEN_ICONS_BIG_JAPAN_FEMALE_10 = '../maps/icons/tankmen/icons/big/japan-female-10.png'
     MAPS_ICONS_TANKMEN_ICONS_BIG_JAPAN_FEMALE_11 = '../maps/icons/tankmen/icons/big/japan-female-11.png'
@@ -2489,6 +2495,15 @@ class RES_ICONS(object):
     MAPS_ICONS_TANKMEN_ICONS_BIG_JAPAN_FEMALE_7 = '../maps/icons/tankmen/icons/big/japan-female-7.png'
     MAPS_ICONS_TANKMEN_ICONS_BIG_JAPAN_FEMALE_8 = '../maps/icons/tankmen/icons/big/japan-female-8.png'
     MAPS_ICONS_TANKMEN_ICONS_BIG_JAPAN_FEMALE_9 = '../maps/icons/tankmen/icons/big/japan-female-9.png'
+    MAPS_ICONS_TANKMEN_ICONS_BIG_JAPAN_GUNNER = '../maps/icons/tankmen/icons/big/japan-Gunner.png'
+    MAPS_ICONS_TANKMEN_ICONS_BIG_JAPAN_GUNNER_1 = '../maps/icons/tankmen/icons/big/japan-Gunner_1.png'
+    MAPS_ICONS_TANKMEN_ICONS_BIG_JAPAN_GUSURG = '../maps/icons/tankmen/icons/big/japan-Gusurg.png'
+    MAPS_ICONS_TANKMEN_ICONS_BIG_JAPAN_ISARA_GUNTHER = '../maps/icons/tankmen/icons/big/japan-Isara_Gunther.png'
+    MAPS_ICONS_TANKMEN_ICONS_BIG_JAPAN_KREIS_CZHERNY = '../maps/icons/tankmen/icons/big/japan-Kreis_Czherny.png'
+    MAPS_ICONS_TANKMEN_ICONS_BIG_JAPAN_LOADER = '../maps/icons/tankmen/icons/big/japan-Loader.png'
+    MAPS_ICONS_TANKMEN_ICONS_BIG_JAPAN_LOADER_2 = '../maps/icons/tankmen/icons/big/japan-Loader_2.png'
+    MAPS_ICONS_TANKMEN_ICONS_BIG_JAPAN_RADIO_OPERATOR = '../maps/icons/tankmen/icons/big/japan-Radio_operator.png'
+    MAPS_ICONS_TANKMEN_ICONS_BIG_JAPAN_WELKIN_GUNTHER = '../maps/icons/tankmen/icons/big/japan-Welkin_Gunther.png'
     MAPS_ICONS_TANKMEN_ICONS_BIG_SWEDEN_1 = '../maps/icons/tankmen/icons/big/sweden-1.png'
     MAPS_ICONS_TANKMEN_ICONS_BIG_SWEDEN_10 = '../maps/icons/tankmen/icons/big/sweden-10.png'
     MAPS_ICONS_TANKMEN_ICONS_BIG_SWEDEN_11 = '../maps/icons/tankmen/icons/big/sweden-11.png'
@@ -2914,6 +2929,7 @@ class RES_ICONS(object):
     MAPS_ICONS_TANKMEN_ICONS_SMALL_JAPAN_7 = '../maps/icons/tankmen/icons/small/japan-7.png'
     MAPS_ICONS_TANKMEN_ICONS_SMALL_JAPAN_8 = '../maps/icons/tankmen/icons/small/japan-8.png'
     MAPS_ICONS_TANKMEN_ICONS_SMALL_JAPAN_9 = '../maps/icons/tankmen/icons/small/japan-9.png'
+    MAPS_ICONS_TANKMEN_ICONS_SMALL_JAPAN_CARISA_CONTZEN = '../maps/icons/tankmen/icons/small/japan-Carisa_Contzen.png'
     MAPS_ICONS_TANKMEN_ICONS_SMALL_JAPAN_FEMALE_1 = '../maps/icons/tankmen/icons/small/japan-female-1.png'
     MAPS_ICONS_TANKMEN_ICONS_SMALL_JAPAN_FEMALE_10 = '../maps/icons/tankmen/icons/small/japan-female-10.png'
     MAPS_ICONS_TANKMEN_ICONS_SMALL_JAPAN_FEMALE_11 = '../maps/icons/tankmen/icons/small/japan-female-11.png'
@@ -2926,6 +2942,15 @@ class RES_ICONS(object):
     MAPS_ICONS_TANKMEN_ICONS_SMALL_JAPAN_FEMALE_7 = '../maps/icons/tankmen/icons/small/japan-female-7.png'
     MAPS_ICONS_TANKMEN_ICONS_SMALL_JAPAN_FEMALE_8 = '../maps/icons/tankmen/icons/small/japan-female-8.png'
     MAPS_ICONS_TANKMEN_ICONS_SMALL_JAPAN_FEMALE_9 = '../maps/icons/tankmen/icons/small/japan-female-9.png'
+    MAPS_ICONS_TANKMEN_ICONS_SMALL_JAPAN_GUNNER = '../maps/icons/tankmen/icons/small/japan-Gunner.png'
+    MAPS_ICONS_TANKMEN_ICONS_SMALL_JAPAN_GUNNER_1 = '../maps/icons/tankmen/icons/small/japan-Gunner_1.png'
+    MAPS_ICONS_TANKMEN_ICONS_SMALL_JAPAN_GUSURG = '../maps/icons/tankmen/icons/small/japan-Gusurg.png'
+    MAPS_ICONS_TANKMEN_ICONS_SMALL_JAPAN_ISARA_GUNTHER = '../maps/icons/tankmen/icons/small/japan-Isara_Gunther.png'
+    MAPS_ICONS_TANKMEN_ICONS_SMALL_JAPAN_KREIS_CZHERNY = '../maps/icons/tankmen/icons/small/japan-Kreis_Czherny.png'
+    MAPS_ICONS_TANKMEN_ICONS_SMALL_JAPAN_LOADER = '../maps/icons/tankmen/icons/small/japan-Loader.png'
+    MAPS_ICONS_TANKMEN_ICONS_SMALL_JAPAN_LOADER_2 = '../maps/icons/tankmen/icons/small/japan-Loader_2.png'
+    MAPS_ICONS_TANKMEN_ICONS_SMALL_JAPAN_RADIO_OPERATOR = '../maps/icons/tankmen/icons/small/japan-Radio_operator.png'
+    MAPS_ICONS_TANKMEN_ICONS_SMALL_JAPAN_WELKIN_GUNTHER = '../maps/icons/tankmen/icons/small/japan-Welkin_Gunther.png'
     MAPS_ICONS_TANKMEN_ICONS_SMALL_SWEDEN_1 = '../maps/icons/tankmen/icons/small/sweden-1.png'
     MAPS_ICONS_TANKMEN_ICONS_SMALL_SWEDEN_10 = '../maps/icons/tankmen/icons/small/sweden-10.png'
     MAPS_ICONS_TANKMEN_ICONS_SMALL_SWEDEN_11 = '../maps/icons/tankmen/icons/small/sweden-11.png'
@@ -3369,6 +3394,7 @@ class RES_ICONS(object):
      MAPS_ICONS_BUTTONS_PLAYERS,
      MAPS_ICONS_BUTTONS_PREMIUM,
      MAPS_ICONS_BUTTONS_PREVIOUSPAGE,
+     MAPS_ICONS_BUTTONS_RANKEDSELECTORSEASONDISABLEDBG,
      MAPS_ICONS_BUTTONS_REFILL_ACCOUNT,
      MAPS_ICONS_BUTTONS_REFRESH,
      MAPS_ICONS_BUTTONS_REMOVE,
@@ -3776,6 +3802,7 @@ class RES_ICONS(object):
      MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_7,
      MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_8,
      MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_9,
+     MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_CARISA_CONTZEN,
      MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_FEMALE_1,
      MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_FEMALE_10,
      MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_FEMALE_11,
@@ -3788,6 +3815,15 @@ class RES_ICONS(object):
      MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_FEMALE_7,
      MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_FEMALE_8,
      MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_FEMALE_9,
+     MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_GUNNER,
+     MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_GUNNER_1,
+     MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_GUSURG,
+     MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_ISARA_GUNTHER,
+     MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_KREIS_CZHERNY,
+     MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_LOADER,
+     MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_LOADER_2,
+     MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_RADIO_OPERATOR,
+     MAPS_ICONS_TANKMEN_ICONS_BARRACKS_JAPAN_WELKIN_GUNTHER,
      MAPS_ICONS_TANKMEN_ICONS_BARRACKS_SWEDEN_1,
      MAPS_ICONS_TANKMEN_ICONS_BARRACKS_SWEDEN_10,
      MAPS_ICONS_TANKMEN_ICONS_BARRACKS_SWEDEN_11,
@@ -4126,12 +4162,6 @@ class RES_ICONS(object):
      MAPS_ICONS_LIBRARY_BONUSES_DEFAULT,
      MAPS_ICONS_LIBRARY_BONUSES_EMBLEMS,
      MAPS_ICONS_LIBRARY_BONUSES_INSCRIPTIONS,
-     MAPS_ICONS_LIBRARY_BONUSES_PREMIUM_1,
-     MAPS_ICONS_LIBRARY_BONUSES_PREMIUM_180,
-     MAPS_ICONS_LIBRARY_BONUSES_PREMIUM_3,
-     MAPS_ICONS_LIBRARY_BONUSES_PREMIUM_30,
-     MAPS_ICONS_LIBRARY_BONUSES_PREMIUM_360,
-     MAPS_ICONS_LIBRARY_BONUSES_PREMIUM_7,
      MAPS_ICONS_LIBRARY_BONUSES_SLOTS,
      MAPS_ICONS_LIBRARY_BONUSES_TANKMEN,
      MAPS_ICONS_LIBRARY_BONUSES_TANKMENXP,
@@ -4140,12 +4170,15 @@ class RES_ICONS(object):
      MAPS_ICONS_LIBRARY_BONUSES_VEHICLEDISCOUNT,
      MAPS_ICONS_LIBRARY_BONUSES_VEHICLES,
      MAPS_ICONS_LIBRARY_BONUSES_VEHICLES_RENT)
-    MAPS_ICONS_LIBRARY_BONUSES_PREMIUM_ENUM = (MAPS_ICONS_LIBRARY_BONUSES_PREMIUM_1,
-     MAPS_ICONS_LIBRARY_BONUSES_PREMIUM_180,
-     MAPS_ICONS_LIBRARY_BONUSES_PREMIUM_3,
-     MAPS_ICONS_LIBRARY_BONUSES_PREMIUM_30,
-     MAPS_ICONS_LIBRARY_BONUSES_PREMIUM_360,
-     MAPS_ICONS_LIBRARY_BONUSES_PREMIUM_7)
+    MAPS_ICONS_QUESTS_BONUSES_SMALL_PREMIUM_ENUM = (MAPS_ICONS_QUESTS_BONUSES_SMALL_PREMIUM_1,
+     MAPS_ICONS_QUESTS_BONUSES_SMALL_PREMIUM_14,
+     MAPS_ICONS_QUESTS_BONUSES_SMALL_PREMIUM_180,
+     MAPS_ICONS_QUESTS_BONUSES_SMALL_PREMIUM_2,
+     MAPS_ICONS_QUESTS_BONUSES_SMALL_PREMIUM_3,
+     MAPS_ICONS_QUESTS_BONUSES_SMALL_PREMIUM_30,
+     MAPS_ICONS_QUESTS_BONUSES_SMALL_PREMIUM_360,
+     MAPS_ICONS_QUESTS_BONUSES_SMALL_PREMIUM_7,
+     MAPS_ICONS_QUESTS_BONUSES_SMALL_PREMIUM_90)
     MAPS_ICONS_LIBRARY_OUTLINE_QUESTS_ENUM = (MAPS_ICONS_LIBRARY_OUTLINE_QUESTS_ALL_DONE, MAPS_ICONS_LIBRARY_OUTLINE_QUESTS_AVAILABLE, MAPS_ICONS_LIBRARY_OUTLINE_QUESTS_DISABLED)
     MAPS_ICONS_MESSENGER_STATUS_ALL_CHAT_ICON_ENUM = (MAPS_ICONS_MESSENGER_STATUS_24X24_CHAT_ICON_MOB,
      MAPS_ICONS_MESSENGER_STATUS_24X24_CHAT_ICON_UNKNOWN,
@@ -4912,9 +4945,9 @@ class RES_ICONS(object):
             return outcome
 
     @classmethod
-    def getPremiumCarouselIcon(cls, value):
-        outcome = '../maps/icons/library/bonuses/premium_{}.png'.format(value)
-        if outcome not in cls.MAPS_ICONS_LIBRARY_BONUSES_PREMIUM_ENUM:
+    def getPremiumBonusesSmallIcon(cls, value):
+        outcome = '../maps/icons/quests/bonuses/small/premium_{}.png'.format(value)
+        if outcome not in cls.MAPS_ICONS_QUESTS_BONUSES_SMALL_PREMIUM_ENUM:
             LOG_WARNING('Localization key "{}" not found'.format(outcome))
             return None
         else:

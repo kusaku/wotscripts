@@ -50,14 +50,53 @@ def getCompletetBonusLimitTooltip():
      'args': []}
 
 
-def getBonusLimitTooltip(bonusCount, bonusLimit):
+def getCompletetBonusLimitValueTooltip(count):
+    """
+    Gets complex tooltip data about completed status wih bonus limits.
+    """
+    return {'tooltip': makeTooltip(body=_ms(TOOLTIPS.QUESTS_COMPLETE_PROGRESS_VALUE_STATUSTOOLTIP, count=text_styles.neutral(count))),
+     'isSpecial': False,
+     'args': []}
+
+
+def getBonusLimitTooltip(bonusCount, bonusLimit, isDaily):
     """
     Gets complex tooltip data about bonus limits
     bonusCount - mission's complete count
     bonusLimit - server definition, means that player several times can complete mission and get bonus
     """
     header = _ms(TOOLTIPS.QUESTS_COMPLETE_PROGRESS_HEADER)
-    body = _ms(TOOLTIPS.QUESTS_COMPLETE_PROGRESS_BODY, count=text_styles.neutral(bonusCount), totalCount=text_styles.neutral(bonusLimit))
+    if isDaily:
+        key = TOOLTIPS.QUESTS_COMPLETE_PROGRESSDAILY_BODY
+    else:
+        key = TOOLTIPS.QUESTS_COMPLETE_PROGRESS_BODY
+    body = _ms(key, count=text_styles.neutral(bonusCount), totalCount=text_styles.neutral(bonusLimit))
+    return {'tooltip': makeTooltip(header=header, body=body),
+     'isSpecial': False,
+     'args': []}
+
+
+def getPersonalBonusLimitDailyTooltip(bonusCount, bonusLimit, maxCompleteCount):
+    """
+    Gets complex tooltip data about bonus limits
+    bonusCount - mission's complete count
+    bonusLimit - server definition, means that player several times can complete mission and get bonus per day
+    """
+    totalLabel = text_styles.standard(_ms(TOOLTIPS.QUESTS_COMPLETE_PROGRESSDAILY_DAILYCOUNT, totalCount=text_styles.neutral(maxCompleteCount), dailyCount=text_styles.neutral(max(bonusLimit - bonusCount, 0))))
+    header = _ms(TOOLTIPS.QUESTS_COMPLETE_PROGRESSDAILY_HEADER)
+    body = _ms(TOOLTIPS.QUESTS_COMPLETE_PERSONAL_PROGRESSDAILY_BODY, count=text_styles.neutral(bonusCount), totalCount=totalLabel, dailyTotalCount=text_styles.neutral(bonusLimit))
+    return {'tooltip': makeTooltip(header=header, body=body),
+     'isSpecial': False,
+     'args': []}
+
+
+def getPersonalReqularTooltip(bonusCount):
+    """
+    Gets complex tooltip data about complete count
+    bonusCount - mission's complete count
+    """
+    header = _ms(TOOLTIPS.QUESTS_COMPLETE_PROGRESSDAILY_HEADER)
+    body = _ms(TOOLTIPS.QUESTS_COMPLETE_PERSONALREGULAR_BODY, count=text_styles.neutral(bonusCount))
     return {'tooltip': makeTooltip(header=header, body=body),
      'isSpecial': False,
      'args': []}
@@ -88,6 +127,13 @@ def getScheduleLabel():
     text = text_styles.main(QUESTS.MISSIONDETAILS_STATUS_NOTAVAILABLEBYTIME)
     clockIcon = icons.makeImageTag(RES_ICONS.MAPS_ICONS_LIBRARY_RENT_ICO_BIG, 19, 19, -4, 8)
     return text_styles.concatStylesToSingleLine(clockIcon, text)
+
+
+def _getDailyLimitedStatusKey(isDaily):
+    if isDaily:
+        return QUESTS.MISSIONDETAILS_MISSIONSCOMPLETE_DAILY
+    else:
+        return QUESTS.MISSIONDETAILS_MISSIONSCOMPLETE
 
 
 class _MissionInfo(QuestInfoModel):
@@ -168,7 +214,9 @@ class _MissionInfo(QuestInfoModel):
             clockIcon = icons.makeImageTag(RES_ICONS.MAPS_ICONS_LIBRARY_TIMERICON, 16, 16, -2, 8)
             statusText = _ms(QUESTS.MISSIONDETAILS_STATUS_NOTAVAILABLE)
             statusLabel = text_styles.concatStylesWithSpace(clockIcon, text_styles.error(statusText))
-            statusTooltipData = self._getMissionDurationTooltipData()
+            statusTooltipData = {'tooltip': makeTooltip(_ms(TOOLTIPS.QUESTS_UNAVAILABLE_TIME_STATUSTOOLTIP), self._getCompleteDailyStatus(QUESTS.MISSIONDETAILS_STATUS_COMPLETED_DAILY)),
+             'isSpecial': False,
+             'args': None}
         else:
             status = EVENT_STATUS.COMPLETED
             if isLimited and bonusLimit > 1:
@@ -216,14 +264,16 @@ class _MissionInfo(QuestInfoModel):
         statusTooltipData = None
         timerMsg = self.getTimerMsg()
         if isLimited:
-            statusLabel = text_styles.standard(_ms(QUESTS.MISSIONDETAILS_MISSIONSCOMPLETE, count=text_styles.stats(bonusCount), total=text_styles.standard(bonusLimit)))
-            statusTooltipData = getBonusLimitTooltip(bonusCount, bonusLimit)
+            isDaily = self.event.bonusCond.isDaily()
+            statusLabel = text_styles.standard(_ms(_getDailyLimitedStatusKey(isDaily), count=text_styles.stats(bonusCount), total=text_styles.standard(bonusLimit)))
+            statusTooltipData = getBonusLimitTooltip(bonusCount, bonusLimit, isDaily)
         elif self.event.getWeekDays() or self.event.getActiveTimeIntervals():
             statusLabel = getScheduleLabel()
             statusTooltipData = getInvalidTimeIntervalsTooltip(self.event)
         elif timerMsg:
             statusLabel = timerMsg
         else:
+            statusTooltipData = getCompletetBonusLimitValueTooltip(self.event.getBonusCount())
             statusLabel = text_styles.standard(_ms(QUESTS.MISSIONDETAILS_MISSIONSCOMPLETECOUNTER, count=text_styles.stats(self.event.getBonusCount())))
         return {'statusLabel': statusLabel,
          'status': EVENT_STATUS.NONE,
@@ -345,14 +395,34 @@ class _PersonalMissionInfo(_MissionInfo):
 
     def _getRegularStatusFields(self, isLimited, bonusCount, bonusLimit):
         statusData = super(_PersonalMissionInfo, self)._getRegularStatusFields(isLimited, bonusCount, bonusLimit)
+        return self._getUpdatedByTokenStatusData(statusData, bonusCount, bonusLimit)
+
+    def _getUpdatedByTokenStatusData(self, statusData, bonusCount, bonusLimit):
+        """
+        There is special behavior fo personal quest.
+        It is important to show complete remaining count info for personal quest,
+        its depends on required tokens count in account
+        """
         tokens = self.event.accountReqs.getTokens()
         for token in tokens:
             if token.getID() == self.event.getRequiredToken() and token.isConsumable():
                 maxCompleteCount = int(token.getReceivedCount() / token.getNeededCount())
-                statusData.update({'statusLabel': text_styles.standard(_ms(QUESTS.MISSIONDETAILS_PERSONALQUEST_COMPLETE_LEFT, count=text_styles.stats(maxCompleteCount)))})
+                statusLabel = text_styles.standard(_ms(QUESTS.MISSIONDETAILS_PERSONALQUEST_COMPLETE_LEFT, count=text_styles.stats(maxCompleteCount)))
+                if self.event.bonusCond.isDaily():
+                    statusTooltipData = getPersonalBonusLimitDailyTooltip(bonusCount, bonusLimit, maxCompleteCount)
+                    statusLabel = self._getPersonalDailyStatusLabel(statusLabel, bonusLimit, bonusCount)
+                else:
+                    statusTooltipData = getPersonalReqularTooltip(bonusCount)
+                statusData.update({'statusLabel': statusLabel,
+                 'statusTooltipData': statusTooltipData})
                 break
 
         return statusData
+
+    @classmethod
+    def _getPersonalDailyStatusLabel(cls, statusLabel, bonusLimit, bonusCount):
+        dailyLeftLabel = text_styles.standard(_ms(QUESTS.MISSIONDETAILS_PERSONALQUEST_COMPLETE_LEFT_DAILY, count=text_styles.stats(max(bonusLimit - bonusCount, 0))))
+        return '%s\n%s' % (statusLabel, dailyLeftLabel)
 
 
 class _DetailedMissionInfo(_MissionInfo):
@@ -365,16 +435,14 @@ class _DetailedMissionInfo(_MissionInfo):
         """
         conds = self.event.vehicleReqs.getConditions()
         extraConditions = []
-        cond = conds.find('vehicleDescr')
+        cond = conds.find('vehicleDescr') or conds.find('premiumVehicle')
         if cond:
             criteria = cond.getFilterCriteria(cond.getData())
         else:
             criteria = REQ_CRITERIA.DISCLOSABLE
-        for condName in ('premiumVehicle', 'hasReceivedMultipliedXP'):
-            cond = conds.find(condName)
-            if cond:
-                extraConditions.append(cond)
-
+        xpMultCond = conds.find('hasReceivedMultipliedXP')
+        if xpMultCond:
+            extraConditions.append(xpMultCond)
         return (criteria, extraConditions)
 
     def _getUIDecoration(self):
@@ -450,12 +518,13 @@ class _DetailedMissionInfo(_MissionInfo):
         Data used in detailed mission view to display its regular state.
         """
         scheduleOrResetLabel = ''
-        statusTooltipData = None
         scheduleTooltip = None
         if isLimited:
-            statusLabel = text_styles.concatStylesWithSpace(icons.makeImageTag(RES_ICONS.MAPS_ICONS_LIBRARY_INPROGRESSICON, 16, 16, -2, 8), text_styles.standard(_ms(QUESTS.MISSIONDETAILS_MISSIONSCOMPLETE, count=text_styles.stats(bonusCount), total=text_styles.standard(bonusLimit))))
-            statusTooltipData = getBonusLimitTooltip(bonusCount, bonusLimit)
+            isDaily = self.event.bonusCond.isDaily()
+            statusLabel = text_styles.concatStylesWithSpace(icons.makeImageTag(RES_ICONS.MAPS_ICONS_LIBRARY_INPROGRESSICON, 16, 16, -2, 8), text_styles.standard(_ms(_getDailyLimitedStatusKey(isDaily), count=text_styles.stats(bonusCount), total=text_styles.standard(bonusLimit))))
+            statusTooltipData = getBonusLimitTooltip(bonusCount, bonusLimit, isDaily)
         else:
+            statusTooltipData = getCompletetBonusLimitValueTooltip(self.event.getBonusCount())
             statusLabel = text_styles.concatStylesWithSpace(icons.makeImageTag(RES_ICONS.MAPS_ICONS_LIBRARY_INPROGRESSICON, 16, 16, -2, 8), text_styles.standard(_ms(QUESTS.MISSIONDETAILS_MISSIONSCOMPLETECOUNTER, count=text_styles.stats(self.event.getBonusCount()))))
         if self.event.getWeekDays() or self.event.getActiveTimeIntervals():
             scheduleOrResetLabel = getScheduleLabel()
@@ -528,8 +597,16 @@ class _DetailedMissionInfo(_MissionInfo):
             return makeTooltip(QUESTS.MISSIONDETAILS_DESCRIPTION, description)
 
 
-class _DetailedPersonalMissionInfo(_PersonalMissionInfo, _DetailedMissionInfo):
-    pass
+class _DetailedPersonalMissionInfo(_DetailedMissionInfo, _PersonalMissionInfo):
+
+    def _getRegularStatusFields(self, isLimited, bonusCount, bonusLimit):
+        statusData = super(_DetailedPersonalMissionInfo, self)._getRegularStatusFields(isLimited, bonusCount, bonusLimit)
+        return self._getUpdatedByTokenStatusData(statusData, bonusCount, bonusLimit)
+
+    @classmethod
+    def _getPersonalDailyStatusLabel(cls, statusLabel, bonusLimit, bonusCount):
+        text = _ms(QUESTS.MISSIONDETAILS_PERSONALQUEST_DETAILS_COMPLETE_LEFT_DAILY, count=text_styles.stats(max(bonusLimit - bonusCount, 0)))
+        return text_styles.standard('%s (%s)' % (statusLabel, text_styles.standard(text)))
 
 
 class _DetailedTokenMissionInfo(_DetailedMissionInfo):
@@ -589,8 +666,7 @@ def getDetailedMissionData(event):
 
 def getAwardsWindowBonuses(bonuses):
     result = AwardsWindowBonusFormatter.getFormattedBonuses(bonuses)
-    lenResult = len(result)
-    while lenResult % AWARDS_PER_PAGE != 0 and lenResult > AWARDS_PER_SINGLE_PAGE:
+    while len(result) % AWARDS_PER_PAGE != 0 and len(result) > AWARDS_PER_SINGLE_PAGE:
         result.append({})
 
     return result

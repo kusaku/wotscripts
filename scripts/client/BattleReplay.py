@@ -686,25 +686,11 @@ class BattleReplay():
     def __onAmmoButtonPressed(self, idx):
         self.onAmmoSettingChanged(idx)
 
-    def onLockTarget(self, lock, playVoiceNotifications = True):
-        player = BigWorld.player()
+    def onLockTarget(self, lock, playVoiceNotifications):
         if not isPlayerAvatar():
             return
-        import SoundGroups
         if self.isPlaying:
-            if lock == 1:
-                SoundGroups.g_instance.playSound2D('ui_target_locked')
-            elif lock == 0:
-                SoundGroups.g_instance.playSound2D('ui_target_unlocked')
-            else:
-                SoundGroups.g_instance.playSound2D('ui_target_lost')
-            if playVoiceNotifications:
-                if lock == 1:
-                    player.soundNotifications.play('target_captured')
-                elif lock == 0:
-                    player.soundNotifications.play('target_unlocked')
-                else:
-                    player.soundNotifications.play('target_lost')
+            BigWorld.player().onLockTarget(lock, playVoiceNotifications)
         elif self.isRecording:
             self.__replayCtrl.onLockTarget(lock, playVoiceNotifications)
 

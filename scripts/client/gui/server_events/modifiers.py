@@ -10,7 +10,7 @@ from helpers import dependency
 from items import vehicles, ITEM_TYPE_NAMES
 from shared_utils import BoundMethodWeakref as bwr, CONST_CONTAINER
 from gui.shared.utils.requesters import REQ_CRITERIA
-from gui.shared.gui_items import GUI_ITEM_TYPE
+from gui.shared.gui_items import GUI_ITEM_TYPE, GUI_ITEM_TYPE_NAMES
 from gui.shared.money import Currency, ZERO_MONEY
 from gui.server_events import formatters
 from skeletons.gui.goodies import IGoodiesCache
@@ -273,6 +273,40 @@ class _ItemsPrice(_DiscountsListAction, _PriceOpAbstract):
 
     def _getMultName(self, idx):
         return 'price%d' % idx
+
+
+class _SplitByCurrency(ActionModifier):
+
+    def __init__(self, name, params, modType = ACTION_MODIFIER_TYPE.DISCOUNT, section = ACTION_SECTION_TYPE.ITEM, itemType = None):
+        super(_SplitByCurrency, self).__init__(name, params, modType, section, itemType)
+        self._paramName = None
+        return
+
+    def splitModifiers(self):
+        """Split economic action into single steps
+        :return: list of economic steps (set_*, mul_*)
+        """
+        res = []
+        for paramName, paramValue in self._params.iteritems():
+            obj = self.__class__(self.getName(), {paramName: paramValue})
+            obj.setParamName(paramName)
+            res.append(obj)
+
+        return res
+
+    def setParamName(self, paramName):
+        self._paramName = paramName
+
+    def getParamName(self):
+        if self._itemType in GUI_ITEM_TYPE.ALL() and self._paramName is not None:
+            itemName = GUI_ITEM_TYPE_NAMES[self._itemType]
+            return '/'.join([itemName, self._paramName])
+        else:
+            return self.getName()
+            return
+
+    def getDefaultParamValue(self):
+        return None
 
 
 class _ItemsPriceAll(ActionModifier):
@@ -693,8 +727,7 @@ class EconomicsSet(ActionModifier):
         return self._calculateDiscount('emblemPacket30Cost', value, default[0], _DT.PERCENT, self._calcCustomizationDiscountValue)
 
     def handlerTradeInSellPriceFactor(self, value):
-        default = 1
-        return self._calculateDiscount('tradeInSellPriceFactor', value, default, _DT.PERCENT)
+        return self._calculateDiscount('tradeInSellPriceFactor', value, 1, _DT.TRADE_IN_PERCENT, discountValueCalculator=lambda v, _: int(v * 100))
 
     def handlerWinXPFactorMode(self):
         value = self.itemsCache.items.shop.dailyXPFactor
@@ -743,7 +776,7 @@ class CamouflagePriceMul(_VehiclePrice):
     def packDiscounts(self):
         result = {}
         for vehicle, priceMult in sorted(self.parse().iteritems(), key=operator.itemgetter(0)):
-            result[vehicle.intCD] = _ActionDiscountValue(discountName=vehicle, discountValue=int((1 - priceMult) * 100), discountType=_DT.PERCENT)
+            result[vehicle.intCD] = _ActionDiscountValue(discountName=vehicle, discountValue=int(round((1 - priceMult) * 100)), discountType=_DT.PERCENT)
 
         return result
 
@@ -761,7 +794,7 @@ class EmblemPriceByGroupsMul(_DiscountsListAction):
         groups, _, _ = vehicles.g_cache.playerEmblems()
         for groupName, priceMult in self.parse().iteritems():
             if groupName in groups:
-                result[groupName] = _ActionDiscountValue(discountName=groupName, discountValue=int((1 - priceMult) * 100), discountType=_DT.PERCENT)
+                result[groupName] = _ActionDiscountValue(discountName=groupName, discountValue=int(round((1 - priceMult) * 100)), discountType=_DT.PERCENT)
             else:
                 LOG_ERROR('Given group name is not available: ', groupName)
 
@@ -794,10 +827,10 @@ class EquipmentPriceMul(_EquipmentPrice, _BuyPriceMul):
         return 'priceMultiplier%d' % idx
 
 
-class EquipmentPriceAll(_ItemsPriceAll):
+class EquipmentPriceAll(_SplitByCurrency, _ItemsPriceAll):
 
     def __init__(self, name, params):
-        super(EquipmentPriceAll, self).__init__(name, params, modType=ACTION_MODIFIER_TYPE.DISCOUNT, itemType=GUI_ITEM_TYPE.EQUIPMENT)
+        super(EquipmentPriceAll, self).__init__(name, params, itemType=GUI_ITEM_TYPE.EQUIPMENT)
 
     def _getRequestCriteria(self):
         return _COMMON_CRITERIA
@@ -822,7 +855,7 @@ class OptDevicePriceMul(_OptDevicePrice, _BuyPriceMul):
         return 'priceMultiplier%d' % idx
 
 
-class ShellPriceAll(_ItemsPriceAll):
+class ShellPriceAll(_SplitByCurrency, _ItemsPriceAll):
 
     def __init__(self, name, params):
         super(ShellPriceAll, self).__init__(name, params, itemType=GUI_ITEM_TYPE.SHELL)

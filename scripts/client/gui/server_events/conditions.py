@@ -15,6 +15,7 @@ from shared_utils import CONST_CONTAINER
 from skeletons.gui.game_control import IIGRController
 from skeletons.gui.server_events import IEventsCache
 from skeletons.gui.shared import IItemsCache
+from gui.Scaleform.locale.QUESTS import QUESTS
 _AVAILABLE_BONUS_TYPES_LABELS = {constants.ARENA_BONUS_TYPE.COMPANY: 'company',
  constants.ARENA_BONUS_TYPE.CYBERSPORT: 'team7x7'}
 _RELATIONS = formatters.RELATIONS
@@ -124,6 +125,9 @@ class _Condition(object):
 
     def clearItemsCache(self):
         pass
+
+    def getValue(self):
+        raise NotImplementedError
 
 
 class _ConditionsGroup(_AvailabilityCheckable, _Negatable):
@@ -582,13 +586,12 @@ class PremiumVehicle(_VehicleRequirement):
     def negate(self):
         self._needValue = not self._needValue
 
-    def isAvailableReason(self, vehicle):
-        isOk = self._isAvailable(vehicle)
+    def getFilterCriteria(self, data):
+        criteria = REQ_CRITERIA.DISCLOSABLE
         if self._needValue:
-            reason = 'needPremium'
+            return criteria | REQ_CRITERIA.VEHICLE.PREMIUM
         else:
-            reason = 'needPremium/not'
-        return (isOk, reason)
+            return criteria | ~REQ_CRITERIA.VEHICLE.PREMIUM
 
     def _isAvailable(self, vehicle):
         return vehicle.isPremium == self._needValue
@@ -614,6 +617,9 @@ class XPMultipliedVehicle(_VehicleRequirement):
             reason = 'xpMultReceived/not'
         return (isOk, reason)
 
+    def getValue(self):
+        return self._needValue
+
     def _isAvailable(self, vehicle):
         return (vehicle.dailyXPFactor == -1) == self._needValue
 
@@ -637,7 +643,7 @@ class VehicleDescr(_VehicleRequirement, _VehsListParser, _Updatable):
     def update(self, other, groupType):
         if groupType != GROUP_TYPE.AND:
             return False
-        if other.getName() == 'vehicleDescr':
+        if other.getName() in ('vehicleDescr', 'premiumVehicle'):
             self._otherCriteria |= other.getFilterCriteria(other._data)
             return True
         return False
@@ -890,7 +896,7 @@ class _Cumulativable(_Condition):
     def getProgressPerGroup(self, curProgData = None, prevProgData = None):
         return self._parseProgress(curProgData, prevProgData)
 
-    def getUserString(self):
+    def getUserString(self, battleTypeName = ''):
         return ''
 
     @abstractmethod
@@ -961,8 +967,8 @@ class BattlesCount(_Cumulativable):
         super(BattlesCount, self).__init__('battles', dict(data), path)
         self._bonus = weakref.proxy(bonusCond)
 
-    def getUserString(self):
-        return i18n.makeString('#quests:details/dossier/random/battlesCount')
+    def getUserString(self, battleTypeName = 'random'):
+        return i18n.makeString(QUESTS.getDetailsDossier(battleTypeName, self._getKey()))
 
     def _getKey(self):
         return 'battlesCount'
@@ -1098,7 +1104,7 @@ class CumulativeResult(_Cumulativable):
         self._unitName = _getArenaBonusType(preBattleCond)
         return None
 
-    def getUserString(self):
+    def getUserString(self, battleTypeName = ''):
         return self.__getLabelString()
 
     def _getKey(self):
@@ -1149,7 +1155,7 @@ class VehicleKillsCumulative(_Cumulativable, VehicleKills):
         super(VehicleKills, self).__init__('vehicleKillsCumulative', dict(data), path)
         self._bonus = weakref.proxy(bonusCond)
 
-    def getUserString(self):
+    def getUserString(self, battleTypeName = ''):
         return i18n.makeString(self._getLabelKey())
 
     def _getKey(self):
@@ -1189,7 +1195,7 @@ class VehicleDamageCumulative(_Cumulativable, VehicleDamage):
         super(VehicleDamage, self).__init__('vehicleDamageCumulative', dict(data), path)
         self._bonus = weakref.proxy(bonusCond)
 
-    def getUserString(self):
+    def getUserString(self, battleTypeName = ''):
         return i18n.makeString(self._getLabelKey())
 
     def _getKey(self):

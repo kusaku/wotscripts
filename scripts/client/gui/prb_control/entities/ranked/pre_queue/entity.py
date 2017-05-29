@@ -76,7 +76,6 @@ class RankedEntryPoint(PreQueueEntryPoint):
             return
         else:
             super(RankedEntryPoint, self).select(ctx, callback)
-            SoundGroups.g_instance.playSound2D('gui_rb_rank_Entrance')
             return
 
     def _getFilterStates(self):
@@ -119,6 +118,7 @@ class RankedEntity(PreQueueEntity):
         result = super(RankedEntity, self).init(ctx)
         if not result & FUNCTIONAL_FLAG.LOAD_PAGE:
             result |= self.__processWelcome()
+        SoundGroups.g_instance.playSound2D('gui_rb_rank_Entrance')
         return result
 
     def fini(self, ctx = None, woEvents = False):

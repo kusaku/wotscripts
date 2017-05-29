@@ -12,6 +12,7 @@ from gui.battle_control import avatar_getter
 from helpers import dependency
 from shared_utils import CONST_CONTAINER
 from skeletons.account_helpers.settings_core import ISettingsCore
+from skeletons.gui.battle_session import IBattleSessionProvider
 _AGGREGATED_HIT_BITS = HIT_FLAGS.IS_BLOCKED | HIT_FLAGS.HP_DAMAGE | HIT_FLAGS.IS_CRITICAL
 _VISUAL_DAMAGE_INDICATOR_SETTINGS = (DAMAGE_INDICATOR.TYPE,
  DAMAGE_INDICATOR.VEHICLE_INFO,
@@ -145,6 +146,7 @@ class _HitDirection(object):
 class HitDirectionController(IViewComponentsController):
     __slots__ = ('__pull', '__ui', '__isVisible', '__callbackIDs', '__damageIndicatorPreset', '__arenaDP', '__weakref__')
     settingsCore = dependency.descriptor(ISettingsCore)
+    sessionProvider = dependency.descriptor(IBattleSessionProvider)
 
     def __init__(self, setup):
         super(HitDirectionController, self).__init__()
@@ -172,6 +174,9 @@ class HitDirectionController(IViewComponentsController):
             from AvatarInputHandler import AvatarInputHandler
             if isinstance(handler, AvatarInputHandler):
                 handler.onPostmortemKillerVision -= self.__onPostmortemKillerVision
+        ctrl = self.sessionProvider.shared.vehicleState
+        if ctrl is not None:
+            ctrl.onVehicleControlling -= self.__onVehicleControlling
         g_eventBus.removeListener(GameEvent.GUI_VISIBILITY, self.__handleGUIVisibility, scope=EVENT_BUS_SCOPE.BATTLE)
         self.__clearHideCallbacks()
         self.__arenaDP = None
@@ -205,6 +210,9 @@ class HitDirectionController(IViewComponentsController):
             from AvatarInputHandler import AvatarInputHandler
             if isinstance(handler, AvatarInputHandler):
                 handler.onPostmortemKillerVision += self.__onPostmortemKillerVision
+        ctrl = self.sessionProvider.shared.vehicleState
+        if ctrl is not None:
+            ctrl.onVehicleControlling += self.__onVehicleControlling
         for hit in self.__pull:
             idx = hit.getIndex()
             duration = hit.setIndicator(proxy)
@@ -344,6 +352,10 @@ class HitDirectionController(IViewComponentsController):
 
     def __onPostmortemKillerVision(self, killerVehicleID):
         if killerVehicleID != self.__arenaDP.getPlayerVehicleID():
+            self._hideAllHits()
+
+    def __onVehicleControlling(self, vehicle):
+        if not vehicle.isPlayerVehicle:
             self._hideAllHits()
 
 

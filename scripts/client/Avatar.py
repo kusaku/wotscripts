@@ -74,16 +74,15 @@ from account_helpers import BattleResultsCache
 from account_helpers import ClientInvitations
 from avatar_helpers import AvatarSyncData
 import BattleReplay
-from physics_shared import computeBarrelLocalPoint, decodeNormalisedRPM
-import physics_shared
+from physics_shared import computeBarrelLocalPoint
 from AvatarInputHandler.control_modes import ArcadeControlMode, VideoCameraControlMode
 from AvatarInputHandler import cameras
 from gun_rotation_shared import decodeGunAngles, isShootPositionInsideOtherVehicle
 from CTFManager import g_ctfManager
 from battle_results_shared import AVATAR_PRIVATE_STATS, listToDict
-from BattleFeedbackCommon import BATTLE_EVENT_TYPE
 import FlockManager
 from vehicle_systems import appearance_cache
+from AimSound import AimSound
 
 class _CRUISE_CONTROL_MODE():
     NONE = 0
@@ -891,11 +890,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager, AvatarOb
         self.inputHandler.setAimingMode(False, AIMING_MODE.TARGET_LOCK)
         self.gunRotator.clientMode = True
         if autoAimVehID and autoAimVehID not in self.__frags:
-            replayCtrl = BattleReplay.g_replayCtrl
-            if replayCtrl.isRecording:
-                replayCtrl.onLockTarget(2)
-            self.soundNotifications.play('target_lost')
-            SoundGroups.g_instance.playSound2D('ui_target_lost')
+            self.onLockTarget(AimSound.TARGET_LOST, True)
 
     def updateVehicleHealth(self, vehicleID, health, deathReasonID, isCrewActive, isRespawn):
         rawHealth = health
@@ -1487,14 +1482,10 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager, AvatarOb
         if self.__autoAimVehID != vehID:
             self.__autoAimVehID = vehID
             self.cell.autoAim(vehID)
-            replayCtrl = BattleReplay.g_replayCtrl
-            if replayCtrl.isRecording:
-                replayCtrl.onLockTarget(vehID != 0)
             if vehID != 0:
                 self.inputHandler.setAimingMode(True, AIMING_MODE.TARGET_LOCK)
                 self.gunRotator.clientMode = False
-                self.soundNotifications.play('target_captured')
-                SoundGroups.g_instance.playSound2D('ui_target_locked')
+                self.onLockTarget(AimSound.TARGET_LOCKED, True)
                 TriggersManager.g_manager.activateTrigger(TRIGGER_TYPE.AUTO_AIM_AT_VEHICLE, vehicleId=vehID)
             else:
                 self.inputHandler.setAimingMode(False, AIMING_MODE.TARGET_LOCK)
@@ -1502,8 +1493,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager, AvatarOb
                 self.__aimingInfo[0] = BigWorld.time()
                 minShotDisp = self.vehicleTypeDescriptor.gun['shotDispersionAngle']
                 self.__aimingInfo[1] = self.gunRotator.dispersionAngle / minShotDisp
-                self.soundNotifications.play('target_unlocked')
-                SoundGroups.g_instance.playSound2D('ui_target_unlocked')
+                self.onLockTarget(AimSound.TARGET_UNLOCKED, True)
                 TriggersManager.g_manager.deactivateTrigger(TRIGGER_TYPE.AUTO_AIM_AT_VEHICLE)
         return
 
@@ -1943,7 +1933,10 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager, AvatarOb
         vehicleAttached = self.getVehicleAttached()
         vehInfo = self.arena.vehicles.get(vehicleAttached.id)
         if vehInfo is not None:
-            return vehInfo['vehicleType']
+            desc = vehInfo['vehicleType']
+            if desc.hasSiegeMode:
+                desc.onSiegeStateChanged(vehicleAttached.siegeState)
+            return desc
         else:
             return vehicleAttached.typeDescriptor
             return
@@ -2051,11 +2044,8 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager, AvatarOb
      'TANKMAN_HIT_AT_DROWNING')
 
     def __onArenaVehicleKilled(self, targetID, attackerID, equipmentID, reason):
-        if self.__autoAimVehID != 0 and self.__autoAimVehID == targetID:
-            SoundGroups.g_instance.playSound2D('ui_target_lost')
-            replayCtrl = BattleReplay.g_replayCtrl
-            if replayCtrl.isRecording:
-                replayCtrl.onLockTarget(2, False)
+        if self.__autoAimVehID != 0 and self.__autoAimVehID == targetID and self.__isVehicleAlive:
+            self.onLockTarget(AimSound.TARGET_LOST, False)
         isMyVehicle = targetID == self.playerVehicleID
         isObservedVehicle = not self.__isVehicleAlive and targetID == getattr(self.inputHandler.ctrl, 'curVehicleID', None)
         if isMyVehicle or isObservedVehicle:
@@ -2357,6 +2347,14 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager, AvatarOb
         else:
             factors = descriptor.miscAttrs
         return factors['additiveShotDispersionFactor']
+
+    def onLockTarget(self, state, playVoiceNotifications):
+        if playVoiceNotifications:
+            AimSound.play(state, self.soundNotifications)
+        else:
+            AimSound.play(state)
+        if BattleReplay.g_replayCtrl.isRecording:
+            BattleReplay.g_replayCtrl.onLockTarget(state, playVoiceNotifications)
 
 
 def preload(alist):

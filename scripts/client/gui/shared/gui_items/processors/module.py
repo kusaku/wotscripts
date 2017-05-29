@@ -269,7 +269,7 @@ class OptDeviceInstaller(ModuleInstallProcessor):
         @param vehicle: vehicle
         @param item: module to install
         @param slotIdx: vehicle equipment slot index to install
-        @param install: flag to designated process
+        @param install: true if device is being installed, false if being demounted
         @param conflictedEqs: conflicted items
         """
         super(OptDeviceInstaller, self).__init__(vehicle, item, (GUI_ITEM_TYPE.OPTIONALDEVICE,), slotIdx, install, conflictedEqs)

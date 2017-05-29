@@ -182,6 +182,7 @@ class REQ_CRITERIA(object):
         CAN_TRADE_IN = RequestCriteria(PredicateCondition(lambda item: item.canTradeIn))
         CAN_TRADE_OFF = RequestCriteria(PredicateCondition(lambda item: item.canTradeOff))
         NAME_VEHICLE = staticmethod(lambda nameVehicle: RequestCriteria(PredicateCondition(lambda item: nameVehicle in item.searchableUserName)))
+        DISCOUNT_RENT_OR_BUY = RequestCriteria(PredicateCondition(lambda item: (item.actionPrc != 0 or item.getRentPackageActionPrc() != 0) and not item.isRestoreAvailable()))
 
         class FALLOUT:
             SELECTED = RequestCriteria(PredicateCondition(lambda item: item.isFalloutSelected))
