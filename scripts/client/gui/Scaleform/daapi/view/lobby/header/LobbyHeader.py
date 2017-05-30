@@ -708,6 +708,8 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, IGlobalListener):
     def __onEventsCacheResync(self):
         self.__updatePrebattleControls()
         self.__onEventsVisited()
+        self.updateMoneyStats()
+        self.updateXPInfo()
 
     def __onEventsVisited(self):
         quests = self.eventsCache.getAdvisableQuests()

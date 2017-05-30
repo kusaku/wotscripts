@@ -3,7 +3,7 @@ from account_helpers import AccountSettings
 from gui.Scaleform.daapi.view.meta.StoreViewMeta import StoreViewMeta
 from gui.Scaleform.locale.MENU import MENU
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
-from gui.shared import events, EVENT_BUS_SCOPE
+from gui.shared import events, g_eventBus, EVENT_BUS_SCOPE
 from gui.sounds.ambients import ShopEnv
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui.Scaleform.genConsts.STORE_CONSTANTS import STORE_CONSTANTS
@@ -33,6 +33,7 @@ class StoreView(StoreViewMeta):
         self.__currentTabIdx = None
         self.__currentTabId = None
         self.__showBackButton = False
+        self.__addHandlers()
         self._initialize(ctx)
         return
 
@@ -41,16 +42,35 @@ class StoreView(StoreViewMeta):
         self.as_initS({'currentViewIdx': self.__currentTabIdx,
          'buttonBarData': _TABS,
          'bgImageSrc': RES_ICONS.MAPS_ICONS_MISSIONS_BACKGROUNDS_SHOP})
+        self.__updateActionsCounter()
 
     def _invalidate(self, ctx = None):
         super(StoreView, self)._invalidate(ctx)
         tabId = ctx.get('tabId')
         prevTabID = self.__currentTabIdx
         self._initialize(ctx)
+        self.__updateActionsCounter()
         if prevTabID != self.__currentTabIdx and tabId is not None:
             self.as_showStorePageS(tabId)
             self.components.get(self.__currentTabId).updateFilters()
         return
+
+    def __addHandlers(self):
+        g_eventBus.addListener(events.LobbySimpleEvent.EVENTS_UPDATED, self.__onActionVisitedChange, scope=EVENT_BUS_SCOPE.DEFAULT)
+
+    def __removeHandlers(self):
+        g_eventBus.removeListener(events.LobbySimpleEvent.EVENTS_UPDATED, self.__onActionVisitedChange, scope=EVENT_BUS_SCOPE.DEFAULT)
+
+    def __onActionVisitedChange(self, event):
+        self.__updateActionsCounter()
+
+    def __updateActionsCounter(self):
+        newActions = filter(lambda i: i.getIsNew(), self.__checkForActiveActions())
+        if newActions:
+            self.as_setBtnTabCountersS([{'tabId': STORE_CONSTANTS.STORE_ACTIONS,
+              'count': str(len(newActions))}])
+        else:
+            self.as_removeBtnTabCountersS([STORE_CONSTANTS.STORE_ACTIONS])
 
     def _initialize(self, ctx = None):
         ctx = ctx or {}
@@ -109,4 +129,5 @@ class StoreView(StoreViewMeta):
         return visible
 
     def _dispose(self):
+        self.__removeHandlers()
         super(StoreView, self)._dispose()

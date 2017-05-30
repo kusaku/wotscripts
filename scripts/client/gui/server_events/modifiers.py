@@ -730,11 +730,12 @@ class EconomicsSet(ActionModifier):
         return self._calculateDiscount('tradeInSellPriceFactor', value, 1, _DT.TRADE_IN_PERCENT, discountValueCalculator=lambda v, _: int(v * 100))
 
     def handlerWinXPFactorMode(self):
-        value = self.itemsCache.items.shop.dailyXPFactor
-        if value == self.itemsCache.items.shop.defaults.dailyXPFactor:
+        winXpFactor = self.itemsCache.items.shop.winXPFactorMode
+        if winXpFactor == constants.WIN_XP_FACTOR_MODE.DAILY:
             return None
         else:
-            return _ActionDiscountValue(discountName='winXPFactorMode', discountValue=value, discountType=_DT.MULTIPLIER)
+            dailyFactor = self.itemsCache.items.shop.dailyXPFactor
+            return _ActionDiscountValue(discountName='winXPFactorMode', discountValue=dailyFactor, discountType=_DT.MULTIPLIER)
 
     def _calculateDiscount(self, paramName, discountVal, defaultVal, discountType, discountValueCalculator = None):
         calculator = discountValueCalculator or self._calcDiscountValue

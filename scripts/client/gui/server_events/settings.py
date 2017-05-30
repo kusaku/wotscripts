@@ -1,6 +1,5 @@
 # Embedded file name: scripts/client/gui/server_events/settings.py
 import time
-from debug_utils import LOG_DEBUG
 from gui.shared import utils, events, g_eventBus
 _LAST_PQ_INTRO_VERSION = 'fallout'
 

@@ -206,6 +206,18 @@ class ModuleTypeValidator(SyncValidator):
         return makeSuccess()
 
 
+class ModuleConfigValidator(SyncValidator):
+
+    def __init__(self, module):
+        super(ModuleConfigValidator, self).__init__()
+        self.module = module
+
+    def _validate(self):
+        if not self.module.fullyConfigured:
+            return makeError()
+        return makeSuccess()
+
+
 class EliteVehiclesValidator(SyncValidator):
 
     def __init__(self, vehiclesCD):

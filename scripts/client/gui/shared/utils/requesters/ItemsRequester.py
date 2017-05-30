@@ -7,7 +7,7 @@ import nations
 from account_shared import LayoutIterator
 from adisp import async, process
 from constants import ARENA_BONUS_TYPE
-from debug_utils import LOG_WARNING, LOG_DEBUG
+from debug_utils import LOG_WARNING, LOG_DEBUG, LOG_ERROR
 from goodies.goodie_constants import GOODIE_STATE
 from gui.shared.gui_items import GUI_ITEM_TYPE, GUI_ITEM_TYPE_NAMES, ItemsCollection, getVehicleSuitablesByType
 from gui.shared.utils.requesters.parsers.ShopDataParser import ShopDataParser
@@ -41,39 +41,37 @@ class PredicateCondition(_CriteriaCondition):
     def __call__(self, item):
         return self.predicate(item)
 
-    def __invert__(self):
-        return NegativePredicateCondition(self.predicate)
-
-
-class NegativePredicateCondition(PredicateCondition):
-    """ Opposition to PredicateCondition, i.e. returns false on hit, true on miss.
-    """
-
-    def __call__(self, item):
-        return not self.predicate(item)
-
 
 class InventoryPredicateCondition(PredicateCondition):
 
     def lookInInventory(self):
         return True
 
-    def __invert__(self):
-        return NegativeInventoryPredicateCondition(self.predicate)
 
-
-class NegativeInventoryPredicateCondition(PredicateCondition):
-    """Opposition to InventoryPredicateCondition, i.e. returns false on hit, true on miss.
+class CompoundPredicateCondition(PredicateCondition):
+    """ Aggregates several predicates in order to operate with them as a group.
+    
+    Final condition is met when all aggregated conditions are met.
     """
 
+    def __init__(self, *predicates):
+        self.predicates = predicates
+
     def lookInInventory(self):
-        return False
+        return all((predicate.lookInInventory() for predicate in self.predicates))
 
     def __call__(self, item):
-        return not self.predicate(item)
+        return all((predicate(item) for predicate in self.predicates))
 
-    def __invert__(self):
-        return InventoryPredicateCondition(self.predicate)
+
+class NegativeCompoundPredicateCondition(CompoundPredicateCondition):
+    """ Inversion of CompoundPredicateCondition.
+    
+    Final condition is met when all aggregated conditions are missed.
+    """
+
+    def __call__(self, item):
+        return not super(NegativeCompoundPredicateCondition, self).__call__(item)
 
 
 class RequestCriteria(object):
@@ -93,11 +91,7 @@ class RequestCriteria(object):
         return RequestCriteria(*(self._conditions + other.getConditions()))
 
     def __invert__(self):
-        invertedConds = []
-        for condition in self._conditions:
-            invertedConds.append(~condition)
-
-        return RequestCriteria(*invertedConds)
+        return RequestCriteria(NegativeCompoundPredicateCondition(*self._conditions))
 
     def getConditions(self):
         return self._conditions
@@ -108,16 +102,6 @@ class RequestCriteria(object):
                 return True
 
         return False
-
-
-class NegativeCriteria(RequestCriteria):
-
-    def __call__(self, item):
-        for c in self._conditions:
-            if c(item):
-                return False
-
-        return True
 
 
 class VehsSuitableCriteria(RequestCriteria):
@@ -695,6 +679,8 @@ class ItemsRequester(IItemsRequester):
         if uid in container:
             return container[uid]
         else:
+            if not self.isSynced():
+                self.__logBrokenSync()
             item = self.itemsFactory.createGuiItem(itemTypeIdx, *args, **kwargs)
             if item is not None:
                 container[uid] = item
@@ -754,3 +740,18 @@ class ItemsRequester(IItemsRequester):
             return {vehData.descriptor.type.compactDescr}
         else:
             return set()
+
+    def __logBrokenSync(self):
+        """
+        Is used in situations, when ItemsRequester is not fully synced and item is created WOTD-81563
+        """
+        requesters = (self.__stats,
+         self.__inventory,
+         self.__recycleBin,
+         self.__shop,
+         self.__dossiers,
+         self.__goodies,
+         self.__vehicleRotation,
+         self.ranked)
+        unsyncedList = [ r.__class__.__name__ for r in filter(lambda r: not r.isSynced(), requesters) ]
+        LOG_ERROR('Trying to create fitting item when requesters are not fully synced:', unsyncedList, stack=True)

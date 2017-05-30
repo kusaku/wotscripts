@@ -33,6 +33,7 @@ class SOUND(object):
     SEASON_RESULT_METAL_BOX_3 = 'gui_rb_rank_metal_box_3'
     SEASON_RESULT_AWARD_ANIMATION = 'gui_rb_rank_reward'
     SEASON_RESULT_BUTTON_ANIMATION = 'gui_rb_rank_exactly'
+    ANIMATION_WINDOW_CLOSED = 'gui_rb_rank_Exit_input_animation'
 
     @staticmethod
     def getRankEarnedEvent(rankID):

@@ -236,8 +236,8 @@ class _VehsListParser(object):
         self.__vehsCache = None
         return
 
-    def _postProcessCriteria(self, criteria):
-        return criteria
+    def _postProcessCriteria(self, defaultCriteria, criteria):
+        return defaultCriteria | criteria
 
     def _isAnyVehicleAcceptable(self, data):
         """ Checks for all vehicles acceptance
@@ -249,17 +249,18 @@ class _VehsListParser(object):
 
     def getFilterCriteria(self, data):
         types, nations, levels, classes = self._parseFilters(data)
+        defaultCriteria = self._getDefaultCriteria()
         if types:
             criteria = REQ_CRITERIA.VEHICLE.SPECIFIC_BY_CD(types)
         else:
-            criteria = self._getDefaultCriteria()
+            criteria = REQ_CRITERIA.EMPTY
             if nations:
                 criteria |= REQ_CRITERIA.NATIONS(nations)
             if levels:
                 criteria |= REQ_CRITERIA.VEHICLE.LEVELS(levels)
             if classes:
                 criteria |= REQ_CRITERIA.VEHICLE.CLASSES(classes)
-        return self._postProcessCriteria(criteria)
+        return self._postProcessCriteria(defaultCriteria, criteria)
 
     def _getDefaultCriteria(self):
         return REQ_CRITERIA.DISCLOSABLE
@@ -651,11 +652,10 @@ class VehicleDescr(_VehicleRequirement, _VehsListParser, _Updatable):
     def getVehiclesList(self):
         return self._getVehiclesList(self._data)
 
-    def _postProcessCriteria(self, criteria):
+    def _postProcessCriteria(self, defaultCriteria, criteria):
         if self._isNegative:
-            return ~criteria | ~self._otherCriteria | REQ_CRITERIA.DISCLOSABLE
-        else:
-            return criteria | self._otherCriteria
+            criteria = ~criteria
+        return defaultCriteria | criteria | self._otherCriteria
 
     def _isAvailable(self, vehicle):
         return vehicle.intCD in self._getVehiclesCache(self._data)

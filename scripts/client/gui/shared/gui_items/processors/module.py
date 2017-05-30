@@ -113,7 +113,7 @@ class ModuleBuyer(ModuleTradeProcessor):
         """
         super(ModuleBuyer, self).__init__(item, count, 'buy')
         self._currency, self._itemPrice = self._getItemCurrencyAndPrice(currency)
-        self.addPlugins((plugins.MoneyValidator(self._getOpPrice()),))
+        self.addPlugins((plugins.MoneyValidator(self._getOpPrice()), plugins.ModuleConfigValidator(item)))
 
     def _getItemCurrencyAndPrice(self, currency):
         """

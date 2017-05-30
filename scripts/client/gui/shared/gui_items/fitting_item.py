@@ -69,6 +69,7 @@ class FittingItem(GUIItem, HasIntCD):
         self.isBoughtForCredits = isBoughtForCredits
         self.rentInfo = RentalInfoProvider()
         self.restoreInfo = None
+        self.fullyConfigured = False
         self._personalDiscountPrice = None
         if proxy is not None and proxy.isSynced():
             self.defaultPrice = proxy.shop.defaults.getItemPrice(self.intCompactDescr)
@@ -87,6 +88,7 @@ class FittingItem(GUIItem, HasIntCD):
             self.altPrice = self._getAltPrice(self._buyPrice, proxy.shop)
             self.defaultAltPrice = self._getAltPrice(self.defaultPrice, proxy.shop.defaults)
             self.sellActionPrc = -1 * getActionPrc(self.sellPrice, self.defaultSellPrice)
+            self.fullyConfigured = True
         return
 
     def _getAltPrice(self, buyPrice, proxy):

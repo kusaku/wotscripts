@@ -1,4 +1,5 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/rankedBattles/RankedBattlesWelcomeView.py
+import SoundGroups
 from account_helpers import AccountSettings
 from account_helpers.AccountSettings import GUI_START_BEHAVIOR
 from gui.Scaleform.daapi import LobbySubView
@@ -78,6 +79,7 @@ class RankedBattlesWelcomeView(LobbySubView, RankedBattlesWelcomeViewMeta):
 
     def __close(self):
         self.fireEvent(events.LoadViewEvent(VIEW_ALIAS.LOBBY_HANGAR), scope=EVENT_BUS_SCOPE.LOBBY)
+        SoundGroups.g_instance.playSound2D(SOUND.ANIMATION_WINDOW_CLOSED)
         self.destroy()
 
     def __getFilters(self):

@@ -30,3 +30,17 @@ class StoreViewMeta(View):
     def as_hideBackButtonS(self):
         if self._isDAAPIInited():
             return self.flashObject.as_hideBackButton()
+
+    def as_setBtnTabCountersS(self, counters):
+        """
+        :param counters: Represented by Vector.<StoreTabCountersVo> (AS)
+        """
+        if self._isDAAPIInited():
+            return self.flashObject.as_setBtnTabCounters(counters)
+
+    def as_removeBtnTabCountersS(self, counters):
+        """
+        :param counters: Represented by Vector.<String> (AS)
+        """
+        if self._isDAAPIInited():
+            return self.flashObject.as_removeBtnTabCounters(counters)

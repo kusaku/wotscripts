@@ -93,7 +93,7 @@ class ActionInfo(EventInfoModel):
     def getFinishTime(self):
         """Return action finish time
         """
-        return BigWorld.wg_getLongDateFormat(self.event.getFinishTime())
+        return self.event.getFinishTime()
 
     def getTitle(self):
         """Return card title
@@ -278,6 +278,27 @@ class ActionInfo(EventInfoModel):
                     return formatCreditPrice(sellPrice[Currency.CREDITS])
         return ''
 
+    @classmethod
+    def _formatRentPriceIcon(cls, item, useBigIco):
+        """Convert price to text with currency icon
+        :param item: vehicle, camuflage, etc...
+        :param useBigIco: show small or big icon format
+        :return: formatted price
+        """
+        if hasattr(item, 'minRentPrice'):
+            rentPrice = item.minRentPrice.toDict()
+            if rentPrice[Currency.GOLD]:
+                if useBigIco:
+                    return formatGoldPriceBig(rentPrice[Currency.GOLD])
+                else:
+                    return formatGoldPrice(rentPrice[Currency.GOLD])
+            if rentPrice[Currency.CREDITS]:
+                if useBigIco:
+                    return formatCreditPriceBig(rentPrice[Currency.CREDITS])
+                else:
+                    return formatCreditPrice(rentPrice[Currency.CREDITS])
+        return ''
+
     def _getPackedDiscounts(self):
         """Gather info about all discounts for card
         :return:
@@ -317,7 +338,7 @@ class ActionInfo(EventInfoModel):
     def _formatFinishTime(self):
         """Format string with finish time for action
         """
-        return '{} {}'.format(text_styles.main(i18n.makeString(QUESTS.ACTION_TIME_FINISH)), self.getFinishTime())
+        return '{} {}'.format(text_styles.main(i18n.makeString(QUESTS.ACTION_TIME_FINISH)), BigWorld.wg_getShortDateFormat(self.getFinishTime()))
 
     def _getActiveDateTimeString(self):
         """Format time in 'hh mm' format
@@ -421,6 +442,19 @@ class EconomicsActionsInfo(ActionInfo):
             discountValue = formatPercentValue(discount.discountValue) if discount else None
         return discountValue
 
+    def isDiscountVisible(self):
+        paramName = self.discount.getParamName()
+        if 'winXPFactorMode' in paramName:
+            discount = self.__handleWinXPFactorMode()
+        else:
+            discount = self._getMaxDiscount()
+        if discount:
+            if discount.discountType == _DT.MULTIPLIER:
+                return not (discount.discountValue == 0 or discount.discountValue == 1)
+            else:
+                return discount.discountValue > 0
+        return False
+
     def __handleWinXPFactorMode(self):
         return self.discount.handlerWinXPFactorMode()
 
@@ -477,7 +511,7 @@ class VehPriceActionInfo(ActionInfo):
         """If card contains tabled data, format and return data
         """
         result = []
-        for item in self.__sortVehicles():
+        for item in self._sortVehicles():
             veh = item.discountName
             if veh.isPremium or veh.isElite:
                 iconFunc = RES_ICONS.maps_icons_vehicletypes_elite
@@ -487,7 +521,7 @@ class VehPriceActionInfo(ActionInfo):
              'additionalIcon': iconFunc(veh.type + '.png'),
              'title': '{} {}'.format(i18n.makeString(TOOLTIPS.level(veh.level)), veh.shortUserName),
              'discount': formatStrDiscount(item),
-             'price': self._formatPriceIcon(veh, False)}
+             'price': self._getPrice(veh, False)}
             result.append(item)
 
         return result
@@ -498,17 +532,20 @@ class VehPriceActionInfo(ActionInfo):
         :return: i18n string
         """
         result = []
-        for item in self.__sortVehicles():
+        for item in self._sortVehicles():
             veh = item.discountName
             level = formatVehicleLevel(i18n.makeString(TOOLTIPS.level(veh.level)))
             item = {'title': '{} {}'.format(level, veh.shortUserName),
              'discount': item.discountValue,
-             'price': self._formatPriceIcon(veh, useBigIco)}
+             'price': self._getPrice(veh, useBigIco)}
             result.append(item)
 
         return result
 
-    def __sortVehicles(self):
+    def _getPrice(self, veh, useBigIco):
+        return self._formatPriceIcon(veh, useBigIco)
+
+    def _sortVehicles(self):
 
         def __sortByNameFunc(item):
             raise item.discountName or AssertionError
@@ -546,6 +583,31 @@ class VehRentActionInfo(VehPriceActionInfo):
         """If card contains tabled data, format and return data
         """
         return None
+
+    def _getPrice(self, veh, useBigIco):
+        return self._formatRentPriceIcon(veh, useBigIco)
+
+    def _sortVehicles(self):
+
+        def __sortByNameFunc(item):
+            raise item.discountName or AssertionError
+            raise item.discountName.shortUserName or AssertionError
+            return item.discountName.shortUserName
+
+        def __sortByVehicleParams(item):
+            raise item.discountName or AssertionError
+            raise item.discountName.minRentPrice or AssertionError
+            raise item.discountName.level or AssertionError
+            raise item.discountValue or AssertionError
+            veh = item.discountName
+            dscnt = item.discountValue
+            return (dscnt, (veh.minRentPrice.gold, veh.minRentPrice.credits), veh.level)
+
+        res = {}
+        for (intCD, rentDays), vehicle in self._getPackedDiscounts().items():
+            res[intCD] = vehicle
+
+        return sorted(sorted(res.values(), key=__sortByNameFunc), key=__sortByVehicleParams, reverse=True)[:3]
 
 
 class EquipmentActionInfo(ActionInfo):
@@ -820,7 +882,7 @@ class ComingSoonActionInfo(ActionInfo):
         pass
 
     def _getStartTime(self):
-        startTimeStr = BigWorld.wg_getLongDateFormat(self.__startTime)
+        startTimeStr = BigWorld.wg_getShortDateFormat(self.__startTime)
         if startTimeStr is not None:
             return text_styles.main(i18n.makeString(QUESTS.ACTION_COMINGSOON_TIME, startTime=startTimeStr))
         else:
@@ -908,7 +970,6 @@ _PARAM_TO_IMG_DICT = {'exchangeRate': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_CONVE
  'set_VehSellPrice': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_VEHICLES,
  'cond_VehRentPrice': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_TANK_CLOCK,
  'mul_VehRentPrice': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_TANK_CLOCK,
- 'set_VehRentPrice': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_TANK_CLOCK,
  'mul_VehRentPriceAll': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_TANK_CLOCK,
  'mul_VehRentPriceNation': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_TANK_CLOCK,
  'equipment/goldPrice': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_CONSUMABLES,
@@ -939,7 +1000,6 @@ _MODIFIERS_DICT = {'mul_EconomicsParams': EconomicsActionsInfo,
  'cond_VehPrice': VehPriceActionInfo,
  'mul_VehPrice': VehPriceActionInfo,
  'mul_VehRentPrice': VehRentActionInfo,
- 'set_VehRentPrice': VehRentActionInfo,
  'mul_EquipmentPriceAll': EquipmentActionInfo,
  'mul_OptionalDevicePriceAll': OptDeviceActionInfo,
  'mul_ShellPriceAll': ShellPriceActionInfo,
