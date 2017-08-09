@@ -2,7 +2,10 @@
 from collections import defaultdict
 from gui import GUI_NATIONS_ORDER_INDEX
 from gui.Scaleform.daapi.view.lobby.server_events.conditions_formatters import _VehicleTableFormatter, QuestsBattleConditionsFormatter
-from gui.Scaleform.daapi.view.lobby.server_events.conditions_formatters.postbattle import _VehiclesKillFormatter, _VehiclesDamageFormatter
+from gui.Scaleform.daapi.view.lobby.server_events.conditions_formatters.postbattle import _VehiclesKillFormatter
+from gui.Scaleform.daapi.view.lobby.server_events.conditions_formatters.postbattle import _VehiclesDamageFormatter
+from gui.Scaleform.daapi.view.lobby.server_events.conditions_formatters.postbattle import _VehiclesStunFormatter
+from gui.Scaleform.locale.QUESTS import QUESTS
 from gui.server_events import formatters
 from gui.server_events.cond_formatters.formatters import CumulativableFormatter
 from gui.shared.gui_items.Vehicle import VEHICLE_TYPES_ORDER_INDICES
@@ -43,6 +46,17 @@ class _VehicleDamageCumulativeFormatter(_VehicleCumulativeFormatter, _VehiclesDa
     pass
 
 
+class _VehicleStunCumulativeFormatter(_VehicleCumulativeFormatter, _VehiclesStunFormatter):
+
+    @classmethod
+    def _getLabelKey(cls, condition = None):
+        if condition.getEventCount():
+            key = QUESTS.DETAILS_CONDITIONS_VEHICLESTUNEVENTCOUNT_CUMULATIVE
+        else:
+            key = QUESTS.DETAILS_CONDITIONS_VEHICLESTUN_CUMULATIVE
+        return key
+
+
 class _CumulativeResultFormatter(CumulativableFormatter):
 
     def _format(self, condition, event):
@@ -79,6 +93,7 @@ class QuestsBonusConditionsFormatter(QuestsBattleConditionsFormatter):
     def __init__(self):
         super(QuestsBonusConditionsFormatter, self).__init__({'vehicleKillsCumulative': _VehiclesKillsCumulativeFormatter(),
          'vehicleDamageCumulative': _VehicleDamageCumulativeFormatter(),
+         'vehicleStunCumulative': _VehicleStunCumulativeFormatter(),
          'cumulative': _CumulativeResultFormatter(),
          'unit': _CumulativeResultFormatter()})
 

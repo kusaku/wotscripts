@@ -1,7 +1,7 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/meta/RankedBattlesWelcomeViewMeta.py
-from gui.Scaleform.framework.entities.View import View
+from gui.Scaleform.daapi.view.meta.WrapperViewMeta import WrapperViewMeta
 
-class RankedBattlesWelcomeViewMeta(View):
+class RankedBattlesWelcomeViewMeta(WrapperViewMeta):
 
     def onCloseBtnClick(self):
         self._printOverrideError('onCloseBtnClick')

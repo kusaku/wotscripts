@@ -6,11 +6,6 @@ Please, don't edit this file manually.
 from debug_utils import LOG_WARNING
 
 class INGAME_GUI(object):
-    PLAYERS_PANEL_STATE_NONE = '#ingame_gui:players_panel/state/none'
-    PLAYERS_PANEL_STATE_SHORT = '#ingame_gui:players_panel/state/short'
-    PLAYERS_PANEL_STATE_MEDIUM = '#ingame_gui:players_panel/state/medium'
-    PLAYERS_PANEL_STATE_MEDIUM2 = '#ingame_gui:players_panel/state/medium2'
-    PLAYERS_PANEL_STATE_LARGE = '#ingame_gui:players_panel/state/large'
     DEVICES_ENGINE = '#ingame_gui:devices/engine'
     DEVICES_AMMO_BAY = '#ingame_gui:devices/ammo_bay'
     DEVICES_FUEL_TANK = '#ingame_gui:devices/fuel_tank'
@@ -77,7 +72,6 @@ class INGAME_GUI(object):
     PLAYER_MESSAGES_REPLAYCONTROLSHELP1 = '#ingame_gui:player_messages/replayControlsHelp1'
     PLAYER_MESSAGES_REPLAYCONTROLSHELP2 = '#ingame_gui:player_messages/replayControlsHelp2'
     PLAYER_MESSAGES_REPLAYCONTROLSHELP3 = '#ingame_gui:player_messages/replayControlsHelp3'
-    PLAYER_MESSAGES_HORN_IS_BLOCKED = '#ingame_gui:player_messages/horn_is_blocked'
     PLAYER_MESSAGES_LOADER_INTUITION_WAS_USED = '#ingame_gui:player_messages/loader_intuition_was_used'
     CHAT_SHORTCUTS_TURN_BACK = '#ingame_gui:chat_shortcuts/turn_back'
     CHAT_SHORTCUTS_SUPPORT_ME_WITH_FIRE = '#ingame_gui:chat_shortcuts/support_me_with_fire'
@@ -240,6 +234,21 @@ class INGAME_GUI(object):
     PLAYERS_PANEL_UNKNOWN_FRAGS = '#ingame_gui:players_panel/unknown_frags'
     PLAYERS_PANEL_UNKNOWN_VEHICLESTATE = '#ingame_gui:players_panel/unknown_vehicleState'
     PLAYERS_PANEL_UNKNOWN_CLAN = '#ingame_gui:players_panel/unknown_clan'
+    EPIC_PLAYERS_PANEL_STATE_HIDDEN_HEADER = '#ingame_gui:epic_players_panel/state/hidden/header'
+    EPIC_PLAYERS_PANEL_STATE_HIDDEN_BODY = '#ingame_gui:epic_players_panel/state/hidden/body'
+    EPIC_PLAYERS_PANEL_STATE_HIDDEN_NOTE = '#ingame_gui:epic_players_panel/state/hidden/note'
+    EPIC_PLAYERS_PANEL_STATE_SHORT_HEADER = '#ingame_gui:epic_players_panel/state/short/header'
+    EPIC_PLAYERS_PANEL_STATE_SHORT_BODY = '#ingame_gui:epic_players_panel/state/short/body'
+    EPIC_PLAYERS_PANEL_STATE_SHORT_NOTE = '#ingame_gui:epic_players_panel/state/short/note'
+    EPIC_PLAYERS_PANEL_STATE_MEDIUM_PLAYER_HEADER = '#ingame_gui:epic_players_panel/state/medium_player/header'
+    EPIC_PLAYERS_PANEL_STATE_MEDIUM_PLAYER_BODY = '#ingame_gui:epic_players_panel/state/medium_player/body'
+    EPIC_PLAYERS_PANEL_STATE_MEDIUM_PLAYER_NOTE = '#ingame_gui:epic_players_panel/state/medium_player/note'
+    EPIC_PLAYERS_PANEL_STATE_MEDIUM_TANK_HEADER = '#ingame_gui:epic_players_panel/state/medium_tank/header'
+    EPIC_PLAYERS_PANEL_STATE_MEDIUM_TANK_BODY = '#ingame_gui:epic_players_panel/state/medium_tank/body'
+    EPIC_PLAYERS_PANEL_STATE_MEDIUM_TANK_NOTE = '#ingame_gui:epic_players_panel/state/medium_tank/note'
+    EPIC_PLAYERS_PANEL_STATE_TOGGLE_HEADER = '#ingame_gui:epic_players_panel/state/toggle/header'
+    EPIC_PLAYERS_PANEL_STATE_TOGGLE_BODY = '#ingame_gui:epic_players_panel/state/toggle/body'
+    EPIC_PLAYERS_PANEL_STATE_TOGGLE_NOTE = '#ingame_gui:epic_players_panel/state/toggle/note'
     VEHICLE_MESSAGES_DEVICE_CRITICAL_AT_WORLD_COLLISION_SELF_SUICIDE = '#ingame_gui:vehicle_messages/DEVICE_CRITICAL_AT_WORLD_COLLISION_SELF_SUICIDE'
     VEHICLE_MESSAGES_DEVICE_CRITICAL_AT_WORLD_COLLISION_ENEMY_SELF = '#ingame_gui:vehicle_messages/DEVICE_CRITICAL_AT_WORLD_COLLISION_ENEMY_SELF'
     VEHICLE_MESSAGES_DEVICE_CRITICAL_AT_WORLD_COLLISION_ALLY_SELF = '#ingame_gui:vehicle_messages/DEVICE_CRITICAL_AT_WORLD_COLLISION_ALLY_SELF'
@@ -453,6 +462,7 @@ class INGAME_GUI(object):
     EFFICIENCYRIBBONS_RECEIVEDBURN = '#ingame_gui:efficiencyRibbons/receivedBurn'
     EFFICIENCYRIBBONS_RECEIVEDRAM = '#ingame_gui:efficiencyRibbons/receivedRam'
     EFFICIENCYRIBBONS_RECEIVEDWORLDCOLLISION = '#ingame_gui:efficiencyRibbons/receivedWorldCollision'
+    EFFICIENCYRIBBONS_ASSISTSTUN = '#ingame_gui:efficiencyRibbons/assistStun'
     DAMAGELOG_SHELLTYPE_ARMOR_PIERCING = '#ingame_gui:damageLog/shellType/ARMOR_PIERCING'
     DAMAGELOG_SHELLTYPE_HIGH_EXPLOSIVE = '#ingame_gui:damageLog/shellType/HIGH_EXPLOSIVE'
     DAMAGELOG_SHELLTYPE_ARMOR_PIERCING_HE = '#ingame_gui:damageLog/shellType/ARMOR_PIERCING_HE'
@@ -567,6 +577,7 @@ class INGAME_GUI(object):
      EFFICIENCYRIBBONS_RECEIVEDBURN,
      EFFICIENCYRIBBONS_RECEIVEDRAM,
      EFFICIENCYRIBBONS_RECEIVEDWORLDCOLLISION,
+     EFFICIENCYRIBBONS_ASSISTSTUN,
      EFFICIENCYRIBBONS_STUN)
     SIEGEMODE_HINT_FORMODE_ENUM = (SIEGEMODE_HINT_FORMODE_0,
      SIEGEMODE_HINT_FORMODE_1,

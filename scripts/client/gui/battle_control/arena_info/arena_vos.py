@@ -1,20 +1,70 @@
 # Embedded file name: scripts/client/gui/battle_control/arena_info/arena_vos.py
 import operator
 from collections import defaultdict
+import BigWorld
 import nations
-from constants import IGR_TYPE, FLAG_ACTION
+from constants import IGR_TYPE, FLAG_ACTION, ARENA_GUI_TYPE
 from debug_utils import LOG_ERROR
 from gui import makeHtmlString
 from gui.battle_control import avatar_getter, vehicle_getter
 from gui.battle_control.arena_info import settings
 from gui.shared.gui_items import Vehicle
 from gui.shared.gui_items.Vehicle import VEHICLE_TAGS, VEHICLE_CLASS_NAME
-from helpers import dependency
 from skeletons.gui.server_events import IEventsCache
+from helpers import dependency
 _INVALIDATE_OP = settings.INVALIDATE_OP
 _VEHICLE_STATUS = settings.VEHICLE_STATUS
 _PLAYER_STATUS = settings.PLAYER_STATUS
 _DELIVERY_STATUS = settings.INVITATION_DELIVERY_STATUS
+
+class EPIC_RANDOM_KEYS():
+    PLAYER_GROUP = 'playerGroup'
+
+    @staticmethod
+    def getKeys(static = True):
+        if static:
+            return [EPIC_RANDOM_KEYS.PLAYER_GROUP]
+        return []
+
+    @staticmethod
+    def getSortingKeys(static = True):
+        if static:
+            return [EPIC_RANDOM_KEYS.PLAYER_GROUP]
+        return []
+
+
+GAMEMODE_SPECIFIC_KEYS = {ARENA_GUI_TYPE.EPIC_RANDOM: EPIC_RANDOM_KEYS,
+ ARENA_GUI_TYPE.EPIC_RANDOM_TRAINING: EPIC_RANDOM_KEYS}
+
+class GameModeDataVO(object):
+    __slots__ = ('__internalData', '__sortingKeys')
+
+    def __init__(self, gameMode, static = True):
+        self.__internalData = {}
+        if gameMode in GAMEMODE_SPECIFIC_KEYS:
+            keys = GAMEMODE_SPECIFIC_KEYS[gameMode]
+            for key in keys.getKeys(static):
+                self.__internalData[key] = None
+
+            self.__sortingKeys = keys.getSortingKeys(static)
+        return
+
+    def update(self, data):
+        invalidate = _INVALIDATE_OP.NONE
+        for key, value in data.items():
+            if key in self.__sortingKeys:
+                invalidate = _INVALIDATE_OP.SORTING
+            self.__internalData[key] = value
+
+        return invalidate
+
+    def getValue(self, key):
+        if key in self.__internalData:
+            return self.__internalData[key]
+        else:
+            return None
+            return None
+
 
 def isObserver(tags):
     return VEHICLE_TAGS.OBSERVER in tags
@@ -154,7 +204,7 @@ class VehicleTypeInfoVO(object):
 
 
 class VehicleArenaInfoVO(object):
-    __slots__ = ('vehicleID', 'team', 'player', 'playerStatus', 'vehicleType', 'vehicleStatus', 'prebattleID', 'events', 'squadIndex', 'invitationDeliveryStatus', 'ranked')
+    __slots__ = ('vehicleID', 'team', 'player', 'playerStatus', 'vehicleType', 'vehicleStatus', 'prebattleID', 'events', 'squadIndex', 'invitationDeliveryStatus', 'ranked', 'gameModeSpecific')
 
     def __init__(self, vehicleID, team = 0, isAlive = None, isAvatarReady = None, isTeamKiller = None, prebattleID = None, events = None, forbidInBattleInvitations = False, ranked = None, **kwargs):
         super(VehicleArenaInfoVO, self).__init__()
@@ -169,6 +219,9 @@ class VehicleArenaInfoVO(object):
         self.events = events or {}
         self.squadIndex = 0
         self.ranked = PlayerRankedInfoVO(*ranked) if ranked is not None else PlayerRankedInfoVO()
+        arena = avatar_getter.getArena()
+        guiType = None if not arena else arena.guiType
+        self.gameModeSpecific = GameModeDataVO(guiType, True)
         return
 
     def __repr__(self):
@@ -211,12 +264,10 @@ class VehicleArenaInfoVO(object):
                 invalidate = _INVALIDATE_OP.addIfNot(invalidate, _INVALIDATE_OP.PLAYER_STATUS)
         return invalidate
 
-    def updateInvitationStatus(self, invalidate = _INVALIDATE_OP.NONE, include = _DELIVERY_STATUS.NONE, exclude = _DELIVERY_STATUS.NONE, forbidInBattleInvitations = False, forbidInBattleSPGInvitations = False, **kwargs):
+    def updateInvitationStatus(self, invalidate = _INVALIDATE_OP.NONE, include = _DELIVERY_STATUS.NONE, exclude = _DELIVERY_STATUS.NONE, forbidInBattleInvitations = False, **kwargs):
         status = self.invitationDeliveryStatus
         if forbidInBattleInvitations:
             status = _DELIVERY_STATUS.addIfNot(status, _DELIVERY_STATUS.FORBIDDEN_BY_RECEIVER)
-        elif forbidInBattleSPGInvitations:
-            status = _DELIVERY_STATUS.addIfNot(status, _DELIVERY_STATUS.SPG_IS_FORBIDDEN)
         status = _DELIVERY_STATUS.addIfNot(status, include)
         status = _DELIVERY_STATUS.removeIfHas(status, exclude)
         if self.invitationDeliveryStatus ^ status:
@@ -229,6 +280,9 @@ class VehicleArenaInfoVO(object):
             self.ranked = PlayerRankedInfoVO(*ranked)
             invalidate = _INVALIDATE_OP.addIfNot(invalidate, _INVALIDATE_OP.VEHICLE_INFO)
         return invalidate
+
+    def updateGameModeSpecificStats(self, *args):
+        return self.gameModeSpecific.update(*args)
 
     def update(self, **kwargs):
         invalidate = _INVALIDATE_OP.VEHICLE_INFO
@@ -392,13 +446,14 @@ class VehicleArenaInteractiveStatsVO(object):
 
 class VehicleArenaStatsVO(object):
     """Value object containing statistics that are related to vehicles."""
-    __slots__ = ('vehicleID', '__frags', '__interactive')
+    __slots__ = ('vehicleID', '__frags', '__interactive', '__gameModeSpecific')
 
     def __init__(self, vehicleID, frags = 0, **kwargs):
         super(VehicleArenaStatsVO, self).__init__()
         self.vehicleID = vehicleID
         self.__frags = frags
         self.__interactive = None
+        self.__gameModeSpecific = None
         return
 
     def __repr__(self):
@@ -417,6 +472,14 @@ class VehicleArenaStatsVO(object):
         if self.__interactive is None:
             self.__interactive = VehicleArenaInteractiveStatsVO()
         return self.__interactive
+
+    @property
+    def gameModeSpecific(self):
+        if self.__gameModeSpecific is None:
+            arena = avatar_getter.getArena()
+            guiType = None if not arena else arena.guiType
+            self.__gameModeSpecific = GameModeDataVO(guiType, False)
+        return self.__gameModeSpecific
 
     @property
     def stopRespawn(self):
@@ -443,6 +506,13 @@ class VehicleArenaStatsVO(object):
         if self.__interactive is None:
             self.__interactive = VehicleArenaInteractiveStatsVO()
         return self.__interactive.update(*args)
+
+    def updateGameModeSpecificStats(self, *args):
+        if self.__gameModeSpecific is None:
+            arena = avatar_getter.getArena()
+            guiType = None if not arena else arena.guiType
+            self.__gameModeSpecific = GameModeDataVO(guiType, False)
+        return self.__gameModeSpecific.update(*args)
 
     def updateVehicleStats(self, frags = None, **kwargs):
         if frags is not None:

@@ -181,6 +181,7 @@ class SelectorDescFactory:
 
 
 class SelectorDesc(object):
+    __slots__ = ('_variable', '_isPC')
 
     def __init__(self):
         self._variable = None
@@ -200,6 +201,7 @@ class SelectorDesc(object):
 
 
 class DiscreteSelectorDesc(SelectorDesc):
+    __slots__ = ('_selectors', '_variable')
 
     @property
     def selectors(self):
@@ -207,7 +209,7 @@ class DiscreteSelectorDesc(SelectorDesc):
 
     def __init__(self):
         super(DiscreteSelectorDesc, self).__init__()
-        self._selectors = dict()
+        self._selectors = {}
 
     def read(self, dataSection, effects):
         super(DiscreteSelectorDesc, self).read(dataSection, effects)
@@ -244,6 +246,7 @@ class DiscreteSelectorDesc(SelectorDesc):
 
 
 class MatkindSelectorDesc(DiscreteSelectorDesc):
+    __slots__ = ('_variable',)
 
     def __init__(self):
         super(MatkindSelectorDesc, self).__init__()
@@ -261,6 +264,7 @@ class MatkindSelectorDesc(DiscreteSelectorDesc):
 
 
 class RangeSelectorDesc(SelectorDesc):
+    __slots__ = ('_selectors', '_variable', '__keys')
 
     def __init__(self):
         super(RangeSelectorDesc, self).__init__()
@@ -313,6 +317,7 @@ class RangeSelectorDesc(SelectorDesc):
 
 
 class UnionSelectorDesc(SelectorDesc):
+    __slots__ = ('_selectors',)
 
     def __init__(self):
         super(UnionSelectorDesc, self).__init__()
@@ -342,6 +347,7 @@ class UnionSelectorDesc(SelectorDesc):
 
 
 class EffectSelectorDesc(SelectorDesc):
+    __slots__ = ('__hardPoint', '_id', '__ttl', '_effectList', '_variable')
 
     @property
     def isEffectList(self):
@@ -437,6 +443,7 @@ class EffectSelectorDesc(SelectorDesc):
 
 
 class EffectListSelectorDesc(EffectSelectorDesc):
+    __slots__ = ('_effectList',)
 
     def __init__(self):
         super(EffectListSelectorDesc, self).__init__()
@@ -455,7 +462,7 @@ class EffectDescriptorBase(object):
         self._selectorDesc = None
         return
 
-    def getActiveEffects(self, args, effectIDs):
+    def getActiveEffects(self, effects, args):
         pass
 
 
@@ -495,32 +502,37 @@ class CustomEffectsDescriptor(EffectDescriptorBase):
             return
             return
 
-    def getActiveEffects(self, args, effectIDs):
+    def getActiveEffects(self, effects, args):
         if self._selectorDesc is not None:
-            return self._selectorDesc.getActiveEffects(args, effectIDs)
+            return self._selectorDesc.getActiveEffects(effects, args)
         else:
             return
 
 
 class ExhaustEffectDescriptor(EffectDescriptorBase):
 
-    def __init__(self, dataSection, xmlCtx, customDescriptor, name):
+    def __init__(self, dataSection, xmlCtx, customDescriptors, name):
+        raise 'default' in customDescriptors or AssertionError
         super(ExhaustEffectDescriptor, self).__init__()
-        self._selectorDesc = customDescriptor
+        self.__descriptors = customDescriptors
         self.nodes = _xml.readNonEmptyString(xmlCtx, dataSection, name).split()
 
     def create(self, args):
-        if self._selectorDesc is not None:
-            return ExhaustMainSelector(self._selectorDesc, args, self.nodes)
+        effectDescriptor = self.__descriptors['default']
+        if len(self.__descriptors) > 1:
+            for tag in args['engineTags']:
+                if tag in self.__descriptors:
+                    effectDescriptor = self.__descriptors[tag]
+                    break
+
+        if effectDescriptor is not None:
+            return ExhaustMainSelector(effectDescriptor, args, self.nodes)
         else:
             return
             return
 
-    def getActiveEffects(self, args, effectIDs):
-        if self._selectorDesc is not None:
-            return self._selectorDesc.getActiveEffects(args, effectIDs)
-        else:
-            return
+    def getActiveEffects(self, effects, args):
+        raise AssertionError('This function should not be called by hand.')
 
 
 class EffectSettings:

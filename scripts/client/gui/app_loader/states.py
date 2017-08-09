@@ -156,6 +156,8 @@ class LoginState(IGlobalState):
             return LobbyState()
         elif spaceID == _SPACE_ID.BATTLE_LOADING:
             return BattleLoadingState(ctx.arenaGuiType)
+        elif spaceID == _SPACE_ID.WAITING:
+            return WaitingState()
         else:
             LOG_ERROR('State can not be switched', self, ctx)
             return None
@@ -241,6 +243,8 @@ class LobbyState(ConnectionState):
         if ctx.guiSpaceID == _SPACE_ID.BATTLE_LOADING:
             return BattleLoadingState(ctx.arenaGuiType)
         else:
+            if ctx.guiSpaceID == _SPACE_ID.WAITING:
+                newState = WaitingState()
             return newState
 
 

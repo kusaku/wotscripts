@@ -1,5 +1,6 @@
 # Embedded file name: scripts/client/messenger/gui/Scaleform/lobby_entry.py
 import weakref
+from collections import defaultdict
 from debug_utils import LOG_ERROR
 from gui import DialogsInterface, SystemMessages
 from gui.Scaleform.daapi.view import dialogs
@@ -21,7 +22,7 @@ class LobbyEntry(IGUIEntry):
         super(LobbyEntry, self).__init__()
         self.__channelsCtrl = None
         self.__carouselHandler = None
-        self.__components = {}
+        self.__components = defaultdict(list)
         return
 
     @storage_getter('channels')
@@ -108,9 +109,9 @@ class LobbyEntry(IGUIEntry):
     def __setView4Ctrl(self, controller):
         clientID = controller.getChannel().getClientID()
         if clientID in self.__components:
-            component = self.__components.pop(clientID)()
-            if component:
-                controller.setView(component)
+            components = self.__components.pop(clientID)
+            for component in components:
+                controller.setView(component())
 
     def __me_onMessageReceived(self, message, channel):
         if channel:
@@ -234,7 +235,7 @@ class LobbyEntry(IGUIEntry):
             if controller:
                 controller.setView(component)
             else:
-                self.__components[clientID] = weakref.ref(component)
+                self.__components[clientID].append(weakref.ref(component))
             return
 
     def __handleRqDeactivateChannel(self, event):

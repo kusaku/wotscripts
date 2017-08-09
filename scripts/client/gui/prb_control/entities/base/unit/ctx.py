@@ -1,6 +1,4 @@
 # Embedded file name: scripts/client/gui/prb_control/entities/base/unit/ctx.py
-import BigWorld
-import gui.macroses as macroses
 from account_helpers import gameplay_ctx
 from external_strings_utils import truncate_utf8
 from UnitBase import UNIT_SLOT
@@ -11,7 +9,7 @@ _CTRL_ENTITY_TYPE = settings.CTRL_ENTITY_TYPE
 _REQUEST_TYPE = settings.REQUEST_TYPE
 _UNDEFINED = settings.FUNCTIONAL_FLAG.UNDEFINED
 
-@ReprInjector.withParent(('getUnitIdx', 'unitIdx'))
+@ReprInjector.withParent(('getID', 'unitMgrID'))
 
 class UnitRequestCtx(PrbCtrlRequestCtx):
     """
@@ -22,11 +20,11 @@ class UnitRequestCtx(PrbCtrlRequestCtx):
     def __init__(self, **kwargs):
         super(UnitRequestCtx, self).__init__(ctrlType=_CTRL_ENTITY_TYPE.UNIT, **kwargs)
 
-    def getUnitIdx(self):
+    def getID(self):
         """
         Getter for joined unit index.
         """
-        return prb_getters.getUnitIdx()
+        return prb_getters.getUnitMgrID()
 
     def getCooldown(self):
         return 5.0
@@ -110,11 +108,8 @@ class LeaveUnitCtx(UnitRequestCtx):
     def getRequestType(self):
         return _REQUEST_TYPE.LEAVE
 
-    def getID(self):
-        """
-        Proxy call.
-        """
-        return self.getUnitIdx()
+    def getCooldown(self):
+        return 0.3
 
 
 @ReprInjector.withParent(('__isLocked', 'isLocked'))

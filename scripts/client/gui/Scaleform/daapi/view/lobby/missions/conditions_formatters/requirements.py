@@ -27,7 +27,7 @@ def relate(relation, value, label):
         value = BigWorld.wg_getNiceNumberFormat(value)
     else:
         value = value
-    relation = ms('#quests:details/relations1/{}'.format(relation))
+    relation = ms('#quests:details/requirementsRelation/{}'.format(relation))
     rlabel = ms('#quests:details/requirements/relation', relation=relation, value=value)
     return '{}{}'.format(label, rlabel)
 
@@ -545,7 +545,7 @@ class TokenGatheringRequirementFormatter(ConditionFormatter):
         needCount = condition.getNeededCount()
         gotCount = condition.getReceivedCount()
         image = condition.getImage(TOKEN_SIZES.BIG)
-        self._tokens.append(packTokenProgress(condition.getID(), event.getID(), '', image, gotCount, needCount))
+        self._tokens.append(packTokenProgress(condition.getID(), event.getID(), '', image, gotCount, needCount, isBigSize=True))
         self._isAvailable = self._isAvailable and condition.isAvailable()
 
     def isAvailable(self):

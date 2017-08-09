@@ -14,7 +14,7 @@ import constants
 import nations
 import physics_shared
 from AvatarInputHandler.aih_constants import ShakeReason
-from ModelHitTester import segmentMayHitVehicle, SegmentCollisionResult
+from ModelHitTester import segmentMayHitVehicle, SegmentCollisionResult, SegmentCollisionResultExt
 from TriggersManager import TRIGGER_TYPE
 from SoundGroups import CREW_GENDER_SWITCHES
 from VehicleEffects import DamageFromShotDecoder
@@ -199,7 +199,11 @@ class Vehicle(BigWorld.Entity):
             if not self.isAlive():
                 return
             if attackerID == BigWorld.player().playerVehicleID and maxHitEffectCode is not None and not self.isPlayerVehicle:
-                if hasPiercedHit:
+                if maxHitEffectCode in VEHICLE_HIT_EFFECT.RICOCHETS:
+                    eventID = _GUI_EVENT_ID.VEHICLE_RICOCHET
+                elif maxHitEffectCode == VEHICLE_HIT_EFFECT.CRITICAL_HIT and damageFactor == 0.0:
+                    eventID = _GUI_EVENT_ID.VEHICLE_CRITICAL_HIT
+                elif hasPiercedHit:
                     eventID = _GUI_EVENT_ID.VEHICLE_ARMOR_PIERCED
                 else:
                     eventID = _GUI_EVENT_ID.VEHICLE_HIT
@@ -307,7 +311,7 @@ class Vehicle(BigWorld.Entity):
     def set_gunAnglesPacked(self, prev):
         syncGunAngles = getattr(self.filter, 'syncGunAngles', None)
         if syncGunAngles:
-            yaw, pitch = decodeGunAngles(self.gunAnglesPacked, self.typeDescriptor.gun['pitchLimits']['absolute'])
+            yaw, pitch = decodeGunAngles(self.gunAnglesPacked, self.typeDescriptor.gun.pitchLimits['absolute'])
             syncGunAngles(yaw, pitch)
         return
 
@@ -333,18 +337,15 @@ class Vehicle(BigWorld.Entity):
         if newHealth > 0 and self.health <= 0:
             self.health = newHealth
             return
-        elif not self.isStarted:
+        if not self.isStarted:
             return
-        else:
-            if not self.isPlayerVehicle:
-                ctrl = self.guiSessionProvider.shared.feedback
-                if ctrl is not None:
-                    ctrl.setVehicleNewHealth(self.id, newHealth, attackerID, attackReasonID)
-            if not self.appearance.damageState.isCurrentModelDamaged:
-                self.appearance.onVehicleHealthChanged()
-            if self.health <= 0 and self.isCrewActive:
-                self.__onVehicleDeath()
-            return
+        self.guiSessionProvider.setVehicleHealth(self.isPlayerVehicle, self.id, newHealth, attackerID, attackReasonID)
+        if not self.appearance.damageState.isCurrentModelDamaged:
+            self.appearance.onVehicleHealthChanged()
+        if self.health <= 0 and self.isCrewActive:
+            self.__onVehicleDeath()
+        if self.isPlayerVehicle:
+            TriggersManager.g_manager.activateTrigger(TRIGGER_TYPE.PLAYER_RECEIVE_DAMAGE, attackerId=attackerID)
 
     def set_stunInfo(self, prev):
         LOG_DEBUG('Set stun info(curr,~ prev): ', self.stunInfo, prev)
@@ -441,20 +442,20 @@ class Vehicle(BigWorld.Entity):
         m = Math.Matrix()
         m.setIdentity()
         res.append((vehicleDescr.chassis, m, True))
-        hullOffset = vehicleDescr.chassis['hullPosition']
+        hullOffset = vehicleDescr.chassis.hullPosition
         m = Math.Matrix()
         m.setTranslate(-hullOffset)
         res.append((vehicleDescr.hull, m, True))
         turretYaw = Math.Matrix(self.appearance.turretMatrix).yaw
         turretMatrix = Math.Matrix()
-        turretMatrix.setTranslate(-hullOffset - vehicleDescr.hull['turretPositions'][0])
+        turretMatrix.setTranslate(-hullOffset - vehicleDescr.hull.turretPositions[0])
         m = Math.Matrix()
         m.setRotateY(-turretYaw)
         turretMatrix.postMultiply(m)
         res.append((vehicleDescr.turret, turretMatrix, not self.isTurretDetached))
         gunPitch = Math.Matrix(self.appearance.gunMatrix).pitch
         gunMatrix = Math.Matrix()
-        gunMatrix.setTranslate(-vehicleDescr.turret['gunPosition'])
+        gunMatrix.setTranslate(-vehicleDescr.turret.gunPosition)
         m = Math.Matrix()
         m.setRotateX(-gunPitch)
         gunMatrix.postMultiply(m)
@@ -478,29 +479,20 @@ class Vehicle(BigWorld.Entity):
         return segmentMayHitVehicle(self.typeDescriptor, startPoint, endPoint, self.position)
 
     def collideSegment(self, startPoint, endPoint, skipGun = False, optimized = True):
-        filterMethod = getattr(self.filter, 'segmentMayHitEntity', self.segmentMayHitVehicle)
-        if not filterMethod(startPoint, endPoint, 0):
-            return
+        res = self.__collideSegment(startPoint, endPoint, skipGun, True)
+        if res:
+            return res[-1]
         else:
-            res = None
-            worldToVehMatrix = Math.Matrix(self.model.matrix)
-            worldToVehMatrix.invert()
-            startPoint = worldToVehMatrix.applyPoint(startPoint)
-            endPoint = worldToVehMatrix.applyPoint(endPoint)
-            for compDescr, compMatrix, isAttached in self.getComponents():
-                if not isAttached:
-                    continue
-                if skipGun and compDescr.get('itemTypeName') == 'vehicleGun':
-                    continue
-                collisions = compDescr['hitTester'].localHitTest(compMatrix.applyPoint(startPoint), compMatrix.applyPoint(endPoint))
-                if collisions is None:
-                    continue
-                for dist, _, hitAngleCos, matKind in collisions:
-                    if res is None or res[0] >= dist:
-                        matInfo = compDescr['materials'].get(matKind)
-                        res = SegmentCollisionResult(dist, hitAngleCos, matInfo.armor if matInfo is not None else 0)
+            return None
 
+    def collideSegmentExt(self, startPoint, endPoint):
+        res = self.__collideSegment(startPoint, endPoint)
+        if res:
+            res.sort(key=lambda c: c.dist)
             return res
+        else:
+            return None
+            return None
 
     def isAlive(self):
         return self.isCrewActive and self.health > 0
@@ -512,7 +504,7 @@ class Vehicle(BigWorld.Entity):
         """Gets approximate gun angles obtained from self.gunAnglesPacked (see vehicle.def).
         :return: (turretYaw, gunPitch)
         """
-        return decodeGunAngles(self.gunAnglesPacked, self.typeDescriptor.gun['pitchLimits']['absolute'])
+        return decodeGunAngles(self.gunAnglesPacked, self.typeDescriptor.gun.pitchLimits['absolute'])
 
     def startVisual(self):
         if not not self.isStarted:
@@ -522,7 +514,7 @@ class Vehicle(BigWorld.Entity):
             self.appearance.setVehicle(self)
             self.appearance.activate()
             self.appearance.changeEngineMode(self.engineMode)
-            self.appearance.onVehicleHealthChanged()
+            self.appearance.onVehicleHealthChanged(self.isPlayerVehicle)
             if self.isPlayerVehicle:
                 if self.isAlive():
                     self.appearance.setupGunMatrixTargets(avatar.gunRotator)
@@ -531,6 +523,8 @@ class Vehicle(BigWorld.Entity):
             self.isStarted = True
             self.set_publicStateModifiers()
             self.set_damageStickers()
+            if TriggersManager.g_manager:
+                TriggersManager.g_manager.activateTrigger(TriggersManager.TRIGGER_TYPE.VEHICLE_VISUAL_VISIBILITY_CHANGED, vehicleId=self.id, isVisible=True)
             self.guiSessionProvider.startVehicleVisual(self.proxy, True)
             if self.stunInfo > 0.0:
                 self.updateStunInfo()
@@ -549,7 +543,7 @@ class Vehicle(BigWorld.Entity):
             return
         else:
             vehicleTypeID = self.typeDescriptor.type.id
-            if vehicleTypeID in _VALKYRIE_SOUND_MODES:
+            if vehicleTypeID in _VALKYRIE_SOUND_MODES and self.id == player.playerVehicleID:
                 SoundGroups.g_instance.soundModes.setMode(_VALKYRIE_SOUND_MODES[vehicleTypeID])
                 return
             genderSwitch = CREW_GENDER_SWITCHES.DEFAULT
@@ -571,8 +565,10 @@ class Vehicle(BigWorld.Entity):
             raise AssertionError
             stippleModel = None
             showStipple = False
-            showStipple and self.appearance.assembleStipple()
-        self.__stopExtras()
+            if showStipple:
+                self.appearance.assembleStipple()
+            self.__stopExtras()
+            TriggersManager.g_manager and TriggersManager.g_manager.activateTrigger(TriggersManager.TRIGGER_TYPE.VEHICLE_VISUAL_VISIBILITY_CHANGED, vehicleId=self.id, isVisible=False)
         self.guiSessionProvider.stopVehicleVisual(self.id, self.isPlayerVehicle)
         self.appearance.deactivate()
         self.appearance = None
@@ -628,22 +624,19 @@ class Vehicle(BigWorld.Entity):
     def __startWGPhysics(self):
         if not hasattr(self.filter, 'setVehiclePhysics'):
             return
-        else:
-            typeDescr = self.typeDescriptor
-            physics = BigWorld.WGVehiclePhysics()
-            physics_shared.initVehiclePhysics(physics, typeDescr, None, False)
-            arenaMinBound, arenaMaxBound = (-10000, -10000), (10000, 10000)
-            physics.setArenaBounds(arenaMinBound, arenaMaxBound)
-            physics.enginePower = typeDescr.physics['enginePower'] / 1000.0
-            physics.owner = weakref.ref(self)
-            physics.staticMode = False
-            physics.movementSignals = 0
-            self.filter.setVehiclePhysics(physics)
-            physics.visibilityMask = ArenaType.getVisibilityMask(BigWorld.player().arenaTypeID >> 16)
-            yaw, pitch = decodeGunAngles(self.gunAnglesPacked, typeDescr.gun['pitchLimits']['absolute'])
-            self.filter.syncGunAngles(yaw, pitch)
-            self.__speedInfo.set(self.filter.speedInfo)
-            return
+        typeDescr = self.typeDescriptor
+        physics = BigWorld.WGVehiclePhysics()
+        physics_shared.initVehiclePhysicsClient(physics, typeDescr)
+        arenaMinBound, arenaMaxBound = (-10000, -10000), (10000, 10000)
+        physics.setArenaBounds(arenaMinBound, arenaMaxBound)
+        physics.owner = weakref.ref(self)
+        physics.staticMode = False
+        physics.movementSignals = 0
+        self.filter.setVehiclePhysics(physics)
+        physics.visibilityMask = ArenaType.getVisibilityMask(BigWorld.player().arenaTypeID >> 16)
+        yaw, pitch = decodeGunAngles(self.gunAnglesPacked, typeDescr.gun.pitchLimits['absolute'])
+        self.filter.syncGunAngles(yaw, pitch)
+        self.__speedInfo.set(self.filter.speedInfo)
 
     def __stopWGPhysics(self):
         self.__speedInfo.reset()
@@ -729,7 +722,7 @@ class Vehicle(BigWorld.Entity):
         if not constants.IS_DEVELOPMENT:
             return
         if not hasattr(self, '_Vehicle__debugServerChassis'):
-            chassisModel = BigWorld.Model(self.typeDescriptor.chassis['hitTester'].bspModelName)
+            chassisModel = BigWorld.Model(self.typeDescriptor.chassis.hitTester.bspModelName)
             BigWorld.player().addModel(chassisModel)
             motor = BigWorld.Servo(Math.Matrix())
             chassisModel.addMotor(motor)
@@ -738,6 +731,34 @@ class Vehicle(BigWorld.Entity):
         chassisMatrix = mathUtils.createRTMatrix(rotation, translation)
         chassisMatrix.postMultiply(self.model.matrix)
         self.__debugServerChassis.motors[0].signal = chassisMatrix
+
+    def __collideSegment(self, startPoint, endPoint, skipGun = False, onlyNearest = False):
+        filterMethod = getattr(self.filter, 'segmentMayHitEntity', self.segmentMayHitVehicle)
+        if not filterMethod(startPoint, endPoint, 0):
+            return
+        else:
+            res = []
+            worldToVehMatrix = Math.Matrix(self.model.matrix)
+            worldToVehMatrix.invert()
+            startPoint = worldToVehMatrix.applyPoint(startPoint)
+            endPoint = worldToVehMatrix.applyPoint(endPoint)
+            for compDescr, compMatrix, isAttached in self.getComponents():
+                if not isAttached:
+                    continue
+                if skipGun and compDescr.itemTypeName == 'vehicleGun':
+                    continue
+                collisions = compDescr.hitTester.localHitTest(compMatrix.applyPoint(startPoint), compMatrix.applyPoint(endPoint))
+                if collisions is None:
+                    continue
+                for dist, _, hitAngleCos, matKind in collisions:
+                    matInfo = compDescr.materials.get(matKind)
+                    if onlyNearest:
+                        if not res or res and res[-1][0] >= dist:
+                            res.append(SegmentCollisionResult(dist, hitAngleCos, matInfo.armor if matInfo is not None else 0))
+                    else:
+                        res.append(SegmentCollisionResultExt(dist, hitAngleCos, matInfo, compDescr.itemTypeName))
+
+            return res
 
 
 @dependency.replace_none_kwargs(lobbyContext=ILobbyContext)

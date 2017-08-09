@@ -9,6 +9,7 @@ from debug_utils import LOG_DEBUG, LOG_ERROR
 from items import vehicles, tankmen
 from AccountCommands import BUY_VEHICLE_FLAG
 from account_shared import AmmoIterator
+from items.item_price import getNextSlotPrice, getNextBerthPackPrice
 from persistent_caches import SimpleCache
 from SyncController import SyncController
 from PlayerEvents import g_playerEvents as events
@@ -166,23 +167,13 @@ class Shop(object):
         self.__getValue('slotsPrices', callback)
 
     def getNextSlotPrice(self, slots, slotsPrices):
-        addSlotNumber = slots - slotsPrices[0]
-        if addSlotNumber < 0:
-            return 0
-        if addSlotNumber < len(slotsPrices[1]):
-            return slotsPrices[1][addSlotNumber]
-        return slotsPrices[1][-1]
+        return getNextSlotPrice(slots, slotsPrices)
 
     def getBerthsPrices(self, callback):
         self.__getValue('berthsPrices', callback)
 
     def getNextBerthPackPrice(self, berths, berthsPrices):
-        addPackNumber = (berths - berthsPrices[0]) / berthsPrices[1]
-        if addPackNumber < 0:
-            return 0
-        if addPackNumber < len(berthsPrices[2]):
-            return berthsPrices[2][addPackNumber]
-        return berthsPrices[2][-1]
+        return getNextBerthPackPrice(berths, berthsPrices)
 
     def getExchangeRate(self, callback):
         self.__getValue('exchangeRate', callback)
@@ -231,9 +222,6 @@ class Shop(object):
 
     def getPlayerInscriptionCost(self, callback):
         self.__getValue('playerInscriptionCost', callback)
-
-    def getHornCost(self, callback):
-        self.__getValue('hornCost', callback)
 
     def buy(self, itemTypeIdx, nationIdx, itemShopID, count, goldForCredits, callback):
         if self.__ignore:

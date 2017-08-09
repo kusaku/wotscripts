@@ -3,13 +3,15 @@ from debug_utils import LOG_CURRENT_EXCEPTION
 from gui.shared.gui_items import GUI_ITEM_TYPE_NAMES, GUI_ITEM_TYPE
 from gui.shared.gui_items.fitting_item import FittingItem
 from gui.shared.gui_items.Tankman import isSkillLearnt
+from gui.shared.gui_items.gui_item_economics import ItemPrice, ItemPrices, ITEM_PRICE_EMPTY, ITEM_PRICES_EMPTY
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
-from gui.shared.money import Currency
+from gui.shared.money import Money, Currency, MONEY_UNDEFINED
 from items import artefacts
 from items.tankmen import PERKS
 from gui.Scaleform.locale.ARTEFACTS import ARTEFACTS
 from gui.Scaleform.locale.ITEM_TYPES import ITEM_TYPES
 from helpers import i18n
+_TAG_NOT_FOR_SALE = 'notForSale'
 _TAG_CREW_BATTLE_BOOSTER = 'crewSkillBattleBooster'
 _TAG_OPT_DEVICE_DELUXE = 'deluxe'
 _TOKEN_OPT_DEVICE_SIMPLE = 'simple'
@@ -18,6 +20,12 @@ _TOKEN_CREW_PERK_REPLACE = 'perk'
 _TOKEN_CREW_PERK_BOOST = 'boost'
 
 class VehicleArtefact(FittingItem):
+    __slots__ = ()
+
+    @property
+    def level(self):
+        """Return 0 because equipments and optional devices have no level."""
+        return 0
 
     @property
     def icon(self):
@@ -36,6 +44,24 @@ class VehicleArtefact(FittingItem):
         return self.shortDescription
 
     @property
+    def isForSale(self):
+        """
+        Some items can not be sold, they will have 'notForSale' tag in xml file.
+        After moving to Money 2.0 concept this property can be removed and sellPrice.isDefined() will
+        be used to replace this property.
+        :return: True if the item can be sold, False otherwise
+        """
+        return _TAG_NOT_FOR_SALE not in self.tags
+
+    @property
+    def tags(self):
+        """
+        Returns list of tags, associated with this item.
+        :return: frozenset of tags(strings), defined in the equipment.xml for the item.
+        """
+        return self.descriptor.tags
+
+    @property
     def isStimulator(self):
         """ Is item stimulator which can increase crew role levels. """
         return isinstance(self.descriptor, artefacts.Stimulator)
@@ -45,7 +71,7 @@ class VehicleArtefact(FittingItem):
         """ Value of crew role levels increasing. """
         if not self.isStimulator:
             return 0
-        return self.descriptor['crewLevelIncrease']
+        return self.descriptor.crewLevelIncrease
 
     @property
     def isRemovingStun(self):
@@ -53,15 +79,20 @@ class VehicleArtefact(FittingItem):
 
 
 class Equipment(VehicleArtefact):
+    __slots__ = ()
 
     def _getAltPrice(self, buyPrice, proxy):
-        """ Overridden method for receiving special action price value for shells
-        @param buyPrice:
-        @param proxy:
-        @return: an instance of Money class
         """
-        creditsPrice = buyPrice.exchange(Currency.GOLD, Currency.CREDITS, proxy.exchangeRateForShellsAndEqs)
-        return buyPrice.replace(Currency.CREDITS, creditsPrice.credits)
+        Returns an alternative price (right now in Currency.CREDITS) based on the original buy price and equipments
+        gold-credits exchange rate defined in the shop.
+        
+        @param buyPrice: buy price in Money
+        @param proxy: shop stats proxy, see IShopCommonStats
+        @return: alternative price in Money (right now in credits)
+        """
+        if Currency.GOLD in buyPrice:
+            return buyPrice.exchange(Currency.GOLD, Currency.CREDITS, proxy.exchangeRateForShellsAndEqs)
+        return super(Equipment, self)._getAltPrice(buyPrice, proxy)
 
     @property
     def icon(self):
@@ -71,12 +102,8 @@ class Equipment(VehicleArtefact):
         return RES_ICONS.getBonusIcon(size, self.name)
 
     @property
-    def tags(self):
-        return self.descriptor.tags
-
-    @property
     def defaultLayoutValue(self):
-        return (self.intCD if not self.isBoughtForCredits else -self.intCD, 1)
+        return (self.intCD if not self.isBoughtForAltPrice else -self.intCD, 1)
 
     @property
     def isRemovingStun(self):
@@ -84,16 +111,10 @@ class Equipment(VehicleArtefact):
         return bool(descr.stunResistanceEffect or descr.stunResistanceDuration)
 
     def isInstalled(self, vehicle, slotIdx = None):
-        for idx, eq in enumerate(vehicle.eqs):
-            if eq is not None and self.intCD == eq.intCD:
-                if slotIdx is None:
-                    return True
-                return idx == slotIdx
-
-        return super(Equipment, self).isInstalled(vehicle, slotIdx)
+        return vehicle.equipment.regularConsumables.containsIntCD(self.intCD, slotIdx)
 
     def mayInstall(self, vehicle, slotIdx = None):
-        for idx, eq in enumerate(vehicle.eqs):
+        for idx, eq in enumerate(vehicle.equipment.regularConsumables):
             if slotIdx is not None and idx == slotIdx or eq is None:
                 continue
             if eq.intCD != self.intCD:
@@ -108,26 +129,23 @@ class Equipment(VehicleArtefact):
     def getInstalledVehicles(self, vehicles):
         result = set()
         for vehicle in vehicles:
-            installed = map(lambda x: (x.intCD if x is not None else None), vehicle.eqs)
-            if self.intCD in installed:
+            if vehicle.equipment.regularConsumables.containsIntCD(self.intCD):
                 result.add(vehicle)
 
         return result
 
     def getConflictedEquipments(self, vehicle):
         conflictEqs = list()
-        if self in vehicle.eqs:
+        if self in vehicle.equipment.regularConsumables:
             return conflictEqs
-        else:
-            for e in vehicle.eqs:
-                if e is not None:
-                    compatibility = e.descriptor.checkCompatibilityWithActiveEquipment(self.descriptor)
-                    if compatibility:
-                        compatibility = self.descriptor.checkCompatibilityWithEquipment(e.descriptor)
-                    if not compatibility:
-                        conflictEqs.append(e)
+        for e in vehicle.equipment.regularConsumables.getInstalledItems():
+            compatibility = e.descriptor.checkCompatibilityWithActiveEquipment(self.descriptor)
+            if compatibility:
+                compatibility = self.descriptor.checkCompatibilityWithEquipment(e.descriptor)
+            if not compatibility:
+                conflictEqs.append(e)
 
-            return conflictEqs
+        return conflictEqs
 
     def getGUIEmblemID(self):
         return super(Equipment, self).icon
@@ -158,11 +176,7 @@ class Equipment(VehicleArtefact):
 
 
 class BattleBooster(Equipment):
-    """
-    This class represents BattleBooster entity. It is a kind of equipment.
-    But it is not displayed in Technical Maintenance window, it has its own slot in hangar.
-    For server we will always set this item in 4th position in equipment layout.
-    """
+    __slots__ = ()
 
     def __init__(self, *args, **kwargs):
         super(BattleBooster, self).__init__(*args, **kwargs)
@@ -181,7 +195,7 @@ class BattleBooster(Equipment):
         Check whether it crew or opt.dev battle booster
         :return: boolean result
         """
-        return _TAG_CREW_BATTLE_BOOSTER in self.descriptor.tags
+        return _TAG_CREW_BATTLE_BOOSTER in self.tags
 
     def isAffectsOnVehicle(self, vehicle):
         """
@@ -197,13 +211,12 @@ class BattleBooster(Equipment):
         return False
 
     def isInstalled(self, vehicle, slotIdx = None):
-        booster = vehicle.battleBooster
-        return booster is not None and self.intCD == booster.intCD
+        return vehicle.equipment.battleBoosterConsumables.containsIntCD(self.intCD, slotIdx)
 
     def getInstalledVehicles(self, vehicles):
         result = set()
         for vehicle in vehicles:
-            if vehicle.battleBooster is not None and self.intCD == vehicle.battleBooster.intCD:
+            if vehicle.equipment.battleBoosterConsumables.containsIntCD(self.intCD):
                 result.add(vehicle)
 
         return result
@@ -219,6 +232,24 @@ class BattleBooster(Equipment):
         """
         return not self.isCrewBooster() and optionalDevice is not None and self.descriptor.getLevelParamsForDevice(optionalDevice.descriptor) is not None
 
+    def getCrewBonus(self, vehicle):
+        """
+        Calculates crew bonus percent. For battle booster it is necessary to check each optional device on vehicle,
+        due to this percent can depend on type of opt. device.
+        :param vehicle: gui_items.Vehicle instances
+        :return: float value
+        """
+        if self.isCrewBooster():
+            return 0
+        else:
+            for device in vehicle.optDevices:
+                if device is not None:
+                    levelParams = self.descriptor.getLevelParamsForDevice(device.descriptor)
+                    if levelParams is not None and 'crewLevelIncrease' in levelParams:
+                        return levelParams[1]
+
+            return 0
+
     def getAffectedSkillName(self):
         """
         Returns a skill name, for which booster has effect
@@ -228,10 +259,6 @@ class BattleBooster(Equipment):
             return self.descriptor.skillName
         else:
             return None
-
-    def mayPurchaseWithExchange(self, money, exchangeRate):
-        canBuy, reason = self.mayPurchase(money)
-        return canBuy
 
     def isAffectedSkillLearnt(self, vehicle = None):
         """
@@ -297,15 +324,54 @@ class BattleBooster(Equipment):
         formatted = valueFormatter(gain) if valueFormatter is not None else gain
         return self.shortDescription % formatted
 
+    def _getShortInfo(self, vehicle = None, expanded = False):
+        if self.isCrewBooster():
+            return self.getCrewBoosterDescription(isPerkReplace=False, formatter=None)
+        else:
+            return self.getOptDeviceBoosterDescription(vehicle=None, valueFormatter=None)
+            return None
 
-class OptionalDevice(VehicleArtefact):
+    def _getAltPrice(self, buyPrice, proxy):
+        """
+        Returns an alternative price based on the original buy price and equipments exchange rate defined in the shop.
+        Right now BattleBooster are not available for alternative price and can be bought only for Currency.CRYSTAL.
+        
+        @param buyPrice: buy price in Money
+        @param proxy: shop stats proxy, see IShopCommonStats
+        @return: alternative price in Money (right now in credits)
+        """
+        return MONEY_UNDEFINED
 
-    def __init__(self, intCompactDescr, proxy = None, isBoughtForCredits = False):
-        super(OptionalDevice, self).__init__(intCompactDescr, proxy, isBoughtForCredits)
+
+class RemovableDevice(VehicleArtefact):
+    __slots__ = ()
+
+    @property
+    def isRemovable(self):
+        """
+        Indicates whether the item can be removed from vehicle for free.
+        :return: bool
+        """
+        return self.descriptor.removable
+
+    def getRemovalPrice(self, proxy = None):
+        """
+        The price to remove this device from vehicle, by default - empty price (remove for free)
+        :param proxy: instance of ItemsRequester
+        :return: ItemPrice
+        """
+        return ITEM_PRICE_EMPTY
+
+
+class OptionalDevice(RemovableDevice):
+    __slots__ = ('_GUIEmblemID',)
+
+    def __init__(self, intCompactDescr, proxy = None):
+        super(OptionalDevice, self).__init__(intCompactDescr, proxy)
         splitIcon = self.icon.split('/')
         labelWithExtension = splitIcon[len(splitIcon) - 1]
         label = labelWithExtension.split('.')[0]
-        self.GUIEmblemID = label
+        self._GUIEmblemID = label
 
     @property
     def shortDescription(self):
@@ -315,12 +381,25 @@ class OptionalDevice(VehicleArtefact):
         description = super(OptionalDevice, self).shortDescription
         return description.format(colorTagOpen='', colorTagClose='')
 
-    @property
-    def isRemovable(self):
-        return self.descriptor['removable']
-
     def isDeluxe(self):
-        return _TAG_OPT_DEVICE_DELUXE in self.descriptor.tags
+        return _TAG_OPT_DEVICE_DELUXE in self.tags
+
+    def getRemovalPrice(self, proxy = None):
+        """
+        The price to remove this device from vehicle
+        :param proxy: instance of ItemsRequester
+        :return: ItemPrice
+        """
+        if not self.isRemovable and proxy is not None:
+            if self.isDeluxe():
+                cost = proxy.shop.paidDeluxeRemovalCost
+                defaultCost = proxy.shop.defaults.paidDeluxeRemovalCost
+                return ItemPrice(price=cost, defPrice=defaultCost)
+            else:
+                cost = proxy.shop.paidRemovalCost
+                defaultCost = proxy.shop.defaults.paidRemovalCost
+                return ItemPrice(price=Money(gold=cost), defPrice=Money(gold=defaultCost))
+        return super(OptionalDevice, self).getRemovalPrice(proxy)
 
     def getBonusIcon(self, size = 'small'):
         iconName = self.descriptor.icon[0].split('/')[-1].split('.')[0]
@@ -374,4 +453,4 @@ class OptionalDevice(VehicleArtefact):
         return result
 
     def getGUIEmblemID(self):
-        return self.GUIEmblemID
+        return self._GUIEmblemID

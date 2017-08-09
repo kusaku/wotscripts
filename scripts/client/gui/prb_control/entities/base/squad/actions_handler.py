@@ -27,12 +27,12 @@ class SquadActionsHandler(AbstractActionsHandler):
         """
         return None
 
-    def setUnitChanged(self, flags = None):
-        if flags.isInQueueChanged():
-            if self._entity.getPlayerInfo().isReady and flags.isInQueue():
-                g_eventDispatcher.loadBattleQueue()
-            else:
-                g_eventDispatcher.loadHangar()
+    def setUnitChanged(self):
+        flags = self._entity.getFlags()
+        if self._entity.getPlayerInfo().isReady and flags.isInQueue():
+            g_eventDispatcher.loadBattleQueue()
+        else:
+            g_eventDispatcher.loadHangar()
 
     def setPlayerInfoChanged(self):
         g_eventDispatcher.updateUI()
@@ -67,7 +67,7 @@ class SquadActionsHandler(AbstractActionsHandler):
     def execute(self):
         if self._entity.isCommander():
             func = self._entity
-            fullData = func.getUnitFullData(unitIdx=self._entity.getUnitIdx())
+            fullData = func.getUnitFullData(unitMgrID=func.getID())
             notReadyCount = 0
             for slot in fullData.slotsIterator:
                 slotPlayer = slot.player
@@ -134,7 +134,7 @@ class SquadActionsHandler(AbstractActionsHandler):
         """
         Routine to set team ready at system's level
         """
-        for slot in self._entity.getSlotsIterator(*self._entity.getUnit(unitIdx=self._entity.getUnitIdx())):
+        for slot in self._entity.getSlotsIterator(*self._entity.getUnit(unitMgrID=self._entity.getID())):
             if slot.player and not slot.player.isReady:
                 return False
 

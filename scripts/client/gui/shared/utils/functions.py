@@ -9,7 +9,7 @@ from helpers.i18n import makeString
 from gui import GUI_SETTINGS, SystemMessages
 from items import ITEM_TYPE_INDICES, vehicles
 from debug_utils import LOG_DEBUG
-from gui.shared.money import Currency
+from gui.shared.money import Currency, MONEY_UNDEFINED
 from gui.Scaleform.locale.SYSTEM_MESSAGES import SYSTEM_MESSAGES
 
 def rnd_choice(*args):
@@ -109,35 +109,58 @@ def checkAmmoLevel(vehicles, callback):
     """
     showAmmoWarning = False
     ammoWarningMessage = 'lowAmmo'
+
+    def _validateMoneyForLayouts(vehicle):
+        from gui.shared.gui_items.processors.plugins import MoneyValidator
+        shellsPrice = MONEY_UNDEFINED
+        eqsPrice = MONEY_UNDEFINED
+        for shell in vehicle.shells:
+            if shell.defaultCount:
+                shellPrice = shell.getBuyPrice().price
+                shellsPrice += shellPrice * (shell.defaultCount - shell.inventoryCount - shell.count)
+
+        for idx, eq in enumerate(vehicle.equipmentLayout.regularConsumables):
+            if eq is not None:
+                vehEquipment = vehicle.equipment.regularConsumables[idx]
+                if vehEquipment:
+                    eqPrice = eq.getBuyPrice().price
+                    eqsPrice += eqPrice
+
+        return MoneyValidator(shellsPrice + eqsPrice).validate()
+
+    def _autoFillLayouts(vehicle):
+        from gui.shared.gui_items.items_actions import factory as ItemsActionsFactory
+        shellsLayout = []
+        eqsLayout = []
+        for shell in vehicle.shells:
+            shellsLayout.extend(shell.defaultLayoutValue)
+
+        for eq in vehicle.equipmentLayout.regularConsumables:
+            if eq is not None:
+                eqsLayout.extend(eq.defaultLayoutValue)
+            else:
+                eqsLayout.extend((0, 0))
+
+        LOG_DEBUG('setVehicleLayouts', shellsLayout, eqsLayout)
+        ItemsActionsFactory.doAction(ItemsActionsFactory.SET_VEHICLE_LAYOUT, vehicle, shellsLayout, eqsLayout)
+        return
+
     for vehicle in vehicles:
         if vehicle.isReadyToFight:
-            if not vehicle.isAutoLoadFull() or not vehicle.isAutoEquipFull():
-                from gui.shared.gui_items.items_actions import factory as ItemsActionsFactory
-                shellsLayout = []
-                eqsLayout = []
-                for shell in vehicle.shells:
-                    shellsLayout.extend(shell.defaultLayoutValue)
-
-                for eq in vehicle.eqsLayout:
-                    if eq is not None:
-                        eqsLayout.extend(eq.defaultLayoutValue)
-                    else:
-                        eqsLayout.extend((0, 0))
-
-                LOG_DEBUG('setVehicleLayouts', shellsLayout, eqsLayout)
-                ItemsActionsFactory.doAction(ItemsActionsFactory.SET_VEHICLE_LAYOUT, vehicle, shellsLayout, eqsLayout)
             showAmmoWarning = showAmmoWarning or not vehicle.isAmmoFull
-            if vehicle.isAutoLoadFull() and showAmmoWarning:
+        if showAmmoWarning:
+            validateResult = _validateMoneyForLayouts(vehicle)
+            if vehicle.isAutoLoadFull() or not validateResult.success:
                 ammoWarningMessage = 'lowAmmoAutoLoad'
-
-    if showAmmoWarning:
-        from gui import DialogsInterface
-        success = yield DialogsInterface.showI18nConfirmDialog(ammoWarningMessage)
-        callback(success)
-    else:
-        yield lambda callback: callback(None)
-        callback(True)
-    return
+            from gui import DialogsInterface
+            success = yield DialogsInterface.showI18nConfirmDialog(ammoWarningMessage)
+            if success:
+                if not vehicle.isAutoLoadFull() or not vehicle.isAutoEquipFull() and validateResult.success:
+                    _autoFillLayouts(vehicle)
+            callback(success)
+        else:
+            yield lambda callback: callback(None)
+            callback(True)
 
 
 def getModuleGoldStatus(price, money):
@@ -168,7 +191,7 @@ def findConflictedEquipments(itemCompactDescr, itemTypeID, vehicle):
     oldModule, = vehicle.descriptor.installComponent(itemCompactDescr)
     for equipmentDescr in vehicle.equipments:
         if equipmentDescr:
-            equipment = vehicles.getDictDescr(equipmentDescr)
+            equipment = vehicles.getItemByCompactDescr(equipmentDescr)
             installPossible, reason = equipment.checkCompatibilityWithVehicle(vehicle.descriptor)
             if not installPossible:
                 conflictEqs.append(equipment)
@@ -200,7 +223,7 @@ def getArenaShortName(arenaTypeID):
 def getArenaFullName(arenaTypeID):
     arenaType = ArenaType.g_cache[arenaTypeID]
     arenaName = arenaType.name
-    if arenaType.gameplayName != 'ctf':
+    if arenaType.gameplayName not in ('ctf', 'ctf30x30'):
         arenaName = '%s - %s' % (arenaName, makeString('#arenas:type/%s/name' % arenaType.gameplayName))
     return arenaName
 
@@ -213,7 +236,7 @@ def getBattleSubTypeWinText(arenaTypeID, teamID):
     return winText
 
 
-def getBattleSubTypeBaseNumder(arenaTypeID, team, baseID):
+def getBattleSubTypeBaseNumber(arenaTypeID, team, baseID):
     teamBasePositions = ArenaType.g_cache[arenaTypeID].teamBasePositions
     if len(teamBasePositions) >= team:
         points = teamBasePositions[team - 1]

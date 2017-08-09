@@ -27,3 +27,6 @@ class ISoundsController(object):
 
     def isEnabled(self):
         raise NotImplementedError
+
+    def setEnvForSpace(self, spaceID, newEnv):
+        raise NotImplementedError

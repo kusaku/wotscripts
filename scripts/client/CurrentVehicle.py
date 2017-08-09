@@ -244,6 +244,9 @@ class _CurrentVehicle(_CachedVehicle):
     def isEvent(self):
         return self.isPresent() and self.item.isEvent
 
+    def isObserver(self):
+        return self.isPresent() and self.item.isObserver
+
     def isAlive(self):
         return self.isPresent() and self.item.isAlive
 
@@ -376,8 +379,8 @@ class _CurrentPreviewVehicle(_CachedVehicle):
         self.__defaultItem = None
         return
 
-    def selectVehicle(self, vehicleCD):
-        self._selectVehicle(vehicleCD)
+    def selectVehicle(self, vehicleCD = None, vehicleStrCD = None):
+        self._selectVehicle(vehicleCD, vehicleStrCD)
 
     def selectNoVehicle(self):
         self._selectVehicle(None)
@@ -414,8 +417,8 @@ class _CurrentPreviewVehicle(_CachedVehicle):
     def isModified(self):
         if self.isPresent():
             for module in _MODULES_NAMES:
-                currentModule = getattr(self.item.descriptor, module)['compactDescr']
-                defaultModule = getattr(self.__defaultItem.descriptor, module)['compactDescr']
+                currentModule = getattr(self.item.descriptor, module).compactDescr
+                defaultModule = getattr(self.__defaultItem.descriptor, module).compactDescr
                 if currentModule != defaultModule:
                     return True
 
@@ -441,15 +444,20 @@ class _CurrentPreviewVehicle(_CachedVehicle):
         super(_CurrentPreviewVehicle, self)._addListeners()
         g_clientUpdateManager.addCallbacks({'stats.unlocks': self._onUpdateUnlocks})
 
-    def _selectVehicle(self, vehicleCD):
+    def _selectVehicle(self, vehicleCD, vehicleStrCD = None):
         if self.isPresent() and self.item.intCD == vehicleCD:
             return
-        Waiting.show('updateCurrentVehicle', isSingle=True)
-        self.onChangeStarted()
-        self.__defaultItem = self.__getPreviewVehicle(vehicleCD)
-        self.__item = self.__getPreviewVehicle(vehicleCD)
-        self.refreshModel()
-        self._setChangeCallback()
+        else:
+            Waiting.show('updateCurrentVehicle', isSingle=True)
+            self.onChangeStarted()
+            self.__defaultItem = self.__getPreviewVehicle(vehicleCD)
+            if vehicleStrCD is not None:
+                self.__item = self.__makePreviewVehicleFromStrCD(vehicleStrCD)
+            else:
+                self.__item = self.__getPreviewVehicle(vehicleCD)
+            self.refreshModel()
+            self._setChangeCallback()
+            return
 
     def _onUpdateUnlocks(self, unlocks):
         if self.isPresent() and self.item.intCD in list(unlocks):
@@ -463,6 +471,16 @@ class _CurrentPreviewVehicle(_CachedVehicle):
                 vehicle.crew = vehicle.getPerfectCrew()
                 return vehicle
         return
+
+    def __makePreviewVehicleFromStrCD(self, vehicleStrCD):
+        vehicle = Vehicle(strCompactDescr=vehicleStrCD, proxy=self.itemsCache.items)
+        for slotID, device in enumerate(vehicle.optDevices):
+            if device is not None:
+                vehicle.descriptor.removeOptionalDevice(slotID)
+                vehicle.optDevices[slotID] = None
+
+        vehicle.crew = vehicle.getPerfectCrew()
+        return vehicle
 
 
 g_currentPreviewVehicle = _CurrentPreviewVehicle()

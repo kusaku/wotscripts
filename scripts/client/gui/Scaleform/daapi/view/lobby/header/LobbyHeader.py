@@ -5,10 +5,11 @@ import WWISE
 import constants
 import account_helpers
 from CurrentVehicle import g_currentVehicle, g_currentPreviewVehicle
-from account_helpers.AccountSettings import AccountSettings, BOOSTERS, KNOWN_SELECTOR_BATTLES, SHOW_CRYSTAL_HEADER_BAND
+from account_helpers.AccountSettings import AccountSettings, BOOSTERS, KNOWN_SELECTOR_BATTLES
 from adisp import process
 from gui.Scaleform import settings
 from gui.Scaleform.daapi.view.lobby.header import battle_selector_items
+from gui.Scaleform.daapi.view.lobby.hof.hof_helpers import getAchievementsTabCounter
 from gui.Scaleform.framework.managers.containers import POP_UP_CRITERIA
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
@@ -103,7 +104,7 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, IGlobalListener):
         RESEARCH = 'research'
         ACADEMY = 'academy'
         MISSIONS = 'missions'
-        FORTIFICATIONS2 = 'Fortifications2View'
+        STRONGHOLD = 'StrongholdView'
 
     itemsCache = dependency.descriptor(IItemsCache)
     wallet = dependency.descriptor(IWalletController)
@@ -129,23 +130,23 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, IGlobalListener):
 
     def onClanEmblem16x16Received(self, clanDbID, emblem):
         if not self.isDisposed() and emblem:
-            self.__updateHangarMenuData(self.getMemoryTexturePath(emblem))
+            self._updateHangarMenuData(self.getMemoryTexturePath(emblem))
 
     def onPlayerStateChanged(self, entity, roster, accountInfo):
         if accountInfo.isCurrentPlayer():
-            self.__updatePrebattleControls()
+            self._updatePrebattleControls()
 
     def onUnitPlayerStateChanged(self, pInfo):
-        self.__updatePrebattleControls()
+        self._updatePrebattleControls()
 
     def onPrbEntitySwitched(self):
-        self.__updatePrebattleControls()
+        self._updatePrebattleControls()
 
     def onDequeued(self, *_):
-        self.__updatePrebattleControls()
+        self._updatePrebattleControls()
 
     def onKickedFromQueue(self, *_):
-        self.__updatePrebattleControls()
+        self._updatePrebattleControls()
 
     def updateAccountInfo(self):
         self.updateMoneyStats()
@@ -225,12 +226,16 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, IGlobalListener):
             else:
                 LOG_ERROR('Prebattle dispatcher is not defined')
 
+    def _onPopulateEnd(self):
+        pass
+
     def _populate(self):
-        self.__updateHangarMenuData()
+        self._updateHangarMenuData()
         battle_selector_items.create()
         super(LobbyHeader, self)._populate()
         self.__addListeners()
         Waiting.hide('enter')
+        self._onPopulateEnd()
 
     def _invalidate(self, *args, **kwargs):
         super(LobbyHeader, self)._invalidate(*args, **kwargs)
@@ -240,6 +245,23 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, IGlobalListener):
         battle_selector_items.clear()
         self.__removeListeners()
         super(LobbyHeader, self)._dispose()
+
+    def _getPremiumLabelText(self, isPremiumAccount, canUpdatePremium):
+        if isPremiumAccount:
+            if canUpdatePremium:
+                return i18n.makeString('#menu:headerButtons/doLabel/premium')
+            else:
+                return ''
+        else:
+            return i18n.makeString('#menu:common/premiumBuy')
+
+    def _getPremiumTooltipText(self, isPremiumAccount, canUpdatePremium):
+        if not canUpdatePremium:
+            return formatters.getLimitExceededPremiumTooltip()
+        elif isPremiumAccount:
+            return TOOLTIPS.HEADER_PREMIUM_EXTEND
+        else:
+            return TOOLTIPS.HEADER_PREMIUM_BUY
 
     def __addListeners(self):
         self.startGlobalListening()
@@ -252,6 +274,7 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, IGlobalListener):
         g_currentPreviewVehicle.onChanged += self.__onVehicleChanged
         self.eventsCache.onSyncCompleted += self.__onEventsCacheResync
         self.eventsCache.onEventsVisited += self.__onEventsVisited
+        self.eventsCache.onProfileVisited += self.__onProfileVisited
         self.itemsCache.onSyncCompleted += self.__onItemsChanged
         self.boosters.onBoosterChangeNotify += self.__onUpdateGoodies
         self.falloutCtrl.onVehiclesChanged += self.__updateFalloutSettings
@@ -286,7 +309,7 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, IGlobalListener):
         g_preDefinedHosts.requestPing()
         self.settingsCore.onSettingsChanged += self.__onSettingsChanged
         self.encyclopedia.onNewRecommendationReceived += self.__onNewEncyclopediaRecommendation
-        self.encyclopedia.onStateChanged += self.__updateHangarMenuData
+        self.encyclopedia.onStateChanged += self._updateHangarMenuData
 
     def __removeListeners(self):
         g_clientUpdateManager.removeObjectCallbacks(self)
@@ -313,7 +336,7 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, IGlobalListener):
         self.boosters.onBoosterChangeNotify -= self.__onUpdateGoodies
         g_preDefinedHosts.onPingPerformed -= self.__onPingPerformed
         self.settingsCore.onSettingsChanged -= self.__onSettingsChanged
-        self.encyclopedia.onStateChanged -= self.__updateHangarMenuData
+        self.encyclopedia.onStateChanged -= self._updateHangarMenuData
         self.encyclopedia.onNewRecommendationReceived -= self.__onNewEncyclopediaRecommendation
 
     def __updateServerData(self):
@@ -405,28 +428,27 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, IGlobalListener):
 
     def __setCredits(self, accCredits):
         btnType = LobbyHeader.BUTTONS.CREDITS
-        isActionActive = self.itemsCache.items.shop.isXPConversionActionActive
-        btnData = self.__getWalletBtnData(btnType, accCredits, getBWFormatter(Currency.CREDITS), isActionActive)
+        isActionActive = self.itemsCache.items.shop.isCreditsConversionActionActive
+        btnData = self._getWalletBtnData(btnType, accCredits, getBWFormatter(Currency.CREDITS), isActionActive)
         self.as_updateWalletBtnS(btnType, btnData)
 
     def __setGold(self, gold):
         btnType = LobbyHeader.BUTTONS.GOLD
-        btnData = self.__getWalletBtnData(btnType, gold, getBWFormatter(Currency.GOLD), isGoldFishActionActive())
+        btnData = self._getWalletBtnData(btnType, gold, getBWFormatter(Currency.GOLD), isGoldFishActionActive())
         self.as_updateWalletBtnS(btnType, btnData)
 
     def __setCrystal(self, crystals):
         btnType = LobbyHeader.BUTTONS.CRYSTAL
-        isNew = AccountSettings.getSettings(SHOW_CRYSTAL_HEADER_BAND)
-        btnData = self.__getWalletBtnData(btnType, crystals, getBWFormatter(Currency.CRYSTAL), False, False, isNew)
+        btnData = self._getWalletBtnData(btnType, crystals, getBWFormatter(Currency.CRYSTAL), False, False, False)
         self.as_updateWalletBtnS(btnType, btnData)
 
     def __setFreeXP(self, freeXP):
         btnType = LobbyHeader.BUTTONS.FREE_XP
         isActionActive = self.itemsCache.items.shop.isXPConversionActionActive
-        btnData = self.__getWalletBtnData(btnType, freeXP, BigWorld.wg_getIntegralFormat, isActionActive)
+        btnData = self._getWalletBtnData(btnType, freeXP, BigWorld.wg_getIntegralFormat, isActionActive)
         self.as_updateWalletBtnS(btnType, btnData)
 
-    def __getWalletBtnData(self, btnType, value, formatter, isHasAction = False, isDiscountEnabled = False, isNew = False):
+    def _getWalletBtnData(self, btnType, value, formatter, isHasAction = False, isDiscountEnabled = False, isNew = False):
         tooltip, tooltipType = self.__getWalletTooltipSettings(btnType)
         return {'money': formatter(value),
          'btnDoText': MENU.HEADERBUTTONS_BTNLABEL + btnType,
@@ -447,32 +469,25 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, IGlobalListener):
         return defFormatter(value)
 
     def __setAccountsAttrs(self, isPremiumAccount, premiumExpiryTime = 0):
-        if isPremiumAccount:
-            if not premiumExpiryTime > 0:
-                raise AssertionError
-                deltaInSeconds = float(time_utils.getTimeDeltaFromNow(time_utils.makeLocalServerTime(premiumExpiryTime)))
-                if deltaInSeconds > time_utils.ONE_DAY:
-                    timeLeft = math.ceil(deltaInSeconds / time_utils.ONE_DAY)
-                    timeMetric = i18n.makeString('#menu:header/account/premium/days')
-                else:
-                    timeLeft = math.ceil(deltaInSeconds / time_utils.ONE_HOUR)
-                    timeMetric = i18n.makeString('#menu:header/account/premium/hours')
-                premiumBtnLbl = makeHtmlString('html_templates:lobby/header', 'premium-account-label', {'timeMetric': timeMetric,
-                 'timeLeft': timeLeft})
-                canUpdatePremium = deltaInSeconds < time_utils.ONE_YEAR
-                buyPremiumLabel = ''
-                if canUpdatePremium:
-                    buyPremiumLabel = i18n.makeString('#menu:headerButtons/doLabel/premium')
+        if not (isPremiumAccount and premiumExpiryTime > 0):
+            raise AssertionError
+            deltaInSeconds = float(time_utils.getTimeDeltaFromNow(time_utils.makeLocalServerTime(premiumExpiryTime)))
+            if deltaInSeconds > time_utils.ONE_DAY:
+                timeLeft = math.ceil(deltaInSeconds / time_utils.ONE_DAY)
+                timeMetric = i18n.makeString('#menu:header/account/premium/days')
             else:
-                canUpdatePremium = True
-                premiumBtnLbl = makeHtmlString('html_templates:lobby/header', 'base-account-label')
-                buyPremiumLabel = i18n.makeString('#menu:common/premiumBuy')
-            hasPersonalDiscount = len(self.itemsCache.items.shop.personalPremiumPacketsDiscounts) > 0
-            tooltip = canUpdatePremium or formatters.getLimitExceededPremiumTooltip()
-        elif isPremiumAccount:
-            tooltip = TOOLTIPS.HEADER_PREMIUM_EXTEND
+                timeLeft = math.ceil(deltaInSeconds / time_utils.ONE_HOUR)
+                timeMetric = i18n.makeString('#menu:header/account/premium/hours')
+            premiumBtnLbl = makeHtmlString('html_templates:lobby/header', 'premium-account-label', {'timeMetric': timeMetric,
+             'timeLeft': timeLeft})
+            canUpdatePremium = deltaInSeconds < time_utils.ONE_YEAR
+            buyPremiumLabel = self._getPremiumLabelText(True, canUpdatePremium)
         else:
-            tooltip = TOOLTIPS.HEADER_PREMIUM_BUY
+            canUpdatePremium = True
+            premiumBtnLbl = makeHtmlString('html_templates:lobby/header', 'base-account-label')
+            buyPremiumLabel = self._getPremiumLabelText(False, False)
+        hasPersonalDiscount = len(self.itemsCache.items.shop.personalPremiumPacketsDiscounts) > 0
+        tooltip = self._getPremiumTooltipText(isPremiumAccount, canUpdatePremium)
         self.as_setPremiumParamsS(premiumBtnLbl, buyPremiumLabel, hasPersonalDiscount, tooltip, TOOLTIP_TYPES.COMPLEX)
 
     def __triggerViewLoad(self, alias):
@@ -558,7 +573,7 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, IGlobalListener):
         elif state == UNIT_RESTRICTION.VEHICLE_INVALID_LEVEL:
             header = i18n.makeString(TOOLTIPS.HANGAR_TANKCARUSEL_WRONGSQUADVEHICLE_HEADER)
             body = i18n.makeString(TOOLTIPS.HANGAR_TANKCARUSEL_WRONGSQUADVEHICLE_BODY)
-        elif state == UNIT_RESTRICTION.SPG_IS_FORBIDDEN:
+        elif state == UNIT_RESTRICTION.SPG_IS_FULL or state == UNIT_RESTRICTION.SPG_IS_FORBIDDEN:
             header = i18n.makeString(TOOLTIPS.HANGAR_TANKCARUSEL_WRONGSQUADSPGVEHICLE_HEADER)
             body = i18n.makeString(TOOLTIPS.HANGAR_TANKCARUSEL_WRONGSQUADSPGVEHICLE_BODY)
         else:
@@ -612,7 +627,7 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, IGlobalListener):
             return makeTooltip(i18n.makeString(MENU.HEADERBUTTONS_FIGHTBTN_TOOLTIP_SANDBOX_INVALID_HEADER), i18n.makeString(MENU.HEADERBUTTONS_FIGHTBTN_TOOLTIP_SANDBOX_INVALID_LEVEL_BODY, levels=toRomanRangeString(result.ctx['levels'], 1)))
         return ''
 
-    def __updatePrebattleControls(self):
+    def _updatePrebattleControls(self):
         if not self.prbDispatcher:
             return
         items = battle_selector_items.getItems()
@@ -651,7 +666,7 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, IGlobalListener):
         else:
             iconSquad = RES_ICONS.MAPS_ICONS_BATTLETYPES_40X40_SQUAD
         self.as_updateSquadS(isInSquad, tooltip, TOOLTIP_TYPES.COMPLEX, isEvent, iconSquad)
-        isFightBtnDisabled = not canDo or selected.isFightButtonForcedDisabled()
+        isFightBtnDisabled = self._checkFightButtonDisabled(canDo, selected.isFightButtonForcedDisabled())
         if isFightBtnDisabled and not state.hasLockedState:
             if isSandbox:
                 self.as_setFightBtnTooltipS(self.__getSandboxTooltipData(result))
@@ -688,8 +703,14 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, IGlobalListener):
             self.as_setScreenS(self.__currentScreen)
         self.updateAccountAttrs()
 
+    def hasCounter(self, alias):
+        return True
+
+    def _checkFightButtonDisabled(self, canDo, isFightButtonForcedDisabled):
+        return not canDo or isFightButtonForcedDisabled
+
     def __handleFightButtonUpdated(self, _):
-        self.__updatePrebattleControls()
+        self._updatePrebattleControls()
 
     def __handleSetPrebattleCoolDown(self, event):
         if not self.prbDispatcher:
@@ -703,11 +724,12 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, IGlobalListener):
         self.as_showBubbleTooltipS(event.getMessage(), event.getDuration())
 
     def __onVehicleChanged(self, *args):
-        self.__updatePrebattleControls()
+        self._updatePrebattleControls()
 
     def __onEventsCacheResync(self):
-        self.__updatePrebattleControls()
+        self._updatePrebattleControls()
         self.__onEventsVisited()
+        self.__onProfileVisited()
         self.updateMoneyStats()
         self.updateXPInfo()
 
@@ -719,11 +741,14 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, IGlobalListener):
         else:
             self.__hideCounter(self.TABS.MISSIONS)
 
+    def __onProfileVisited(self):
+        self.__updateProfileTabCounter()
+
     def __updateFalloutSettings(self, *args):
-        self.__updatePrebattleControls()
+        self._updatePrebattleControls()
 
     def __onIGRChanged(self, *args):
-        self.__updatePrebattleControls()
+        self._updatePrebattleControls()
 
     def __updateGoodies(self, *args):
         self.updateClanInfo()
@@ -732,7 +757,7 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, IGlobalListener):
 
     def __updateRanked(self):
         self.__updateBadge()
-        self.__updatePrebattleControls()
+        self._updatePrebattleControls()
 
     def _updateStrongholdsSelector(self, emblem = None):
         strongholdEnabled = isStrongholdsEnabled()
@@ -740,13 +765,13 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, IGlobalListener):
             tooltip = TOOLTIPS.HEADER_BUTTONS_FORTS
         else:
             tooltip = TOOLTIPS.HEADER_BUTTONS_FORTS_TURNEDOFF
-        return {'label': MENU.HEADERBUTTONS_FORTS,
-         'value': FORTIFICATION_ALIASES.FORTIFICATIONS2_VIEW_ALIAS,
+        return {'label': MENU.HEADERBUTTONS_STRONGHOLD,
+         'value': FORTIFICATION_ALIASES.STRONGHOLD_VIEW_ALIAS,
          'tooltip': tooltip,
          'icon': emblem,
          'enabled': strongholdEnabled}
 
-    def __updateHangarMenuData(self, fortEmblem = None):
+    def _updateHangarMenuData(self, fortEmblem = None):
         tabDataProvider = [{'label': MENU.HEADERBUTTONS_HANGAR,
           'value': self.TABS.HANGAR,
           'textColor': 16764006,
@@ -781,6 +806,7 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, IGlobalListener):
         if self.encyclopedia.isActivated() and self.encyclopedia.hasNewRecommendations():
             self.__onNewEncyclopediaRecommendation()
         self.__onEventsVisited()
+        self.__onProfileVisited()
 
     def __onSPAUpdated(self, _):
         self.__updateGoldFishState(False)
@@ -795,24 +821,41 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, IGlobalListener):
 
     def __onItemsChanged(self, updateReason, invalidItems):
         self.__onEventsVisited()
+        self.__onProfileVisited()
         vehiclesDiff = invalidItems.get(GUI_ITEM_TYPE.VEHICLE)
         if vehiclesDiff is not None:
             falloutVehicle = findFirst(lambda v: v.intCD in vehiclesDiff, self.falloutCtrl.getSelectedVehicles())
             if falloutVehicle is not None:
-                self.__updatePrebattleControls()
+                self._updatePrebattleControls()
         return
 
     def __onServerSettingChanged(self, diff):
         if 'isSandboxEnabled' in diff:
-            self.__updatePrebattleControls()
-        if 'isFortsEnabled' in diff:
-            self.__updateHangarMenuData()
-            self.__updatePrebattleControls()
-        if 'isStrongholdsEnabled' in diff:
-            self.__updateHangarMenuData()
-            self.__updatePrebattleControls()
+            self._updatePrebattleControls()
+        if 'isBootcampEnabled' in diff:
+            battle_selector_items.clear()
+            battle_selector_items.create()
+            self._updatePrebattleControls()
+        if 'strongholdSettings' in diff:
+            self._updateHangarMenuData()
+            self._updatePrebattleControls()
         if 'ranked_config' in diff:
+            self._updatePrebattleControls()
+        if 'hallOfFame' in diff:
+            self.__updateProfileTabCounter()
+        if 'isEpicRandomEnabled' in diff:
+            self.__updateHangarMenuData()
             self.__updatePrebattleControls()
+
+    def __updateProfileTabCounter(self):
+        if self.lobbyContext.getServerSettings().isHofEnabled():
+            hofCounter = getAchievementsTabCounter()
+            if hofCounter:
+                self.__setCounter(self.TABS.PROFILE, hofCounter)
+            else:
+                self.__hideCounter(self.TABS.PROFILE)
+        else:
+            self.__hideCounter(self.TABS.PROFILE)
 
     def __onUpdateGoodies(self, *args):
         self.__setClanInfo(g_clanCache.clanInfo)
@@ -828,9 +871,7 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, IGlobalListener):
         if 'isColorBlind' in diff:
             self.__updatePing()
         if KNOWN_SELECTOR_BATTLES in diff:
-            self.__updatePrebattleControls()
-        if SHOW_CRYSTAL_HEADER_BAND in diff:
-            self.updateMoneyStats()
+            self._updatePrebattleControls()
 
     def __updatePing(self):
         pingData = g_preDefinedHosts.getHostPingData(self.connectionMgr.url)
@@ -841,6 +882,8 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, IGlobalListener):
     def __setCounter(self, alias, counter = None):
         """ Show the notification counter for the given tab alias.
         """
+        if not self.hasCounter(alias):
+            return
         self.__shownCounters.add(alias)
         counter = counter or i18n.makeString(MENU.HEADER_NOTIFICATIONSIGN)
         self.as_setButtonCounterS(alias, text_styles.counterLabelText(counter))

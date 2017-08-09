@@ -62,3 +62,7 @@ class HangarMeta(View):
     def as_setDefaultHeaderS(self, isDefault):
         if self._isDAAPIInited():
             return self.flashObject.as_setDefaultHeader(isDefault)
+
+    def as_setAlertMessageBlockVisibleS(self, isVisible):
+        if self._isDAAPIInited():
+            return self.flashObject.as_setAlertMessageBlockVisible(isVisible)

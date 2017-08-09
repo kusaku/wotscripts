@@ -118,6 +118,7 @@ def onAccountShowGUI(ctx):
 
 
 def onAccountBecomeNonPlayer():
+    g_clanCache.clear()
     ServicesLocator.itemsCache.clear()
     ServicesLocator.goodiesCache.clear()
     g_currentVehicle.destroy()

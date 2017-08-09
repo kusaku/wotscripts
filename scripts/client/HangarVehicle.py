@@ -26,7 +26,7 @@ class HangarVehicle(BigWorld.Entity):
         self.icanDoHitTest = False
         if self.typeDescriptor is not None:
             for compDescr, compMatrix in self.getComponents():
-                hitTester = compDescr['hitTester']
+                hitTester = compDescr.hitTester
                 if hitTester.isBspModelLoaded():
                     hitTester.releaseBspModel()
 
@@ -39,9 +39,9 @@ class HangarVehicle(BigWorld.Entity):
         endPoint = worldToVehMatrix.applyPoint(endPoint)
         res = None
         for compDescr, compMatrix in self.getComponents():
-            if skipGun and compDescr.get('itemTypeName') == 'vehicleGun':
+            if skipGun and compDescr.itemTypeName == 'vehicleGun':
                 continue
-            hitTester = compDescr['hitTester']
+            hitTester = compDescr.hitTester
             if not hitTester.isBspModelLoaded():
                 hitTester.loadBspModel()
             collisions = hitTester.localHitTest(compMatrix.applyPoint(startPoint), compMatrix.applyPoint(endPoint))
@@ -49,7 +49,7 @@ class HangarVehicle(BigWorld.Entity):
                 continue
             for dist, _, hitAngleCos, matKind in collisions:
                 if res is None or res[0] >= dist:
-                    matInfo = compDescr['materials'].get(matKind)
+                    matInfo = compDescr.materials.get(matKind)
                     res = SegmentCollisionResult(dist, hitAngleCos, matInfo.armor if matInfo is not None else 0)
 
         return res
@@ -63,18 +63,18 @@ class HangarVehicle(BigWorld.Entity):
         m = Math.Matrix()
         m.setIdentity()
         res.append((vehicleDescr.chassis, m))
-        hullOffset = vehicleDescr.chassis['hullPosition']
+        hullOffset = vehicleDescr.chassis.hullPosition
         m = Math.Matrix()
         offset = -hullOffset
         m.setTranslate(offset)
         res.append((vehicleDescr.hull, m))
         m = Math.Matrix()
-        offset -= vehicleDescr.hull['turretPositions'][0]
+        offset -= vehicleDescr.hull.turretPositions[0]
         m.setTranslate(offset)
         res.append((vehicleDescr.turret, m))
-        yaw = vehicleDescr.gun.get('staticTurretYaw', 0.0)
-        pitch = vehicleDescr.gun.get('staticPitch', 0.0)
-        offset -= vehicleDescr.turret['gunPosition']
+        yaw = vehicleDescr.gun.staticTurretYaw
+        pitch = vehicleDescr.gun.staticPitch
+        offset -= vehicleDescr.turret.gunPosition
         if yaw is None:
             yaw = 0.0
         if pitch is None:

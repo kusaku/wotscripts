@@ -480,7 +480,7 @@ class _PreDefinedHostList(object):
              None))
         return result
 
-    def getSimpleHostsList(self, hosts):
+    def getSimpleHostsList(self, hosts, withShortName = False):
         result = []
         defAvail = self.getDefaultCSISStatus()
         predefined = tuple((host.url for host in self.peripheries()))
@@ -491,10 +491,17 @@ class _PreDefinedHostList(object):
                 status = HOST_AVAILABILITY.IGNORED
             else:
                 status = defAvail if isInProgress else csisResGetter(item.peripheryID, defAvail)
-            result.append((item.url,
-             item.name,
-             status,
-             item.peripheryID))
+            if withShortName:
+                result.append((item.url,
+                 item.name,
+                 item.shortName,
+                 status,
+                 item.peripheryID))
+            else:
+                result.append((item.url,
+                 item.name,
+                 status,
+                 item.peripheryID))
 
         return result
 

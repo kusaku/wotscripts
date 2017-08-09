@@ -13,7 +13,7 @@ from gui.shared.utils.requesters.ItemsRequester import REQ_CRITERIA
 from helpers import dependency
 from items import _xml, vehicles, getTypeOfCompactDescr
 import nations
-import ResMgr
+from realm_utils import ResMgr
 from skeletons.gui.shared import IItemsCache
 
 class _ConfigError(Exception):
@@ -210,7 +210,7 @@ class _TechTreeDataProvider(object):
             if IS_DEVELOPMENT:
                 if nodeCD not in nextLevel:
                     _, nationID, vTypeID = vehicles.parseIntCompactDescr(parentCD)
-                    pName = vehicles.g_list.getList(nationID)[vTypeID]['name']
+                    pName = vehicles.g_list.getList(nationID)[vTypeID].name
                     LOG_ERROR('{0:>s} does not have relation with {1:>s}'.format(pName, uName))
                 else:
                     nextLevel.remove(nodeCD)
@@ -235,10 +235,10 @@ class _TechTreeDataProvider(object):
 
         if IS_DEVELOPMENT and len(nextLevel):
             _, nationID, vTypeID = vehicles.parseIntCompactDescr(parentCD)
-            pName = vehicles.g_list.getList(nationID)[vTypeID]['name']
+            pName = vehicles.g_list.getList(nationID)[vTypeID].name
             for itemCD in nextLevel:
                 _, nationID, vTypeID = vehicles.parseIntCompactDescr(itemCD)
-                uName = vehicles.g_list.getList(nationID)[vTypeID]['name']
+                uName = vehicles.g_list.getList(nationID)[vTypeID].name
                 LOG_ERROR('Relation between {0:>s} and {1:>s} are not defined'.format(pName, uName))
 
         return result.values()
@@ -520,7 +520,9 @@ class _TechTreeDataProvider(object):
         unlocks = self.itemsCache.items.stats.unlocks
         xps = self.itemsCache.items.stats.vehiclesXPs
         freeXP = self.itemsCache.items.stats.actualFreeXP
-        allPossibleXp = self.getAllVehiclePossibleXP(nodeCD, UnlockStats(unlocks, xps, freeXP))
+        unlockProps = g_techTreeDP.getUnlockProps(nodeCD)
+        parentID = unlockProps.parentID
+        allPossibleXp = self.getAllVehiclePossibleXP(parentID, UnlockStats(unlocks, xps, freeXP))
         isAvailable, props = self.isNext2Unlock(nodeCD, unlocked=set(unlocks), xps=xps, freeXP=freeXP)
         return (isAvailable and allPossibleXp >= props.xpCost, props.xpCost, allPossibleXp)
 

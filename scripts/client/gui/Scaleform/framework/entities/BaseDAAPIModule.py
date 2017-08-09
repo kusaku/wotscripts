@@ -24,9 +24,6 @@ class BaseDAAPIModule(BaseDAAPIModuleMeta):
     def setPyReloading(self, flag):
         self.__isPyReloading = flag
 
-    def _printOverrideError(self, methodName):
-        LOG_ERROR('Method must be override!', methodName, self.__class__)
-
     def setFlashObject(self, movieClip, autoPopulate = True, setScript = True):
         if movieClip is not None:
             self.__isScriptSet = setScript
@@ -48,8 +45,8 @@ class BaseDAAPIModule(BaseDAAPIModuleMeta):
         super(BaseDAAPIModule, self)._populate()
         self.as_populateS()
 
-    def _dispose(self):
-        super(BaseDAAPIModule, self)._dispose()
+    def _destroy(self):
+        super(BaseDAAPIModule, self)._destroy()
         if self.flashObject is not None:
             try:
                 if self.__isScriptSet and not self.__isPyReloading:
@@ -60,3 +57,6 @@ class BaseDAAPIModule(BaseDAAPIModuleMeta):
             self.turnDAAPIoff(self.__isScriptSet)
         self.__app = None
         return
+
+    def _printOverrideError(self, methodName):
+        LOG_ERROR('Method must be override!', methodName, self.__class__)

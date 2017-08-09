@@ -2,7 +2,7 @@
 import nations
 from items import vehicles, ITEM_TYPES
 from account_shared import AmmoIterator
-from constants import PREBATTLE_ACCOUNT_STATE, VEHICLE_CLASSES, ARENA_GUI_TYPE, PREBATTLE_ROLE, PREBATTLE_COMPANY_DIVISION, IGR_TYPE, IS_DEVELOPMENT
+from constants import PREBATTLE_ACCOUNT_STATE, VEHICLE_CLASSES, ARENA_GUI_TYPE, PREBATTLE_ROLE, IGR_TYPE, IS_DEVELOPMENT
 from debug_utils import LOG_DEBUG
 
 def decodeRoster(roster):
@@ -208,7 +208,6 @@ SETTING_DEFAULTS = {'ver': 1,
  'arenaVoipChannels': 0,
  'notifyWeb': False,
  'extraData': {},
- 'division': PREBATTLE_COMPANY_DIVISION.ABSOLUTE,
  'gameplaysMask': 0,
  'vehicleLockMode': 0,
  'vehicleLockTimeFactors': {},
@@ -230,16 +229,16 @@ def _collectCurrentReplaceableVehicleComponents(vehicleDescr):
     res = []
     vehicleType = vehicleDescr.type
     if len(vehicleType.chassis) > 1:
-        res.append(vehicleDescr.chassis['compactDescr'])
+        res.append(vehicleDescr.chassis.compactDescr)
     if len(vehicleType.engines) > 1:
-        res.append(vehicleDescr.engine['compactDescr'])
+        res.append(vehicleDescr.engine.compactDescr)
     if len(vehicleType.radios) > 1:
-        res.append(vehicleDescr.radio['compactDescr'])
+        res.append(vehicleDescr.radio.compactDescr)
     for posIdx, (turretDescr, gunDescr) in enumerate(vehicleDescr.turrets):
         if len(vehicleType.turrets[posIdx]) > 1:
-            res.append(turretDescr['compactDescr'])
-        if len(turretDescr['guns']) > 1:
-            res.append(gunDescr['compactDescr'])
+            res.append(turretDescr.compactDescr)
+        if len(turretDescr.guns) > 1:
+            res.append(gunDescr.compactDescr)
 
     return res
 

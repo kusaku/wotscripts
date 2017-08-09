@@ -1,6 +1,7 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/store/tabs/inventory.py
 from constants import IS_RENTALS_ENABLED
-from gui.Scaleform.daapi.view.lobby.store.tabs import StoreItemsTab, StoreModuleTab, StoreVehicleTab, StoreShellTab, StoreArtefactTab, StoreOptionalDeviceTab, StoreEquipmentTab
+from gui.Scaleform.daapi.view.lobby.store.tabs import StoreItemsTab, StoreModuleTab, StoreVehicleTab, StoreShellTab, StoreArtefactTab, StoreOptionalDeviceTab, StoreEquipmentTab, StoreBattleBoosterTab
+from gui.Scaleform.genConsts.STORE_CONSTANTS import STORE_CONSTANTS
 from gui.Scaleform.locale.MENU import MENU
 from gui.shared.gui_items import GUI_ITEM_TYPE
 from gui.shared.gui_items.Vehicle import Vehicle, getVehicleStateIcon
@@ -10,14 +11,16 @@ from helpers.i18n import makeString
 
 class InventoryItemsTab(StoreItemsTab):
 
-    def _getItemPrice(self, item):
-        return item.sellPrice
-
-    def _getItemDefaultPrice(self, item):
-        return item.defaultSellPrice
+    def _getItemPrices(self, item):
+        """
+        For inventory tab return sellPrices (original and alt prices)
+        :param item: FittingItem instance
+        :return: ItemPrices
+        """
+        return item.sellPrices
 
     def _getItemActionData(self, item):
-        if item.sellPrice != item.defaultSellPrice and not item.isRented:
+        if item.sellPrices.itemPrice.isActionPrice() and not item.isRented:
             return packItemActionTooltipData(item, False)
         else:
             return None
@@ -44,13 +47,13 @@ class InventoryItemsTab(StoreItemsTab):
         if not item.isInInventory:
             statusMessage = makeString(MENU.INVENTORY_ERRORS_RESERVED)
             disabled = True
-        return (statusMessage, disabled)
+        return (statusMessage, disabled or not item.isForSale)
 
     def _getItemStatusLevel(self, item):
         return Vehicle.VEHICLE_STATE_LEVEL.INFO
 
     def _isItemOnDiscount(self, item):
-        return item.sellActionPrc != 0
+        return item.sellPrices.itemPrice.isActionPrice()
 
 
 class InventoryModuleTab(InventoryItemsTab, StoreModuleTab):
@@ -174,7 +177,7 @@ class InventoryOptionalDeviceTab(InventoryArtefactTab, StoreOptionalDeviceTab):
         disabled = False
         statusMessage = ''
         if not item.isInInventory:
-            if not item.descriptor['removable']:
+            if not item.descriptor.removable:
                 statusMessage = makeString(MENU.INVENTORY_DEVICE_ERRORS_NOT_REMOVABLE)
                 disabled = True
             else:
@@ -185,3 +188,16 @@ class InventoryOptionalDeviceTab(InventoryArtefactTab, StoreOptionalDeviceTab):
 
 class InventoryEquipmentTab(InventoryArtefactTab, StoreEquipmentTab):
     pass
+
+
+class InventoryBattleBoosterTab(StoreBattleBoosterTab, InventoryArtefactTab):
+
+    def _getRequestCriteria(self, invVehicles):
+        targetType = self._filterData['targetType']
+        if targetType == STORE_CONSTANTS.FOR_EQUIPMENT_FIT:
+            result = REQ_CRITERIA.BATTLE_BOOSTER.OPTIONAL_DEVICE_EFFECT
+        elif targetType == STORE_CONSTANTS.FOR_CREW_FIT:
+            result = REQ_CRITERIA.BATTLE_BOOSTER.CREW_EFFECT
+        else:
+            result = REQ_CRITERIA.BATTLE_BOOSTER.ALL
+        return result | REQ_CRITERIA.INVENTORY

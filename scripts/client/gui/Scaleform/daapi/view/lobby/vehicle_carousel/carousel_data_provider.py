@@ -7,7 +7,8 @@ from gui.Scaleform.framework.entities.DAAPIDataProvider import SortableDAAPIData
 from gui.Scaleform.locale.MENU import MENU
 from gui.shared.formatters import icons, text_styles
 from gui.shared.formatters.time_formatters import RentLeftFormatter
-from gui.shared.gui_items.Vehicle import Vehicle, VEHICLE_TYPES_ORDER_INDICES, getVehicleStateIcon, getBattlesLeft
+from gui.shared.gui_items.Vehicle import Vehicle, VEHICLE_TYPES_ORDER_INDICES, getVehicleStateIcon, getBattlesLeft, getSmallIconPath, getIconPath
+from gui.shared.gui_items.dossier.achievements.MarkOfMasteryAchievement import isMarkOfMasteryAchieved
 from gui.shared.utils.requesters import REQ_CRITERIA
 from helpers.i18n import makeString as ms
 
@@ -99,6 +100,7 @@ def getVehicleDataVO(vehicle):
         bonusImage = ''
     label = vehicle.shortUserName if vehicle.isPremiumIGR else vehicle.userName
     labelStyle = text_styles.premiumVehicleName if vehicle.isPremium else text_styles.vehicleName
+    isVehicleAvailable = vState not in Vehicle.VEHICLE_STATE.CUSTOM
     return {'id': vehicle.invID,
      'intCD': vehicle.intCD,
      'infoText': largeStatus,
@@ -106,7 +108,9 @@ def getVehicleDataVO(vehicle):
      'clanLock': vehicle.clanLock,
      'lockBackground': _isLockedBackground(vState, vStateLvl),
      'icon': vehicle.icon,
+     'iconAlt': getIconPath('noImage'),
      'iconSmall': vehicle.iconSmall,
+     'iconSmallAlt': getSmallIconPath('noImage'),
      'label': labelStyle(label),
      'level': vehicle.level,
      'premium': vehicle.isPremium,
@@ -115,7 +119,7 @@ def getVehicleDataVO(vehicle):
      'xpImgSource': bonusImage,
      'tankType': '{}_elite'.format(vehicle.type) if vehicle.isElite else vehicle.type,
      'rentLeft': rentInfoText,
-     'clickEnabled': vehicle.isInInventory,
+     'clickEnabled': vehicle.isInInventory and isVehicleAvailable,
      'alpha': 1,
      'infoImgSrc': getVehicleStateIcon(vState),
      'isCritInfo': vStateLvl == Vehicle.VEHICLE_STATE_LEVEL.CRITICAL}
@@ -134,8 +138,9 @@ class CarouselDataProvider(SortableDAAPIDataProvider):
         self._filteredIndices = []
         self._selectedIdx = -1
         self._showVehicleStats = False
-        self._vehiclesStats = {}
+        self._randomStats = None
         self._filter.load()
+        return
 
     def hasRentedVehicles(self):
         """ Returns True if there is at least one rented vehicle, False otherwise
@@ -241,6 +246,7 @@ class CarouselDataProvider(SortableDAAPIDataProvider):
         self._filter = None
         self._itemsCache = None
         self._currentVehicle = None
+        self._randomStats = None
         super(CarouselDataProvider, self)._dispose()
         return
 
@@ -254,7 +260,7 @@ class CarouselDataProvider(SortableDAAPIDataProvider):
     def _buildVehicleItems(self):
         self._vehicles = []
         self._vehicleItems = []
-        self._vehiclesStats = self._itemsCache.items.getAccountDossier().getRandomStats().getVehicles()
+        self._randomStats = self._itemsCache.items.getAccountDossier().getRandomStats()
         vehicleIcons = []
         vehiclesCollection = self._itemsCache.items.getVehicles(self._baseCriteria)
         for intCD, vehicle in vehiclesCollection.iteritems():
@@ -267,15 +273,19 @@ class CarouselDataProvider(SortableDAAPIDataProvider):
         self.app.imageManager.loadImages(vehicleIcons)
 
     def _buildVehicle(self, vehicle):
-        return getVehicleDataVO(vehicle)
+        vo = getVehicleDataVO(vehicle)
+        return vo
 
     def _getVehicleStats(self, vehicle):
         intCD = vehicle.intCD
-        if intCD in self._vehiclesStats:
-            battlesCount, wins, markOfMastery, xp = self._vehiclesStats.get(intCD)
-            markOfMasteryText = ''
-            if markOfMastery > 0:
+        vehicleRandomStats = self._randomStats.getVehicles() if self._randomStats is not None else {}
+        if intCD in vehicleRandomStats:
+            battlesCount, wins, xp = vehicleRandomStats.get(intCD)
+            markOfMastery = self._randomStats.getMarkOfMasteryForVehicle(intCD)
+            if isMarkOfMasteryAchieved(markOfMastery):
                 markOfMasteryText = makeHtmlString('html_templates:lobby/tank_carousel/statistic', 'markOfMastery', ctx={'markOfMastery': markOfMastery})
+            else:
+                markOfMasteryText = ''
             winsEfficiency = 100.0 * wins / battlesCount if battlesCount else 0
             winsEfficiencyStr = BigWorld.wg_getIntegralFormat(round(winsEfficiency)) + '%'
             winsText = makeHtmlString('html_templates:lobby/tank_carousel/statistic', 'wins', ctx={'wins': winsEfficiencyStr})
@@ -298,7 +308,7 @@ class CarouselDataProvider(SortableDAAPIDataProvider):
         """
         updateIndices = []
         updateVehicles = []
-        self._vehiclesStats = self._itemsCache.items.getAccountDossier().getRandomStats().getVehicles()
+        self._randomStats = self._itemsCache.items.getAccountDossier().getRandomStats()
         for intCD, newVehicle in vehiclesCollection.iteritems():
             for idx, oldVehicle in enumerate(self._vehicles):
                 if oldVehicle.intCD == newVehicle.intCD:
@@ -335,6 +345,5 @@ class CarouselDataProvider(SortableDAAPIDataProvider):
          GUI_NATIONS_ORDER_INDEX[vehicle.nationName],
          VEHICLE_TYPES_ORDER_INDICES[vehicle.type],
          vehicle.level,
-         vehicle.buyPrice.gold,
-         vehicle.buyPrice.credits,
+         tuple(vehicle.buyPrices.itemPrice.price.iterallitems(byWeight=True)),
          vehicle.userName)

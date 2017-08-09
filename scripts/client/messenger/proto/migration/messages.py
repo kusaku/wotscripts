@@ -1,5 +1,4 @@
 # Embedded file name: scripts/client/messenger/proto/migration/messages.py
-from messenger.m_constants import LAZY_CHANNEL
 from messenger.proto.bw import bw_chat_string_utils
 from messenger.proto.events import g_messengerEvents
 from messenger.proto.migration.proxy import MigrationProxy
@@ -19,9 +18,6 @@ class MessagesManagerProxy(MigrationProxy):
         raise NotImplementedError
 
     def joinToUserRoom(self, roomID, name, password = ''):
-        raise NotImplementedError
-
-    def getCompanyRoomName(self):
         raise NotImplementedError
 
 
@@ -45,9 +41,6 @@ class BWMessagesManagerProxy(MessagesManagerProxy):
     def joinToUserRoom(self, roomID, name, password = ''):
         self._proto.channels.joinToChannel(roomID, password)
         return True
-
-    def getCompanyRoomName(self):
-        return LAZY_CHANNEL.COMPANIES
 
 
 class XMPPMessagesManagerProxy(MessagesManagerProxy):
@@ -74,6 +67,3 @@ class XMPPMessagesManagerProxy(MessagesManagerProxy):
         if not result:
             g_messengerEvents.onErrorReceived(error)
         return result
-
-    def getCompanyRoomName(self):
-        return LAZY_CHANNEL.XMPP_COMPANIES

@@ -206,6 +206,7 @@ class ShopBoostersTab(BoosterTab):
         isPurchaseEnabled, _ = booster.mayPurchase(self.__balance)
         btnTooltip = makeTooltip(None, _ms(TOOLTIPS.BOOSTER_ACTIVEBTN_DISABLED_BODY)) if not isPurchaseEnabled else ''
         priceState = self.__getPriceState(isPurchaseEnabled)
+        itemPrice = booster.buyPrices.itemPrice
         return {'id': booster.boosterID,
          'actionBtnEnabled': isPurchaseEnabled,
          'actionBtnTooltip': btnTooltip,
@@ -221,13 +222,14 @@ class ShopBoostersTab(BoosterTab):
          'actionPriceData': self.__getActionVO(booster),
          'actionStyle': ACTION_PRICE_CONSTANTS.STATE_ALIGN_TOP,
          'rendererState': BOOSTER_CONSTANTS.RENDERER_STATE_SHOP,
-         'price': {'oldPrice': booster.defaultPrice,
-                   'newPrice': booster.buyPrice}}
+         'price': {'oldPrice': itemPrice.defPrice.toMoneyTuple(),
+                   'newPrice': itemPrice.price.toMoneyTuple()}}
 
     @staticmethod
     def __getActionVO(booster):
-        if booster.buyPrice != booster.defaultPrice:
-            return packActionTooltipData(ACTION_TOOLTIPS_TYPE.BOOSTER, str(booster.boosterID), True, booster.buyPrice, booster.defaultPrice)
+        itemPrice = booster.buyPrices.itemPrice
+        if itemPrice.isActionPrice():
+            return packActionTooltipData(ACTION_TOOLTIPS_TYPE.BOOSTER, str(booster.boosterID), True, itemPrice.price, itemPrice.defPrice)
         else:
             return None
 

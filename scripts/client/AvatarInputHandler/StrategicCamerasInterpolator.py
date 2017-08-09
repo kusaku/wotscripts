@@ -22,7 +22,7 @@ class StrategicCamerasInterpolator(CallbackDelayer):
         return
 
     def enable(self, initialState, finalState, initialFov, finalFov):
-        self.__prevTime = BigWorld.time()
+        self.__prevTime = BigWorld.timeExact()
         if self.__elapsedTime > 0.0:
             self.__elapsedTime = self.__totalInterpolationTime - self.__elapsedTime
         self.__initialState = initialState
@@ -53,7 +53,7 @@ class StrategicCamerasInterpolator(CallbackDelayer):
         return
 
     def __cameraUpdate(self):
-        currentTime = BigWorld.time()
+        currentTime = BigWorld.timeExact()
         self.__elapsedTime += currentTime - self.__prevTime
         self.__prevTime = currentTime
         interpolationCoefficient = self.__easingMethod(self.__elapsedTime, 1.0, self.__totalInterpolationTime)

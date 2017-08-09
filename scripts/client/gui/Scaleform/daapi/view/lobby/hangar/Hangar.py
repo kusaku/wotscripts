@@ -2,7 +2,6 @@
 import BigWorld
 import SoundGroups
 from CurrentVehicle import g_currentVehicle
-from PlayerEvents import g_playerEvents
 from constants import QUEUE_TYPE
 from gui.prb_control.entities.listener import IGlobalListener
 from gui.ClientUpdateManager import g_clientUpdateManager
@@ -27,6 +26,7 @@ from helpers.i18n import makeString as _ms
 from skeletons.gui.game_control import IFalloutController, IRankedBattlesController
 from skeletons.gui.game_control import IIGRController
 from skeletons.gui.shared import IItemsCache
+from gui.ranked_battles.constants import PRIME_TIME_STATUS
 
 class Hangar(LobbySubView, HangarMeta, IGlobalListener):
     __background_alpha__ = 0.0
@@ -43,12 +43,14 @@ class Hangar(LobbySubView, HangarMeta, IGlobalListener):
         return
 
     def _populate(self):
+        self._onPopulateStarted()
         LobbySubView._populate(self)
         g_currentVehicle.onChanged += self.__onCurrentVehicleChanged
         self.igrCtrl.onIgrTypeChanged += self.__onIgrTypeChanged
         self.falloutCtrl.onSettingsChanged += self.__onFalloutSettingsChanged
         self.itemsCache.onSyncCompleted += self.onCacheResync
         self.rankedController.onUpdated += self.onRankedUpdate
+        self.rankedController.onPrimeTimeStatusUpdated += self.__onRankedPrimeStatusUpdate
         g_hangarSpace.onObjectSelected += self.__on3DObjectSelected
         g_hangarSpace.onObjectUnselected += self.__on3DObjectUnSelected
         g_hangarSpace.onObjectClicked += self.__on3DObjectClicked
@@ -61,6 +63,7 @@ class Hangar(LobbySubView, HangarMeta, IGlobalListener):
         self.addListener(LobbySimpleEvent.NOTIFY_CURSOR_OVER_3DSCENE, self.__onNotifyCursorOver3dScene)
         self.addListener(LobbySimpleEvent.WAITING_SHOWN, self.__onWaitingShown, EVENT_BUS_SCOPE.LOBBY)
         self.addListener(events.FightButtonEvent.FIGHT_BUTTON_UPDATE, self.__handleFightButtonUpdated, scope=EVENT_BUS_SCOPE.LOBBY)
+        self._onPopulateEnd()
 
     def _onCustomizationShow(self, event):
         self.as_setVisibleS(not event.ctx)
@@ -103,6 +106,7 @@ class Hangar(LobbySubView, HangarMeta, IGlobalListener):
         self.igrCtrl.onIgrTypeChanged -= self.__onIgrTypeChanged
         self.falloutCtrl.onSettingsChanged -= self.__onFalloutSettingsChanged
         self.rankedController.onUpdated -= self.onRankedUpdate
+        self.rankedController.onPrimeTimeStatusUpdated -= self.__onRankedPrimeStatusUpdate
         g_hangarSpace.onObjectSelected -= self.__on3DObjectSelected
         g_hangarSpace.onObjectUnselected -= self.__on3DObjectUnSelected
         g_hangarSpace.onObjectClicked -= self.__on3DObjectClicked
@@ -169,6 +173,17 @@ class Hangar(LobbySubView, HangarMeta, IGlobalListener):
             currentRank = self.rankedController.getCurrentRank(vehicle)
             lastRank = self.rankedController.getLastRank(vehicle)
             self.rankedWidget.update(ranks, currentRank, lastRank)
+        return
+
+    def __updateAlertMessage(self):
+        if self.prbDispatcher.getFunctionalState().isInPreQueue(QUEUE_TYPE.RANKED):
+            status, timeLeft = self.rankedController.getPrimeTimeStatus()
+            visible = status == PRIME_TIME_STATUS.NOT_AVAILABLE
+            self.as_setAlertMessageBlockVisibleS(visible)
+            if visible and self.alertMessage is not None:
+                self.alertMessage.updateTimeLeft(timeLeft)
+        else:
+            self.as_setAlertMessageBlockVisibleS(False)
         return
 
     def __highlight3DEntityAndShowTT(self, entity):
@@ -239,6 +254,10 @@ class Hangar(LobbySubView, HangarMeta, IGlobalListener):
     def rankedWidget(self):
         return self.getComponent(HANGAR_ALIASES.RANKED_WIDGET)
 
+    @property
+    def alertMessage(self):
+        return self.getComponent(HANGAR_ALIASES.ALERT_MESSAGE_BLOCK)
+
     def onCacheResync(self, reason, diff):
         if reason == CACHE_SYNC_REASON.SHOP_RESYNC:
             self.__updateAll()
@@ -272,6 +291,16 @@ class Hangar(LobbySubView, HangarMeta, IGlobalListener):
     def onRankedUpdate(self):
         self.__updateRankedWidget()
 
+    def _onPopulateStarted(self):
+        pass
+
+    def _onPopulateEnd(self):
+        pass
+
+    def __onRankedPrimeStatusUpdate(self, status):
+        if self.prbDispatcher.getFunctionalState().isInPreQueue(QUEUE_TYPE.RANKED):
+            self.as_setAlertMessageBlockVisibleS(status != PRIME_TIME_STATUS.AVAILABLE)
+
     def __updateAll(self):
         Waiting.show('updateVehicle')
         self.__switchCarousels()
@@ -283,6 +312,7 @@ class Hangar(LobbySubView, HangarMeta, IGlobalListener):
         self.__updateHeader()
         self.__updateCrew()
         self.__updateRankedWidget()
+        self.__updateAlertMessage()
         Waiting.hide('updateVehicle')
 
     def __onCurrentVehicleChanged(self):
@@ -318,6 +348,7 @@ class Hangar(LobbySubView, HangarMeta, IGlobalListener):
         self.__updateState()
         self.__updateAmmoPanel()
         self.__updateRankedWidget()
+        self.__updateAlertMessage()
         self.__updateNavigationInResearchPanel()
         self.__updateHeader()
 

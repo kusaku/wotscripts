@@ -1,5 +1,4 @@
 # Embedded file name: scripts/client/gui/Scaleform/framework/entities/DAAPIEntity.py
-from debug_utils import LOG_DEBUG
 from gui.Scaleform.framework.entities.EventSystemEntity import EventSystemEntity
 __author__ = 'd_dichkovsky'
 

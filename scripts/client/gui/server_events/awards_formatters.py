@@ -9,6 +9,7 @@ from gui.shared.formatters import text_styles
 from gui.shared.gui_items import GUI_ITEM_TYPE
 from gui.shared.gui_items.Tankman import getRoleUserName
 from gui.shared.utils.functions import makeTooltip
+from gui.shared.money import Currency
 from helpers import time_utils, i18n, dependency
 from shared_utils import CONST_CONTAINER
 from skeletons.gui.server_events import IEventsCache
@@ -23,8 +24,9 @@ class LABEL_ALIGN(CONST_CONTAINER):
     CENTER = 'center'
 
 
-AWARD_IMAGES = {AWARDS_SIZES.SMALL: {'credits': RES_ICONS.MAPS_ICONS_QUESTS_BONUSES_SMALL_CREDITS,
-                      'gold': RES_ICONS.MAPS_ICONS_QUESTS_BONUSES_SMALL_GOLD,
+AWARD_IMAGES = {AWARDS_SIZES.SMALL: {Currency.CREDITS: RES_ICONS.MAPS_ICONS_QUESTS_BONUSES_SMALL_CREDITS,
+                      Currency.GOLD: RES_ICONS.MAPS_ICONS_QUESTS_BONUSES_SMALL_GOLD,
+                      Currency.CRYSTAL: RES_ICONS.MAPS_ICONS_QUESTS_BONUSES_SMALL_CRYSTAL,
                       'creditsFactor': RES_ICONS.MAPS_ICONS_QUESTS_BONUSES_SMALL_CREDITS,
                       'freeXP': RES_ICONS.MAPS_ICONS_QUESTS_BONUSES_SMALL_FREEEXP,
                       'freeXPFactor': RES_ICONS.MAPS_ICONS_QUESTS_BONUSES_SMALL_FREEEXP,
@@ -33,8 +35,9 @@ AWARD_IMAGES = {AWARDS_SIZES.SMALL: {'credits': RES_ICONS.MAPS_ICONS_QUESTS_BONU
                       'xp': RES_ICONS.MAPS_ICONS_QUESTS_BONUSES_SMALL_EXP,
                       'xpFactor': RES_ICONS.MAPS_ICONS_QUESTS_BONUSES_SMALL_EXP,
                       'dailyXPFactor': RES_ICONS.MAPS_ICONS_QUESTS_BONUSES_SMALL_FREEEXP},
- AWARDS_SIZES.BIG: {'credits': RES_ICONS.MAPS_ICONS_QUESTS_BONUSES_BIG_CREDITS,
-                    'gold': RES_ICONS.MAPS_ICONS_QUESTS_BONUSES_BIG_GOLD,
+ AWARDS_SIZES.BIG: {Currency.CREDITS: RES_ICONS.MAPS_ICONS_QUESTS_BONUSES_BIG_CREDITS,
+                    Currency.GOLD: RES_ICONS.MAPS_ICONS_QUESTS_BONUSES_BIG_GOLD,
+                    Currency.CRYSTAL: RES_ICONS.MAPS_ICONS_QUESTS_BONUSES_BIG_CRYSTAL,
                     'creditsFactor': RES_ICONS.MAPS_ICONS_QUESTS_BONUSES_BIG_CREDITS,
                     'freeXP': RES_ICONS.MAPS_ICONS_QUESTS_BONUSES_BIG_FREEXP,
                     'freeXPFactor': RES_ICONS.MAPS_ICONS_QUESTS_BONUSES_BIG_FREEXP,
@@ -52,8 +55,9 @@ def _getMultiplierFormatter(formatter):
     return wrapper
 
 
-TEXT_FORMATTERS = {'credits': text_styles.credits,
- 'gold': text_styles.gold,
+TEXT_FORMATTERS = {Currency.CREDITS: text_styles.credits,
+ Currency.GOLD: text_styles.gold,
+ Currency.CRYSTAL: text_styles.crystal,
  'creditsFactor': _getMultiplierFormatter(text_styles.credits),
  'freeXP': text_styles.expText,
  'freeXPFactor': _getMultiplierFormatter(text_styles.expText),
@@ -73,8 +77,9 @@ def getDefaultAwardFormatter():
     countableIntegralBonusFormatter = CountableIntegralBonusFormatter()
     tokenBonusFormatter = TokenBonusFormatter()
     return AwardsPacker({'strBonus': simpleBonusFormatter,
-     'gold': simpleBonusFormatter,
-     'credits': simpleBonusFormatter,
+     Currency.GOLD: simpleBonusFormatter,
+     Currency.CREDITS: simpleBonusFormatter,
+     Currency.CRYSTAL: simpleBonusFormatter,
      'freeXP': simpleBonusFormatter,
      'xp': simpleBonusFormatter,
      'tankmenXP': simpleBonusFormatter,
@@ -311,12 +316,18 @@ class VehiclesBonusFormatter(SimpleBonusFormatter):
             else:
                 tmanRoleLevel = bonus.getTmanRoleLevel(vehInfo)
                 rentDays = bonus.getRentDays(vehInfo)
+                rentBattles = bonus.getRentBattles(vehInfo)
+                rentWins = bonus.getRentWins(vehInfo)
                 if rentDays:
                     rentExpiryTime = time_utils.getCurrentTimestamp()
                     rentExpiryTime += rentDays * time_utils.ONE_DAY
                 else:
                     rentExpiryTime = 0
-                result.append(PreformattedBonus(userName=self._getUserName(vehicle), images=self._getImages(rentDays), isSpecial=True, specialAlias=TOOLTIPS_CONSTANTS.AWARD_VEHICLE, specialArgs=[vehicle.intCD, tmanRoleLevel, rentExpiryTime], isCompensation=self._isCompensation(bonus)))
+                result.append(PreformattedBonus(userName=self._getUserName(vehicle), images=self._getImages(rentDays or rentBattles or rentWins), isSpecial=True, specialAlias=TOOLTIPS_CONSTANTS.AWARD_VEHICLE, specialArgs=[vehicle.intCD,
+                 tmanRoleLevel,
+                 rentExpiryTime,
+                 rentBattles,
+                 rentWins], isCompensation=self._isCompensation(bonus)))
 
         return result
 
@@ -324,10 +335,10 @@ class VehiclesBonusFormatter(SimpleBonusFormatter):
         return vehicle.userName
 
     @classmethod
-    def _getImages(cls, rentDays):
+    def _getImages(cls, rent):
         result = {}
         for size in AWARDS_SIZES.ALL():
-            if rentDays:
+            if rent:
                 image = RES_ICONS.getRentVehicleAwardIcon(size)
             else:
                 image = RES_ICONS.getVehicleAwardIcon(size)

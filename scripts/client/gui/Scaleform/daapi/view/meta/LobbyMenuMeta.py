@@ -1,7 +1,7 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/meta/LobbyMenuMeta.py
-from gui.Scaleform.framework.entities.abstract.AbstractWindowView import AbstractWindowView
+from gui.Scaleform.framework.entities.View import View
 
-class LobbyMenuMeta(AbstractWindowView):
+class LobbyMenuMeta(View):
 
     def settingsClick(self):
         self._printOverrideError('settingsClick')
@@ -24,6 +24,12 @@ class LobbyMenuMeta(AbstractWindowView):
     def onCounterNeedUpdate(self):
         self._printOverrideError('onCounterNeedUpdate')
 
+    def bootcampClick(self):
+        self._printOverrideError('bootcampClick')
+
+    def onEscapePress(self):
+        self._printOverrideError('onEscapePress')
+
     def as_setVersionMessageS(self, data):
         """
         :param data: Represented by VersionMessageVO (AS)
@@ -31,10 +37,28 @@ class LobbyMenuMeta(AbstractWindowView):
         if self._isDAAPIInited():
             return self.flashObject.as_setVersionMessage(data)
 
-    def as_setSettingsBtnCounterS(self, value):
+    def as_setCounterS(self, counters):
+        """
+        :param counters: Represented by Vector.<CountersVo> (AS)
+        """
         if self._isDAAPIInited():
-            return self.flashObject.as_setSettingsBtnCounter(value)
+            return self.flashObject.as_setCounter(counters)
 
-    def as_removeSettingsBtnCounterS(self):
+    def as_removeCounterS(self, counters):
+        """
+        :param counters: Represented by Vector.<String> (AS)
+        """
         if self._isDAAPIInited():
-            return self.flashObject.as_removeSettingsBtnCounter()
+            return self.flashObject.as_removeCounter(counters)
+
+    def as_setBootcampButtonLabelS(self, label, icon):
+        if self._isDAAPIInited():
+            return self.flashObject.as_setBootcampButtonLabel(label, icon)
+
+    def as_showBootcampButtonS(self, value):
+        if self._isDAAPIInited():
+            return self.flashObject.as_showBootcampButton(value)
+
+    def as_setMenuStateS(self, state):
+        if self._isDAAPIInited():
+            return self.flashObject.as_setMenuState(state)

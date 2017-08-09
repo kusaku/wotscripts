@@ -1,7 +1,7 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/meta/RankedBattlesPrimeTimeMeta.py
-from gui.Scaleform.framework.entities.View import View
+from gui.Scaleform.daapi.view.meta.WrapperViewMeta import WrapperViewMeta
 
-class RankedBattlesPrimeTimeMeta(View):
+class RankedBattlesPrimeTimeMeta(WrapperViewMeta):
 
     def closeView(self):
         self._printOverrideError('closeView')
@@ -18,10 +18,6 @@ class RankedBattlesPrimeTimeMeta(View):
         """
         if self._isDAAPIInited():
             return self.flashObject.as_setData(data)
-
-    def as_setSelectedServerIndexS(self, index):
-        if self._isDAAPIInited():
-            return self.flashObject.as_setSelectedServerIndex(index)
 
     def as_getServersDPS(self):
         if self._isDAAPIInited():

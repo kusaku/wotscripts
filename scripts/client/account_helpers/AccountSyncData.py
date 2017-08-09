@@ -4,7 +4,7 @@ from SyncController import SyncController
 from debug_utils import LOG_ERROR, LOG_DEBUG
 from persistent_caches import SimpleCache
 from live_crc_accountdata import accountDataPersistentHash, accountDataExtractPersistent, accountDataGetDiffForPersistent, accountDataMergePersistent
-from diff_utils import synchronizeDicts
+from shared_utils.account_helpers.diff_utils import synchronizeDicts
 
 class AccountSyncData(object):
 
@@ -38,9 +38,7 @@ class AccountSyncData(object):
             self.__syncController = None
         self.__savePersistentCache()
         if account is not None:
-            oldName = self.__persistentCache.getAccountName()
-            raise oldName is None or oldName == account.name or AssertionError
-            self.__persistentCache.setAccountName(account.name)
+            self.__persistentCache.setAccount(account)
             self.__syncController = SyncController(account, self.__sendSyncRequest, self.__onSyncResponse, self.__onSyncComplete)
         return
 

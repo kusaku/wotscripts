@@ -40,7 +40,7 @@ class AbstractActionsHandler(object):
         """
         pass
 
-    def setUnitChanged(self, flags = None):
+    def setUnitChanged(self):
         """
         Routine that should be invoked when unit changes its flags.
         """

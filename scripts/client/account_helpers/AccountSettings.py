@@ -7,13 +7,16 @@ import BigWorld
 import CommandMapping
 import Settings
 import Event
-from constants import FORT_BUILDING_TYPE as _FBT, VEHICLE_CLASSES, MAX_VEHICLE_LEVEL
+from constants import VEHICLE_CLASSES, MAX_VEHICLE_LEVEL
 from account_helpers import gameplay_ctx
 from debug_utils import LOG_CURRENT_EXCEPTION
+from gui.Scaleform.genConsts.PROFILE_CONSTANTS import PROFILE_CONSTANTS
 from gui.Scaleform.genConsts.STORE_CONSTANTS import STORE_CONSTANTS
+from copy import deepcopy
 KEY_FILTERS = 'filters'
 KEY_SETTINGS = 'settings'
 KEY_FAVORITES = 'favorites'
+KEY_COUNTERS = 'counters'
 CAROUSEL_FILTER_1 = 'CAROUSEL_FILTER_1'
 CAROUSEL_FILTER_2 = 'CAROUSEL_FILTER_2'
 CAROUSEL_FILTER_CLIENT_1 = 'CAROUSEL_FILTER_CLIENT_1'
@@ -41,11 +44,11 @@ LAST_PROMO_PATCH_VERSION = 'lastPromoPatchVersion'
 LAST_RESTORE_NOTIFICATION = 'lastRestoreNotification'
 PREVIEW_INFO_PANEL_IDX = 'previewInfoPanelIdx'
 NEW_SETTINGS_COUNTER = 'newSettingsCounter'
+NEW_HOF_COUNTER = 'newHofCounter'
 PROFILE_TECHNIQUE = 'profileTechnique'
 TRAJECTORY_VIEW_HINT_COUNTER = 'trajectoryViewHintCounter'
 PROFILE_TECHNIQUE_MEMBER = 'profileTechniqueMember'
-LAST_CLUB_OPENED_FOR_APPS = 'lastClubOpenedForApps'
-SHOW_INVITE_COMMAND_BTN_ANIMATION = 'showInviteCommandBtnAnimation'
+SHOW_CRYSTAL_HEADER_BAND = 'showCrystalHeaderBand'
 DEFAULT_QUEUE = 'defaultQueue'
 STORE_TAB = 'store_tab'
 STATS_REGULAR_SORTING = 'statsSorting'
@@ -54,7 +57,6 @@ MISSIONS_PAGE = 'missions_page'
 DEFAULT_VEHICLE_TYPES_FILTER = [False] * len(VEHICLE_CLASSES)
 DEFAULT_LEVELS_FILTERS = [False] * MAX_VEHICLE_LEVEL
 SHOW_OPT_DEVICE_HINT = 'showOptDeviceHint'
-SHOW_CRYSTAL_HEADER_BAND = 'showCrystalHeaderBand'
 KNOWN_SELECTOR_BATTLES = 'knownSelectorBattles'
 DEFAULT_VALUES = {KEY_FILTERS: {STORE_TAB: 0,
                'shop_current': (-1, STORE_CONSTANTS.VEHICLE, False),
@@ -89,6 +91,7 @@ DEFAULT_VALUES = {KEY_FILTERS: {STORE_TAB: 0,
                'shop_equipment': {'fitsType': STORE_CONSTANTS.CURRENT_VEHICLE_ARTEFACT_FIT,
                                   'vehicleCD': -1,
                                   'extra': [STORE_CONSTANTS.ON_VEHICLE_EXTRA_NAME]},
+               'shop_battleBooster': {'targetType': STORE_CONSTANTS.ALL_KIND_FIT},
                'inventory_current': (-1, STORE_CONSTANTS.VEHICLE, False),
                'inventory_vehicle': {'selectedTypes': DEFAULT_VEHICLE_TYPES_FILTER,
                                      'selectedLevels': DEFAULT_LEVELS_FILTERS,
@@ -113,6 +116,7 @@ DEFAULT_VALUES = {KEY_FILTERS: {STORE_TAB: 0,
                'inventory_equipment': {'fitsType': STORE_CONSTANTS.CURRENT_VEHICLE_ARTEFACT_FIT,
                                        'vehicleCD': -1,
                                        'extra': [STORE_CONSTANTS.ON_VEHICLE_EXTRA_NAME]},
+               'inventory_battleBooster': {'targetType': STORE_CONSTANTS.ALL_KIND_FIT},
                MISSIONS_PAGE: {'hideDone': False,
                                'hideUnavailable': False},
                CAROUSEL_FILTER_1: {'ussr': False,
@@ -124,6 +128,7 @@ DEFAULT_VALUES = {KEY_FILTERS: {STORE_TAB: 0,
                                    'japan': False,
                                    'czech': False,
                                    'sweden': False,
+                                   'poland': False,
                                    'lightTank': False,
                                    'mediumTank': False,
                                    'heavyTank': False,
@@ -156,6 +161,7 @@ DEFAULT_VALUES = {KEY_FILTERS: {STORE_TAB: 0,
                                           'japan': False,
                                           'czech': False,
                                           'sweden': False,
+                                          'poland': False,
                                           'lightTank': False,
                                           'mediumTank': False,
                                           'heavyTank': False,
@@ -189,6 +195,7 @@ DEFAULT_VALUES = {KEY_FILTERS: {STORE_TAB: 0,
                                            'japan': False,
                                            'czech': False,
                                            'sweden': False,
+                                           'poland': False,
                                            'lightTank': False,
                                            'mediumTank': False,
                                            'heavyTank': False,
@@ -255,8 +262,6 @@ DEFAULT_VALUES = {KEY_FILTERS: {STORE_TAB: 0,
                         'victoryAward': -1,
                         'battlesCountAward': -1,
                         'pveBattlesCountAward': -1},
-               LAST_CLUB_OPENED_FOR_APPS: 0,
-               SHOW_INVITE_COMMAND_BTN_ANIMATION: True,
                PROFILE_TECHNIQUE: {'selectedColumn': 4,
                                    'selectedColumnSorting': 'descending',
                                    'isInHangarSelected': False},
@@ -265,35 +270,23 @@ DEFAULT_VALUES = {KEY_FILTERS: {STORE_TAB: 0,
  KEY_FAVORITES: {CURRENT_VEHICLE: 0,
                  FALLOUT_VEHICLES: {}},
  KEY_SETTINGS: {'unitWindow': {'selectedIntroVehicles': []},
-                'fortSettings': {'clanDBID': 0,
-                                 'battleConsumesIntroShown': False,
-                                 'visitedBuildings': {_FBT.MILITARY_BASE,
-                                                      _FBT.FINANCIAL_DEPT,
-                                                      _FBT.TANKODROME,
-                                                      _FBT.TRAINING_DEPT,
-                                                      _FBT.MILITARY_ACADEMY,
-                                                      _FBT.TRANSPORT_DEPT,
-                                                      _FBT.INTENDANT_SERVICE,
-                                                      _FBT.TROPHY_BRIGADE,
-                                                      _FBT.OFFICE,
-                                                      _FBT.MILITARY_SHOP}},
                 'vehicleSellDialog': {'isOpened': False},
                 KNOWN_SELECTOR_BATTLES: set(),
                 'tankmanDropSkillIdx': 0,
                 'cursor': False,
-                'arcade': {'mixing': {'alpha': 90,
-                                      'type': 0},
-                           'gunTag': {'alpha': 90,
-                                      'type': 0},
-                           'centralTag': {'alpha': 90,
-                                          'type': 0},
-                           'net': {'alpha': 90,
+                'arcade': {'mixing': {'alpha': 100,
+                                      'type': 3},
+                           'gunTag': {'alpha': 100,
+                                      'type': 9},
+                           'centralTag': {'alpha': 100,
+                                          'type': 8},
+                           'net': {'alpha': 100,
                                    'type': 0},
-                           'reloader': {'alpha': 90,
+                           'reloader': {'alpha': 100,
                                         'type': 0},
-                           'condition': {'alpha': 90,
+                           'condition': {'alpha': 100,
                                          'type': 0},
-                           'cassette': {'alpha': 90,
+                           'cassette': {'alpha': 100,
                                         'type': 0},
                            'reloaderTimer': {'alpha': 100,
                                              'type': 0},
@@ -367,7 +360,7 @@ DEFAULT_VALUES = {KEY_FILTERS: {STORE_TAB: 0,
                 'useServerAim': False,
                 'showVehiclesCounter': True,
                 'minimapAlpha': 0,
-                'minimapSize': 0,
+                'minimapSize': 1,
                 'minimapRespawnSize': 0,
                 'minimapViewRange': True,
                 'minimapMaxViewRange': True,
@@ -380,6 +373,7 @@ DEFAULT_VALUES = {KEY_FILTERS: {STORE_TAB: 0,
                 'players_panel': {'state': 2,
                                   'showLevels': True,
                                   'showTypes': True},
+                'epic_random_players_panel': {'state': 5},
                 'gameplayMask': gameplay_ctx.getDefaultMask(),
                 'statsSorting': {'iconType': 'tank',
                                  'sortDirection': 'descending'},
@@ -396,6 +390,7 @@ DEFAULT_VALUES = {KEY_FILTERS: {STORE_TAB: 0,
                 'customization': {},
                 'showVehModelsOnMap': 0,
                 'battleLoadingInfo': 1,
+                'battleLoadingRankedInfo': 1,
                 'relativePower': False,
                 'relativeArmor': False,
                 'relativeMobility': False,
@@ -420,10 +415,14 @@ DEFAULT_VALUES = {KEY_FILTERS: {STORE_TAB: 0,
                 'doubleCarouselType': 0,
                 'vehicleCarouselStats': True,
                 'siegeModeHintCounter': 10,
-                NEW_SETTINGS_COUNTER: {'SoundSettingsDropDown': True},
+                NEW_SETTINGS_COUNTER: {'FeedbackSettings': {'feedbackDamageLog': {'damageLogAssistStun': True},
+                                                            'feedbackBattleEvents': {'battleEventsEnemyAssistStun': True}},
+                                       'GameSettings': {'gameplay_epicStandard': True}},
                 TRAJECTORY_VIEW_HINT_COUNTER: 10,
-                SHOW_OPT_DEVICE_HINT: True,
-                SHOW_CRYSTAL_HEADER_BAND: True}}
+                SHOW_OPT_DEVICE_HINT: True},
+ KEY_COUNTERS: {NEW_HOF_COUNTER: {PROFILE_CONSTANTS.HOF_ACHIEVEMENTS_BUTTON: True,
+                                  PROFILE_CONSTANTS.HOF_VEHICLES_BUTTON: True,
+                                  PROFILE_CONSTANTS.HOF_VIEW_RATING_BUTTON: True}}}
 
 def _filterAccountSection(dataSec):
     for key, section in dataSec.items()[:]:
@@ -441,7 +440,7 @@ def _unpack(value):
 
 class AccountSettings(object):
     onSettingsChanging = Event.Event()
-    version = 31
+    version = 32
     __cache = {'login': None,
      'section': None}
     __isFirstRun = True
@@ -462,6 +461,7 @@ class AccountSettings(object):
     def __readUserSection():
         if AccountSettings.__isFirstRun:
             AccountSettings.convert()
+            AccountSettings.invalidateNewSettingsCounter()
             AccountSettings.__isFirstRun = False
         userLogin = getattr(BigWorld.player(), 'name', '')
         if AccountSettings.__cache['login'] != userLogin:
@@ -757,6 +757,12 @@ class AccountSettings(object):
                                 settingsSection.write('players_panel', _pack(panelSettings))
 
             if currVersion < 28:
+                for key, section in _filterAccountSection(ads):
+                    filters = AccountSettings.__readSection(section, KEY_FILTERS)
+                    filters.deleteSection('lastClubOpenedForApps')
+                    filters.deleteSection('showInviteCommandBtnAnimation')
+
+            if currVersion < 29:
                 getSection = AccountSettings.__readSection
                 cmSection = getSection(Settings.g_instance.userPrefs, Settings.KEY_COMMAND_MAPPING)
                 cmdItems = cmSection.items()[:]
@@ -790,10 +796,15 @@ class AccountSettings(object):
                             defaults = DEFAULT_VALUES[KEY_FILTERS][filterName]
                             accFilters.write(filterName, base64.b64encode(pickle.dumps(defaults)))
 
-            if currVersion < 31:
+            if currVersion < 32:
                 for _, section in _filterAccountSection(ads):
                     accSettings = AccountSettings.__readSection(section, KEY_SETTINGS)
                     accSettings.deleteSection(NEW_SETTINGS_COUNTER)
+
+            if currVersion < 32:
+                for _, section in _filterAccountSection(ads):
+                    accSettings = AccountSettings.__readSection(section, KEY_SETTINGS)
+                    accSettings.deleteSection(SHOW_CRYSTAL_HEADER_BAND)
 
             ads.writeInt('version', AccountSettings.version)
         return
@@ -801,6 +812,18 @@ class AccountSettings(object):
     @staticmethod
     def getFilterDefault(name):
         return DEFAULT_VALUES[KEY_FILTERS].get(name, None)
+
+    @staticmethod
+    def invalidateNewSettingsCounter():
+        ads = AccountSettings.__readSection(Settings.g_instance.userPrefs, Settings.KEY_ACCOUNT_SETTINGS)
+        currentDefaults = AccountSettings.getSettingsDefault(NEW_SETTINGS_COUNTER)
+        filtered = _filterAccountSection(ads)
+        for _, section in filtered:
+            accSettings = AccountSettings.__readSection(section, KEY_SETTINGS)
+            if NEW_SETTINGS_COUNTER in accSettings.keys():
+                savedNewSettingsCounters = _unpack(accSettings[NEW_SETTINGS_COUNTER].asString)
+                newSettingsCounters = AccountSettings.updateNewSettingsCounter(currentDefaults, savedNewSettingsCounters)
+                accSettings.write(NEW_SETTINGS_COUNTER, _pack(newSettingsCounters))
 
     @staticmethod
     def getFilterDefaults(names):
@@ -837,6 +860,38 @@ class AccountSettings(object):
     @staticmethod
     def setFavorites(name, value):
         AccountSettings.__setValue(name, value, KEY_FAVORITES)
+
+    @staticmethod
+    def getCounters(name):
+        return AccountSettings.__getValue(name, KEY_COUNTERS)
+
+    @staticmethod
+    def setCounters(name, value):
+        AccountSettings.__setValue(name, value, KEY_COUNTERS)
+
+    @staticmethod
+    def updateNewSettingsCounter(defaultDict, savedDict):
+        finalDict = dict()
+
+        def recursiveStep(defaultDict, savedDict, finalDict):
+            for key in defaultDict:
+                defaultElement = defaultDict[key]
+                savedElement = savedDict.get(key, None)
+                if type(defaultElement) == dict:
+                    if savedElement is not None and type(savedElement) == dict:
+                        finalDict[key] = dict()
+                        recursiveStep(defaultElement, savedElement, finalDict[key])
+                    else:
+                        finalDict[key] = deepcopy(defaultElement)
+                elif savedElement is not None:
+                    finalDict[key] = savedElement
+                else:
+                    finalDict[key] = defaultElement
+
+            return
+
+        recursiveStep(defaultDict, savedDict, finalDict)
+        return finalDict
 
     @staticmethod
     def __getValue(name, type):

@@ -11,6 +11,7 @@ from gui.Scaleform.genConsts.BOOSTER_CONSTANTS import BOOSTER_CONSTANTS
 from gui.Scaleform.genConsts.CUSTOMIZATION_ITEM_TYPE import CUSTOMIZATION_ITEM_TYPE
 from gui.Scaleform.genConsts.TOOLTIPS_CONSTANTS import TOOLTIPS_CONSTANTS
 from gui.Scaleform.genConsts.TEXT_ALIGN import TEXT_ALIGN
+from gui.Scaleform.genConsts.SLOT_HIGHLIGHT_TYPES import SLOT_HIGHLIGHT_TYPES
 from gui.Scaleform.locale.BADGE import BADGE
 from gui.Scaleform.locale.QUESTS import QUESTS
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
@@ -107,11 +108,13 @@ class SimpleBonus(object):
         return [{'label': self.carouselFormat(),
           'tooltip': self.getTooltip()}]
 
-    def getRankedAwardVOs(self, iconSize = 'small', withCounts = False):
+    def getRankedAwardVOs(self, iconSize = 'small', withCounts = False, withKey = False):
         itemInfo = {'imgSource': self.getIconBySize(iconSize),
          'label': self.getIconLabel(),
          'tooltip': self.getTooltip(),
          'align': TEXT_ALIGN.CENTER}
+        if withKey:
+            itemInfo['itemKey'] = self.getName()
         if withCounts:
             if isinstance(self._value, int):
                 itemInfo['count'] = self._value
@@ -300,58 +303,11 @@ class BattleTokensBonus(TokensBonus):
         self._name = 'battleToken'
 
     def isShowInGUI(self):
-        return self.__getFirstQuestName() != ''
+        return True
 
     def getCarouselList(self, isReceived = False):
         return [{'imgSource': RES_ICONS.MAPS_ICONS_QUESTS_ICON_BATTLE_MISSIONS_PRIZE_TOKEN,
           'tooltip': self.getTooltip()}]
-
-    def getTooltip(self):
-        """ Get award's tooltip for award carousel.
-        """
-        if len(self._value) > 1 or len(self._value.values()[0].get('questNames', [])) > 1:
-            nameFormat = '{}/several'.format(self._name)
-            header = i18n.makeString(TOOLTIPS.getAwardHeader(nameFormat))
-            body = self.__getAllQuestNames()
-        else:
-            nameFormat = '{}/one'.format(self._name)
-            header = i18n.makeString(TOOLTIPS.getAwardHeader(nameFormat))
-            body = i18n.makeString(TOOLTIPS.getAwardBody(nameFormat), name=self.__getFirstQuestName())
-        if header or body:
-            return makeTooltip(header or None, body or None)
-        else:
-            return ''
-            return None
-
-    def __getAllQuestNames(self):
-        """Return formatted string for tooltip with several quest
-        1. "quest name 1"
-        2. "quest name 2"
-        ...
-        :return:
-        """
-        tooltip = [i18n.makeString(TOOLTIPS.AWARDITEM_BATTLETOKEN_SEVERAL_BODY)]
-        questIdx = 0
-        for item in self._value.values():
-            names = item.get('questNames', [])
-            for name in names:
-                if name:
-                    questIdx += 1
-                    tooltip.append(i18n.makeString(TOOLTIPS.AWARDITEM_BATTLETOKEN_SEVERAL_LINE, num=questIdx, name=name))
-
-        return '\n'.join(tooltip)
-
-    def __getFirstQuestName(self):
-        """We're show only one (first) quest in tooltip
-        :return:
-        """
-        if len(self._value) > 0:
-            _, firstItem = self._value.items()[0]
-            if firstItem:
-                names = firstItem.get('questNames', [])
-                if len(names) > 0:
-                    return names[0]
-        return ''
 
 
 class PotapovTokensBonus(TokensBonus):
@@ -439,13 +395,19 @@ class ItemsBonus(SimpleBonus):
 
         return result
 
-    def getRankedAwardVOs(self, iconSize = 'small', withCounts = False):
+    def getRankedAwardVOs(self, iconSize = 'small', withCounts = False, withKey = False):
         result = []
         for item, count in self.getItems().iteritems():
             itemInfo = {'imgSource': item.getBonusIcon(iconSize),
              'label': text_styles.stats('x{}'.format(count)),
              'tooltip': self.makeItemTooltip(item),
              'align': TEXT_ALIGN.RIGHT}
+            if item.itemTypeName == 'optionalDevice':
+                if item.isDeluxe():
+                    itemInfo['highlightType'] = SLOT_HIGHLIGHT_TYPES.NO_HIGHLIGHT
+                    itemInfo['overlayType'] = SLOT_HIGHLIGHT_TYPES.EQUIPMENT_PLUS
+            if withKey:
+                itemInfo['itemKey'] = 'item_{}'.format(item.intCD)
             if withCounts:
                 itemInfo['count'] = count
             result.append(itemInfo)
@@ -539,7 +501,7 @@ class GoodiesBonus(SimpleBonus):
 
         return result
 
-    def getRankedAwardVOs(self, iconSize = 'small', withCounts = False):
+    def getRankedAwardVOs(self, iconSize = 'small', withCounts = False, withKey = False):
         result = []
         for booster, count in self.getBoosters().iteritems():
             if booster is not None:
@@ -547,6 +509,8 @@ class GoodiesBonus(SimpleBonus):
                  'label': text_styles.hightlight('x{}'.format(count)),
                  'align': TEXT_ALIGN.RIGHT}
                 itemData.update(self.__itemTooltip(booster))
+                if withKey:
+                    itemData['itemKey'] = 'booster_{}'.format(booster.boosterID)
                 if withCounts:
                     itemData['count'] = count
                 result.append(itemData)
@@ -618,7 +582,7 @@ class VehiclesBonus(SimpleBonus):
         for curVehicle, vehInfo in self.getVehicles():
             compensation = vehInfo.get('customCompensation')
             if curVehicle == vehicle and compensation:
-                money = Money(*compensation)
+                money = Money.makeMoney(compensation)
                 for currency, value in money.iteritems():
                     if value:
                         cls = _BONUSES.get(currency)
@@ -636,12 +600,14 @@ class VehiclesBonus(SimpleBonus):
     def getIconLabel(self):
         return 'x1'
 
-    def getRankedAwardVOs(self, iconSize = 'small', withCounts = False):
+    def getRankedAwardVOs(self, iconSize = 'small', withCounts = False, withKey = False):
         result = []
         for vehicle, vehInfo in self.getVehicles():
             vehicleVO = self.__getVehicleVO(vehicle, vehInfo, partial(RES_ICONS.getBonusIcon, iconSize))
             vehicleVO.update({'label': self.getIconLabel()})
             vehicleVO['align'] = TEXT_ALIGN.RIGHT
+            if withKey:
+                vehicleVO['itemKey'] = 'vehicle_{}'.format(vehicle.intCD)
             if withCounts:
                 vehicleVO['count'] = 1
             result.append(vehicleVO)
@@ -658,6 +624,8 @@ class VehiclesBonus(SimpleBonus):
 
     @staticmethod
     def getRentDays(vehInfo):
+        """ Get rent days info from bonus if there is such info.
+        """
         if 'rent' not in vehInfo:
             return None
         else:
@@ -670,6 +638,22 @@ class VehiclesBonus(SimpleBonus):
                 else:
                     return None
             return None
+
+    @staticmethod
+    def getRentBattles(vehInfo):
+        """ Get rent battles info from bonus if there is such info.
+        
+        Rent battles means rent vehicle for a given number of battles.
+        """
+        return vehInfo.get('rent', {}).get('battles')
+
+    @staticmethod
+    def getRentWins(vehInfo):
+        """ Get rent wins info from bonus if there is such info.
+        
+        Rent battles means rent vehicle for a given number of wins (lost battles don't count).
+        """
+        return vehInfo.get('rent', {}).get('wins')
 
     def __getVehicleVO(self, vehicle, vehicleInfo, iconGetter):
         tmanRoleLevel = self.getTmanRoleLevel(vehicleInfo)
@@ -752,7 +736,7 @@ class DossierBonus(SimpleBonus):
 
         return result
 
-    def getRankedAwardVOs(self, iconSize = 'small', withCounts = False):
+    def getRankedAwardVOs(self, iconSize = 'small', withCounts = False, withKey = False):
         """
         Here we're supporting bonuses only that allowed in ranked battles
         """
@@ -767,6 +751,8 @@ class DossierBonus(SimpleBonus):
                 badgeVO = {'imgSource': getBadgeIconPath(badgesIconSizes[iconSize], record),
                  'label': '',
                  'tooltip': makeTooltip(header, body, note)}
+                if withKey:
+                    badgeVO['itemKey'] = BADGE.badgeName(record)
                 if withCounts:
                     badgeVO['count'] = 1
                 result.append(badgeVO)
@@ -981,7 +967,7 @@ class CustomizationsBonus(SimpleBonus):
 
         return result
 
-    def getRankedAwardVOs(self, iconSize = 'small', withCounts = False):
+    def getRankedAwardVOs(self, iconSize = 'small', withCounts = False, withKey = False):
         result = []
         for item, data in zip(self.getCustomizations(), self.getList(defaultSize=128)):
             count = item.get('value', 1)
@@ -989,6 +975,8 @@ class CustomizationsBonus(SimpleBonus):
              'label': text_styles.hightlight('x{}'.format(count)),
              'align': TEXT_ALIGN.RIGHT}
             itemData.update(self.__itemTooltip(data, isReceived=False))
+            if withKey:
+                itemData['itemKey'] = 'customization_{}'.format(item.get('custType'))
             if withCounts:
                 itemData['count'] = count
             result.append(itemData)

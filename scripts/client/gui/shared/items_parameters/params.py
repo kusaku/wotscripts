@@ -8,7 +8,6 @@ from collections import namedtuple, defaultdict
 from math import ceil
 from operator import itemgetter
 from constants import SHELL_TYPES, PIERCING_POWER
-from debug_utils import LOG_DEBUG
 from gui import GUI_SETTINGS
 from gui.shared.formatters import text_styles
 from gui.shared.items_parameters import calcGunParams, calcShellParams, getShotsPerMinute, getGunDescriptors
@@ -21,8 +20,9 @@ from gui.shared.utils import DISPERSION_RADIUS_PROP_NAME, SHELLS_PROP_NAME, GUN_
 from gui.shared.utils import GUN_CAN_BE_CLIP, RELOAD_TIME_PROP_NAME
 from gui.shared.utils import RELOAD_MAGAZINE_TIME_PROP_NAME, SHELL_RELOADING_TIME_PROP_NAME, GUN_CLIP
 from helpers import time_utils, dependency
-from items import getTypeOfCompactDescr, vehicles, getTypeInfoByIndex, ITEM_TYPES
+from items import getTypeOfCompactDescr, getTypeInfoByIndex, ITEM_TYPES, vehicles
 from items import utils as items_utils
+from items.components import component_constants
 from shared_utils import findFirst
 from skeletons.gui.lobby_context import ILobbyContext
 MAX_VISION_RADIUS = 500
@@ -81,9 +81,9 @@ def _universalSum(a, b):
 def _getInstalledModuleVehicle(vehicleDescr, itemDescr):
     curVehicle = None
     if vehicleDescr:
-        compDescrType = getTypeOfCompactDescr(itemDescr['compactDescr'])
+        compDescrType = getTypeOfCompactDescr(itemDescr.compactDescr)
         module = MODULES[compDescrType](vehicleDescr)
-        if module['id'][1] == itemDescr['id'][1]:
+        if module.id[1] == itemDescr.id[1]:
             curVehicle = vehicleDescr.type.userString
     return curVehicle
 
@@ -94,7 +94,7 @@ def _average(listOfNumbers):
 
 def _isStunParamVisible(shellDict):
     lobbyContext = dependency.instance(ILobbyContext)
-    return shellDict['hasStun'] and lobbyContext.getServerSettings().spgRedesignFeatures.isStunEnabled()
+    return shellDict.hasStun and lobbyContext.getServerSettings().spgRedesignFeatures.isStunEnabled()
 
 
 class _ParameterBase(object):
@@ -116,7 +116,7 @@ class _ParameterBase(object):
 
     def _getPrecachedInfo(self):
         if self.__preCachedInfo is None:
-            self.__preCachedInfo = g_paramsCache.getPrecachedParameters(self._itemDescr['compactDescr'])
+            self.__preCachedInfo = g_paramsCache.getPrecachedParameters(self._itemDescr.compactDescr)
         return self.__preCachedInfo
 
     def _getRawParams(self):
@@ -135,7 +135,7 @@ class CompatibleParams(_ParameterBase):
 
     @property
     def compatibles(self):
-        return g_paramsCache.getComponentVehiclesNames(self._itemDescr['compactDescr'])
+        return g_paramsCache.getComponentVehiclesNames(self._itemDescr.compactDescr)
 
     def _getCompatible(self):
         curVehicle = _getInstalledModuleVehicle(self._vehicleDescr, self._itemDescr)
@@ -146,36 +146,36 @@ class WeightedParam(CompatibleParams):
 
     @property
     def weight(self):
-        return self._itemDescr['weight']
+        return self._itemDescr.weight
 
 
 class RadioParams(WeightedParam):
 
     @property
     def radioDistance(self):
-        return int(round(self._itemDescr['distance']))
+        return int(round(self._itemDescr.distance))
 
 
 class EngineParams(WeightedParam):
 
     @property
     def enginePower(self):
-        return int(round(self._itemDescr['power'] / vehicles.HP_TO_WATTS, 0))
+        return int(round(self._itemDescr.power / component_constants.HP_TO_WATTS, 0))
 
     @property
     def fireStartingChance(self):
-        return int(round(self._itemDescr['fireStartingChance'] * ONE_HUNDRED_PERCENTS))
+        return int(round(self._itemDescr.fireStartingChance * ONE_HUNDRED_PERCENTS))
 
 
 class ChassisParams(WeightedParam):
 
     @property
     def maxLoad(self):
-        return self._itemDescr['maxLoad'] / 1000
+        return self._itemDescr.maxLoad / 1000
 
     @property
     def rotationSpeed(self):
-        return int(round(math.degrees(self._itemDescr['rotationSpeed'])))
+        return int(round(math.degrees(self._itemDescr.rotationSpeed)))
 
     @property
     def isHydraulic(self):
@@ -186,23 +186,23 @@ class TurretParams(WeightedParam):
 
     @property
     def armor(self):
-        return self._itemDescr['primaryArmor']
+        return self._itemDescr.primaryArmor
 
     @property
     def rotationSpeed(self):
-        return int(round(math.degrees(self._itemDescr['rotationSpeed'])))
+        return int(round(math.degrees(self._itemDescr.rotationSpeed)))
 
     @property
     def circularVisionRadius(self):
-        return self._itemDescr['circularVisionRadius']
+        return self._itemDescr.circularVisionRadius
 
     @property
     def gunCompatibles(self):
-        return [ gun['userString'] for gun in self._itemDescr['guns'] ]
+        return [ gun.i18n.userString for gun in self._itemDescr.guns ]
 
     def _getCompatible(self):
         if self._vehicleDescr is not None:
-            curGun = self._vehicleDescr.gun['userString']
+            curGun = self._vehicleDescr.gun.i18n.userString
         else:
             curGun = None
         compatibleVehicles = list(super(TurretParams, self)._getCompatible())
@@ -227,7 +227,7 @@ class VehicleParams(_ParameterBase):
 
     @property
     def enginePower(self):
-        return round(self._itemDescr.physics['enginePower'] * self.__factors['engine/power'] / vehicles.HP_TO_WATTS)
+        return round(self._itemDescr.physics['enginePower'] * self.__factors['engine/power'] / component_constants.HP_TO_WATTS)
 
     @property
     def enginePowerPerTon(self):
@@ -246,17 +246,17 @@ class VehicleParams(_ParameterBase):
 
     @property
     def hullArmor(self):
-        return self._itemDescr.hull['primaryArmor']
+        return self._itemDescr.hull.primaryArmor
 
     @property
     def damage(self):
         avgDamage = self.avgDamage
-        damageRandomization = self._itemDescr.shot['shell']['damageRandomization']
+        damageRandomization = self._itemDescr.shot.shell.damageRandomization
         return (int(avgDamage - avgDamage * damageRandomization), int(ceil(avgDamage + avgDamage * damageRandomization)))
 
     @property
     def avgDamage(self):
-        return self._itemDescr.shot['shell'][DAMAGE_PROP_NAME][0]
+        return self._itemDescr.shot.shell.damage[0]
 
     @property
     def avgDamagePerMinute(self):
@@ -264,12 +264,12 @@ class VehicleParams(_ParameterBase):
 
     @property
     def avgPiercingPower(self):
-        return self._itemDescr.shot[PIERCING_POWER_PROP_NAME][0]
+        return self._itemDescr.shot.piercingPower[0]
 
     @property
     def piercingPower(self):
         piercingPower = self.avgPiercingPower
-        delta = piercingPower * self._itemDescr.shot['shell']['piercingPowerRandomization']
+        delta = piercingPower * self._itemDescr.shot.shell.piercingPowerRandomization
         return (int(piercingPower - delta), int(ceil(piercingPower + delta)))
 
     @property
@@ -304,13 +304,13 @@ class VehicleParams(_ParameterBase):
     @property
     def turretArmor(self):
         if self.__hasTurret():
-            return self._itemDescr.turret['primaryArmor']
+            return self._itemDescr.turret.primaryArmor
 
     @property
     def explosionRadius(self):
-        shotShell = self._itemDescr.shot['shell']
-        if shotShell['kind'] == SHELL_TYPES.HIGH_EXPLOSIVE:
-            return round(shotShell['explosionRadius'], 2)
+        shotShell = self._itemDescr.shot.shell
+        if shotShell.kind == SHELL_TYPES.HIGH_EXPLOSIVE:
+            return round(shotShell.type.explosionRadius, 2)
         else:
             return 0
 
@@ -334,7 +334,7 @@ class VehicleParams(_ParameterBase):
     @property
     def relativePower(self):
         coeffs = self.__coefficients['power']
-        penetration = self._itemDescr.shot[PIERCING_POWER_PROP_NAME][0]
+        penetration = self._itemDescr.shot.piercingPower[0]
         rotationSpeed = self.turretRotationSpeed or self.gunRotationSpeed
         turretCoefficient = 1 if self.__hasTurret() else coeffs['turretCoefficient']
         heCorrection = 1.0
@@ -342,9 +342,9 @@ class VehicleParams(_ParameterBase):
             spgCorrection = 6
         else:
             spgCorrection = 1
-            if self.__currentShot()['shell']['kind'] == 'HIGH_EXPLOSIVE':
+            if self.__currentShot().shell.kind == SHELL_TYPES.HIGH_EXPLOSIVE:
                 heCorrection = coeffs['alphaDamage']
-        gunCorrection = self.__adjustmentCoefficient('guns').get(self._itemDescr.gun['name'], {})
+        gunCorrection = self.__adjustmentCoefficient('guns').get(self._itemDescr.gun.name, {})
         gunCorrection = gunCorrection.get('caliberCorrection', 1)
         value = round(self.avgDamagePerMinute * penetration / self.shotDispersionAngle * (coeffs['rotationIntercept'] + coeffs['rotationSlope'] * rotationSpeed) * turretCoefficient * coeffs['normalization'] * self.__adjustmentCoefficient('power') * spgCorrection * gunCorrection * heCorrection)
         return max(value, MIN_RELATIVE_VALUE)
@@ -352,8 +352,8 @@ class VehicleParams(_ParameterBase):
     @property
     def relativeArmor(self):
         coeffs = self.__coefficients['armour']
-        hullArmor = self._itemDescr.hull['primaryArmor']
-        turretArmor = self._itemDescr.turret['primaryArmor'] if self.__hasTurret() else hullArmor
+        hullArmor = self._itemDescr.hull.primaryArmor
+        turretArmor = self._itemDescr.turret.primaryArmor if self.__hasTurret() else hullArmor
         value = round((hullArmor[0] * coeffs['hullFront'] + hullArmor[1] * coeffs['hullSide'] + hullArmor[2] * coeffs['hullBack'] + turretArmor[0] * coeffs['turretFront'] + turretArmor[1] * coeffs['turretSide'] + turretArmor[2] * coeffs['turretBack']) * self.maxHealth * coeffs['normalization'] * self.__adjustmentCoefficient('armour'))
         return max(value, MIN_RELATIVE_VALUE)
 
@@ -413,13 +413,13 @@ class VehicleParams(_ParameterBase):
 
     @property
     def invisibilityFactorAtShot(self):
-        return self._itemDescr.gun['invisibilityFactorAtShot']
+        return self._itemDescr.gun.invisibilityFactorAtShot
 
     @property
     def clipFireRate(self):
         if self.__hasClipGun():
             gunParams = self._itemDescr.gun
-            clipData = gunParams['clip']
+            clipData = gunParams.clip
             reloadTime = items_utils.getReloadTime(self._itemDescr, self.__factors)
             return (reloadTime, clipData[1], clipData[0])
         else:
@@ -444,13 +444,18 @@ class VehicleParams(_ParameterBase):
 
     @property
     def stunMaxDuration(self):
-        return self._itemDescr.shot['shell'].get('stunDuration', None)
+        shell = self._itemDescr.shot.shell
+        if shell.hasStun:
+            return shell.stun.stunDuration
+        else:
+            return None
+            return None
 
     @property
     def stunMinDuration(self):
-        item = self._itemDescr.shot['shell']
-        if 'guaranteedStunDuration' in item and 'stunDuration' in item:
-            return item['guaranteedStunDuration'] * item['stunDuration']
+        item = self._itemDescr.shot.shell
+        if item.hasStun:
+            return item.stun.guaranteedStunDuration * item.stun.stunDuration
         else:
             return None
             return None
@@ -458,13 +463,13 @@ class VehicleParams(_ParameterBase):
     def getParamsDict(self, preload = False):
         conditionalParams = ('turretYawLimits', 'gunYawLimits', 'clipFireRate', 'gunRotationSpeed', 'turretRotationSpeed', 'turretArmor', 'reloadTimeSecs', 'switchOnTime', 'switchOffTime')
         stunConditionParams = ('stunMaxDuration', 'stunMinDuration')
-        result = _ParamsDictProxy(self, preload, conditions=((conditionalParams, lambda v: v is not None), (stunConditionParams, lambda s: _isStunParamVisible(self._itemDescr.shot['shell']))))
+        result = _ParamsDictProxy(self, preload, conditions=((conditionalParams, lambda v: v is not None), (stunConditionParams, lambda s: _isStunParamVisible(self._itemDescr.shot.shell))))
         return result
 
     def getAllDataDict(self):
 
         def getItemFullName(itemTypeIdx, itemDescr):
-            return getTypeInfoByIndex(itemTypeIdx)['userString'] + ' ' + itemDescr['userString']
+            return getTypeInfoByIndex(itemTypeIdx)['userString'] + ' ' + itemDescr.userString
 
         result = super(VehicleParams, self).getAllDataDict()
         base = [getItemFullName(ITEM_TYPES.vehicleGun, self._itemDescr.gun),
@@ -478,9 +483,12 @@ class VehicleParams(_ParameterBase):
 
     @staticmethod
     def getBonuses(vehicle):
-        result = map(lambda eq: (eq.name, eq.itemTypeName), [ item for item in vehicle.eqs if item is not None ])
+        result = map(lambda eq: (eq.name, eq.itemTypeName), [ item for item in vehicle.equipment.regularConsumables.getInstalledItems() ])
         optDevs = map(lambda device: (device.name, device.itemTypeName), [ item for item in vehicle.optDevices if item is not None ])
         result.extend(optDevs)
+        for battleBooster in vehicle.equipment.battleBoosterConsumables.getInstalledItems():
+            result.append((battleBooster.name, 'battleBooster'))
+
         for _, tankman in vehicle.crew:
             if tankman is None:
                 continue
@@ -533,14 +541,14 @@ class VehicleParams(_ParameterBase):
         return self._itemDescr.type.clientAdjustmentFactors[paramName]
 
     def __getGunYawLimits(self):
-        limits = self._itemDescr.gun['turretYawLimits']
+        limits = self._itemDescr.gun.turretYawLimits
         if limits is not None:
             limits = map(lambda limit: abs(math.degrees(limit)), limits[:])
         return limits
 
     def __hasTurret(self):
         vDescr = self._itemDescr
-        return len(vDescr.hull['fakeTurrets']['lobby']) != len(vDescr.turrets)
+        return len(vDescr.hull.fakeTurrets['lobby']) != len(vDescr.turrets)
 
     def __getRealSpeedLimit(self):
         enginePower = self.__getEnginePhysics()['smplEnginePower']
@@ -562,28 +570,28 @@ class VehicleParams(_ParameterBase):
             wheelsCorrectionAngles = hullAimingParams['pitch']['wheelsCorrectionAngles']
             hullAimingPitchMin = wheelsCorrectionAngles['pitchMin']
             hullAimingPitchMax = wheelsCorrectionAngles['pitchMax']
-            if self._itemDescr.gun['staticPitch'] is not None:
+            if self._itemDescr.gun.staticPitch is not None:
                 return (hullAimingPitchMin, hullAimingPitchMax)
             else:
-                pitchLimits = self._itemDescr.gun['pitchLimits']
+                pitchLimits = self._itemDescr.gun.pitchLimits
                 minPitch = pitchLimits['minPitch']
                 maxPitch = pitchLimits['maxPitch']
                 hullAimingPitchMin = wheelsCorrectionAngles['pitchMin']
                 hullAimingPitchMax = wheelsCorrectionAngles['pitchMax']
                 return (min([ key for _, key in minPitch ]) + hullAimingPitchMin, max([ key for _, key in maxPitch ]) + hullAimingPitchMax)
         else:
-            return self._itemDescr.gun['pitchLimits']['absolute']
+            return self._itemDescr.gun.pitchLimits['absolute']
         return
 
     def __hasClipGun(self):
-        return self._itemDescr.gun['clip'][0] != 1
+        return self._itemDescr.gun.clip[0] != 1
 
     def __getChassisPhysics(self):
-        chassisName = self._itemDescr.chassis.get('name', '')
+        chassisName = self._itemDescr.chassis.name
         return self._itemDescr.type.xphysics['chassis'][chassisName]
 
     def __getEnginePhysics(self):
-        engineName = self._itemDescr.engine.get('name', '')
+        engineName = self._itemDescr.engine.name
         return self._itemDescr.type.xphysics['engines'][engineName]
 
     @staticmethod
@@ -591,7 +599,7 @@ class VehicleParams(_ParameterBase):
         return (itemsDict['firm'], itemsDict['medium'], itemsDict['soft'])
 
     def __currentShot(self):
-        return self._itemDescr.gun['shots'][self._itemDescr.activeGunShotIndex]
+        return self._itemDescr.gun.shots[self._itemDescr.activeGunShotIndex]
 
     def __getTerrainResistanceFactors(self):
         return map(operator.mul, self.__factors['chassis/terrainResistance'], self._itemDescr.physics['rollingFrictionFactors'])
@@ -601,7 +609,7 @@ class GunParams(WeightedParam):
 
     @property
     def caliber(self):
-        return self._itemDescr['shots'][0]['shell']['caliber']
+        return self._itemDescr.shots[0].shell.caliber
 
     @property
     def shellsCount(self):
@@ -640,7 +648,7 @@ class GunParams(WeightedParam):
 
     @property
     def compatibles(self):
-        allVehiclesNames = set(g_paramsCache.getComponentVehiclesNames(self._itemDescr['compactDescr']))
+        allVehiclesNames = set(g_paramsCache.getComponentVehiclesNames(self._itemDescr.compactDescr))
         clipVehiclesNames = set(self._getPrecachedInfo().clipVehiclesNames)
         return allVehiclesNames.difference(clipVehiclesNames)
 
@@ -654,11 +662,7 @@ class GunParams(WeightedParam):
 
     @property
     def maxShotDistance(self):
-        return self._itemDescr['shots'][0]['maxDistance']
-
-    @property
-    def turretsCompatibles(self):
-        return self._getPrecachedInfo().turrets
+        return self._itemDescr.shots[0].maxDistance
 
     @property
     def clipVehiclesCD(self):
@@ -694,7 +698,7 @@ class GunParams(WeightedParam):
 
     def getParamsDict(self):
         stunConditionParams = (STUN_DURATION_PROP_NAME, GUARANTEED_STUN_DURATION_PROP_NAME)
-        stunItem = self._itemDescr['shots'][0]['shell']
+        stunItem = self._itemDescr.shots[0].shell
         result = _ParamsDictProxy(self, conditions=((['maxShotDistance'], lambda v: v == _AUTOCANNON_SHOT_DISTANCE), (stunConditionParams, lambda s: _isStunParamVisible(stunItem))))
         return result
 
@@ -728,7 +732,7 @@ class ShellParams(CompatibleParams):
 
     @property
     def caliber(self):
-        return self._itemDescr['caliber']
+        return self._itemDescr.caliber
 
     @property
     def piercingPower(self):
@@ -740,7 +744,7 @@ class ShellParams(CompatibleParams):
 
     @property
     def avgDamage(self):
-        return self._itemDescr[DAMAGE_PROP_NAME][0]
+        return self._itemDescr.damage[0]
 
     @property
     def avgPiercingPower(self):
@@ -748,14 +752,14 @@ class ShellParams(CompatibleParams):
 
     @property
     def explosionRadius(self):
-        if self._itemDescr['kind'] == SHELL_TYPES.HIGH_EXPLOSIVE:
-            return self._itemDescr['explosionRadius']
+        if self._itemDescr.kind == SHELL_TYPES.HIGH_EXPLOSIVE:
+            return self._itemDescr.type.explosionRadius
         else:
             return 0
 
     @property
     def piercingPowerTable(self):
-        if self._itemDescr['kind'] in (SHELL_TYPES.ARMOR_PIERCING, SHELL_TYPES.ARMOR_PIERCING_CR):
+        if self._itemDescr.kind in (SHELL_TYPES.ARMOR_PIERCING, SHELL_TYPES.ARMOR_PIERCING_CR):
             if self._vehicleDescr is None:
                 return NO_DATA
             result = []
@@ -764,7 +768,7 @@ class ShellParams(CompatibleParams):
             for distance in PIERCING_DISTANCES:
                 if distance > maxDistance:
                     distance = int(maxDistance)
-                currPiercing = PIERCING_POWER.computePiercingPowerAtDist(shellDescriptor[PIERCING_POWER_PROP_NAME], distance, maxDistance)
+                currPiercing = PIERCING_POWER.computePiercingPowerAtDist(shellDescriptor.piercingPower, distance, maxDistance)
                 result.append((distance, currPiercing))
 
             return result
@@ -774,27 +778,32 @@ class ShellParams(CompatibleParams):
 
     @property
     def maxShotDistance(self):
-        if self._itemDescr['kind'] in _SHELL_KINDS:
+        if self._itemDescr.kind in _SHELL_KINDS:
             if self._vehicleDescr is not None:
-                return getShellDescriptors(self._itemDescr, self._vehicleDescr)[0]['maxDistance']
+                return getShellDescriptors(self._itemDescr, self._vehicleDescr)[0].maxDistance
         return
 
     @property
     def isBasic(self):
-        return self._vehicleDescr is not None and getBasicShell(self._vehicleDescr)['compactDescr'] == self._itemDescr['compactDescr']
+        return self._vehicleDescr is not None and getBasicShell(self._vehicleDescr).compactDescr == self._itemDescr.compactDescr
 
     @property
     def compatibles(self):
-        return self._getPrecachedInfo().guns
+        getter = vehicles.getItemByCompactDescr
+        return [ getter(gunCD).userString for gunCD in self._getPrecachedInfo().guns ]
 
     @property
     def stunMaxDuration(self):
-        return self._itemDescr.get('stunDuration', None)
+        if self._itemDescr.hasStun:
+            return self._itemDescr.stun.stunDuration
+        else:
+            return None
+            return None
 
     @property
     def stunMinDuration(self):
-        if 'guaranteedStunDuration' in self._itemDescr and 'stunDuration' in self._itemDescr:
-            return self._itemDescr['guaranteedStunDuration'] * self._itemDescr['stunDuration']
+        if self._itemDescr.hasStun:
+            return self._itemDescr.stun.guaranteedStunDuration * self._itemDescr.stun.stunDuration
         else:
             return None
             return None
@@ -837,7 +846,7 @@ class EquipmentParams(_ParameterBase):
 
     @property
     def equipmentType(self):
-        return self._itemDescr['equipmentType']
+        return self._itemDescr.equipmentType
 
     @property
     def nations(self):

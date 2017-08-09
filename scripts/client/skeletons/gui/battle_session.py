@@ -97,7 +97,7 @@ class IDynamicControllersLocator(object):
         raise NotImplementedError
 
     @property
-    def finishSound(self):
+    def battleField(self):
         raise NotImplementedError
 
 
@@ -167,6 +167,12 @@ class IClientArenaVisitor(object):
     def hasGasAttack(self):
         raise NotImplementedError
 
+    def hasHealthBar(self):
+        raise NotImplementedError
+
+    def hasPlayerGroups(self):
+        raise NotImplementedError
+
     def isSoloTeam(self, team):
         raise NotImplementedError
 
@@ -225,6 +231,9 @@ class IClientArenaVisitor(object):
         raise NotImplementedError
 
     def getArenaStatistics(self):
+        raise NotImplementedError
+
+    def hasArenaFogOfWarHiddenVehicles(self):
         raise NotImplementedError
 
 
@@ -563,6 +572,9 @@ class IBattleSessionProvider(object):
         raise NotImplementedError
 
     def invalidateVehicleState(self, state, value, vehicleID = 0):
+        raise NotImplementedError
+
+    def setVehicleHealth(self, isPlayerVehicle, id, newHealth, attackerID, attackReasonID):
         raise NotImplementedError
 
     def repairPointAction(self, repairPointIndex, action, nextActionTime):

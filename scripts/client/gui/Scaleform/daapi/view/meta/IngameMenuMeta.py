@@ -18,6 +18,9 @@ class IngameMenuMeta(AbstractWindowView):
     def onCounterNeedUpdate(self):
         self._printOverrideError('onCounterNeedUpdate')
 
+    def bootcampClick(self):
+        self._printOverrideError('bootcampClick')
+
     def as_setServerSettingS(self, serverName, tooltipFullData, serverState):
         if self._isDAAPIInited():
             return self.flashObject.as_setServerSetting(serverName, tooltipFullData, serverState)
@@ -26,14 +29,28 @@ class IngameMenuMeta(AbstractWindowView):
         if self._isDAAPIInited():
             return self.flashObject.as_setServerStats(stats, tooltipType)
 
-    def as_setSettingsBtnCounterS(self, value):
+    def as_setCounterS(self, counters):
+        """
+        :param counters: Represented by Vector.<CountersVo> (AS)
+        """
         if self._isDAAPIInited():
-            return self.flashObject.as_setSettingsBtnCounter(value)
+            return self.flashObject.as_setCounter(counters)
 
-    def as_removeSettingsBtnCounterS(self):
+    def as_removeCounterS(self, counters):
+        """
+        :param counters: Represented by Vector.<String> (AS)
+        """
         if self._isDAAPIInited():
-            return self.flashObject.as_removeSettingsBtnCounter()
+            return self.flashObject.as_removeCounter(counters)
 
-    def as_setMenuButtonsLabelsS(self, helpLabel, settingsLabel, cancelLabel, quitLabel):
+    def as_setMenuButtonsLabelsS(self, helpLabel, settingsLabel, cancelLabel, quitLabel, bootcampLabel, bootcampIcon):
         if self._isDAAPIInited():
-            return self.flashObject.as_setMenuButtonsLabels(helpLabel, settingsLabel, cancelLabel, quitLabel)
+            return self.flashObject.as_setMenuButtonsLabels(helpLabel, settingsLabel, cancelLabel, quitLabel, bootcampLabel, bootcampIcon)
+
+    def as_showQuitButtonS(self, value):
+        if self._isDAAPIInited():
+            return self.flashObject.as_showQuitButton(value)
+
+    def as_showBootcampButtonS(self, value):
+        if self._isDAAPIInited():
+            return self.flashObject.as_showBootcampButton(value)

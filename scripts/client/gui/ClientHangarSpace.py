@@ -295,7 +295,7 @@ class ClientHangarSpace():
             return
         else:
             self.__vAppearance.recreate(vDesc, vState, onVehicleLoadedCallback)
-            hitTester = vDesc.hull['hitTester']
+            hitTester = vDesc.hull.hitTester
             hitTester.loadBspModel()
             self.__boundingRadius = (hitTester.bbox[2] + 1) * _CFG['v_scale']
             hitTester.releaseBspModel()
@@ -520,6 +520,7 @@ class ClientHangarSpace():
         mat = Math.Matrix()
         mat.setTranslate(_CFG['cam_start_target_pos'])
         self.__cam.target = mat
+        self.__cam.wg_applyParams()
         BigWorld.camera(self.__cam)
 
     def __waitLoadingSpace(self):
@@ -673,7 +674,7 @@ class _VehicleAppearance(ComponentSystem):
         self.__vState = vState
         self.__resources = {}
         self.__vehicleStickers = None
-        camouflageResources = {'camouflageExclusionMask': vDesc.type.camouflageExclusionMask}
+        camouflageResources = {'camouflageExclusionMask': vDesc.type.camouflage.exclusionMask}
         customization = items.vehicles.g_cache.customization(vDesc.type.customizationNationID)
         if customization is not None and vDesc.camouflages is not None:
             activeCamo = g_tankActiveCamouflage['historical'].get(vDesc.type.compactDescr)
@@ -690,9 +691,14 @@ class _VehicleAppearance(ComponentSystem):
             self.__emblemsAlpha = _CFG['emblems_alpha_damaged']
             self.__isVehicleDestroyed = True
         resources = camouflageResources.values()
-        splineDesc = vDesc.chassis['splineDesc']
+        splineDesc = vDesc.chassis.splineDesc
         if splineDesc is not None:
-            resources.extend(splineDesc.values())
+            resources.append(splineDesc.segmentModelLeft)
+            resources.append(splineDesc.segmentModelRight)
+            resources.append(splineDesc.leftDesc)
+            resources.append(splineDesc.rightDesc)
+            resources.append(splineDesc.segment2ModelLeft)
+            resources.append(splineDesc.segment2ModelRight)
         resources.append(model_assembler.prepareCompoundAssembler(self.__vDesc, self.__vState, self.__spaceId))
         BigWorld.loadResourceListBG(tuple(resources), makeCallbackWeak(self.__onResourcesLoaded, self.__curBuildInd))
         return
@@ -746,8 +752,8 @@ class _VehicleAppearance(ComponentSystem):
             self.wheelsAnimator = None
             self.trackNodesAnimator = None
         self.updateCamouflage()
-        yaw = self.__vDesc.gun.get('staticTurretYaw', 0.0)
-        pitch = self.__vDesc.gun.get('staticPitch', 0.0)
+        yaw = self.__vDesc.gun.staticTurretYaw
+        pitch = self.__vDesc.gun.staticPitch
         if yaw is None:
             yaw = 0.0
         if pitch is None:
@@ -787,7 +793,7 @@ class _VehicleAppearance(ComponentSystem):
             if 'observer' in self.__vDesc.type.tags:
                 self.__removeHangarShadowMap()
                 return
-            shadowMapTexFileName = self.__vDesc.hull['hangarShadowTexture']
+            shadowMapTexFileName = self.__vDesc.hull.hangarShadowTexture
             if shadowMapTexFileName is None:
                 shadowMapTexFileName = _CFG['shadow_default_texture_name']
             self.__hangarSpace.modifyFakeShadowAsset(shadowMapTexFileName)
@@ -828,7 +834,9 @@ class _VehicleAppearance(ComponentSystem):
         self.__vDesc.playerInscriptions = initialInscriptions
 
     def __onClanDBIDRetrieved(self, _, clanID):
-        self.__vehicleStickers.setClanID(clanID)
+        if self.__vehicleStickers is not None:
+            self.__vehicleStickers.setClanID(clanID)
+        return
 
     def __setupModel(self, buildIdx):
         model = self.__assembleModel()
@@ -863,17 +871,17 @@ class _VehicleAppearance(ComponentSystem):
         hitTester = ModelHitTester()
         worldMat = None
         if onHull:
-            hitTester.bspModelName = self.__vDesc.hull['models']['undamaged']
-            emblemsDesc = self.__vDesc.hull['emblemSlots']
+            hitTester.bspModelName = self.__vDesc.hull.models.undamaged
+            emblemsDesc = self.__vDesc.hull.emblemSlots
             worldMat = Math.Matrix(self.__model.node(TankPartNames.HULL))
         else:
-            if self.__vDesc.turret['showEmblemsOnGun']:
+            if self.__vDesc.turret.showEmblemsOnGun:
                 node = self.__model.node(TankPartNames.GUN)
-                hitTester.bspModelName = self.__vDesc.gun['models']['undamaged']
+                hitTester.bspModelName = self.__vDesc.gun.models.undamaged
             else:
                 node = self.__model.node(TankPartNames.TURRET)
-                hitTester.bspModelName = self.__vDesc.turret['models']['undamaged']
-            emblemsDesc = self.__vDesc.turret['emblemSlots']
+                hitTester.bspModelName = self.__vDesc.turret.models.undamaged
+            emblemsDesc = self.__vDesc.turret.emblemSlots
             worldMat = Math.Matrix(node)
         desiredEmblems = [ emblem for emblem in emblemsDesc if emblem.type == emblemType ]
         if emblemIdx >= len(desiredEmblems):
@@ -916,7 +924,7 @@ class _VehicleAppearance(ComponentSystem):
         return [ m.applyPoint(vec) for vec in result ]
 
     def __correctEmblemLookAgainstGun(self, hitPos, dir, up, emblem):
-        hitTester = self.__vDesc.gun['hitTester']
+        hitTester = self.__vDesc.gun.hitTester
         hitTester.loadBspModel()
         toLocalGun = Math.Matrix(self.__model.node(TankPartNames.GUN))
         toLocalGun.invert()
@@ -991,7 +999,7 @@ class _ClientHangarSpacePathOverride():
         from gui.shared.utils.HangarSpace import g_hangarSpace
         g_hangarSpace.refreshSpace(isPremium, True)
 
-    def setPath(self, path, isPremium = None):
+    def setPath(self, path, isPremium = None, reload = True):
         if path is not None and not path.startswith('spaces/'):
             path = 'spaces/' + path
         from gui.shared.utils.HangarSpace import g_hangarSpace
@@ -1002,7 +1010,8 @@ class _ClientHangarSpacePathOverride():
         elif _EVENT_HANGAR_PATHS.has_key(isPremium):
             del _EVENT_HANGAR_PATHS[isPremium]
         readHangarSettings('igrPremHangarPath' + ('CN' if constants.IS_CHINA else ''))
-        g_hangarSpace.refreshSpace(g_hangarSpace.isPremium, True)
+        if reload:
+            g_hangarSpace.refreshSpace(g_hangarSpace.isPremium, True)
         return
 
     def __onDisconnected(self):

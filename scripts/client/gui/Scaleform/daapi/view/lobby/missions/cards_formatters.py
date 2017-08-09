@@ -47,7 +47,7 @@ def _packNoGuiCondition(event):
 
 
 def _packPlayBattleCondition():
-    titleArgs = (i18n.makeString(QUESTS.DETAILS_CONDITIONS_TARGET_TITLE),)
+    titleArgs = (i18n.makeString(QUESTS.DETAILS_CONDITIONS_PLAYBATTLE_TITLE),)
     descrArgs = (i18n.makeString(QUESTS.MISSIONDETAILS_CONDITIONS_PLAYBATTLE),)
     return formatters.packMissionIconCondition(FormattableField(FORMATTER_IDS.SIMPLE_TITLE, titleArgs), MISSIONS_ALIASES.NONE, FormattableField(FORMATTER_IDS.DESCRIPTION, descrArgs), CONDITION_ICON.BATTLES)
 

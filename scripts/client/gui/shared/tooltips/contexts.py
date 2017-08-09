@@ -15,7 +15,6 @@ from gui.shared.gui_items.Tankman import TankmanSkill
 from gui.shared.gui_items.dossier import factories, loadDossier
 from gui.shared.tooltips import TOOLTIP_COMPONENT
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
-from gui.shared.fortifications.FortOrder import FortOrder
 from gui.shared.formatters import text_styles
 from helpers.i18n import makeString
 from items import vehicles
@@ -34,7 +33,7 @@ def _getCmpInitialVehicle():
 
 
 class StatsConfiguration(object):
-    __slots__ = ('vehicle', 'sellPrice', 'buyPrice', 'unlockPrice', 'inventoryCount', 'vehiclesCount', 'node', 'xp', 'dailyXP', 'minRentPrice', 'restorePrice', 'rentals', 'slotIdx', 'futureRentals')
+    __slots__ = ('vehicle', 'sellPrice', 'buyPrice', 'unlockPrice', 'inventoryCount', 'vehiclesCount', 'node', 'xp', 'dailyXP', 'minRentPrice', 'restorePrice', 'rentals', 'slotIdx', 'futureRentals', 'isAwardWindow')
 
     def __init__(self):
         self.vehicle = None
@@ -51,6 +50,7 @@ class StatsConfiguration(object):
         self.xp = True
         self.dailyXP = True
         self.slotIdx = 0
+        self.isAwardWindow = False
         return
 
 
@@ -160,11 +160,15 @@ class AwardContext(ShopContext):
         super(AwardContext, self).__init__(fieldsToExclude)
         self._tmanRoleLevel = None
         self._rentExpiryTime = None
+        self._rentBattlesLeft = None
+        self._rentWinsLeft = None
         return
 
-    def buildItem(self, intCD, tmanCrewLevel = None, rentExpiryTime = None):
+    def buildItem(self, intCD, tmanCrewLevel = None, rentExpiryTime = None, rentBattles = None, rentWins = None):
         self._tmanRoleLevel = tmanCrewLevel
         self._rentExpiryTime = rentExpiryTime
+        self._rentBattlesLeft = rentBattles
+        self._rentWinsLeft = rentWins
         return self.itemsCache.items.getItemByCD(int(intCD))
 
     def getStatsConfiguration(self, item):
@@ -175,6 +179,7 @@ class AwardContext(ShopContext):
         value.inventoryCount = False
         value.vehiclesCount = False
         value.futureRentals = True
+        value.isAwardWindow = True
         return value
 
     def getStatusConfiguration(self, item):
@@ -190,7 +195,9 @@ class AwardContext(ShopContext):
 
     def getParams(self):
         return {'tmanRoleLevel': self._tmanRoleLevel,
-         'rentExpiryTime': self._rentExpiryTime}
+         'rentExpiryTime': self._rentExpiryTime,
+         'rentBattlesLeft': self._rentBattlesLeft,
+         'rentWinsLeft': self._rentWinsLeft}
 
 
 class RankedRankContext(ToolTipContext):
@@ -653,14 +660,6 @@ class ContactContext(ToolTipContext):
         super(ContactContext, self).__init__(TOOLTIP_COMPONENT.CONTACT, fieldsToExclude)
 
 
-class FortOrderContext(FortificationContext):
-    """ Fortification class for tool tip context
-    """
-
-    def buildItem(self, fortOrderTypeID, level):
-        return FortOrder(int(fortOrderTypeID), level=int(level))
-
-
 class BattleConsumableContext(FortificationContext):
     """ Context for all battle consumables.
     """
@@ -676,12 +675,6 @@ class HangarTutorialContext(ToolTipContext):
 
     def __init__(self, fieldsToExclude = None):
         super(HangarTutorialContext, self).__init__(TOOLTIP_COMPONENT.HANGAR_TUTORIAL, fieldsToExclude)
-
-
-class FortSortieLimitContext(FortificationContext):
-    """ Fortifications sorties limit class for tool tip context
-    """
-    pass
 
 
 class FortPopoverDefResProgressContext(FortificationContext):
@@ -750,3 +743,36 @@ class HangarServerStatusContext(ToolTipContext):
 
     def __init__(self, fieldsToExclude = None):
         super(HangarServerStatusContext, self).__init__(TOOLTIP_COMPONENT.HANGAR, fieldsToExclude)
+
+
+class ShopBattleBoosterContext(HangarContext):
+    """
+    Override HangarContext and always return None vehicle to not show special hints for battle boosters.
+    """
+
+    def getStatsConfiguration(self, item):
+        value = super(HangarContext, self).getStatsConfiguration(item)
+        value.vehicle = None
+        return value
+
+    def getStatusConfiguration(self, item):
+        value = super(HangarContext, self).getStatusConfiguration(item)
+        value.vehicle = None
+        return value
+
+
+class InventoryBattleBoosterContext(ShopBattleBoosterContext):
+    """
+    Override ShopBattleBoosterContext and always return False for everything related to buying.
+    Selling is not available for BattleBooster.
+    """
+
+    def getStatsConfiguration(self, item):
+        value = super(InventoryBattleBoosterContext, self).getStatsConfiguration(item)
+        value.buyPrice = False
+        return value
+
+    def getStatusConfiguration(self, item):
+        value = super(InventoryBattleBoosterContext, self).getStatusConfiguration(item)
+        value.checkBuying = False
+        return value

@@ -1,4 +1,5 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/PersonalCase.py
+import operator
 import constants
 from CurrentVehicle import g_currentVehicle
 from account_helpers.settings_core.settings_constants import TUTORIAL
@@ -23,7 +24,7 @@ from gui.shared.gui_items.serializers import packTankman, packVehicle
 from gui.shared.money import Money
 from gui.shared.tooltips import ACTION_TOOLTIPS_TYPE
 from gui.shared.tooltips.formatters import packActionTooltipData
-from gui.shared.utils import decorators, isVehicleObserver, roundByModulo
+from gui.shared.utils import decorators, roundByModulo
 from gui.shared.utils.functions import getViewName
 from gui.shared.utils.requesters import REQ_CRITERIA
 from helpers import dependency
@@ -65,7 +66,7 @@ class PersonalCase(PersonalCaseMeta, IGlobalListener):
                 if vehicle.isLocked:
                     return self.destroy()
                 vehsDiff = inventory.get(GUI_ITEM_TYPE.VEHICLE, {})
-                isTankmanVehicleChanged = len(filter(lambda hive: vehicle.inventoryID in hive or (vehicle.inventoryID, '_r') in hive, vehsDiff.itervalues())) > 0
+                isTankmanVehicleChanged = len(filter(lambda hive: vehicle.invID in hive or (vehicle.invID, '_r') in hive, vehsDiff.itervalues())) > 0
         if isTankmanChanged or isTankmanVehicleChanged or isFreeXpChanged:
             self.__setCommonData()
         if isTankmanChanged or isTankmanVehicleChanged:
@@ -328,7 +329,7 @@ class PersonalCaseDataProvider(object):
                     break
 
         shopPrices, action = items.shop.getTankmanCostWithDefaults()
-        callback({'money': items.stats.money,
+        callback({'money': items.stats.money.toMoneyTuple(),
          'tankmanCost': shopPrices,
          'action': action,
          'vehicles': result})
@@ -352,25 +353,24 @@ class PersonalCaseDataProvider(object):
         action = None
         if shopPrice != defaultPrice:
             action = packActionTooltipData(ACTION_TOOLTIPS_TYPE.ECONOMICS, 'passportChangeCost', True, Money(gold=shopPrice), Money(gold=defaultPrice))
-        callback({'money': items.stats.money,
+        callback({'money': items.stats.money.toMoneyTuple(),
          'passportChangeCost': shopPrice,
          'action': action,
-         'firstnames': self.__getDocGroupValues(tankman, config, 'firstNames'),
-         'lastnames': self.__getDocGroupValues(tankman, config, 'lastNames'),
-         'icons': self.__getDocGroupValues(tankman, config, 'icons', sortNeeded=False)})
+         'firstnames': self.__getDocGroupValues(tankman, config, operator.attrgetter('firstNamesList'), config.getFirstName),
+         'lastnames': self.__getDocGroupValues(tankman, config, operator.attrgetter('lastNamesList'), config.getLastName),
+         'icons': self.__getDocGroupValues(tankman, config, operator.attrgetter('iconsList'), config.getIcon, sortNeeded=False)})
         return
 
     @staticmethod
-    def __getDocGroupValues(tankman, config, subGroupName, sortNeeded = True):
+    def __getDocGroupValues(tankman, config, listGetter, valueGetter, sortNeeded = True):
         result = []
         isPremium, isFemale = tankman.descriptor.isPremium, tankman.descriptor.isFemale
-        groupName = 'premiumGroups' if isPremium else 'normalGroups'
-        for gIdx, group in enumerate(config[groupName]):
-            if not group['notInShop'] and group['isFemales'] == isFemale:
-                for idx in group['%sList' % subGroupName]:
+        for gIdx, group in enumerate(config.getGroups(isPremium)):
+            if not group.notInShop and group.isFemales == isFemale:
+                for idx in listGetter(group):
                     result.append({'id': idx,
                      'group': gIdx,
-                     'value': config[subGroupName][idx]})
+                     'value': valueGetter(idx)})
 
         if sortNeeded:
             result = sorted(result, key=lambda sortField: sortField['value'], cmp=lambda a, b: strcmp(unicode(a), unicode(b)))

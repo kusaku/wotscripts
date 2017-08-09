@@ -1,5 +1,4 @@
 # Embedded file name: scripts/client/vehicle_systems/tankStructure.py
-import BigWorld
 from collections import namedtuple
 
 class ModelStates:
@@ -25,6 +24,28 @@ class TankPartNames:
                 return idx
 
         raise Exception('Invalid part name!')
+
+
+class DetachedTurretPartNames:
+    ALL = (TankPartNames.TURRET, TankPartNames.GUN)
+
+    @staticmethod
+    def getIdx(name):
+        for idx, n in enumerate(DetachedTurretPartNames.ALL):
+            if n == name:
+                return idx
+
+        return None
+
+
+class DetachedTurretPartIndexes:
+    TURRET = 0
+    GUN = 1
+    ALL = (TURRET, GUN)
+
+    @staticmethod
+    def getName(idx):
+        return DetachedTurretPartNames.ALL[idx]
 
 
 VehiclePartsTuple = namedtuple('VehiclePartsTuple', TankPartNames.ALL)
@@ -87,10 +108,10 @@ UNDAMAGED_SKELETON = VehiclePartsTuple(chassis=[('Tank', ''),
 CRASHED_SKELETON = VehiclePartsTuple(chassis=[('Tank', ''), ('V', 'Tank'), ('HP_gui', '')], hull=[('HP_Fire_1', '')], turret=[('HP_gunJoint', '')], gun=[])
 
 def getCrashedSkeleton(vehicleDesc):
-    turretJointNode = (vehicleDesc.hull['turretHardPoints'][0], '')
+    turretJointNode = (vehicleDesc.hull.turretHardPoints[0], '')
     result = VehiclePartsTuple(chassis=CRASHED_SKELETON.chassis, hull=CRASHED_SKELETON.hull + [turretJointNode], turret=CRASHED_SKELETON.turret, gun=CRASHED_SKELETON.gun)
     return result
 
 
 def getPartModelsFromDesc(vehicleDesc, modelStateName):
-    return VehiclePartsTuple(vehicleDesc.chassis['models'][modelStateName], vehicleDesc.hull['models'][modelStateName], vehicleDesc.turret['models'][modelStateName], vehicleDesc.gun['models'][modelStateName])
+    return VehiclePartsTuple(chassis=vehicleDesc.chassis.models.getPathByStateName(modelStateName), hull=vehicleDesc.hull.models.getPathByStateName(modelStateName), turret=vehicleDesc.turret.models.getPathByStateName(modelStateName), gun=vehicleDesc.gun.models.getPathByStateName(modelStateName))

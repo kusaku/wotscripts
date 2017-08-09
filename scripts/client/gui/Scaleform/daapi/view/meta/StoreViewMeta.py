@@ -33,7 +33,7 @@ class StoreViewMeta(View):
 
     def as_setBtnTabCountersS(self, counters):
         """
-        :param counters: Represented by Vector.<StoreTabCountersVo> (AS)
+        :param counters: Represented by Vector.<CountersVo> (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_setBtnTabCounters(counters)

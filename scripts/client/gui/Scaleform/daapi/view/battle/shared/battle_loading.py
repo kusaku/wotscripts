@@ -58,7 +58,6 @@ class BattleLoading(BaseBattleLoadingMeta, IArenaVehiclesController):
     def invalidateArenaInfo(self):
         arenaDP = self._battleCtx.getArenaDP()
         self._setTipsInfo()
-        self.__addPlayerData(arenaDP)
 
     def arenaLoadCompleted(self):
         if not BattleReplay.isPlaying():
@@ -109,12 +108,9 @@ class BattleLoading(BaseBattleLoadingMeta, IArenaVehiclesController):
         self.as_setMapIconS(SMALL_MAP_IMAGE_SF_PATH % self._arenaVisitor.type.getGeometryName())
         BigWorld.wg_setGUIBackground(self._battleCtx.getArenaScreenIcon())
 
-    def __addPlayerData(self, arenaDP):
-        vInfoVO = arenaDP.getVehicleInfo()
-        self.as_setPlayerDataS(vInfoVO.vehicleID, vInfoVO.getSquadID())
-
     def __makeVisualTipVO(self, arenaDP, tip = None):
-        setting = self.settingsCore.options.getSetting(settings_constants.GAME.BATTLE_LOADING_INFO)
+        loadingInfo = settings_constants.GAME.BATTLE_LOADING_RANKED_INFO if self._arenaVisitor.gui.isRankedBattle() else settings_constants.GAME.BATTLE_LOADING_INFO
+        setting = self.settingsCore.options.getSetting(loadingInfo)
         settingID = setting.getSettingID(isVisualOnly=self._arenaVisitor.gui.isSandboxBattle() or self._arenaVisitor.gui.isEventBattle(), isFallout=self.isFalloutMode())
         vo = {'settingID': settingID,
          'tipIcon': tip.icon if settingID == BattleLoadingTipSetting.OPTIONS.VISUAL else None,
@@ -122,11 +118,11 @@ class BattleLoading(BaseBattleLoadingMeta, IArenaVehiclesController):
          'minimapTeam': arenaDP.getNumberOfTeam(),
          'showMinimap': settingID == BattleLoadingTipSetting.OPTIONS.MINIMAP,
          'showTipsBackground': settingID == BattleLoadingTipSetting.OPTIONS.MINIMAP}
-        viewSettings = self.__getViewSettingByID(settingID)
+        viewSettings = self._getViewSettingByID(settingID)
         vo.update(viewSettings)
         return vo
 
-    def __getViewSettingByID(self, settingID):
+    def _getViewSettingByID(self, settingID):
         """ Get settings for view by type
         :return:
         """

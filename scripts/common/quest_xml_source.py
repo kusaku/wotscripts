@@ -10,7 +10,7 @@ from debug_utils import LOG_DEBUG, LOG_WARNING
 from dossiers2.custom.layouts import accountDossierLayout, vehicleDossierLayout, StaticSizeBlockBuilder, BinarySetDossierBlockBuilder
 from dossiers2.custom.records import RECORD_DB_IDS
 from items import vehicles, tankmen
-from constants import VEHICLE_CLASS_INDICES, ARENA_BONUS_TYPE, EVENT_TYPE, IGR_TYPE, ATTACK_REASONS, FORT_QUEST_SUFFIX, QUEST_RUN_FLAGS, DEFAULT_QUEST_START_TIME, DEFAULT_QUEST_FINISH_TIME
+from constants import VEHICLE_CLASS_INDICES, ARENA_BONUS_TYPE, EVENT_TYPE, IGR_TYPE, ATTACK_REASONS, QUEST_RUN_FLAGS, DEFAULT_QUEST_START_TIME, DEFAULT_QUEST_FINISH_TIME
 from bonus_readers import readBonusSection, readUTC
 from optional_bonuses import walkBonuses, FilterVisitor, StripVisitor
 _WEEKDAYS = {'Mon': 1,
@@ -232,11 +232,6 @@ class Source(object):
         if eventType == EVENT_TYPE.PERSONAL_QUEST:
             if not requiredToken:
                 raise Exception('Personal quest must contain tag <requiredToken> with not empty token')
-        if eventType == EVENT_TYPE.FORT_QUEST:
-            if FORT_QUEST_SUFFIX not in id:
-                raise Exception('Fort quest must contain "stronghold" in its id.')
-        elif FORT_QUEST_SUFFIX in id:
-            raise Exception('Quest must not contain "stronghold" in its id.')
         runFlags = []
         if questSection.has_key('run'):
             for flagName, flagValue in questSection['run'].items():
@@ -341,6 +336,7 @@ class Source(object):
              'unitVehicleKills': self.__readBattleResultsConditionList,
              'unitVehicleDescr': self.__readBattleResultsConditionList,
              'vehicleDamage': self.__readBattleResultsConditionList,
+             'vehicleStun': self.__readBattleResultsConditionList,
              'vehicleKills': self.__readBattleResultsConditionList,
              'vehicleDescr': self.__readBattleResultsConditionList,
              'clanKills': self.__readBattleResultsConditionList,
@@ -364,8 +360,6 @@ class Source(object):
              'allInSpecifiedClasses': self.__readCondition_true,
              'enemyIsNotSpotted': self.__readCondition_true,
              'whileEnemyWithFlag': self.__readCondition_true,
-             'whenStunCaused': self.__readCondition_true,
-             'stunDuration': self.__readCondition_true,
              'installedModules': self.__readBattleResultsConditionList,
              'guns': self.__readCondition_installedModules,
              'engines': self.__readCondition_installedModules,
@@ -398,8 +392,7 @@ class Source(object):
              'tankman': self.__readBattleResultsConditionList,
              'critical': self.__readBattleResultsConditionList,
              'crit': self.__readBattleResultsConditionList,
-             'critName': self.__readCritName,
-             'clubs': self.__readClubsSection})
+             'critName': self.__readCritName})
         if eventType in (EVENT_TYPE.BATTLE_QUEST,):
             condition_readers.update({'red': self.__readClanIds,
              'silver': self.__readClanIds,
@@ -410,7 +403,8 @@ class Source(object):
              'cycle': self.__readCondition_int,
              'rank': self.__readCondition_int,
              'step': self.__readCondition_int,
-             'maxRank': self.__readBattleResultsConditionList})
+             'maxRank': self.__readBattleResultsConditionList,
+             'ladderPts': self.__readBattleResultsConditionList})
         return condition_readers
 
     def __getAvailableBonuses(self, eventType):
@@ -429,7 +423,7 @@ class Source(object):
          'dossier',
          'tankmen',
          'customizations'}
-        if eventType in (EVENT_TYPE.BATTLE_QUEST, EVENT_TYPE.FORT_QUEST, EVENT_TYPE.PERSONAL_QUEST):
+        if eventType in (EVENT_TYPE.BATTLE_QUEST, EVENT_TYPE.PERSONAL_QUEST):
             bonusTypes.update(('xp', 'tankmenXP', 'xpFactor', 'creditsFactor', 'freeXPFactor', 'tankmenXPFactor'))
         return bonusTypes
 
@@ -461,13 +455,13 @@ class Source(object):
                 nationModules = vehicles.g_cache.radios(nationID)
             elif node.name == 'optionalDevice':
                 idx = vehicles.g_cache.optionalDeviceIDs()[name]
-                modules.add(vehicles.g_cache.optionalDevices()[idx]['compactDescr'])
+                modules.add(vehicles.g_cache.optionalDevices()[idx].compactDescr)
                 break
             else:
                 raise Exception('Unknown tag %s' % node.name)
             for descr in nationModules.itervalues():
-                if descr['name'] == name:
-                    modules.add(descr['compactDescr'])
+                if descr.name == name:
+                    modules.add(descr.compactDescr)
                     break
             else:
                 raise Exception('Unknown module(%s) %s' % (node.name, module))
@@ -637,16 +631,3 @@ class Source(object):
                 meta[local.strip()] = sub.readString('', '').strip()
 
             return meta
-
-    def __readClubsSection(self, readersMapping, section, node):
-        for name, sub in section.items():
-            subNode = XMLNode(name)
-            if name == 'seasonID':
-                self.__readCondition_int(readersMapping, sub, subNode)
-            elif name == 'division':
-                self.__readCondition_int(readersMapping, sub, subNode)
-            elif name == 'minBattles':
-                self.__readCondition_int(readersMapping, sub, subNode)
-            elif name == 'fromLowerDivision':
-                self.__readCondition_true(readersMapping, sub, subNode)
-            node.addChild(subNode)

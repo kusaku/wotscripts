@@ -26,10 +26,6 @@ def _getEfficiency(dividend, delimiter):
     return float(dividend) / delimiter
 
 
-def _getTextLevel(level):
-    return int2roman(max(level, 1))
-
-
 _defDateTime = datetime.fromtimestamp(0)
 
 def formatField(getter, dummy = None, formatter = None):
@@ -656,7 +652,7 @@ class StrongholdStatisticsData(_StrongholdStatisticsData, FieldsCheckerMixin):
     def getFortBattlesIn28Days(self):
         return self.fort_battles_in_28_days
 
-    @simpleFormatter(_getTextLevel)
+    @simpleFormatter(int2roman)
     def getStrongholdLevel(self):
         return self.stronghold_level
 
@@ -1475,3 +1471,17 @@ class ClanFavouriteAttrs(_ClanFavouriteAttrs, FieldsCheckerMixin):
     @fmtUnavailableValue(fields=('favorite_primetime',))
     def getFavoritePrimetime(self):
         return self.favorite_primetime
+
+
+_HofAttrs = namedtuple('_HofAttrs', ['status', 'errors'])
+_HofAttrs.__new__.__defaults__ = (None, {})
+
+class HofAttrs(_HofAttrs, FieldsCheckerMixin):
+
+    @fmtUnavailableValue(fields=('status',))
+    def getStatus(self):
+        return self.status
+
+    @fmtUnavailableValue(fields=('errors',))
+    def getErrors(self):
+        return self.errors.keys()

@@ -1,11 +1,12 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/store/tabs/shop.py
 import BigWorld
-from gui.Scaleform.daapi.view.lobby.store.tabs import StoreItemsTab, StoreModuleTab, StoreVehicleTab, StoreShellTab, StoreArtefactTab, StoreOptionalDeviceTab, StoreEquipmentTab
+from gui.Scaleform.daapi.view.lobby.store.tabs import StoreItemsTab, StoreModuleTab, StoreVehicleTab, StoreShellTab, StoreArtefactTab, StoreOptionalDeviceTab, StoreEquipmentTab, StoreBattleBoosterTab
 from gui.Scaleform.genConsts.STORE_CONSTANTS import STORE_CONSTANTS
 from gui.Scaleform.locale.MENU import MENU
 from gui.shared.formatters import moneyWithIcon
 from gui.shared.gui_items import GUI_ITEM_TYPE
 from gui.shared.gui_items.Vehicle import Vehicle
+from gui.shared.gui_items.gui_item_economics import ItemPrices, ItemPrice
 from gui.shared.money import Currency
 from gui.shared.tooltips.formatters import getActionPriceData
 from gui.shared.utils.requesters import REQ_CRITERIA
@@ -15,15 +16,17 @@ from skeletons.gui.game_control import ITradeInController
 class ShopItemsTab(StoreItemsTab):
     tradeIn = dependency.descriptor(ITradeInController)
 
-    def _getItemPrice(self, item):
-        return item.altPrice or item.buyPrice
-
-    def _getItemDefaultPrice(self, item):
-        return item.defaultAltPrice or item.defaultPrice
+    def _getItemPrices(self, item):
+        """
+        Return buyPrices (original and alt prices)
+        :param item: FittingItem instance
+        :return: ItemPrices
+        """
+        return item.buyPrices
 
     def _getItemActionData(self, item):
         actionData = None
-        if item.actionPrc != 0:
+        if self._isItemOnDiscount(item):
             actionData = getActionPriceData(item)
         return actionData
 
@@ -58,7 +61,7 @@ class ShopItemsTab(StoreItemsTab):
             return REQ_CRITERIA.EMPTY
 
     def _isItemOnDiscount(self, item):
-        return item.actionPrc != 0
+        return item.buyPrices.itemPrice.isActionPrice()
 
     def _getComparator(self):
         """
@@ -67,10 +70,10 @@ class ShopItemsTab(StoreItemsTab):
         if self._actionsSelected:
 
             def comparator(a, b):
-                creditsActionPrcA, goldActionPrcA = self._getActionAllPercents(a)
-                creditsActionPrcB, goldActionPrcB = self._getActionAllPercents(b)
-                maxPrcA = max(creditsActionPrcA, goldActionPrcA)
-                maxPrcB = max(creditsActionPrcB, goldActionPrcB)
+                actionPrcsA = self._getActionAllPercents(a)
+                actionPrcsB = self._getActionAllPercents(b)
+                maxPrcA = max(actionPrcsA)
+                maxPrcB = max(actionPrcsB)
                 return maxPrcB - maxPrcA
 
             return comparator
@@ -109,10 +112,10 @@ class ShopVehicleTab(ShopItemsTab, StoreVehicleTab):
     def getFilterInitData(cls):
         return (STORE_CONSTANTS.SHOP_VEHICLES_FILTERS_VO_CLASS, True)
 
-    def _getItemPrice(self, item):
+    def _getItemPrices(self, item):
         if item.isRestorePossible():
-            return item.restorePrice
-        return super(ShopVehicleTab, self)._getItemPrice(item)
+            return ItemPrices(ItemPrice(item.restorePrice, item.restorePrice))
+        return super(ShopVehicleTab, self)._getItemPrices(item)
 
     def _isPurchaseEnabled(self, item, money):
         money = self.tradeIn.addTradeInPriceIfNeeded(item, money)
@@ -162,6 +165,11 @@ class ShopVehicleTab(ShopItemsTab, StoreVehicleTab):
         else:
             return REQ_CRITERIA.EMPTY
 
+    def _isItemOnDiscount(self, item):
+        if item.isRestorePossible():
+            return False
+        return super(ShopVehicleTab, self)._isItemOnDiscount(item)
+
 
 class ShopRestoreVehicleTab(ShopVehicleTab):
 
@@ -169,8 +177,8 @@ class ShopRestoreVehicleTab(ShopVehicleTab):
     def getFilterInitData(cls):
         return (STORE_CONSTANTS.SHOP_VEHICLES_FILTERS_VO_CLASS, False)
 
-    def _getItemPrice(self, item):
-        return item.restorePrice
+    def _getItemPrices(self, item):
+        return ItemPrices(ItemPrice(item.restorePrice, item.restorePrice))
 
     def _getRequestCriteria(self, invVehicles):
         requestCriteria = REQ_CRITERIA.VEHICLE.IS_RESTORE_POSSIBLE
@@ -253,4 +261,8 @@ class ShopOptionalDeviceTab(ShopArtefactTab, StoreOptionalDeviceTab):
 
 
 class ShopEquipmentTab(ShopArtefactTab, StoreEquipmentTab):
+    pass
+
+
+class ShopBattleBoosterTab(StoreBattleBoosterTab, ShopArtefactTab):
     pass

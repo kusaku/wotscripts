@@ -1,4 +1,5 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/vehicle_compare/cmp_top_modules.py
+import operator
 from gui.shared.gui_items import GUI_ITEM_TYPE
 from gui.shared.items_parameters import params
 from gui.shared.utils.requesters import REQ_CRITERIA
@@ -71,10 +72,11 @@ class _BaseModuleComparator(object):
 
     def _getValuableParam(self, paramName, excludes = None):
         res = []
+        getter = operator.attrgetter(paramName)
         for intCD, module in self._items.items():
             if excludes and module in excludes:
                 continue
-            maxLoad = module.descriptor[paramName]
+            maxLoad = getter(module.descriptor)
             res.append((maxLoad, module))
 
         if len(res) == 0:

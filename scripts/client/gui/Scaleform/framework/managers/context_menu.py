@@ -80,6 +80,9 @@ class ContextMenuManager(ContextMenuManagerMeta):
         return
 
     def _sendOptionsToFlash(self, options):
+        from bootcamp.Bootcamp import g_bootcamp
+        if g_bootcamp.isRunning():
+            g_bootcamp.disableContextMenuItems(options)
         self.as_setOptionsS({'options': options})
 
     def _onOptionsChanged(self, options):
@@ -151,4 +154,7 @@ class AbstractContextMenuHandler(object):
         pass
 
     def _clearFlashValues(self):
+        pass
+
+    def getCMInfo(self):
         pass

@@ -7,6 +7,7 @@ from async import async, await
 from debug_utils import LOG_DEBUG
 from gui.ClientUpdateManager import g_clientUpdateManager
 from gui.Scaleform.daapi import LobbySubView
+from gui.Scaleform.daapi.settings import BUTTON_LINKAGES
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui.Scaleform.daapi.view.lobby.missions import group_packers
 from gui.Scaleform.daapi.view.lobby.missions.missions_helper import HIDE_DONE, HIDE_UNAVAILABLE
@@ -177,7 +178,7 @@ class MissionsPage(LobbySubView, MissionsPageMeta):
           'linkage': QUESTS_ALIASES.CURRENT_VEHICLE_MISSIONS_VIEW_LINKAGE}]
         advisableQuests = self.eventsCache.getAdvisableQuests()
         for idx, alias in enumerate((QUESTS_ALIASES.MISSIONS_MARATHONS_VIEW_PY_ALIAS, QUESTS_ALIASES.MISSIONS_CATEGORIES_VIEW_PY_ALIAS)):
-            if self.__currentTabAlias == alias:
+            if self.__currentTabAlias == alias and self.currentTab is not None:
                 newEvents = settings.getNewCommonEvents(self.currentTab.getSuitableEvents())
             else:
                 events = self.__builders[alias].getBlocksAdvisableEvents(advisableQuests)
@@ -185,6 +186,7 @@ class MissionsPage(LobbySubView, MissionsPageMeta):
             data[idx].update(value=len(newEvents))
 
         self.as_setTabsCounterDataS(data)
+        return
 
     def __filterApplied(self):
         for attr in self.__filterData:
@@ -242,6 +244,7 @@ class MissionView(MissionsViewBaseMeta):
         if self.__filterData != filterData:
             self.__filterData = filterData
             self._filterMissions()
+        self._onDataChangedNotify()
 
     def dummyClicked(self, eventType):
         filterData = {'hideDone': False,
@@ -289,20 +292,24 @@ class MissionView(MissionsViewBaseMeta):
         self.__filteredQuestsCount = filteredQuestsCount
         self._questsDP.buildList(result)
         if not self.__totalQuestsCount:
-            self.as_showDummyS({'iconSource': RES_ICONS.MAPS_ICONS_LIBRARY_ALERTBIGICON,
-             'htmlText': text_styles.main(_ms(QUESTS.MISSIONS_NOTASKS_DUMMY_TEXT)),
-             'alignCenter': False,
-             'btnVisible': False,
-             'btnLabel': '',
-             'btnTooltip': '',
-             'btnEvent': ''})
+            self.as_showDummyS(self._getDummy())
         else:
             self.as_hideDummyS()
-        self.__onDataChangedNotify()
 
     @staticmethod
     def _getBackground():
         return ''
+
+    @staticmethod
+    def _getDummy():
+        return {'iconSource': RES_ICONS.MAPS_ICONS_LIBRARY_ALERTBIGICON,
+         'htmlText': text_styles.main(_ms(QUESTS.MISSIONS_NOTASKS_DUMMY_TEXT)),
+         'alignCenter': False,
+         'btnVisible': False,
+         'btnLabel': '',
+         'btnTooltip': '',
+         'btnEvent': '',
+         'btnLinkage': BUTTON_LINKAGES.BUTTON_BLACK}
 
     @async
     def __onEventsUptate(self, *args):
@@ -320,6 +327,7 @@ class MissionView(MissionsViewBaseMeta):
         self.__viewQuests = self.eventsCache.getActiveQuests(self._getViewQuestFilter())
         self._builder.invalidateBlocks()
         self._filterMissions()
+        self._onDataChangedNotify()
         settings.updateCommonEventsSettings(self.__viewQuests)
 
     def __filter(self, event):
@@ -330,7 +338,7 @@ class MissionView(MissionsViewBaseMeta):
         else:
             return True
 
-    def __onDataChangedNotify(self):
+    def _onDataChangedNotify(self):
         """
         Fire event on next frame to prevent freezes
         """

@@ -31,6 +31,12 @@ def _removeSkillModifier(vehicle, skillName):
     return vehicle
 
 
+def _removeBattleBoosterModifier(vehicle, boosterName):
+    if vehicle.equipment.battleBoosterConsumables[0] is not None:
+        vehicle.equipment.battleBoosterConsumables[0] = None
+    return vehicle
+
+
 def _removeOptionalDeviceModifier(vehicle, optDevName):
     """
     remove selected optional device from vehicle copy
@@ -47,9 +53,9 @@ def _removeEquipmentModifier(vehicle, eqName):
     """
     remove selected equipment device from vehicle copy
     """
-    for slotIdx, equipment in enumerate(vehicle.eqs):
+    for slotIdx, equipment in enumerate(vehicle.equipment.regularConsumables):
         if equipment and equipment.name == eqName:
-            vehicle.eqs[slotIdx] = None
+            vehicle.equipment.regularConsumables[slotIdx] = None
 
     return vehicle
 
@@ -57,7 +63,8 @@ def _removeEquipmentModifier(vehicle, eqName):
 _VEHICLE_MODIFIERS = {'skill': _removeSkillModifier,
  'extra': _removeCamouflageModifier,
  'equipment': _removeEquipmentModifier,
- 'optionalDevice': _removeOptionalDeviceModifier}
+ 'optionalDevice': _removeOptionalDeviceModifier,
+ 'battleBooster': _removeBattleBoosterModifier}
 
 class _BonusSorter(object):
 

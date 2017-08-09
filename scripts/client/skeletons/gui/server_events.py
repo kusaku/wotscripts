@@ -8,6 +8,7 @@ class IEventsCache(object):
     onSlotsCountChanged = None
     onProgressUpdated = None
     onEventsVisited = None
+    onProfileVisited = None
 
     def init(self):
         raise NotImplementedError
@@ -50,10 +51,6 @@ class IEventsCache(object):
 
     @property
     def potapov(self):
-        raise NotImplementedError
-
-    @property
-    def companies(self):
         raise NotImplementedError
 
     @property
@@ -115,9 +112,6 @@ class IEventsCache(object):
         raise NotImplementedError
 
     def getFutureEvents(self):
-        raise NotImplementedError
-
-    def getCompanyBattles(self):
         raise NotImplementedError
 
     def isFalloutEnabled(self):

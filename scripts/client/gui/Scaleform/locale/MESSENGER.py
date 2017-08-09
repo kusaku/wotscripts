@@ -6,27 +6,16 @@ Please, don't edit this file manually.
 from debug_utils import LOG_WARNING
 
 class MESSENGER(object):
-    CONTACTS_TOOLTIPS_BTNS_SEARCH = '#messenger:contacts/tooltips/btns/search'
-    CONTACTS_TOOLTIPS_BTNS_ADDGROUP = '#messenger:contacts/tooltips/btns/addGroup'
-    CONTACTS_TOOLTIPS_BTNS_SETTINGS = '#messenger:contacts/tooltips/btns/settings'
-    CONTACTS_SEARCHVIEW_TOOLTIPS_BTNS_SEARCH = '#messenger:contacts/searchView/tooltips/btns/search'
-    CONTACTS_SEARCHVIEW_TOOLTIPS_BTNS_ADD = '#messenger:contacts/searchView/tooltips/btns/add'
-    CONTACTS_SEARCHVIEW_TOOLTIPS_BTNS_CLOSE = '#messenger:contacts/searchView/tooltips/btns/close'
-    CONTACTS_TOOLTIPS_BTNS_EXTERNALSEARCH = '#messenger:contacts/tooltips/btns/externalSearch'
     CONTACTS_SETTINGSVIEW_TOOLTIPS_BTNS_APPLY = '#messenger:contacts/settingsView/tooltips/btns/apply'
     CONTACTS_SETTINGSVIEW_TOOLTIPS_BTNS_CLOSE = '#messenger:contacts/settingsView/tooltips/btns/close'
+    CONTACTS_SEARCHVIEW_TOOLTIPS_BTNS_ADD = '#messenger:contacts/searchView/tooltips/btns/add'
+    CONTACTS_SEARCHVIEW_TOOLTIPS_BTNS_CLOSE = '#messenger:contacts/searchView/tooltips/btns/close'
     CONTACTS_CREATEGROUPVIEW_TOOLTIPS_BTNS_APPLY = '#messenger:contacts/createGroupView/tooltips/btns/apply'
     CONTACTS_CREATEGROUPVIEW_TOOLTIPS_BTNS_CLOSE = '#messenger:contacts/createGroupView/tooltips/btns/close'
     CONTACTS_GROUPRENAMEVIEW_TOOLTIPS_BTNS_APPLY = '#messenger:contacts/groupRenameView/tooltips/btns/apply'
     CONTACTS_GROUPRENAMEVIEW_TOOLTIPS_BTNS_CLOSE = '#messenger:contacts/groupRenameView/tooltips/btns/close'
     CONTACTS_GROUPDELETEVIEW_TOOLTIPS_BTNS_APPLY = '#messenger:contacts/groupDeleteView/tooltips/btns/apply'
     CONTACTS_GROUPDELETEVIEW_TOOLTIPS_BTNS_CLOSE = '#messenger:contacts/groupDeleteView/tooltips/btns/close'
-    PREBATTLE_ADDALLBTN_TOOLTIP = '#messenger:prebattle/addAllBtn/tooltip'
-    PREBATTLE_ADDBTN_TOOLTIP = '#messenger:prebattle/addBtn/tooltip'
-    PREBATTLE_REMOVEALLBTN_TOOLTIP = '#messenger:prebattle/removeAllBtn/tooltip'
-    PREBATTLE_REMOVEBTN_TOOLTIP = '#messenger:prebattle/removeBtn/tooltip'
-    CONTACTS_SEARCHVIEW_TOOLTIPS_SEARCHDISABLED = '#messenger:contacts/searchView/tooltips/searchDisabled'
-    CONTACTS_SEARCHVIEW_TOOLTIPS_SEARCHCREDENTIALS = '#messenger:contacts/searchView/tooltips/searchCredentials'
     MESSENGER_CONTACTS_EDITNOTE_TOOLTIPS_BTNS_CLOSE = '#messenger:messenger/contacts/editNote/tooltips/btns/close'
     MESSENGER_CONTACTS_EDITNOTE_TOOLTIPS_BTNS_OK = '#messenger:messenger/contacts/editNote/tooltips/btns/ok'
     MESSENGER_CONTACTS_CREATENOTE_TOOLTIPS_BTNS_OK = '#messenger:messenger/contacts/createNote/tooltips/btns/ok'
@@ -110,7 +99,6 @@ class MESSENGER(object):
     DIALOGS_CONTACTS_TITLE = '#messenger:dialogs/contacts/title'
     DIALOGS_CONTACTS_TREE_FRIENDS = '#messenger:dialogs/contacts/tree/friends'
     DIALOGS_CONTACTS_TREE_CLAN = '#messenger:dialogs/contacts/tree/clan'
-    DIALOGS_CONTACTS_TREE_CLUB = '#messenger:dialogs/contacts/tree/club'
     DIALOGS_CONTACTS_TREE_IGNORED = '#messenger:dialogs/contacts/tree/ignored'
     DIALOGS_CONTACTS_TREE_MUTED = '#messenger:dialogs/contacts/tree/muted'
     DIALOGS_CONTACTS_TREE_FRIENDSHIP_REQUEST = '#messenger:dialogs/contacts/tree/friendship_request'
@@ -149,6 +137,7 @@ class MESSENGER(object):
     DIALOGS_SQUAD_EVENT_VEHICLE = '#messenger:dialogs/squad/event/vehicle'
     DIALOGS_SQUAD_MESSAGE_INVALIDVEHICLELEVEL = '#messenger:dialogs/squad/message/invalidVehicleLevel'
     DIALOGS_SQUAD_MESSAGE_SPGFORBIDDEN = '#messenger:dialogs/squad/message/spgForbidden'
+    DIALOGS_SQUAD_MESSAGE_SPGFULL = '#messenger:dialogs/squad/message/spgFull'
     DIALOGS_SQUAD_MESSAGE_VEHICLES_DIFFERENTLEVELS = '#messenger:dialogs/squad/message/vehicles/differentLevels'
     DIALOGS_FALLOUTSQUADCHANNEL_VEHICLES = '#messenger:dialogs/falloutSquadChannel/vehicles'
     DIALOGS_FALLOUTSQUADCHANNEL_VEHICLES_STEELHUNTING = '#messenger:dialogs/falloutSquadChannel/vehicles/steelHunting'
@@ -183,9 +172,7 @@ class MESSENGER(object):
     DIALOGS_SQUADCHANNEL_HEADERMSG_SQUADFORMATIONRESTRICTION = '#messenger:dialogs/squadChannel/headerMsg/squadFormationRestriction'
     DIALOGS_SQUADCHANNEL_HEADERMSG_EVENTFORMATIONRESTRICTION = '#messenger:dialogs/squadChannel/headerMsg/eventFormationRestriction'
     DIALOGS_SQUADCHANNEL_HEADERMSG_DYNSQUAD = '#messenger:dialogs/squadChannel/headerMsg/dynSquad'
-    DIALOGS_TEAMCHANNEL_CONTEXT_KICKPLAYER = '#messenger:dialogs/teamChannel/context/kickPlayer'
     DIALOGS_BSCHANNEL_CONTEXT_KICKPLAYER = '#messenger:dialogs/bsChannel/context/kickPlayer'
-    DIALOGS_TEAMCHANNEL_BUTTONS_LEAVE = '#messenger:dialogs/teamChannel/buttons/leave'
     DIALOGS_TEAMCHANNEL_BUTTONS_DISMISS = '#messenger:dialogs/teamChannel/buttons/dismiss'
     DIALOGS_TEAMCHANNEL_BUTTONS_INVITE = '#messenger:dialogs/teamChannel/buttons/invite'
     DIALOGS_SQUADCHANNEL_TOOLTIPS_STATUS_OFFLINE = '#messenger:dialogs/squadChannel/tooltips/status/offline'
@@ -359,10 +346,6 @@ class MESSENGER(object):
     SERVICECHANNELMESSAGES_BATTLERESULTS_FORTRESOURCE_CLAN = '#messenger:serviceChannelMessages/battleResults/fortResource/clan'
     SERVICECHANNELMESSAGES_BATTLERESULTS_FORTRESOURCE_PLAYER = '#messenger:serviceChannelMessages/battleResults/fortResource/player'
     SERVICECHANNELMESSAGES_BATTLERESULTS_FORT_CLAN = '#messenger:serviceChannelMessages/battleResults/fort/clan'
-    SERVICECHANNELMESSAGES_BATTLERESULTS_CLUB_RATING_UP = '#messenger:serviceChannelMessages/battleResults/club/rating/up'
-    SERVICECHANNELMESSAGES_BATTLERESULTS_CLUB_RATING_DOWN = '#messenger:serviceChannelMessages/battleResults/club/rating/down'
-    SERVICECHANNELMESSAGES_BATTLERESULTS_CLUB_DIVISION_NEW = '#messenger:serviceChannelMessages/battleResults/club/division/new'
-    SERVICECHANNELMESSAGES_BATTLERESULTS_CLUB_LEAGUE_NEW = '#messenger:serviceChannelMessages/battleResults/club/league/new'
     SERVICECHANNELMESSAGES_BATTLERESULTS_RANKEDSTATE_RANKEARNED = '#messenger:serviceChannelMessages/battleResults/rankedState/rankEarned'
     SERVICECHANNELMESSAGES_BATTLERESULTS_RANKEDSTATE_RANKLOST = '#messenger:serviceChannelMessages/battleResults/rankedState/rankLost'
     SERVICECHANNELMESSAGES_BATTLERESULTS_RANKEDSTATE_STEPEARNED = '#messenger:serviceChannelMessages/battleResults/rankedState/stepEarned'
@@ -430,7 +413,6 @@ class MESSENGER(object):
     SERVICECHANNELMESSAGES_PREMIUMRECEIVEDASGIFT = '#messenger:serviceChannelMessages/premiumReceivedAsGift'
     SERVICECHANNELMESSAGES_ITEMRECEIVEDASGIFT = '#messenger:serviceChannelMessages/itemReceivedAsGift'
     SERVICECHANNELMESSAGES_VEHICLERECEIVEDASGIFT = '#messenger:serviceChannelMessages/vehicleReceivedAsGift'
-    SERVICECHANNELMESSAGES_FORTIFICATIONSTARTUP_TITLE = '#messenger:serviceChannelMessages/fortificationStartUp/title'
     SERVICECHANNELMESSAGES_FORTIFICATIONSTARTUP = '#messenger:serviceChannelMessages/fortificationStartUp'
     SERVICECHANNELMESSAGES_WARESBOUGHTASGOLD = '#messenger:serviceChannelMessages/waresBoughtAsGold'
     SERVICECHANNELMESSAGES_WARESSOLDASGOLD = '#messenger:serviceChannelMessages/waresSoldAsGold'
@@ -471,6 +453,7 @@ class MESSENGER(object):
     SERVICECHANNELMESSAGES_SYSMSG_TITLES_REPAIR = '#messenger:serviceChannelMessages/sysMsg/titles/repair'
     SERVICECHANNELMESSAGES_SYSMSG_TITLES_CUSTOMIZATION = '#messenger:serviceChannelMessages/sysMsg/titles/customization'
     SERVICECHANNELMESSAGES_SYSMSG_TITLES_PRIMETIME = '#messenger:serviceChannelMessages/sysMsg/titles/primeTime'
+    SERVICECHANNELMESSAGES_SYSMSG_TITLES_RANKEDBATTLESAVAILABLE = '#messenger:serviceChannelMessages/sysMsg/titles/rankedBattlesAvailable'
     SERVICECHANNELMESSAGES_PREBATTLE_BATTLETYPE_TOURNAMENT = '#messenger:serviceChannelMessages/prebattle/battleType/tournament'
     SERVICECHANNELMESSAGES_PREBATTLE_BATTLETYPE_CLAN = '#messenger:serviceChannelMessages/prebattle/battleType/clan'
     SERVICECHANNELMESSAGES_PREBATTLE_BATTLETYPE_PREBATTLE = '#messenger:serviceChannelMessages/prebattle/battleType/prebattle'
@@ -529,7 +512,6 @@ class MESSENGER(object):
     SERVICECHANNELMESSAGES_FORT_DEF_HOUR_SHUTDOWN = '#messenger:serviceChannelMessages/fort/DEF_HOUR_SHUTDOWN'
     SERVICECHANNELMESSAGES_FORT_RESERVE_ACTIVATED_TITLE = '#messenger:serviceChannelMessages/fort/RESERVE_ACTIVATED/title'
     SERVICECHANNELMESSAGES_FORT_RESERVE_ACTIVATED = '#messenger:serviceChannelMessages/fort/RESERVE_ACTIVATED'
-    SERVICECHANNELMESSAGES_FORT_PERMANENT_RESERVE_ACTIVATED = '#messenger:serviceChannelMessages/fort/PERMANENT_RESERVE_ACTIVATED'
     SERVICECHANNELMESSAGES_FORT_RESERVE_EXPIRED = '#messenger:serviceChannelMessages/fort/RESERVE_EXPIRED'
     SERVICECHANNELMESSAGES_FORT_RESERVE_PRODUCED = '#messenger:serviceChannelMessages/fort/RESERVE_PRODUCED'
     SERVICECHANNELMESSAGES_FORT_STORAGE_OVERFLOW = '#messenger:serviceChannelMessages/fort/STORAGE_OVERFLOW'
@@ -627,7 +609,6 @@ class MESSENGER(object):
     SERVER_ERROR_USER_ROOM_CREATION_WRONG_WORD = '#messenger:server_error/user_room_creation/WRONG_WORD'
     CHAT_ACTION_BROADCAST_UNIT_MESSAGE = '#messenger:chat_action/BROADCAST_UNIT_MESSAGE'
     CHAT_ACTION_BROADCAST_BATTLE_MESSAGE = '#messenger:chat_action/BROADCAST_BATTLE_MESSAGE'
-    CHAT_ACTION_BROADCAST_CLUB_MESSAGE = '#messenger:chat_action/BROADCAST_CLUB_MESSAGE'
     CHAT_ACTION_FIND_USERS_BY_NAME = '#messenger:chat_action/FIND_USERS_BY_NAME'
     CHAT_ACTION_GET_VOIP_CREDENTIALS = '#messenger:chat_action/GET_VOIP_CREDENTIALS'
     CLIENT_ACTION_ADD_FRIEND = '#messenger:client_action/ADD_FRIEND'
@@ -835,7 +816,6 @@ class MESSENGER(object):
      CHAT_ERROR_GENERIC_ERROR)
     CHAT_ACTION_ENUM = (CHAT_ACTION_BROADCAST_UNIT_MESSAGE,
      CHAT_ACTION_BROADCAST_BATTLE_MESSAGE,
-     CHAT_ACTION_BROADCAST_CLUB_MESSAGE,
      CHAT_ACTION_FIND_USERS_BY_NAME,
      CHAT_ACTION_GET_VOIP_CREDENTIALS)
     COMMAND_SUCCESS_ENUM = (COMMAND_SUCCESS_USERBAN, COMMAND_SUCCESS_USERUNBAN)
@@ -843,11 +823,6 @@ class MESSENGER(object):
      LISTVIEW_EMPTYLIST_INFO,
      LISTVIEW_EMPTYLIST_INVITE,
      LISTVIEW_EMPTYLIST_OFFER)
-    DIALOGS_SQUADCHANNEL_TOOLTIPS_STATUS_ENUM = (DIALOGS_SQUADCHANNEL_TOOLTIPS_STATUS_OFFLINE,
-     DIALOGS_SQUADCHANNEL_TOOLTIPS_STATUS_NOTREADY,
-     DIALOGS_SQUADCHANNEL_TOOLTIPS_STATUS_READY,
-     DIALOGS_SQUADCHANNEL_TOOLTIPS_STATUS_INBATTLE,
-     DIALOGS_SQUADCHANNEL_TOOLTIPS_STATUS_AFK)
     SERVICECHANNELMESSAGES_BATTLERESULTS_RANKEDSTATE_ENUM = (SERVICECHANNELMESSAGES_BATTLERESULTS_RANKEDSTATE_RANKEARNED,
      SERVICECHANNELMESSAGES_BATTLERESULTS_RANKEDSTATE_RANKLOST,
      SERVICECHANNELMESSAGES_BATTLERESULTS_RANKEDSTATE_STEPEARNED,
@@ -939,15 +914,6 @@ class MESSENGER(object):
     def listview_emptylist(cls, key0):
         outcome = '#messenger:listView/emptyList/{}'.format(key0)
         if outcome not in cls.LISTVIEW_EMPTYLIST_ENUM:
-            LOG_WARNING('Localization key "{}" not found'.format(outcome))
-            return None
-        else:
-            return outcome
-
-    @classmethod
-    def dialogs_squadchannel_tooltips_status(cls, key0):
-        outcome = '#messenger:dialogs/squadChannel/tooltips/status/{}'.format(key0)
-        if outcome not in cls.DIALOGS_SQUADCHANNEL_TOOLTIPS_STATUS_ENUM:
             LOG_WARNING('Localization key "{}" not found'.format(outcome))
             return None
         else:

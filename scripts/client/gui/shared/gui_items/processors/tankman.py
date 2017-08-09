@@ -8,7 +8,7 @@ from gui.game_control.restore_contoller import getTankmenRestoreInfo
 from gui.shared.formatters import formatPrice, formatPriceForCurrency, text_styles, icons
 from gui.shared.gui_items import GUI_ITEM_TYPE, Tankman
 from gui.shared.gui_items.processors import Processor, ItemProcessor, makeI18nSuccess, makeI18nError, plugins
-from gui.shared.money import Money, ZERO_MONEY, Currency
+from gui.shared.money import Money, MONEY_UNDEFINED, Currency
 from helpers import dependency
 from items import tankmen, makeIntCompactDescrByID
 from items.tankmen import SKILL_INDICES, SKILL_NAMES
@@ -76,7 +76,7 @@ class TankmanRecruit(Processor):
             return Money(credits=upgradeCost[Currency.CREDITS])
         if tmanCostTypeIdx == 2:
             return Money(gold=upgradeCost[Currency.GOLD])
-        return ZERO_MONEY
+        return MONEY_UNDEFINED
 
     def __getSysMsgType(self):
         tmanCost = self.__getRecruitPrice(self.tmanCostTypeIdx)
@@ -159,7 +159,7 @@ class TankmanRecruitAndEquip(Processor):
             return Money(credits=upgradeCost[Currency.CREDITS])
         if tmanCostTypeIdx == 2:
             return Money(gold=upgradeCost[Currency.GOLD])
-        return ZERO_MONEY
+        return MONEY_UNDEFINED
 
     def __getSysMsgPrefix(self):
         if not self.isReplace:
@@ -219,10 +219,15 @@ class TankmanReturn(Processor):
 class TankmanRetraining(ItemProcessor):
 
     def __init__(self, tankman, vehicle, tmanCostTypeIdx):
+        hasUndistributedExp = False
+        if tmanCostTypeIdx != 2:
+            canLearnSkills, lastSkillLevel = tankman.newSkillCount
+            hasUndistributedExp = lastSkillLevel > 0 or canLearnSkills > 1
         super(TankmanRetraining, self).__init__(tankman, (plugins.VehicleValidator(vehicle, False),
          plugins.TankmanLockedValidator(tankman),
          plugins.VehicleCrewLockedValidator(vehicle),
-         plugins.MessageConfirmator('tankmanRetraining/unknownVehicle', ctx={'tankname': vehicle.userName}, isEnabled=not vehicle.isInInventory)))
+         plugins.MessageConfirmator('tankmanRetraining/unknownVehicle', ctx={'tankname': vehicle.userName}, isEnabled=not vehicle.isInInventory),
+         plugins.MessageConfirmator('tankmanRetraining/undistributedExp', ctx={}, isEnabled=hasUndistributedExp)))
         self.vehicle = vehicle
         self.tmanCostTypeIdx = tmanCostTypeIdx
 
@@ -242,7 +247,7 @@ class TankmanRetraining(ItemProcessor):
             return Money(credits=upgradeCost[Currency.CREDITS])
         if tmanCostTypeIdx == 2:
             return Money(gold=upgradeCost[Currency.GOLD])
-        return ZERO_MONEY
+        return MONEY_UNDEFINED
 
     def _request(self, callback):
         LOG_DEBUG('Make server request to retrain Crew:', self.item, self.vehicle, self.tmanCostTypeIdx)
@@ -252,10 +257,19 @@ class TankmanRetraining(ItemProcessor):
 class TankmanCrewRetraining(Processor):
 
     def __init__(self, tankmen, vehicle, tmanCostTypeIdx):
+        hasUndistributedExp = False
+        if tmanCostTypeIdx != 2:
+            for tmanInvID in tankmen:
+                canLearnSkills, lastSkillLevel = self.itemsCache.items.getTankman(tmanInvID).newSkillCount
+                hasUndistributedExp = lastSkillLevel > 0 or canLearnSkills > 1
+                if hasUndistributedExp:
+                    break
+
         super(TankmanCrewRetraining, self).__init__((plugins.VehicleValidator(vehicle, False),
          plugins.VehicleCrewLockedValidator(vehicle),
          plugins.GroupOperationsValidator(tankmen, tmanCostTypeIdx),
-         plugins.MessageConfirmator('tankmanRetraining/unknownVehicle', ctx={'tankname': vehicle.userName}, isEnabled=not vehicle.isInInventory)))
+         plugins.MessageConfirmator('tankmanRetraining/unknownVehicle', ctx={'tankname': vehicle.userName}, isEnabled=not vehicle.isInInventory),
+         plugins.MessageConfirmator('tankmanRetraining/undistributedExp', ctx={}, isEnabled=hasUndistributedExp)))
         self.tankmen = tankmen
         self.vehicle = vehicle
         self.tmanCostTypeIdx = tmanCostTypeIdx
@@ -396,7 +410,7 @@ class TankmanChangePassport(ItemProcessor):
             price = self.itemsCache.items.shop.passportFemaleChangeCost
         else:
             price = self.itemsCache.items.shop.passportChangeCost
-        super(TankmanChangePassport, self).__init__(tankman, (plugins.TankmanLockedValidator(tankman), plugins.MessageConfirmator('replacePassport/unique' if hasUniqueData else 'replacePassportConfirmation', ctx={Currency.GOLD: text_styles.concatStylesWithSpace(text_styles.gold(BigWorld.wg_getGoldFormat(price)), icons.makeImageTag(RES_ICONS.MAPS_ICONS_LIBRARY_GOLDICON_2))})))
+        super(TankmanChangePassport, self).__init__(tankman, (plugins.TankmanChangePassportValidator(tankman), plugins.MessageConfirmator('replacePassport/unique' if hasUniqueData else 'replacePassportConfirmation', ctx={Currency.GOLD: text_styles.concatStylesWithSpace(text_styles.gold(BigWorld.wg_getGoldFormat(price)), icons.makeImageTag(RES_ICONS.MAPS_ICONS_LIBRARY_GOLDICON_2))})))
         self.firstNameID = firstNameID
         self.firstNameGroup = firstNameGroup
         self.lastNameID = lastNameID
@@ -408,7 +422,7 @@ class TankmanChangePassport(ItemProcessor):
         self.price = price
 
     def _errorHandler(self, code, errStr = '', ctx = None):
-        return makeI18nError('replace_tankman/server_error')
+        return makeI18nError('replace_tankman/%s' % errStr, defaultSysMsgKey='replace_tankman/server_error')
 
     def _successHandler(self, code, ctx = None):
         return makeI18nSuccess('replace_tankman/success', money=formatPrice(Money(gold=self.price)), type=SM_TYPE.PurchaseForGold)
@@ -421,9 +435,9 @@ class TankmanChangePassport(ItemProcessor):
     def __hasUniqueData(cls, tankman, firstNameID, lastNameID, iconID):
         tDescr = tankman.descriptor
         nationConfig = tankmen.getNationConfig(tankman.nationID)
-        for group in nationConfig['normalGroups']:
-            if group.get('notInShop'):
-                if tDescr.firstNameID != firstNameID and firstNameID is not None and tDescr.firstNameID in group['firstNamesList'] or tDescr.lastNameID != lastNameID and lastNameID is not None and tDescr.lastNameID in group['lastNamesList'] or tDescr.iconID != iconID and iconID is not None and tDescr.iconID in group['iconsList']:
+        for group in nationConfig.normalGroups:
+            if group.notInShop:
+                if tDescr.firstNameID != firstNameID and firstNameID is not None and tDescr.firstNameID in group.firstNamesList or tDescr.lastNameID != lastNameID and lastNameID is not None and tDescr.lastNameID in group.lastNamesList or tDescr.iconID != iconID and iconID is not None and tDescr.iconID in group.iconsList:
                     return True
 
         return False

@@ -122,6 +122,7 @@ class BasePrbEntity(IActionsValidator, PrbFunctionalFlags):
         self._actionsValidator = self._createActionsValidator()
         self._scheduler = self._createScheduler()
         self._isActive = False
+        self._cooldown = self._createCooldownManager()
 
     def init(self, **kwargs):
         """
@@ -142,6 +143,14 @@ class BasePrbEntity(IActionsValidator, PrbFunctionalFlags):
         self._scheduler.fini()
         self._isActive = False
         return FUNCTIONAL_FLAG.UNDEFINED
+
+    def invalidate(self):
+        """
+        Hangar was reloaded, but the entity and state of PRB hasn't changed.
+        Example: user clicks on Shop, Research or other tab - after that returns in Hangar.
+        Override in child to catch this event.
+        """
+        pass
 
     def restore(self):
         """
@@ -255,7 +264,7 @@ class BasePrbEntity(IActionsValidator, PrbFunctionalFlags):
 
     def getID(self):
         """
-        Gets prebattle ID/unit index. The 0 means prebattle/unit is not defined.
+        Gets prebattle ID/unit manager ID. The 0 means prebattle/unit is not defined.
         """
         return 0
 
@@ -335,6 +344,26 @@ class BasePrbEntity(IActionsValidator, PrbFunctionalFlags):
         """
         pass
 
+    def isInCoolDown(self, requestType):
+        """
+        Is given request in cooldown now.
+        """
+        return self._cooldown and self._cooldown.isInProcess(requestType)
+
+    def setCoolDown(self, requestType, coolDown):
+        """
+        Sets cooldown for specify request.
+        """
+        if self._cooldown:
+            self._cooldown.process(requestType, coolDown=coolDown)
+
+    def resetCoolDown(self, requestType):
+        """
+        Resets cooldown for specify request.
+        """
+        if self._cooldown:
+            self._cooldown.reset(requestType)
+
     def _createActionsValidator(self):
         """
         Creates actions validator object.
@@ -346,6 +375,12 @@ class BasePrbEntity(IActionsValidator, PrbFunctionalFlags):
         Creates scheduler object.
         """
         return BaseScheduler(self)
+
+    def _createCooldownManager(self):
+        """
+        Creates unit's cooldown manager object.
+        """
+        return None
 
 
 class NotSupportedEntryPoint(BasePrbEntryPoint):

@@ -46,3 +46,7 @@ class ResearchMeta(ResearchView):
     def as_setRootNodeVehCompareDataS(self, data):
         if self._isDAAPIInited():
             return self.flashObject.as_setRootNodeVehCompareData(data)
+
+    def as_setXpInfoLinkageS(self, linkage):
+        if self._isDAAPIInited():
+            return self.flashObject.as_setXpInfoLinkage(linkage)

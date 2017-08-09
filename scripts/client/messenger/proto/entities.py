@@ -66,6 +66,10 @@ class OutChatCommand(_ChatCommand):
     pass
 
 
+class ReceivedUnitChatCommand(_ChatCommand):
+    pass
+
+
 class ReceivedBattleChatCommand(_ChatCommand):
 
     def getCommandType(self):

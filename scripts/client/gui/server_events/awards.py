@@ -343,7 +343,12 @@ class MissionAward(MissionAwardAbstract):
         return text_styles.highTitle(self._quest.getUserName())
 
     def getCurrentQuestConditions(self):
-        return {'containerElements': old_events_helpers.getEventConditions(self._quest)}
+        containerElements = old_events_helpers.getEventConditions(self._quest)
+        if containerElements:
+            return {'containerElements': containerElements}
+        else:
+            return None
+            return None
 
     def getMainStatusText(self):
         return text_styles.success('#menu:awardWindow/mission/conditionComplete')

@@ -13,7 +13,6 @@ from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.Scaleform.genConsts.TOOLTIPS_CONSTANTS import TOOLTIPS_CONSTANTS
 from gui.prb_control import settings
-from gui.prb_control.items.sortie_items import getDivisionNameByType, getDivisionLevel
 from gui.prb_control.settings import UNIT_RESTRICTION
 from gui.shared.formatters import icons, text_styles
 from gui.shared.formatters.ranges import toRomanRangeString
@@ -239,7 +238,7 @@ def makeUnitStateLabel(unitState):
     return makeHtmlString('html_templates:lobby/cyberSport', 'teamUnlocked' if unitState.isOpened() else 'teamLocked', {})
 
 
-def _getSlotsData(unitIdx, fullData, app = None, levelsRange = None, checkForVehicles = True, maxPlayerCount = MAX_PLAYER_COUNT_ALL):
+def _getSlotsData(unitMgrID, fullData, app = None, levelsRange = None, checkForVehicles = True, maxPlayerCount = MAX_PLAYER_COUNT_ALL):
     pInfo = fullData.playerInfo
     isPlayerCreator = pInfo.isCommander()
     isPlayerInSlot = pInfo.isInSlot
@@ -260,14 +259,7 @@ def _getSlotsData(unitIdx, fullData, app = None, levelsRange = None, checkForVeh
         falloutBattleType = QUEUE_TYPE.UNKNOWN
         falloutCfg = None
     unit = fullData.unit
-    if unit is None:
-        makeVO = makePlayerVO
-    elif unit.isFortBattle():
-        makeVO = makeClanBattlePlayerVO
-    elif unit.isSortie():
-        makeVO = makeSortiePlayerVO
-    else:
-        makeVO = makePlayerVO
+    makeVO = makePlayerVO
     rosterSlots = {}
     isDefaultSlot = False
     if unit is not None:
@@ -301,7 +293,7 @@ def _getSlotsData(unitIdx, fullData, app = None, levelsRange = None, checkForVeh
         else:
             playerStatus = getPlayerStatus(slotState, player)
         if unit is not None:
-            restrictions = makeUnitRosterConditions(rosterSlots, isDefaultSlot, index=index, isSortie=unit.isSortie(), levelsRange=levelsRange)
+            restrictions = makeUnitRosterConditions(rosterSlots, isDefaultSlot, index=index, levelsRange=levelsRange)
         else:
             restrictions = []
         rating = ''
@@ -313,7 +305,7 @@ def _getSlotsData(unitIdx, fullData, app = None, levelsRange = None, checkForVeh
             isLocked = False
         else:
             isLocked = True
-        slot = {'rallyIdx': unitIdx,
+        slot = {'rallyIdx': unitMgrID,
          'isCommanderState': isPlayerCreator,
          'isCurrentUserInSlot': isPlayerInSlot,
          'playerStatus': playerStatus,
@@ -412,51 +404,23 @@ def _getSlotsData(unitIdx, fullData, app = None, levelsRange = None, checkForVeh
     return slots
 
 
-def makeSlotsVOs(unitEntity, unitIdx = None, app = None, maxPlayerCount = MAX_PLAYER_COUNT_ALL):
-    fullData = unitEntity.getUnitFullData(unitIdx=unitIdx)
-    slots = _getSlotsData(unitIdx, fullData, app, unitEntity.getRosterSettings().getLevelsRange(), maxPlayerCount=maxPlayerCount)
+def makeSlotsVOs(unitEntity, unitMgrID = None, app = None, maxPlayerCount = MAX_PLAYER_COUNT_ALL):
+    fullData = unitEntity.getUnitFullData(unitMgrID=unitMgrID)
+    slots = _getSlotsData(unitMgrID, fullData, app, unitEntity.getRosterSettings().getLevelsRange(), maxPlayerCount=maxPlayerCount)
     isRosterSet = fullData.unit.isRosterSet(ignored=settings.CREATOR_ROSTER_SLOT_INDEXES)
     return (isRosterSet, slots)
 
 
-def getUnitMaxLevel(unitEntity, unitIdx = None, app = None):
-    _, unit = unitEntity.getUnit(unitIdx=unitIdx)
-    division = getDivisionNameByType(unit.getRosterTypeID())
-    return getDivisionLevel(division)
-
-
-def makeUnitShortVO(unitEntity, unitIdx = None, app = None, maxPlayerCount = MAX_PLAYER_COUNT_ALL):
-    fullData = unitEntity.getUnitFullData(unitIdx=unitIdx)
+def makeUnitShortVO(unitEntity, unitMgrID = None, app = None, maxPlayerCount = MAX_PLAYER_COUNT_ALL):
+    fullData = unitEntity.getUnitFullData(unitMgrID=unitMgrID)
     return {'isFreezed': fullData.flags.isLocked(),
      'hasRestrictions': fullData.unit.isRosterSet(ignored=settings.CREATOR_ROSTER_SLOT_INDEXES),
-     'slots': _getSlotsData(unitIdx, fullData, app, unitEntity.getRosterSettings().getLevelsRange(), maxPlayerCount=maxPlayerCount),
-     'description': unitEntity.getCensoredComment(unitIdx=unitIdx)}
-
-
-def makeSortieShortVO(unitEntity, unitIdx = None, app = None, maxPlayerCount = MAX_PLAYER_COUNT_ALL):
-    fullData = unitEntity.getUnitFullData(unitIdx=unitIdx)
-    division = getDivisionNameByType(fullData.unit.getRosterTypeID())
-    divisionTypeStr = i18n.makeString(FORTIFICATIONS.sortie_division_name(division))
-    if divisionTypeStr:
-        description = divisionTypeStr
-    else:
-        description = unitEntity.getCensoredComment(unitIdx=unitIdx)
-    return {'isFreezed': fullData.flags.isLocked(),
-     'hasRestrictions': fullData.unit.isRosterSet(ignored=settings.CREATOR_ROSTER_SLOT_INDEXES),
-     'slots': _getSlotsData(unitIdx, fullData, app, unitEntity.getRosterSettings().getLevelsRange(), maxPlayerCount=maxPlayerCount),
-     'description': description}
+     'slots': _getSlotsData(unitMgrID, fullData, app, unitEntity.getRosterSettings().getLevelsRange(), maxPlayerCount=maxPlayerCount),
+     'description': unitEntity.getCensoredComment(unitMgrID=unitMgrID)}
 
 
 def makeMsg(value):
     return i18n.makeString(value)
-
-
-def makeFortBattleShortVO(unitEntity, unitIdx = None, app = None, maxPlayerCount = MAX_PLAYER_COUNT_ALL):
-    fullData = unitEntity.getUnitFullData(unitIdx=unitIdx)
-    return {'isFreezed': fullData.flags.isLocked(),
-     'hasRestrictions': fullData.unit.isRosterSet(ignored=settings.CREATOR_ROSTER_SLOT_INDEXES),
-     'slots': _getSlotsData(unitIdx, fullData, app, unitEntity.getRosterSettings().getLevelsRange(), maxPlayerCount=maxPlayerCount),
-     'description': unitEntity.getCensoredComment(unitIdx=unitIdx)}
 
 
 def makeSimpleClanListRenderVO(member, intTotalMining, intWeekMining, role, roleID):
@@ -476,8 +440,8 @@ def makeSimpleClanListRenderVO(member, intTotalMining, intWeekMining, role, role
      'fullName': member.getFullName()}
 
 
-def makeUnitVO(unitEntity, unitIdx = None, app = None, maxPlayerCount = MAX_PLAYER_COUNT_ALL):
-    fullData = unitEntity.getUnitFullData(unitIdx=unitIdx)
+def makeUnitVO(unitEntity, unitMgrID = None, app = None, maxPlayerCount = MAX_PLAYER_COUNT_ALL):
+    fullData = unitEntity.getUnitFullData(unitMgrID=unitMgrID)
     isPlayerCreator = fullData.playerInfo.isCommander()
     levelsValidation = unitEntity.validateLevels()
     canDoAction, restriction = levelsValidation.isValid, levelsValidation.restriction
@@ -490,30 +454,24 @@ def makeUnitVO(unitEntity, unitIdx = None, app = None, maxPlayerCount = MAX_PLAY
      'sumLevelsInt': fullData.stats.curTotalLevel,
      'sumLevels': sumLevelsStr,
      'sumLevelsError': canDoAction,
-     'slots': _getSlotsData(unitIdx, fullData, app, unitEntity.getRosterSettings().getLevelsRange(), maxPlayerCount=maxPlayerCount),
-     'description': unitEntity.getCensoredComment(unitIdx=unitIdx)}
+     'slots': _getSlotsData(unitMgrID, fullData, app, unitEntity.getRosterSettings().getLevelsRange(), maxPlayerCount=maxPlayerCount),
+     'description': unitEntity.getCensoredComment(unitMgrID=unitMgrID)}
 
 
-def makeSortieVO(unitEntity, isCommander, unitIdx = None, app = None, canInvite = True, maxPlayerCount = MAX_PLAYER_COUNT_ALL):
-    fullData = unitEntity.getUnitFullData(unitIdx=unitIdx)
-    division = getDivisionNameByType(fullData.unit.getRosterTypeID())
-    divisionLbl = ''
-    if len(division):
-        divisionTypeStr = i18n.makeString(FORTIFICATIONS.sortie_division_name(division))
-        divisionStr = i18n.makeString(FORTIFICATIONS.SORTIE_ROOM_DIVISION)
-        divisionLbl = ''.join((text_styles.standard(divisionStr), text_styles.main(divisionTypeStr)))
+def makeSortieVO(unitEntity, isCommander, unitMgrID = None, app = None, canInvite = True, maxPlayerCount = MAX_PLAYER_COUNT_ALL):
+    fullData = unitEntity.getUnitFullData(unitMgrID=unitMgrID)
     levelsValidation = unitEntity.validateLevels()
     canDoAction, restriction = levelsValidation.isValid, levelsValidation.restriction
     sumLevelsStr = makeTotalLevelLabel(fullData.stats, restriction)
-    slots = _getSlotsData(unitIdx, fullData, app, unitEntity.getRosterSettings().getLevelsRange(), maxPlayerCount=maxPlayerCount)
+    slots = _getSlotsData(unitMgrID, fullData, app, unitEntity.getRosterSettings().getLevelsRange(), maxPlayerCount=maxPlayerCount)
     if fullData.playerInfo.isInSlot:
         disableCanBeTakenButtonInSlots(slots)
-    if fullData.flags.isLocked() or unitEntity.getStrongholdUnitIsFreezed():
+    if fullData.flags.isLocked() or unitEntity.isStrongholdUnitFreezed():
         freezedInSlots(slots)
         canAssignToSlot = False
     else:
-        canAssignToSlot = True
-    return {'canInvite': showCanInviteButton(canInvite, isCommander, slots, fullData.playerInfo.accID),
+        canAssignToSlot = canInvite
+    return {'canInvite': canInvite,
      'isCommander': isCommander,
      'isFreezed': fullData.flags.isLocked(),
      'canAssignToSlot': canAssignToSlot,
@@ -524,36 +482,7 @@ def makeSortieVO(unitEntity, isCommander, unitIdx = None, app = None, canInvite 
      'sumLevels': sumLevelsStr,
      'sumLevelsError': canDoAction,
      'slots': slots,
-     'description': unitEntity.getCensoredComment(unitIdx=unitIdx),
-     'divisionLbl': divisionLbl}
-
-
-def makeFortBattleVO(unitEntity, unitIdx = None, app = None, canInvite = True, maxPlayerCount = MAX_PLAYER_COUNT_ALL):
-    fullData = unitEntity.getUnitFullData(unitIdx=unitIdx)
-    isPlayerCreator = fullData.playerInfo.isCommander()
-    levelsValidation = unitEntity.validateLevels()
-    canDoAction, restriction = levelsValidation.isValid, levelsValidation.restriction
-    sumLevelsStr = makeTotalLevelLabel(fullData.stats, restriction)
-    slots = _getSlotsData(unitIdx, fullData, app, unitEntity.getRosterSettings().getLevelsRange(), maxPlayerCount=maxPlayerCount)
-    if fullData.playerInfo.isInSlot:
-        disableCanBeTakenButtonInSlots(slots)
-    if fullData.flags.isLocked() or unitEntity.getStrongholdUnitIsFreezed():
-        freezedInSlots(slots)
-        canAssignToSlot = False
-    else:
-        canAssignToSlot = True
-    return {'canInvite': showCanInviteButton(canInvite, isPlayerCreator, slots, fullData.playerInfo.accID),
-     'isCommander': isPlayerCreator,
-     'isFreezed': fullData.flags.isLocked(),
-     'canAssignToSlot': canAssignToSlot,
-     'hasRestrictions': fullData.unit.isRosterSet(ignored=settings.CREATOR_ROSTER_SLOT_INDEXES),
-     'statusLbl': makeUnitStateLabel(fullData.flags),
-     'statusValue': fullData.flags.isOpened(),
-     'sumLevelsInt': fullData.stats.curTotalLevel,
-     'sumLevels': sumLevelsStr,
-     'sumLevelsError': canDoAction,
-     'slots': slots,
-     'description': unitEntity.getCensoredComment(unitIdx=unitIdx)}
+     'description': unitEntity.getCensoredComment(unitMgrID=unitMgrID)}
 
 
 def disableCanBeTakenButtonInSlots(slots):
@@ -568,25 +497,13 @@ def freezedInSlots(slots):
     for player in slots:
         if player['player'] is not None and player['selectedVehicle'] is not None:
             player['isFreezed'] = True
-            player['isDragNDropFreezed'] = True
+            player['isDragNDropFreezed'] = False
         player['canBeTaken'] = False
 
     return slots
 
 
-def showCanInviteButton(canInvite, isCommander, slots, selfAccID):
-    userCanInvite = canInvite
-    for player in slots:
-        if player['player'] is not None and player['selectedVehicle'] is not None and player['player']['readyState'] and not isCommander and player['player']['accID'] == selfAccID:
-            player['isFreezed'] = True
-            player['isDragNDropFreezed'] = True
-            userCanInvite = False
-            break
-
-    return userCanInvite
-
-
-def makeUnitRosterVO(unit, pInfo, index = None, isSortie = False, levelsRange = None):
+def makeUnitRosterVO(unit, pInfo, index = None, levelsRange = None):
     itemsCache = dependency.instance(IItemsCache)
     vehicleGetter = itemsCache.items.getItemByCD
     if index is None:
@@ -597,10 +514,10 @@ def makeUnitRosterVO(unit, pInfo, index = None, isSortie = False, levelsRange = 
     roster = unit.getRoster()
     rosterSlots = roster.slots
     isDefaultSlot = roster.isDefaultSlot
-    return getUnitRosterModel(vehicleVOs, makeUnitRosterConditions(rosterSlots, isDefaultSlot, index, isSortie, levelsRange), pInfo.isCommander())
+    return getUnitRosterModel(vehicleVOs, makeUnitRosterConditions(rosterSlots, isDefaultSlot, index, levelsRange), pInfo.isCommander())
 
 
-def makeUnitRosterConditions(slots, isDefaultSlot, index = None, isSortie = False, levelsRange = None):
+def makeUnitRosterConditions(slots, isDefaultSlot, index = None, levelsRange = None):
     if index is None:
         return [None, None]
     else:
@@ -625,7 +542,7 @@ def makeUnitRosterConditions(slots, isDefaultSlot, index = None, isSortie = Fals
                 params = {'nationIDRange': tuple(),
                  'vTypeRange': tuple(),
                  'vLevelRange': tuple()}
-                isDefault = not isSortie and isDefaultSlot(rosterSlot)
+                isDefault = isDefaultSlot(rosterSlot)
                 if not isDefault:
                     if not rosterSlot.isNationMaskFull():
                         nationMask = rosterSlot.nationMask
@@ -634,7 +551,7 @@ def makeUnitRosterConditions(slots, isDefaultSlot, index = None, isSortie = Fals
                         vehClassMask = rosterSlot.vehClassMask
                         params['vTypeRange'] = filter(lambda k, mask = vehClassMask: 1 << VEHICLE_CLASS_INDICES[k] & mask, VEHICLE_CLASSES)
                     levels = rosterSlot.levels
-                    if levels != rosterSlot.DEFAULT_LEVELS or isSortie:
+                    if levels != rosterSlot.DEFAULT_LEVELS:
                         params['vLevelRange'] = levels
                     conditions.append(params)
                 else:
@@ -649,12 +566,12 @@ def getUnitRosterModel(vehiclesData, conditions, isCreator):
      'isCreator': isCreator}
 
 
-def getUnitRosterData(unitEntity, unitIdx = None, index = None):
-    _, unit = unitEntity.getUnit(unitIdx)
+def getUnitRosterData(unitEntity, unitMgrID = None, index = None):
+    _, unit = unitEntity.getUnit(unitMgrID)
     if unit is None:
         result = {}
     else:
-        result = makeUnitRosterVO(unit, unitEntity.getPlayerInfo(unitIdx=unitIdx), index=index, isSortie=unit.isSortie(), levelsRange=unitEntity.getRosterSettings().getLevelsRange())
+        result = makeUnitRosterVO(unit, unitEntity.getPlayerInfo(unitMgrID=unitMgrID), index=index, levelsRange=unitEntity.getRosterSettings().getLevelsRange())
     return result
 
 
@@ -716,9 +633,9 @@ def makeReserveSlotVO(reserveType, groupType, reserveId, level, slotIndex, toolt
      'tooltip': tooltip}
 
 
-__locTypeMap = {SUPPORT_TYPE: FORTIFICATIONS.FORT2RESERVE_SUPPORT,
- REQUISITION_TYPE: FORTIFICATIONS.FORT2RESERVE_REQUISITION,
- HEAVYTRUCKS_TYPE: FORTIFICATIONS.FORT2RESERVE_HEAVYTRUCKS}
+__locTypeMap = {SUPPORT_TYPE: FORTIFICATIONS.STRONGHOLDRESERVE_SUPPORT,
+ REQUISITION_TYPE: FORTIFICATIONS.STRONGHOLDRESERVE_REQUISITION,
+ HEAVYTRUCKS_TYPE: FORTIFICATIONS.STRONGHOLDRESERVE_HEAVYTRUCKS}
 
 def getReserveGroupTitle(groupType):
     return i18n.makeString(__locTypeMap[groupType])
@@ -731,15 +648,15 @@ def makeReserveSlotTooltipVO(groupType, header, description, empty, notChosen, h
         header = getReserveGroupTitle(groupType)
         if havePermition:
             if disabledByRequisition:
-                description = i18n.makeString(FORTIFICATIONS.FORT2RESERVE_TOOLTIP_DISABLEDREQUISITION)
+                description = i18n.makeString(FORTIFICATIONS.STRONGHOLDRESERVE_TOOLTIP_DISABLEDREQUISITION)
             elif isInBattle:
-                description = i18n.makeString(FORTIFICATIONS.FORT2RESERVE_TOOLTIP_DISABLEDINBATTLE)
+                description = i18n.makeString(FORTIFICATIONS.STRONGHOLDRESERVE_TOOLTIP_DISABLEDINBATTLE)
             elif empty:
-                description = i18n.makeString(FORTIFICATIONS.FORT2RESERVE_TOOLTIP_EMPTY)
+                description = i18n.makeString(FORTIFICATIONS.STRONGHOLDRESERVE_TOOLTIP_EMPTY)
             else:
-                description = i18n.makeString(FORTIFICATIONS.FORT2RESERVE_TOOLTIP_WITHPERMITION)
+                description = i18n.makeString(FORTIFICATIONS.STRONGHOLDRESERVE_TOOLTIP_WITHPERMITION)
         else:
-            description = i18n.makeString(FORTIFICATIONS.FORT2RESERVE_TOOLTIP_WITHOUTPERMITION)
+            description = i18n.makeString(FORTIFICATIONS.STRONGHOLDRESERVE_TOOLTIP_WITHOUTPERMITION)
     return (makeTooltip(header, description), tooltipType)
 
 
@@ -766,7 +683,7 @@ def makeReserveModuleData(id, moduleType, level, count, isSelected, paramValues,
 
 def makeFortClanBattleRoomVO(mapId, headerDescr, mineClanName, enemyClanName, waitForBattleDescr, isMapEnabled, isBattleTimerVisible, isSortie):
     timerVisible = isBattleTimerVisible and not isSortie
-    mapName = getArenaShortName(mapId) if mapId else i18n.makeString(FORTIFICATIONS.FORT2MAP_RANDOMMAP)
+    mapName = getArenaShortName(mapId) if mapId else i18n.makeString(FORTIFICATIONS.STRONGHOLDMAP_RANDOMMAP)
     if mapId == 0:
         isMapEnabled = False
     return {'mapID': mapId,
@@ -778,7 +695,7 @@ def makeFortClanBattleRoomVO(mapId, headerDescr, mineClanName, enemyClanName, wa
      'isMapEnabled': isMapEnabled,
      'isBattleTimerVisible': timerVisible,
      'isBattleType': not isSortie,
-     'teamHeader': i18n.makeString(FORTIFICATIONS.FORT2_TEAMHEADER)}
+     'teamHeader': i18n.makeString(FORTIFICATIONS.STRONGHOLD_TEAMHEADER)}
 
 
 def makeClanBattleTimerVO(deltaTime, htmlFormatter, alertHtmlFormatter, glowColor, alertGlowColor, timerDefaultValue, hintState):
@@ -820,13 +737,13 @@ def makeDirectionVO(buildIdx, isAttack, battleIdx):
 
 def makeOpenRoomButtonVO(isOpen):
     if isOpen:
-        label = i18n.makeString(FORTIFICATIONS.FORT2BUTTONS_MAKEINVISIBLE)
+        label = i18n.makeString(FORTIFICATIONS.STRONGHOLDBUTTONS_MAKEINVISIBLE)
     else:
-        label = i18n.makeString(FORTIFICATIONS.FORT2BUTTONS_MAKEVISIBLE)
+        label = i18n.makeString(FORTIFICATIONS.STRONGHOLDBUTTONS_MAKEVISIBLE)
     if isOpen:
-        stateString = i18n.makeString(FORTIFICATIONS.FORT2BUTTONS_MAKEINVISIBLESTATUS)
+        stateString = i18n.makeString(FORTIFICATIONS.STRONGHOLDBUTTONS_MAKEINVISIBLESTATUS)
     else:
-        stateString = i18n.makeString(FORTIFICATIONS.FORT2BUTTONS_MAKEVISIBLESTATUS)
+        stateString = i18n.makeString(FORTIFICATIONS.STRONGHOLDBUTTONS_MAKEVISIBLESTATUS)
     if isOpen:
         tooltipString = i18n.makeString(TOOLTIPS.FORTIFICATION_UNIT_ACCESS_BODYOPEN)
     else:
@@ -843,7 +760,7 @@ def makeTableHeaderVO(currentPlayerCount, maxPlayerCount, currentLegCount, maxLe
     total = i18n.makeString(FORTIFICATIONS.SORTIE_LISTVIEW_TEAMMEMBERS, current=str(currentPlayerCount), max=str(maxPlayerCount))
     legionariesIcon = icons.makeImageTag(RES_ICONS.MAPS_ICONS_LIBRARY_FORTIFICATION_LEGIONNAIRE, 16, 16, -4, 0)
     label = total + ' (' + legionariesIcon + ' ' + str(currentLegCount) + ' / ' + str(maxLegCount) + ')'
-    return [{'buttonWidth': 228,
+    return [{'buttonWidth': 212,
       'buttonHeight': 40,
       'sortOrder': 0,
       'toolTip': '-',
@@ -855,20 +772,20 @@ def makeTableHeaderVO(currentPlayerCount, maxPlayerCount, currentLegCount, maxLe
       'sortOrder': 0,
       'toolTip': '-',
       'defaultSortDirection': 'ascending',
-      'label': i18n.makeString(FORTIFICATIONS.FORT2TABLE_RATING),
-      'showSeparator': True}, {'buttonWidth': 200,
+      'label': i18n.makeString(FORTIFICATIONS.STRONGHOLDTABLE_RATING),
+      'showSeparator': True}, {'buttonWidth': 216,
       'buttonHeight': 40,
       'sortOrder': 0,
       'toolTip': '-',
       'defaultSortDirection': 'ascending',
-      'label': i18n.makeString(FORTIFICATIONS.FORT2TABLE_TECH),
+      'label': i18n.makeString(FORTIFICATIONS.STRONGHOLDTABLE_TECH),
       'showSeparator': False}]
 
 
-__directionMap = {'A': FORTIFICATIONS.FORT2DIRECTION_A,
- 'B': FORTIFICATIONS.FORT2DIRECTION_B,
- 'C': FORTIFICATIONS.FORT2DIRECTION_C,
- 'D': FORTIFICATIONS.FORT2DIRECTION_D}
+__directionMap = {'A': FORTIFICATIONS.STRONGHOLDDIRECTION_A,
+ 'B': FORTIFICATIONS.STRONGHOLDDIRECTION_B,
+ 'C': FORTIFICATIONS.STRONGHOLDDIRECTION_C,
+ 'D': FORTIFICATIONS.STRONGHOLDDIRECTION_D}
 
 def getDirection(direction):
     return i18n.makeString(__directionMap[direction])

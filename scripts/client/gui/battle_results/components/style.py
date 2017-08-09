@@ -54,11 +54,19 @@ def getIntegralFormatIfNoEmpty(value):
     return markValueAsEmpty(value)
 
 
+def getFractionalFormatIfNoEmpty(value):
+    if value:
+        return BigWorld.wg_getFractionalFormat(value)
+    return markValueAsEmpty(value)
+
+
 _SPLASH_CHAR_NO_EMPTY_STAT = '/'
 _SPLASH_CHAR_EMPTY_STAT = markValueAsEmpty(_SPLASH_CHAR_NO_EMPTY_STAT)
 
-def getTooltipParamsStyle():
-    return makeHtmlString('html_templates:lobby/battle_results', 'tooltip_params_style', {'text': i18n.makeString(BATTLE_RESULTS.COMMON_TOOLTIP_PARAMS_VAL)})
+def getTooltipParamsStyle(paramKey = None):
+    if paramKey is None:
+        paramKey = BATTLE_RESULTS.COMMON_TOOLTIP_PARAMS_VAL
+    return makeHtmlString('html_templates:lobby/battle_results', 'tooltip_params_style', {'text': i18n.makeString(paramKey)})
 
 
 def _makeModuleTooltipLabel(module, suffix):
@@ -183,17 +191,6 @@ def makeFreeXpLabel(value, canBeFaded = False):
     return makeHtmlString('html_templates:lobby/battle_results', template, {'value': BigWorld.wg_getIntegralFormat(int(value))})
 
 
-def makeResourceLabel(value, canBeFaded = False):
-    formatted = BigWorld.wg_getIntegralFormat(int(value))
-    if formatted < 0:
-        formatted = markValueAsError(formatted)
-    if canBeFaded and not value:
-        template = 'resource_small_inactive_label'
-    else:
-        template = 'resource_small_label'
-    return makeHtmlString('html_templates:lobby/battle_results', template, {'value': formatted})
-
-
 def makePercentLabel(value):
     formatted = BigWorld.wg_getGoldFormat(int(value))
     template = 'percent'
@@ -243,14 +240,6 @@ def makeTimeStatsVO(field, value):
      'value': value}
 
 
-def makeTotalFortResourcesItem(totalFortResource):
-    return makeHtmlString('html_templates:lobby/battle_results', 'teamResourceTotal', {'resourceValue': totalFortResource})
-
-
-def makeTotalInfluencePointsItem(totalInfluencePoints):
-    return makeHtmlString('html_templates:lobby/battle_results', 'teamInfluenceTotal', {'resourceValue': totalInfluencePoints})
-
-
 def makeRankIcon(rank):
     if not rank:
         return ''
@@ -274,8 +263,16 @@ def makeRankedPointValue(pointsValue):
     return makeHtmlString('html_templates:lobby/battle_results', 'xp_small_label', {'value': text_styles.playerOnline(pointsValue)})
 
 
+def makeRankedPointHugeValue(pointsValue):
+    return makeHtmlString('html_templates:lobby/battle_results', 'xp_small_label', {'value': text_styles.hightlight(pointsValue)})
+
+
 def makeRankedNickNameValue(name):
     return text_styles.playerOnline(name)
+
+
+def makeRankedNickNameHugeValue(name):
+    return text_styles.hightlight(name)
 
 
 class GroupMiddleLabelBlock(base.DirectStatsItem):

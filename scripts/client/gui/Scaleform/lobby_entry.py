@@ -13,6 +13,7 @@ from gui.Scaleform.framework.managers.containers import DefaultContainer
 from gui.Scaleform.framework.managers.containers import PopUpContainer
 from gui.Scaleform.framework.managers.context_menu import ContextMenuManager
 from gui.Scaleform.framework.managers.event_logging import EventLogManager
+from gui.Scaleform.framework.managers.loaders import ViewLoadParams
 from gui.Scaleform.managers.ColorSchemeManager import ColorSchemeManager
 from gui.Scaleform.managers.GameInputMgr import GameInputMgr
 from gui.Scaleform.managers.GlobalVarsManager import GlobalVarsManager
@@ -105,7 +106,7 @@ class LobbyEntry(SFApplication):
         BigWorld.wg_setRedefineKeysMode(True)
 
     def _loadWaiting(self):
-        self._containerMgr.load(VIEW_ALIAS.WAITING)
+        self._containerMgr.load(ViewLoadParams(VIEW_ALIAS.WAITING))
 
     def _getRequiredLibraries(self):
         return ('windows.swf', 'animations.swf', 'common_i18n.swf', 'guiControlsLogin.swf', 'guiControlsLoginBattleDynamic.swf')

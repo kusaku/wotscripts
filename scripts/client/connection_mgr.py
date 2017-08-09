@@ -115,6 +115,8 @@ class ConnectionManager(IConnectionManager):
                 if server.serverString == self.__connectionUrl:
                     self.__hostItem = self.__hostItem._replace(name=server.ownerName, shortName=server.ownerName)
                     break
+            else:
+                self.__hostItem = self.__hostItem._replace(name=self.__connectionUrl, shortName=self.__connectionUrl)
 
         return
 
@@ -144,6 +146,7 @@ class ConnectionManager(IConnectionManager):
             if stage == 6:
                 self.onDisconnected()
                 g_playerEvents.onDisconnected()
+        BigWorld.WGC_onServerResponse()
         return
 
     def __setConnectionData(self, params, password):

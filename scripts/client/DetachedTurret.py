@@ -33,6 +33,7 @@ class DetachedTurret(BigWorld.Entity, ComponentSystem):
         self.targetCaps = [1]
         self.__isBeingPulledCallback = None
         self.__hitEffects = None
+        self.__vehicleStickers = None
         return
 
     def reload(self):
@@ -40,8 +41,8 @@ class DetachedTurret(BigWorld.Entity, ComponentSystem):
 
     def __prepareModelAssembler(self):
         assembler = BigWorld.CompoundAssembler(self.__vehDescr.name, self.spaceID)
-        turretModel = self.__vehDescr.turret['models']['exploded']
-        gunModel = self.__vehDescr.gun['models']['exploded']
+        turretModel = self.__vehDescr.turret.models.exploded
+        gunModel = self.__vehDescr.gun.models.exploded
         assembler.addRootPart(turretModel, TankPartNames.TURRET)
         assembler.emplacePart(gunModel, TankNodeNames.GUN_JOINT, TankPartNames.GUN)
         return assembler
@@ -58,7 +59,7 @@ class DetachedTurret(BigWorld.Entity, ComponentSystem):
         self.__vehDescr.keepPrereqs(prereqs)
         turretDescr = self.__vehDescr.turret
         if self.isUnderWater == 0:
-            self.__detachmentEffects = _TurretDetachmentEffects(self.model, turretDescr['turretDetachmentEffects'], self.isCollidingWithWorld == 1)
+            self.__detachmentEffects = _TurretDetachmentEffects(self.model, turretDescr.turretDetachmentEffects, self.isCollidingWithWorld == 1)
             self.addComponent(self.__detachmentEffects)
         else:
             self.__detachmentEffects = None
@@ -66,14 +67,27 @@ class DetachedTurret(BigWorld.Entity, ComponentSystem):
         self.addComponent(self.__hitEffects)
         self.__componentsDesc = (self.__vehDescr.turret, self.__vehDescr.gun)
         for desc in self.__componentsDesc:
-            desc['hitTester'].loadBspModel()
+            desc.hitTester.loadBspModel()
 
         from helpers.CallbackDelayer import CallbackDelayer
         self.__isBeingPulledCallback = CallbackDelayer()
         self.__isBeingPulledCallback.delayCallback(self.__checkIsBeingPulled(), self.__checkIsBeingPulled)
         DetachedTurret.allTurrets.append(self)
         ProjectileAwareEntities.addEntity(self)
+        BigWorld.callback(0.0, self.__createAndAttachStickers)
         return
+
+    def __createAndAttachStickers(self):
+        if self.__vehicleStickers is not None:
+            return
+        else:
+            from VehicleStickers import VehicleStickers
+            vehicle = BigWorld.entity(self.vehicleID)
+            if vehicle is not None:
+                self.__vehicleStickers = VehicleStickers(self.__vehDescr, vehicle.publicInfo['marksOnGun'])
+                self.__vehicleStickers.alpha = vehicles.g_cache.commonConfig['miscParams']['damageStickerAlpha']
+                self.__vehicleStickers.attach(self.model, True, False, True)
+            return
 
     def onLeaveWorld(self):
         ComponentSystem.destroy(self)
@@ -83,6 +97,9 @@ class DetachedTurret(BigWorld.Entity, ComponentSystem):
         self.__detachConfirmationTimer = None
         self.__isBeingPulledCallback.destroy()
         self.__isBeingPulledCallback = None
+        if self.__vehicleStickers is not None:
+            self.__vehicleStickers.detach()
+            self.__vehicleStickers = None
         return
 
     def onStaticCollision(self, energy, point, normal):
@@ -119,12 +136,12 @@ class DetachedTurret(BigWorld.Entity, ComponentSystem):
             for matrix, desc in zip(matricesToCheck, self.__componentsDesc):
                 toModel = matrix
                 toModel.invert()
-                collisions = desc['hitTester'].localHitTest(toModel.applyPoint(startPoint), toModel.applyPoint(endPoint))
+                collisions = desc.hitTester.localHitTest(toModel.applyPoint(startPoint), toModel.applyPoint(endPoint))
                 if collisions is None:
                     continue
                 for dist, _, hitAngleCos, matKind in collisions:
                     if res is None or res.dist >= dist:
-                        matInfo = desc['materials'].get(matKind)
+                        matInfo = desc.materials.get(matKind)
                         res = SegmentCollisionResult(dist, hitAngleCos, matInfo.armor if matInfo is not None else 0)
 
             return res
@@ -140,6 +157,7 @@ class DetachedTurret(BigWorld.Entity, ComponentSystem):
 
     def changeAppearanceVisibility(self, isVisible):
         self.model.visible = isVisible
+        self.__createAndAttachStickers()
 
     def __checkIsBeingPulled(self):
         if self.__detachmentEffects is not None:
@@ -392,8 +410,8 @@ class SynchronousDetachment(VehicleEnterTimer):
     @staticmethod
     def transferInputs(vehicle, turret):
         vehicleDescriptor = vehicle.typeDescriptor
-        hullOffset = vehicleDescriptor.chassis['hullPosition']
+        hullOffset = vehicleDescriptor.chassis.hullPosition
         turretMatrix = Math.Matrix()
-        turretMatrix.setTranslate(hullOffset + vehicleDescriptor.hull['turretPositions'][0])
+        turretMatrix.setTranslate(hullOffset + vehicleDescriptor.hull.turretPositions[0])
         turretMatrix.preMultiply(vehicle.appearance.turretMatrix)
         turret.filter.transferInputAsVehicle(vehicle.filter, turretMatrix)

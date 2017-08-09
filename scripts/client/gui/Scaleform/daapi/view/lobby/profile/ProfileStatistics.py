@@ -14,6 +14,7 @@ from skeletons.gui.game_control import IRankedBattlesController
 _RankedSeasonsKeys = namedtuple('_RankedSeasonsKeys', ['all', 'current', 'previous'])
 _RANKED_SEASONS_KEYS = _RankedSeasonsKeys('all', 'current', 'previous')
 _FRAME_LABELS = {PROFILE_DROPDOWN_KEYS.ALL: 'random',
+ PROFILE_DROPDOWN_KEYS.EPIC_RANDOM: 'epicRandom',
  PROFILE_DROPDOWN_KEYS.FALLOUT: 'fallout',
  PROFILE_DROPDOWN_KEYS.HISTORICAL: 'historical',
  PROFILE_DROPDOWN_KEYS.TEAM: 'team7x7',
@@ -61,10 +62,16 @@ class ProfileStatistics(ProfileStatisticsMeta):
         self._setInitData()
 
     def _setInitData(self, accountDossier = None):
-        dropDownProvider = [self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.ALL), self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.RANKED), self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.FALLOUT)]
+        dropDownProvider = [self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.ALL),
+         self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.EPIC_RANDOM),
+         self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.RANKED),
+         self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.FALLOUT)]
         if accountDossier is not None and accountDossier.getHistoricalStats().getVehicles():
             dropDownProvider.append(self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.HISTORICAL))
-        dropDownProvider.extend((self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.TEAM), self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.STATICTEAM), self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.CLAN)))
+        dropDownProvider.append(self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.TEAM))
+        if accountDossier is not None and accountDossier.getRated7x7Stats().getVehicles():
+            dropDownProvider.append(self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.STATICTEAM))
+        dropDownProvider.append(self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.CLAN))
         if self.lobbyContext.getServerSettings().isStrongholdsEnabled():
             dropDownProvider.append(self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.FORTIFICATIONS))
         self.as_setInitDataS({'dropDownProvider': dropDownProvider})

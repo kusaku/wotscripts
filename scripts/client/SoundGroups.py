@@ -10,7 +10,6 @@ import MusicControllerWWISE
 from ReplayEvents import g_replayEvents
 from debug_utils import LOG_ERROR, LOG_WARNING, LOG_CURRENT_EXCEPTION, LOG_DEBUG
 from helpers import i18n
-from constants import ARENA_PERIOD
 from vehicle_systems.tankStructure import TankPartNames
 ENABLE_LS = True
 ENABLE_ENGINE_N_TRACKS = True
@@ -23,9 +22,7 @@ DSP_LOWPASS_HI = 20000
 DSP_SEEKSPEED = 200000
 SOUND_ENABLE_STATUS_DEFAULT = 0
 SOUND_ENABLE_STATUS_VALUES = range(3)
-_arenaPeriodState = {ARENA_PERIOD.WAITING: 'STATE_arenastate_waiting',
- ARENA_PERIOD.PREBATTLE: 'STATE_arenastate_counter',
- ARENA_PERIOD.BATTLE: 'STATE_arenastate_battle'}
+MASTER_VOLUME_DEFAULT = 0.5
 _envStateDefs = {'login': ('ue_01_loginscreen_enter', 'ue_01_loginscreen_exit', 0),
  'lobby': ('ue_02_hangar_enter', 'ue_02_hangar_exit', 1),
  'queue': ('ue_03_lobby_enter', 'ue_03_lobby_exit', 0),
@@ -308,7 +305,6 @@ class SoundGroups(object):
          'masterVivox': (),
          'micVivox': (),
          'masterFadeVivox': ()}
-        defMasterVolume = 0.5
         defCategoryVolumes = {'music': 0.5,
          'masterVivox': 0.7,
          'micVivox': 0.4}
@@ -318,7 +314,7 @@ class SoundGroups(object):
         self.__soundModes = None
         if not userPrefs.has_key(Settings.KEY_SOUND_PREFERENCES):
             userPrefs.write(Settings.KEY_SOUND_PREFERENCES, '')
-            self.__masterVolume = defMasterVolume
+            self.__masterVolume = MASTER_VOLUME_DEFAULT
             for categoryName in self.__categories.iterkeys():
                 self.__volumeByCategory[categoryName] = defCategoryVolumes.get(categoryName, 1.0)
 
@@ -326,7 +322,7 @@ class SoundGroups(object):
         else:
             ds = userPrefs[Settings.KEY_SOUND_PREFERENCES]
             self.__enableStatus = ds.readInt('enable', SOUND_ENABLE_STATUS_DEFAULT)
-            self.__masterVolume = ds.readFloat('masterVolume', defMasterVolume)
+            self.__masterVolume = ds.readFloat('masterVolume', MASTER_VOLUME_DEFAULT)
             self.__volumeByCategory['music_hangar'] = ds.readFloat('volume_music_hangar', 1.0)
             self.__volumeByCategory['voice'] = ds.readFloat('volume_voice', 1.0)
             self.__volumeByCategory['ev_ambient'] = ds.readFloat('volume_ev_ambient', 0.8)
@@ -421,18 +417,7 @@ class SoundGroups(object):
         if WWISE.enabled:
             if spaceID == GUI_GLOBAL_SPACE_ID.LOGIN:
                 WWISE.WG_loadLogin()
-        if spaceID == GUI_GLOBAL_SPACE_ID.BATTLE:
-            BigWorld.player().arena.onPeriodChange += self.__arenaPeriodChanged
-        elif self.__spaceID == GUI_GLOBAL_SPACE_ID.BATTLE:
-            BigWorld.player().arena.onPeriodChange -= self.__arenaPeriodChanged
         self.__spaceID = spaceID
-
-    def __arenaPeriodChanged(self, *args):
-        period = BigWorld.player().arena.period
-        state = _arenaPeriodState.get(period, None)
-        if state is not None:
-            WWISE.WW_setState('STATE_arenastate', state)
-        return
 
     def onEnvStart(self, environment):
         state = _envStateDefs.get(environment, None)
@@ -473,7 +458,10 @@ class SoundGroups(object):
         self.onMusicVolumeChanged('ambient', self.__masterVolume, self.getVolume('ambient'))
 
     def getMasterVolume(self):
-        return self.__masterVolume
+        if self.__isWindowVisible:
+            return self.__masterVolume
+        else:
+            return 0.0
 
     def getEnableStatus(self):
         return self.__enableStatus
@@ -577,6 +565,12 @@ class SoundGroups(object):
             WWISE.WG_unloadHangar()
         MusicControllerWWISE.init(arenaName)
 
+    def loadSoundBank(self, name):
+        WWISE.WG_loadSoundBank(name)
+
+    def unLoadSoundBank(self, name):
+        WWISE.WG_unLoadSoundBank(name)
+
     def getSound3D(self, node, event):
         if DEBUG_TRACE_SOUND is True:
             LOG_DEBUG('SOUND: getSound3D', event, node)
@@ -675,7 +669,7 @@ class SoundGroups(object):
         else:
             vehicleTypeDescriptor = BigWorld.player().vehicleTypeDescriptor
         if vehicleTypeDescriptor is not None:
-            __ceilLess = vehicleTypeDescriptor.turret['ceilless']
+            __ceilLess = vehicleTypeDescriptor.turret.ceilless
         if mode == 0:
             WWISE.WW_setRTCPGlobal('RTPC_ext_viewPlayMode', 1)
             if __ceilLess is True:

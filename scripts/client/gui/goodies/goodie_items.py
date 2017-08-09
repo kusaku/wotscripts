@@ -2,12 +2,13 @@
 import BigWorld
 from goodies.goodie_constants import GOODIE_RESOURCE_TYPE, GOODIE_STATE, GOODIE_VARIETY, GOODIE_TARGET_TYPE
 from gui import GUI_SETTINGS
-from gui.shared.gui_items import GUI_ITEM_PURCHASE_CODE
+from gui.shared.gui_items import GUI_ITEM_ECONOMY_CODE
 from gui.Scaleform.locale.MENU import MENU
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.shared.economics import getActionPrc
 from gui.shared.formatters import text_styles
-from gui.shared.money import Currency
+from gui.shared.money import Currency, MONEY_UNDEFINED
+from gui.shared.gui_items.gui_item_economics import ItemPrices, ItemPrice, ITEM_PRICE_EMPTY, ITEM_PRICES_EMPTY
 from shared_utils import CONST_CONTAINER
 from helpers import time_utils
 from helpers.i18n import makeString as _ms
@@ -216,7 +217,7 @@ class PersonalVehicleDiscount(_PersonalDiscount):
         if resoruce.isPercentage:
             return resoruce.value
         else:
-            defaultCreditPrice = vehicle.defaultPrice.credits
+            defaultCreditPrice = vehicle.buyPrices.itemPrice.defPrice.getSignValue(Currency.CREDITS)
             discountCreditPrice = defaultCreditPrice - resoruce.value
             return getActionPrc(discountCreditPrice, defaultCreditPrice)
 
@@ -231,9 +232,25 @@ class Booster(_Goodie):
 
     def __init__(self, boosterID, boosterDescription, proxy):
         super(Booster, self).__init__(boosterID, boosterDescription, proxy)
-        raise boosterDescription.variety == GOODIE_VARIETY.BOOSTER or AssertionError
-        self.buyPrice, self.defaultPrice, self.isHidden = proxy.getBoosterPriceData(boosterID)
+        if not boosterDescription.variety == GOODIE_VARIETY.BOOSTER:
+            raise AssertionError
+            buyPrice, defaultPrice, altPrice, defaultAltPrice, self.isHidden = proxy.getBoosterPriceData(boosterID)
+            buyPrice = ItemPrice(price=buyPrice, defPrice=defaultPrice)
+            altPrice = altPrice is not None and ItemPrice(price=altPrice, defPrice=defaultAltPrice)
+        else:
+            altPrice = ITEM_PRICE_EMPTY
+        self.__buyPrices = ItemPrices(itemPrice=buyPrice, itemAltPrice=altPrice)
+        self.__sellPrices = ITEM_PRICES_EMPTY
         self.__activeBoostersValues = proxy.getActiveBoostersTypes()
+        return
+
+    @property
+    def buyPrices(self):
+        return self.__buyPrices
+
+    @property
+    def sellPrices(self):
+        return self.__sellPrices
 
     @property
     def boosterID(self):
@@ -347,12 +364,21 @@ class Booster(_Goodie):
             text = _ms(MENU.BOOSTERSWINDOW_BOOSTERSTABLERENDERER_UNDEFINETIME)
         return text_styles.standard(text)
 
-    def getBuyPriceCurrency(self):
+    def getBuyPrice(self, preferred = True):
         """
-        Returns the buy price of the goodie item.
-        :return: <str>, see Currency enum.
+        For goodie item - return always item's regular buy price
+        :param preferred: bool - this flag is necessary to match FittingItem's signature
+        :return: ItemPrice
         """
-        return self.buyPrice.getCurrency(byWeight=True)
+        return self.buyPrices.itemPrice
+
+    def getSellPrice(self, preferred = True):
+        """
+        For goodie item - return always item's regular sell price
+        :param preferred: bool - this flag is necessary to match FittingItem's signature
+        :return: ItemPrice
+        """
+        return self.sellPrices.itemPrice
 
     def mayPurchase(self, money):
         """
@@ -362,17 +388,10 @@ class Booster(_Goodie):
         else return False and error msg.
         """
         if getattr(BigWorld.player(), 'isLongDisconnectedFromCenter', False):
-            return (False, GUI_ITEM_PURCHASE_CODE.CENTER_UNAVAILABLE)
+            return (False, GUI_ITEM_ECONOMY_CODE.CENTER_UNAVAILABLE)
         if self.isHidden:
-            return (False, GUI_ITEM_PURCHASE_CODE.ITEM_IS_HIDDEN)
-        price = self.buyPrice
-        if not price:
-            return (False, GUI_ITEM_PURCHASE_CODE.ITEM_NO_PRICE)
-        shortage = money.getShortage(price)
-        if shortage:
-            currency, _ = shortage.pop()
-            return (False, '%s_error' % currency)
-        return (True, GUI_ITEM_PURCHASE_CODE.OK)
+            return (False, GUI_ITEM_ECONOMY_CODE.ITEM_IS_HIDDEN)
+        return self._isEnoughMoney(self.buyPrices, money)
 
     def getFormattedValue(self, formatter = None):
         """
@@ -386,3 +405,25 @@ class Booster(_Goodie):
             return formatter(value)
         else:
             return value
+
+    @classmethod
+    def _isEnoughMoney(cls, prices, money):
+        """
+        Determines if the given money enough for buying the booster for a price.
+        
+        :param prices: item prices represented by ItemPrices
+        :param money: money for buying, see Money
+        :return: tuple(can be installed <bool>, error msg <str>), also see GUI_ITEM_ECONOMY_CODE
+        """
+        shortage = MONEY_UNDEFINED
+        for itemPrice in prices:
+            need = money.getShortage(itemPrice.price)
+            if need:
+                shortage += need
+            else:
+                return (True, GUI_ITEM_ECONOMY_CODE.UNDEFINED)
+
+        if shortage:
+            currency = shortage.getCurrency(byWeight=True)
+            return (False, GUI_ITEM_ECONOMY_CODE.getMoneyError(currency))
+        return (False, GUI_ITEM_ECONOMY_CODE.ITEM_NO_PRICE)

@@ -18,3 +18,4 @@ class PROFILE_DROPDOWN_KEYS(object):
     FORTIFICATIONS_SORTIES = 'fortifications/sorties'
     COMPANY = 'company'
     RANKED = 'ranked'
+    EPIC_RANDOM = 'epicRandom'

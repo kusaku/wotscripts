@@ -34,6 +34,9 @@ class FadingMessages(BattleMessageListMeta):
     def __del__(self):
         LOG_DEBUG('{0} is deleted'.format(self.__name))
 
+    def setSettingFile(self, file):
+        self.__settingsFilePath = _MESSAGES_SETTINGS_PATH.format(file)
+
     @sf_battle
     def app(self):
         return None

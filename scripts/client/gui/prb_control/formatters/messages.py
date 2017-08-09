@@ -30,7 +30,7 @@ def getKickReasonMessage(reasonCode):
 
 def getPrbKickedFromQueueMessage(prbTypeName):
     guiName = prbTypeName.lower()
-    if guiName != 'squad' and guiName != 'company':
+    if guiName != 'squad':
         guiName = 'default'
     return i18n.makeString('#system_messages:prebattle_start_failed/kickedFromQueue/{0:>s}'.format(guiName))
 

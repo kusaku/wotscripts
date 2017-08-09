@@ -13,7 +13,6 @@ def prepareFashions(vDesc, isCurrentModelDamaged, camouflageId = None):
          None,
          None]
     else:
-        drivenJoints = vDesc.gun.get('drivenJoints', None)
         fashions = [BigWorld.WGVehicleFashion(False),
          None,
          None,
@@ -58,10 +57,10 @@ def applyCamouflage(vDesc, fashions, isCurrentModelDamaged, camouflageId = None)
     if isCurrentModelDamaged:
         weights *= 0.1
     for fashionIdx, descId in enumerate(TankPartNames.ALL):
-        exclusionMap = vDesc.type.camouflageExclusionMask
+        exclusionMap = vDesc.type.camouflage.exclusionMask
         tiling = defaultTiling
         if tiling is None:
-            tiling = vDesc.type.camouflageTiling
+            tiling = vDesc.type.camouflage.tiling
         if descId == 'chassis':
             compDesc = vDesc.chassis
         elif descId == 'hull':
@@ -73,7 +72,7 @@ def applyCamouflage(vDesc, fashions, isCurrentModelDamaged, camouflageId = None)
         else:
             compDesc = None
         if compDesc is not None:
-            coeff = compDesc.get('camouflageTiling')
+            coeff = compDesc.camouflage.tiling
             if coeff is not None:
                 if tiling is not None:
                     tiling = (tiling[0] * coeff[0],
@@ -82,8 +81,8 @@ def applyCamouflage(vDesc, fashions, isCurrentModelDamaged, camouflageId = None)
                      tiling[3] + coeff[3])
                 else:
                     tiling = coeff
-            if compDesc.get('camouflageExclusionMask'):
-                exclusionMap = compDesc['camouflageExclusionMask']
+            if compDesc.camouflage.exclusionMask:
+                exclusionMap = compDesc.camouflage.exclusionMask
         useCamouflage = camouflagePresent and texture
         fashion = fashions[fashionIdx]
         if fashion is not None:

@@ -14,6 +14,7 @@ class NATIONS(object):
     JAPAN = '#nations:japan'
     CZECH = '#nations:czech'
     CHINA = '#nations:china'
+    POLAND = '#nations:poland'
     SWEDEN = '#nations:sweden'
     ALL_ENUM = (USSR,
      GERMANY,
@@ -23,6 +24,7 @@ class NATIONS(object):
      JAPAN,
      CZECH,
      CHINA,
+     POLAND,
      SWEDEN)
 
     @classmethod

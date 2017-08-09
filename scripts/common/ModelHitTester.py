@@ -1,21 +1,15 @@
 # Embedded file name: scripts/common/ModelHitTester.py
 from collections import namedtuple
-import math
 import BigWorld
-from Math import Vector3, Vector2, Matrix
-from debug_utils import *
-from constants import IS_DEVELOPMENT, IS_CLIENT
+from Math import Vector2, Matrix
+from constants import IS_DEVELOPMENT, IS_CLIENT, IS_BOT
+from debug_utils import LOG_DEBUG
 
 class ModelHitTester(object):
-    bbox = None
-
-    def __setBspModelName(self, value):
-        self.releaseBspModel()
-        self.__bspModelName = value
-
-    bspModelName = property(lambda self: self.__bspModelName, __setBspModelName)
+    __slots__ = ('__bspModel', '__bspModelName', '__bspModelDown', '__bspModelNameDown', '__bspModelUp', '__bspModelNameUp', 'bbox', 'bboxDown', 'bboxUp')
 
     def __init__(self, dataSection = None):
+        self.bbox = None
         self.__bspModel = None
         self.__bspModelName = None
         self.__bspModelDown = None
@@ -23,7 +17,7 @@ class ModelHitTester(object):
         self.__bspModelUp = None
         self.__bspModelNameUp = None
         if dataSection is not None:
-            modelTag = 'collisionModelClient' if IS_CLIENT else 'collisionModelServer'
+            modelTag = 'collisionModelClient' if IS_CLIENT or IS_BOT else 'collisionModelServer'
             self.__bspModelName = dataSection.readString(modelTag)
             if not self.__bspModelName:
                 raise Exception('<%s> is missing or wrong' % modelTag)
@@ -32,6 +26,16 @@ class ModelHitTester(object):
             modelTagUp = modelTag + 'Up'
             self.__bspModelNameUp = dataSection.readString(modelTagUp)
         return
+
+    @property
+    def bspModelName(self):
+        """Name of BSP (collision) model if it is used, None otherwise."""
+        return self.__bspModelName
+
+    @bspModelName.setter
+    def bspModelName(self, name):
+        self.releaseBspModel()
+        self.__bspModelName = name
 
     def getBspModel(self):
         return self.__bspModel
@@ -137,3 +141,4 @@ def segmentMayHitVehicle(vehicleDescr, segmentStart, segmentEnd, vehicleCenter):
 
 
 SegmentCollisionResult = namedtuple('SegmentCollisionResult', ('dist', 'hitAngleCos', 'armor'))
+SegmentCollisionResultExt = namedtuple('SegmentCollisionResultExt', ('dist', 'hitAngleCos', 'matInfo', 'compName'))

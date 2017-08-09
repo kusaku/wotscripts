@@ -16,9 +16,7 @@ from gui.server_events.parsers import AccountRequirements, VehicleRequirements, 
 from helpers import dependency
 from helpers import getLocalizedData, i18n, time_utils
 from potapov_quests import PQ_STATE as _PQS, PQ_BRANCH
-from predefined_hosts import g_preDefinedHosts
 from shared_utils import first, findFirst
-from skeletons.connection_mgr import IConnectionManager
 from skeletons.gui.shared import IItemsCache
 EventBattles = namedtuple('EventBattles', ['vehicleTags',
  'vehicles',
@@ -294,8 +292,6 @@ class Quest(ServerEventAbstract):
         self.__linkedActions = value
 
     def getUserType(self):
-        if self.getType() == constants.EVENT_TYPE.FORT_QUEST:
-            return i18n.makeString(QUESTS.ITEM_TYPE_SPECIALMISSION)
         return i18n.makeString(QUESTS.ITEM_TYPE_QUEST)
 
     def getProgressExpiryTime(self):
@@ -361,15 +357,16 @@ class Quest(ServerEventAbstract):
     def getProgressData(self):
         return self._progress or {}
 
-    def getBonuses(self, bonusName = None, isCompensation = False):
+    def getBonuses(self, bonusName = None, isCompensation = False, bonusData = None):
         """ Get quest's bonuses.
         
         :param bonusName: str, bonus name to be find
         :param isCompensation: bool, treat returned bonuses as compensation
+        :param bonusData: dict, formed quest bonus dict section, wrap bonus data for existing bonus dict
         :return: list with found bonuses
         """
         result = []
-        bonusData = self._data.get('bonus', {})
+        bonusData = bonusData or self._data.get('bonus', {})
         if bonusName is None:
             for name, value in bonusData.iteritems():
                 bonus = getBonusObj(self, name, value, isCompensation)
@@ -1011,50 +1008,6 @@ class MotiveQuest(Quest):
 
     def getRequirementsStr(self):
         return getLocalizedData(self._data, 'requirements')
-
-
-class CompanyBattles(namedtuple('CompanyBattles', ['startTime', 'finishTime', 'peripheryIDs'])):
-    DELTA = 1
-    connectionMgr = dependency.descriptor(IConnectionManager)
-
-    def getCreationTimeLeft(self):
-        if self.startTime is not None:
-            startTimeDelta = time_utils.getTimestampFromNow(self.startTime)
-            if startTimeDelta <= CompanyBattles.DELTA:
-                return 0
-            return startTimeDelta
-        else:
-            return self.startTime
-
-    def getDestroyingTimeLeft(self):
-        if self.finishTime is not None:
-            destroyTimeDelta = time_utils.getTimestampFromNow(self.finishTime)
-            if destroyTimeDelta <= CompanyBattles.DELTA:
-                return 0
-            return destroyTimeDelta
-        else:
-            return self.finishTime
-
-    def isCreationTimeCorrect(self):
-        creationTime = self.getCreationTimeLeft()
-        return creationTime is None or creationTime <= 0
-
-    def isDestroyingTimeCorrect(self):
-        destroyingTime = self.getDestroyingTimeLeft()
-        return destroyingTime > 0 or destroyingTime is None
-
-    def needToChangePeriphery(self):
-        return not self.connectionMgr.isStandalone() and self.connectionMgr.peripheryID not in self.peripheryIDs
-
-    def isValid(self):
-        return (self.startTime is None or self.startTime > 0) and (self.finishTime is None or self.finishTime > 0) and (self.connectionMgr.isStandalone() or self.__validatePeripheryIDs())
-
-    def isRunning(self):
-        return self.isCreationTimeCorrect() and self.isDestroyingTimeCorrect()
-
-    def __validatePeripheryIDs(self):
-        validPeripheryIDs = set((host.peripheryID for host in g_preDefinedHosts.hosts() if host.peripheryID != 0))
-        return self.peripheryIDs <= validPeripheryIDs and len(self.peripheryIDs) != 0
 
 
 class FalloutConfig(namedtuple('FalloutConfig', ['allowedVehicles',

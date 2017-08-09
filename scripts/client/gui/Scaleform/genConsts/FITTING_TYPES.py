@@ -16,7 +16,8 @@ class FITTING_TYPES(object):
      MODULE,
      SHELL,
      OPTIONAL_DEVICE,
-     EQUIPMENT]
+     EQUIPMENT,
+     BOOSTER]
     ARTEFACT_SLOTS = [OPTIONAL_DEVICE, EQUIPMENT]
     VEHICLE_GUN = 'vehicleGun'
     VEHICLE_TURRET = 'vehicleTurret'

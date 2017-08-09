@@ -1,6 +1,9 @@
 # Embedded file name: scripts/client/gui/prb_control/entities/training/legacy/limits.py
+from CurrentVehicle import g_currentVehicle
 from constants import PREBATTLE_ACCOUNT_STATE, PREBATTLE_TYPE
-from gui.prb_control.entities.base.limits import AbstractTeamIsValid, LimitsCollection, VehicleIsValid, TeamNoPlayersInBattle, TeamIsValid
+from gui.prb_control.entities.base.limits import AbstractTeamIsValid, LimitsCollection, VehicleIsValid
+from gui.prb_control.entities.base.limits import TeamNoPlayersInBattle, TeamIsValid
+from gui.prb_control.settings import PREBATTLE_RESTRICTION
 from helpers import dependency
 from items import vehicles
 from skeletons.gui.shared import IItemsCache
@@ -42,10 +45,23 @@ class ObserverInTeamIsValid(AbstractTeamIsValid):
         return True
 
 
+class TrainingVehicleIsValid(VehicleIsValid):
+    """
+    Class for current vehicle validation in trainings. Validates also:
+    - is vehicle not observer
+    """
+
+    def check(self, teamLimits):
+        isValid, restriction = super(TrainingVehicleIsValid, self).check(teamLimits)
+        if isValid and g_currentVehicle.isObserver():
+            return (False, PREBATTLE_RESTRICTION.VEHICLE_NOT_SUPPORTED)
+        return (isValid, restriction)
+
+
 class TrainingLimits(LimitsCollection):
     """
     Training limits class
     """
 
     def __init__(self, entity):
-        super(TrainingLimits, self).__init__(entity, (VehicleIsValid(),), (TeamNoPlayersInBattle(PREBATTLE_TYPE.TRAINING), TeamIsValid(), ObserverInTeamIsValid()))
+        super(TrainingLimits, self).__init__(entity, (TrainingVehicleIsValid(),), (TeamNoPlayersInBattle(PREBATTLE_TYPE.TRAINING), TeamIsValid(), ObserverInTeamIsValid()))

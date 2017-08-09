@@ -12,9 +12,6 @@ class TutorialManagerMeta(BaseDAAPIComponent):
     def onTriggerActivated(self, componentId, triggerId):
         self._printOverrideError('onTriggerActivated')
 
-    def requestCriteriaValue(self, criteriaName):
-        self._printOverrideError('requestCriteriaValue')
-
     def as_setSystemEnabledS(self, value):
         if self._isDAAPIInited():
             return self.flashObject.as_setSystemEnabled(value)
@@ -23,9 +20,9 @@ class TutorialManagerMeta(BaseDAAPIComponent):
         if self._isDAAPIInited():
             return self.flashObject.as_setDescriptions(descriptions)
 
-    def as_setCriteriaS(self, criteriaName, criteriaValue, requestedCriteria = True):
+    def as_setCriteriaS(self, criteriaName, criteriaValue):
         if self._isDAAPIInited():
-            return self.flashObject.as_setCriteria(criteriaName, criteriaValue, requestedCriteria)
+            return self.flashObject.as_setCriteria(criteriaName, criteriaValue)
 
     def as_setTriggersS(self, componentId, triggers):
         """

@@ -1,5 +1,4 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/rankedBattles/ranked_battles_prime_time_view.py
-import random
 import operator
 import constants
 from adisp import process
@@ -8,7 +7,7 @@ from gui.Scaleform import MENU
 from gui.Scaleform.daapi import LobbySubView
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui.Scaleform.daapi.view.meta.RankedBattlesPrimeTimeMeta import RankedBattlesPrimeTimeMeta
-from gui.Scaleform.daapi.view.servers_data_provider import ServersDataProvider
+from gui.Scaleform.daapi.view.lobby.rankedBattles.ranked_servers_data_provider import RankedServersDataProvider
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.Scaleform.locale.RANKED_BATTLES import RANKED_BATTLES
 from gui.prb_control.entities.base.ctx import PrbAction
@@ -29,6 +28,7 @@ from skeletons.connection_mgr import IConnectionManager
 from skeletons.gui.game_control import IRankedBattlesController
 from skeletons.gui.game_control import IReloginController
 from gui.shared.utils.scheduled_notifications import Notifiable, PeriodicNotifier, SimpleNotifier
+_PING_MAX_VALUE = 999
 
 class RankedBattlesPrimeTimeView(LobbySubView, RankedBattlesPrimeTimeMeta, Notifiable, IPreQueueListener):
     relogin = dependency.descriptor(IReloginController)
@@ -48,7 +48,7 @@ class RankedBattlesPrimeTimeView(LobbySubView, RankedBattlesPrimeTimeMeta, Notif
     def selectServer(self, idx):
         vo = self.__serversDP.getVO(idx)
         self.__serversDP.setSelectedID(vo['id'])
-        self.__updateData()
+        self.__serversDP.refresh()
 
     def apply(self):
         selectedID = self.__serversDP.getSelectedID()
@@ -59,7 +59,7 @@ class RankedBattlesPrimeTimeView(LobbySubView, RankedBattlesPrimeTimeMeta, Notif
 
     def _populate(self):
         super(RankedBattlesPrimeTimeView, self)._populate()
-        self.__serversDP = ServersDataProvider()
+        self.__serversDP = RankedServersDataProvider()
         self.__serversDP.setFlashObject(self.as_getServersDPS())
         self.__updateList()
         self.__updateData()
@@ -92,16 +92,19 @@ class RankedBattlesPrimeTimeView(LobbySubView, RankedBattlesPrimeTimeMeta, Notif
         self.fireEvent(events.LoadViewEvent(VIEW_ALIAS.LOBBY_HANGAR), scope=EVENT_BUS_SCOPE.LOBBY)
 
     def __updateList(self):
-        hostsList = g_preDefinedHosts.getSimpleHostsList(g_preDefinedHosts.hostsWithRoaming())
+        hostsList = g_preDefinedHosts.getSimpleHostsList(g_preDefinedHosts.hostsWithRoaming(), withShortName=True)
         if self.connectionMgr.peripheryID == 0:
             hostsList.insert(0, (self.connectionMgr.url,
              self.connectionMgr.serverUserName,
+             self.connectionMgr.serverUserNameShort,
              HOST_AVAILABILITY.IGNORED,
              0))
         serversList = []
         availableServersList = []
-        for hostName, name, csisStatus, peripheryID in hostsList:
+        for hostName, name, shortName, csisStatus, peripheryID in hostsList:
             primeTimeStatus, timeLeft = self.rankedController.getPrimeTimeStatus(peripheryID)
+            pingValue, _ = g_preDefinedHosts.getHostPingData(hostName)
+            pingValue = min(pingValue, _PING_MAX_VALUE)
             if primeTimeStatus in (PRIME_TIME_STATUS.AVAILABLE, PRIME_TIME_STATUS.NOT_AVAILABLE):
                 isAvailable = primeTimeStatus == PRIME_TIME_STATUS.AVAILABLE
                 periphery = {'label': name,
@@ -109,7 +112,9 @@ class RankedBattlesPrimeTimeView(LobbySubView, RankedBattlesPrimeTimeMeta, Notif
                  'csisStatus': csisStatus,
                  'data': hostName,
                  'enabled': isAvailable,
-                 'timeLeft': timeLeft}
+                 'timeLeft': timeLeft,
+                 'shortname': shortName,
+                 'pingValue': pingValue}
                 serversList.append(periphery)
                 if isAvailable:
                     availableServersList.append(periphery)
@@ -132,29 +137,26 @@ class RankedBattlesPrimeTimeView(LobbySubView, RankedBattlesPrimeTimeMeta, Notif
         if len(self.__serversList) == 1:
             serverDDName = text_styles.concatStylesToSingleLine(text_styles.main(currentServerName), '  ', selectedItem['pingValue'])
             serversDDEnabled = False
-            serverDDVisible = False
         else:
             serverDDName = ''
             serversDDEnabled = True
-            serverDDVisible = True
-        serverDDLabel = text_styles.highTitle(_ms(RANKED_BATTLES.PRIMETIME_SERVERS, server=serverDDName))
+        applyButtonLabel = _ms(RANKED_BATTLES.PRIMETIME_APPLYBTN)
+        title = _ms(RANKED_BATTLES.PRIMETIME_TITLE)
         if self.__isEnabled:
             timeLeftStr = time_utils.getTillTimeString(serverItem['timeLeft'], MENU.HEADERBUTTONS_BATTLE_TYPES_RANKED_AVAILABILITY)
             status = text_styles.main(_ms(RANKED_BATTLES.PRIMETIME_STATUS_THISENABLE, server=currentServerName, time=text_styles.warning(timeLeftStr)))
             mainBackground = RES_ICONS.MAPS_ICONS_RANKEDBATTLES_PRIMETIME_PRIME_TIME_BACK_DEFAULT
+            title = _ms(RANKED_BATTLES.PRIMETIME_TITLEWELCOME)
         else:
+            applyButtonLabel = _ms(RANKED_BATTLES.PRIMETIME_CONTINUEBTN)
             status = '{} {}'.format(icons.alert(-3), text_styles.main(_ms(RANKED_BATTLES.PRIMETIME_STATUS_DISABLE)))
             mainBackground = RES_ICONS.MAPS_ICONS_RANKEDBATTLES_PRIMETIME_PRIME_TIME_BACK_BW
-        self.as_setDataS({'calendarTooltip': makeTooltip(RANKED_BATTLES.RANKEDBATTLEVIEW_STATUSBLOCK_CALENDARBTNTOOLTIP_HEADER, RANKED_BATTLES.RANKEDBATTLEVIEW_STATUSBLOCK_CALENDARBTNTOOLTIP_BODY),
-         'calendarIcon': RES_ICONS.MAPS_ICONS_BUTTONS_CALENDAR,
-         'title': _ms(RANKED_BATTLES.PRIMETIME_TITLE),
-         'apply': _ms(RANKED_BATTLES.PRIMETIME_APPLYBTN),
+        self.as_setDataS({'title': title,
+         'apply': applyButtonLabel,
          'mainBackground': mainBackground,
          'status': status,
-         'serverDDLabel': serverDDLabel,
          'serversDDEnabled': serversDDEnabled,
-         'serverDDVisible': serverDDVisible})
-        self.as_setSelectedServerIndexS(selectedIdx)
+         'serverDDVisible': True})
 
     def __updateServer(self):
         if self.__serversDP.getSelectedIdx() == -1:
@@ -162,8 +164,11 @@ class RankedBattlesPrimeTimeView(LobbySubView, RankedBattlesPrimeTimeMeta, Notif
             if findFirst(lambda s: s['id'] == currentServerID, self.__serversList) is not None:
                 self.__serversDP.setSelectedID(currentServerID)
             else:
-                server = random.choice(self.__serversList)
-                self.__serversDP.setSelectedID(server['id'])
+                bestServer = self.__serversDP.getDefaultSelectedServer(self.__serversList)
+                for server in self.__serversList:
+                    if server['shortname'] == bestServer:
+                        self.__serversDP.setSelectedID(server['id'])
+
         return
 
     def __onServersUpdate(self, *args):

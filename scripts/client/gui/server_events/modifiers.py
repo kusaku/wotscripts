@@ -11,7 +11,7 @@ from items import vehicles, ITEM_TYPE_NAMES
 from shared_utils import BoundMethodWeakref as bwr, CONST_CONTAINER
 from gui.shared.utils.requesters import REQ_CRITERIA
 from gui.shared.gui_items import GUI_ITEM_TYPE, GUI_ITEM_TYPE_NAMES
-from gui.shared.money import Currency, ZERO_MONEY
+from gui.shared.money import Currency, MONEY_UNDEFINED
 from gui.server_events import formatters
 from skeletons.gui.goodies import IGoodiesCache
 from skeletons.gui.shared import IItemsCache
@@ -203,11 +203,11 @@ class _BuyPriceSet(_PriceOpAbstract):
 
     def _getDiscountParams(self, item, value):
         for currency in Currency.BY_WEIGHT:
-            setValue = item.defaultPrice.get(currency)
+            setValue = item.buyPrices.itemPrice.defPrice.get(currency)
             if setValue:
                 return (_getPercentDiscountByValue(value, setValue), currency)
 
-        return (_getPercentDiscountByValue(value, item.defaultPrice.credits), _DT.CREDITS)
+        return (_getPercentDiscountByValue(value, item.buyPrices.itemPrice.defPrice.credits), _DT.CREDITS)
 
 
 class _RentPriceSet(_PriceOpAbstract):
@@ -215,7 +215,7 @@ class _RentPriceSet(_PriceOpAbstract):
     def _getRentDiscountParams(self, item, package, value):
         rentPackage = item.getRentPackage(package)
         if rentPackage:
-            defaultGoldRentPrice = rentPackage.get('defaultRentPrice', ZERO_MONEY).gold
+            defaultGoldRentPrice = rentPackage.get('defaultRentPrice', MONEY_UNDEFINED).gold
             if defaultGoldRentPrice:
                 return (_getPercentDiscountByValue(value, defaultGoldRentPrice), _DT.GOLD)
         return (_getPercentDiscountByValue(value, 0), _DT.CREDITS)
@@ -224,16 +224,16 @@ class _RentPriceSet(_PriceOpAbstract):
 class _BuyPriceMul(_PriceOpAbstract):
 
     def _getDiscountParams(self, item, value):
-        if item.defaultPrice[1]:
-            return (_getPercentDiscountByMultiplier(value, item.defaultPrice[1]), _DT.GOLD)
-        return (_getPercentDiscountByMultiplier(value, item.defaultPrice[0]), _DT.PERCENT)
+        if item.buyPrices.itemPrice.defPrice.isSet(Currency.GOLD):
+            return (_getPercentDiscountByMultiplier(value, item.buyPrices.itemPrice.defPrice.gold), _DT.GOLD)
+        return (_getPercentDiscountByMultiplier(value, item.buyPrices.itemPrice.defPrice.getSignValue(Currency.CREDITS)), _DT.PERCENT)
 
 
 class _RentPriceMul(_PriceOpAbstract):
 
     def _getDiscountParams(self, item, value):
         if len(item.rentPackages) > 0:
-            defaultRentPrice = item.rentPackages[0].get('defaultRentPrice', ZERO_MONEY)
+            defaultRentPrice = item.rentPackages[0].get('defaultRentPrice', MONEY_UNDEFINED)
             for currency in Currency.BY_WEIGHT:
                 setValue = defaultRentPrice.get(currency)
                 if setValue:
@@ -246,13 +246,13 @@ class _SellPriceMul(_PriceOpAbstract):
 
     def _getDiscountParams(self, item, value):
         isForGold, value = value
-        if item.buyPrice[1]:
+        if item.buyPrices.itemPrice.price.isSet(Currency.GOLD):
             if isForGold:
-                return (int(item.buyPrice[1] * float(value)), _DT.GOLD)
+                return (int(item.buyPrices.itemPrice.price.gold * float(value)), _DT.GOLD)
             else:
-                creditsPrice = item.buyPrice[1] * self.itemsCache.items.shop.exchangeRate
+                creditsPrice = item.buyPrices.itemPrice.price.gold * self.itemsCache.items.shop.exchangeRate
                 return (int(creditsPrice * float(value)), _DT.CREDITS)
-        return (int(item.buyPrice[0] * float(value)), _DT.CREDITS)
+        return (int(item.buyPrices.itemPrice.price.getSignValue(Currency.CREDITS) * float(value)), _DT.CREDITS)
 
 
 class _ItemsPrice(_DiscountsListAction, _PriceOpAbstract):
@@ -337,9 +337,9 @@ class _ItemsPriceAll(ActionModifier):
     def _getConditionResult(self, nation, goldPriceMult, creditsPriceMult, criteria):
         result = {}
         for v in self.itemsCache.items.getItems(itemTypeID=self._itemType, criteria=criteria).itervalues():
-            if v.buyPrice[1] and goldPriceMult is not None:
+            if v.buyPrices.itemPrice.price.isSet(Currency.GOLD) and goldPriceMult is not None:
                 result[nation, v] = float(goldPriceMult)
-            elif v.buyPrice[0] and creditsPriceMult is not None:
+            elif v.buyPrices.itemPrice.price.isSet(Currency.CREDITS) and creditsPriceMult is not None:
                 result[nation, v] = float(creditsPriceMult)
 
         return result
@@ -450,7 +450,7 @@ class _EquipmentPrice(_ItemsPrice):
             vehCache = vehicles.g_cache
             idx = vehCache.equipmentIDs().get(eqName)
             if idx is not None:
-                return self.itemsCache.items.getItemByCD(vehCache.equipments()[idx]['compactDescr'])
+                return self.itemsCache.items.getItemByCD(vehCache.equipments()[idx].compactDescr)
         except Exception:
             LOG_CURRENT_EXCEPTION()
 
@@ -467,7 +467,7 @@ class _OptDevicePrice(_ItemsPrice):
             vehCache = vehicles.g_cache
             idx = vehCache.optionalDeviceIDs().get(devName)
             if idx is not None:
-                return self.itemsCache.items.getItemByCD(vehCache.optionalDevices()[idx]['compactDescr'])
+                return self.itemsCache.items.getItemByCD(vehCache.optionalDevices()[idx].compactDescr)
         except Exception:
             LOG_CURRENT_EXCEPTION()
 
@@ -489,7 +489,7 @@ class _ShellPrice(_ItemsPrice):
             vehCache = vehicles.g_cache
             idx = vehCache.shellIDs(shellNation).get(shellName)
             if idx is not None:
-                return self.itemsCache.items.getItemByCD(vehCache.shells(shellNation)[idx]['compactDescr'])
+                return self.itemsCache.items.getItemByCD(vehCache.shells(shellNation)[idx].compactDescr)
         except Exception:
             LOG_CURRENT_EXCEPTION()
 
@@ -521,6 +521,7 @@ class EconomicsSet(ActionModifier):
          'goldDropSkillsCost': bwr(self.handlerGoldDropSkillsCost),
          'clanCreationCost': bwr(self.handlerClanCreationCost),
          'paidRemovalCost': bwr(self.handlerPaidRemovalCost),
+         'paidDeluxeRemovalCost': bwr(self.handlerPaidDeluxeRemovalCost),
          'berthsPrices': bwr(self.handlerBerthsPrices),
          'passportChangeCost': bwr(self.handlerPassportChangeCost),
          'femalePassportChangeCost': bwr(self.handlerFemalePassportChangeCost),
@@ -634,7 +635,7 @@ class EconomicsSet(ActionModifier):
     def handlerExchangeRate(self, value):
         default = self.itemsCache.items.shop.defaults.exchangeRate
         shopValue = self.itemsCache.items.shop.exchangeRate
-        return _ActionDiscountValue(discountName='exchangeRate', discountValue=self._calculateModifier(shopValue, default), discountType=_DT.MULTIPLIER)
+        return self._calculateDiscount('exchangeRate', shopValue, default, _DT.MULTIPLIER, discountValueCalculator=self._calculateModifier)
 
     def handlerExchangeRateForShellsAndEqs(self, value):
         default = self.itemsCache.items.shop.defaults.exchangeRateForShellsAndEqs
@@ -643,6 +644,10 @@ class EconomicsSet(ActionModifier):
     def handlerPaidRemovalCost(self, value):
         default = self.itemsCache.items.shop.defaults.paidRemovalCost
         return self._calculateDiscount('paidRemovalCost', value, default, _DT.PERCENT)
+
+    def handlerPaidDeluxeRemovalCost(self, value):
+        default = self.itemsCache.items.shop.defaults.paidDeluxeRemovalCost
+        return self._calculateDiscount('paidDeluxeRemovalCost', value, default, _DT.PERCENT)
 
     def handlerPassportChangeCost(self, value):
         default = self.itemsCache.items.shop.defaults.passportChangeCost
@@ -659,12 +664,12 @@ class EconomicsSet(ActionModifier):
     def handlerFreeXPConversionDiscrecity(self, value):
         default = self.itemsCache.items.shop.defaults.freeXPConversion[0]
         shopValue = self.itemsCache.items.shop.freeXPConversion[0]
-        return _ActionDiscountValue(discountName='freeXPConversionDiscrecity', discountValue=self._calculateModifier(shopValue, default), discountType=_DT.MULTIPLIER)
+        return self._calculateDiscount('freeXPConversionDiscrecity', shopValue, default, _DT.MULTIPLIER, discountValueCalculator=self._calculateModifier)
 
     def handlerFreeXPToTManXPRate(self, value):
         default = self.itemsCache.items.shop.defaults.freeXPToTManXPRate
         shopValue = self.itemsCache.items.shop.freeXPToTManXPRate
-        return _ActionDiscountValue(discountName='freeXPToTManXPRate', discountValue=self._calculateModifier(shopValue, default), discountType=_DT.MULTIPLIER)
+        return self._calculateDiscount('freeXPToTManXPRate', shopValue, default, _DT.MULTIPLIER, discountValueCalculator=self._calculateModifier)
 
     def handlerPremiumPacket1(self, value):
         default = self.itemsCache.items.shop.defaults.getPremiumPacketCost(1)
@@ -760,6 +765,8 @@ class EconomicsMul(EconomicsSet):
     def _wrapParamName(self, name):
         if name not in ('exchangeRateForShellsAndEqs',) and name.endswith(_MULTIPLIER):
             name = name[:-len(_MULTIPLIER)]
+        elif name == 'paidRemovalCostMultiplierGold':
+            name = 'paidRemovalCost'
         return name
 
     def _calcDiscountValue(self, value, default):
@@ -980,9 +987,9 @@ class VehPriceCond(_VehiclePrice, _BuyPriceMul):
     def _getConditionResult(self, goldPriceMult, creditsPriceMult, criteria):
         result = {}
         for v in self.itemsCache.items.getVehicles(criteria).itervalues():
-            if v.buyPrice[1] and goldPriceMult is not None:
+            if v.buyPrices.itemPrice.price.isSet(Currency.GOLD) and goldPriceMult is not None:
                 result[v] = float(goldPriceMult)
-            elif v.buyPrice[0] and creditsPriceMult is not None:
+            elif v.buyPrices.itemPrice.price.isSet(Currency.CREDITS) and creditsPriceMult is not None:
                 result[v] = float(creditsPriceMult)
 
         return result
@@ -996,9 +1003,9 @@ class VehRentPriceCond(VehPriceCond, _VehicleRentPrice, _RentPriceMul):
             for rentPackage in v.rentPackages:
                 rentCost = rentPackage['rentPrice']
                 rentDays = rentPackage['days']
-                if rentCost[1] and goldPriceMult is not None:
+                if rentCost.isSet(Currency.GOLD) and goldPriceMult is not None:
                     result[v, rentDays] = float(goldPriceMult)
-                elif rentCost[0] and creditsPriceMult is not None:
+                elif rentCost.isSet(Currency.CREDITS) and creditsPriceMult is not None:
                     result[v, rentDays] = float(creditsPriceMult)
 
         return result
@@ -1107,9 +1114,10 @@ class BoostersPriceAll(_ItemsPriceAll):
     def _getConditionResult(self, nation, goldPriceMult, creditsPriceMult, criteria):
         result = {}
         for booster in self.goodiesCache.getBoosters(criteria=criteria).itervalues():
-            if booster.buyPrice[1] and goldPriceMult is not None:
+            buyPrices = booster.buyPrices
+            if buyPrices.hasPriceIn(Currency.GOLD) and goldPriceMult is not None:
                 result[nation, booster] = float(goldPriceMult)
-            elif booster.buyPrice[0] and creditsPriceMult is not None:
+            elif buyPrices.hasPriceIn(Currency.CREDITS) and creditsPriceMult is not None:
                 result[nation, booster] = float(creditsPriceMult)
 
         return result

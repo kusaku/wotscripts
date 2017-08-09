@@ -1,5 +1,5 @@
 # Embedded file name: scripts/client/skeletons/gui/shared/utils/requesters.py
-from gui.shared.money import Money
+from gui.shared.money import Money, MoneySet
 
 class IRequester(object):
     """Interface of requester that fetches required data from cache."""
@@ -67,6 +67,9 @@ class IInventoryRequester(IRequester):
         raise NotImplementedError
 
     def getIgrCustomizationsLayout(self):
+        raise NotImplementedError
+
+    def getFreeSlots(self, vehiclesSlots):
         raise NotImplementedError
 
 
@@ -340,7 +343,7 @@ class IShopCommonStats(object):
         raise NotImplementedError
 
     def getBoosterPrices(self):
-        """Gets dictionary containing boosters prices."""
+        """Gets dictionary containing boosters prices that are represented by tuple."""
         raise NotImplementedError
 
     def getHiddens(self):
@@ -371,13 +374,13 @@ class IShopCommonStats(object):
         """Gets item price to buy."""
         raise NotImplementedError
 
-    def getBoosterPrice(self, boosterID):
-        """Gets booster price to buy."""
+    def getBoosterPricesTuple(self, boosterID):
+        """Gets all available prices for buying booster with the given id."""
         raise NotImplementedError
 
     def getItem(self, intCD):
         """Gets information about shop item as
-        tuple(price of item, item is hidden, item can be sold for gold)."""
+        tuple(price of item, item is hidden)."""
         raise NotImplementedError
 
     @property
@@ -388,6 +391,14 @@ class IShopCommonStats(object):
     @property
     def paidRemovalCost(self):
         """Gets cost of dismantling of non-removable optional devices for gold."""
+        raise NotImplementedError
+
+    @property
+    def paidDeluxeRemovalCost(self):
+        """
+        Gets cost of dismantling of non-removable Deluxe optional devices for crystals by default
+        It can be any currency.
+        """
         raise NotImplementedError
 
     @property
@@ -525,10 +536,6 @@ class IShopCommonStats(object):
     def getVehCamouflagePriceFactor(self, typeCompDescr):
         """Gets price factor to buy vehicle's camouflage
         by vehicle int-type compact descriptor."""
-        raise NotImplementedError
-
-    def getHornPriceFactor(self, hornID):
-        """Gets price factor to buy vehicle's horn. It is not used."""
         raise NotImplementedError
 
     def getEmblemsGroupPriceFactors(self):
@@ -672,6 +679,13 @@ class IShopRequester(IShopCommonStats, IRequester):
     def isXPConversionActionActive(self):
         """freeXPConversion is not price, but count of XP for one gold
         so during action we have higher rate, not lower price"""
+        raise NotImplementedError
+
+    @property
+    def isCreditsConversionActionActive(self):
+        """
+        @return: if rate of gold for credits exchanging not standard return True
+        """
         raise NotImplementedError
 
     @property

@@ -1,6 +1,6 @@
 # Embedded file name: scripts/client/gui/prb_control/items/prb_seqs.py
 import time
-from constants import PREBATTLE_CACHE_KEY, PREBATTLE_COMPANY_DIVISION_NAMES
+from constants import PREBATTLE_CACHE_KEY
 from constants import PREBATTLE_TYPE
 from gui.prb_control.prb_getters import getPrebattleAutoInvites
 from gui.prb_control.items.prb_items import PlayerPrbInfo
@@ -29,7 +29,7 @@ def AutoInvitesIterator():
 
 
 class PrbListItem(object):
-    __slots__ = ('prbID', 'time', 'arenaTypeID', 'creator', 'clanAbbrev', 'playersCount', 'isOpened', 'comment', 'division', 'creatorIgrType', 'creatorDbId')
+    __slots__ = ('prbID', 'time', 'arenaTypeID', 'creator', 'clanAbbrev', 'playersCount', 'isOpened', 'comment', 'creatorIgrType', 'creatorDbId')
 
     def __init__(self, time, prbID, info):
         super(PrbListItem, self).__init__()
@@ -53,9 +53,6 @@ class PrbListItem(object):
         self.comment = ''
         if PREBATTLE_CACHE_KEY.COMMENT in info:
             self.comment = info[PREBATTLE_CACHE_KEY.COMMENT]
-        self.division = 0
-        if PREBATTLE_CACHE_KEY.DIVISION in info:
-            self.division = info[PREBATTLE_CACHE_KEY.DIVISION]
         self.creatorIgrType = 0
         if PREBATTLE_CACHE_KEY.CREATOR_IGR_TYPE in info:
             self.creatorIgrType = info[PREBATTLE_CACHE_KEY.CREATOR_IGR_TYPE]
@@ -64,7 +61,7 @@ class PrbListItem(object):
             self.creatorDbId = info[PREBATTLE_CACHE_KEY.CREATOR_DB_ID]
 
     def __repr__(self):
-        return 'PrbListItem(prbID = {0:n}, arenaTypeID = {1:n}, creator = {2:>s}, playersCount = {3:n}, isOpened = {4!r:s}, division = {5:>s}, time = {6:n}, creatorIgrType = {7:n}, creatorDbId = {8:n})'.format(self.prbID, self.arenaTypeID, self.getCreatorFullName(), self.playersCount, self.isOpened, self.getDivisionName(), self.time, self.creatorIgrType, self.creatorDbId)
+        return 'PrbListItem(prbID = {0:n}, arenaTypeID = {1:n}, creator = {2:>s}, playersCount = {3:n}, isOpened = {4!r:s}, time = {5:n}, creatorIgrType = {6:n}, creatorDbId = {7:n})'.format(self.prbID, self.arenaTypeID, self.getCreatorFullName(), self.playersCount, self.isOpened, self.time, self.creatorIgrType, self.creatorDbId)
 
     def getCreatorFullName(self):
         if self.clanAbbrev and len(self.clanAbbrev):
@@ -77,12 +74,6 @@ class PrbListItem(object):
         if self.comment:
             return passCensor(self.comment)
         return ''
-
-    def getDivisionName(self):
-        name = None
-        if self.division in PREBATTLE_COMPANY_DIVISION_NAMES:
-            name = PREBATTLE_COMPANY_DIVISION_NAMES[self.division]
-        return name
 
 
 class AutoInviteItem(object):

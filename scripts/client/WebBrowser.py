@@ -103,6 +103,7 @@ class WebBrowser(object):
         self.onTitleChange = Event(self.__eventMgr)
         self.onFailedCreation = Event(self.__eventMgr)
         self.onCanCreateNewBrowser = Event(self.__eventMgr)
+        self.onUserRequestToClose = Event(self.__eventMgr)
         LOG_BROWSER('INIT ', self.__baseUrl, texName, size, self.__browserID)
         return
 
@@ -194,7 +195,18 @@ class WebBrowser(object):
               None,
               None,
               lambda me, e: injectKeyUp(me, e)))
+            self.__disableKeyHandlers = []
             return True
+
+    def setDisabledKeys(self, keys):
+        self.__disableKeyHandlers = []
+        for key, isKeyDown, isAltDown, isShiftDown, isCtrlDown in keys:
+            self.__disableKeyHandlers.append((key,
+             isKeyDown,
+             isAltDown,
+             isShiftDown,
+             isCtrlDown,
+             lambda me, e: None))
 
     def ready(self, success):
         LOG_BROWSER('READY ', success, self.__baseUrl, self.__browserID)
@@ -319,7 +331,7 @@ class WebBrowser(object):
          isShiftDown,
          isCtrlDown)
         matches = lambda t: t[0] is None or t[0] == t[1]
-        browserKeyHandlers = self.__browserKeyHandlers
+        browserKeyHandlers = tuple(self.__disableKeyHandlers) + self.__browserKeyHandlers
         if self.useSpecialKeys:
             browserKeyHandlers = self.__specialKeyHandlers + browserKeyHandlers
         for values in browserKeyHandlers:
@@ -498,7 +510,7 @@ class WebBrowser(object):
             secondtest = self.__browser.url[:-1]
             if secondtest.endswith(title):
                 return False
-        if self.__baseUrl == title:
+        if self.__baseUrl == title or self.__baseUrl.endswith(title):
             return False
         return True
 

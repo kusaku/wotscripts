@@ -27,7 +27,7 @@ from gui.Scaleform.locale.MENU import MENU
 from gui.Scaleform.locale.WAITING import WAITING
 from gui.shared import events, g_eventBus
 from gui.shared.event_bus import EVENT_BUS_SCOPE
-from gui.shared.events import OpenLinkEvent, LoginEventEx, ArgsEvent, LoginEvent
+from gui.shared.events import OpenLinkEvent, LoginEventEx, ArgsEvent, LoginEvent, BootcampEvent
 from helpers import getFullClientVersion, dependency
 from helpers.i18n import makeString as _ms
 from helpers.statistics import HANGAR_LOADING_STATE
@@ -37,6 +37,7 @@ from skeletons.connection_mgr import IConnectionManager
 from skeletons.gui.battle_session import IBattleSessionProvider
 from skeletons.gui.login_manager import ILoginManager
 from skeletons.helpers.statistics import IStatisticsCollector
+from shared_utils import nextTick
 
 class INVALID_FIELDS:
     ALL_VALID = 0
@@ -167,6 +168,7 @@ class BackgroundMode(object):
             if filename[-4:] == '.png' and filename[0:2] != '__':
                 files.append(filename[0:-4])
 
+        ResMgr.purge(Scaleform.SCALEFORM_WALLPAPER_PATH, True)
         return files
 
 
@@ -190,6 +192,7 @@ class LoginView(LoginPageMeta):
         self._rememberUser = False
         self.loginManager.servers.updateServerList()
         self._servers = self.loginManager.servers
+        self._entityEnqueueCancelCallback = None
         return
 
     def onRegister(self, host):
@@ -209,6 +212,35 @@ class LoginView(LoginPageMeta):
         else:
             self.as_setErrorMessageS(result.errorMessage, result.invalidFields)
         return
+
+    def __tryWGCLogin(self):
+        if not BigWorld.WGC_prepareLogin():
+            return
+        BigWorld.WGC_printLastError()
+        if BigWorld.WGC_processingState() != constants.WGC_STATE.ERROR:
+            Waiting.show('login')
+            self.__wgcCheck()
+
+    def __wgcCheck(self):
+        if BigWorld.WGC_processingState() == constants.WGC_STATE.WAITING_TOKEN_1:
+            nextTick(lambda : self.__wgcCheck())()
+        elif BigWorld.WGC_processingState() == constants.WGC_STATE.LOGIN_IN_PROGRESS:
+            self.__wgcConnect()
+        else:
+            BigWorld.WGC_printLastError()
+            Waiting.hide('login')
+
+    def __wgcConnect(self):
+        serverName = self._servers.selectedServer
+        if serverName is None:
+            return
+        else:
+            serverName = serverName['data']
+            self.statsCollector.noteHangarLoadingState(HANGAR_LOADING_STATE.LOGIN, True)
+            self._autoSearchVisited = serverName == AUTO_LOGIN_QUERY_URL
+            self.__customLoginStatus = None
+            self.loginManager.initiateLogin('', '', serverName, False, False)
+            return
 
     def resetToken(self):
         self.loginManager.clearToken2Preference()
@@ -274,6 +306,8 @@ class LoginView(LoginPageMeta):
         self.connectionMgr.onKickWhileLoginReceived += self._onKickedWhileLogin
         self.connectionMgr.onQueued += self._onHandleQueue
         g_playerEvents.onAccountShowGUI += self._clearLoginView
+        g_playerEvents.onEntityCheckOutEnqueued += self._onEntityCheckoutEnqueued
+        g_playerEvents.onAccountBecomeNonPlayer += self._onAccountBecomeNonPlayer
         self.as_setVersionS(getFullClientVersion())
         self.as_setCopyrightS(_ms(MENU.COPY), _ms(MENU.LEGAL))
         ScaleformFileLoader.enableStreaming([getPathForFlash(_LOGIN_VIDEO_FILE)])
@@ -296,8 +330,13 @@ class LoginView(LoginPageMeta):
         self.connectionMgr.onQueued -= self._onHandleQueue
         self._servers.onServersStatusChanged -= self.__updateServersList
         g_playerEvents.onAccountShowGUI -= self._clearLoginView
+        g_playerEvents.onEntityCheckOutEnqueued -= self._onEntityCheckoutEnqueued
+        g_playerEvents.onAccountBecomeNonPlayer -= self._onAccountBecomeNonPlayer
+        if self._entityEnqueueCancelCallback:
+            g_eventBus.removeListener(BootcampEvent.QUEUE_DIALOG_CANCEL, self._onEntityCheckoutCanceled, EVENT_BUS_SCOPE.LOBBY)
         self._serversDP.fini()
         self._serversDP = None
+        self._entityEnqueueCancelCallback = None
         View._dispose(self)
         return
 
@@ -359,6 +398,25 @@ class LoginView(LoginPageMeta):
 
     def _onLoginQueueClosed(self, event):
         self.__closeLoginQueueDialog()
+
+    def _onEntityCheckoutEnqueued(self, cancelCallback):
+        g_eventBus.addListener(BootcampEvent.QUEUE_DIALOG_CANCEL, self._onEntityCheckoutCanceled, EVENT_BUS_SCOPE.LOBBY)
+        g_eventBus.handleEvent(BootcampEvent(BootcampEvent.QUEUE_DIALOG_SHOW), EVENT_BUS_SCOPE.LOBBY)
+        self._entityEnqueueCancelCallback = cancelCallback
+
+    def _onAccountBecomeNonPlayer(self):
+        if self._entityEnqueueCancelCallback:
+            self._entityEnqueueCancelCallback = None
+            g_eventBus.removeListener(BootcampEvent.QUEUE_DIALOG_CANCEL, self._onEntityCheckoutCanceled, EVENT_BUS_SCOPE.LOBBY)
+        return
+
+    def _onEntityCheckoutCanceled(self, _):
+        Waiting.show('login')
+        g_eventBus.removeListener(BootcampEvent.QUEUE_DIALOG_CANCEL, self._onEntityCheckoutCanceled, EVENT_BUS_SCOPE.LOBBY)
+        if self._entityEnqueueCancelCallback:
+            self._entityEnqueueCancelCallback()
+        self._entityEnqueueCancelCallback = None
+        return
 
     def _onLoginQueueSwitched(self, event):
         self.__closeLoginQueueDialog()
@@ -481,3 +539,4 @@ class LoginView(LoginPageMeta):
         if not self.__isListInitialized and self._servers.serverList:
             self.__isListInitialized = True
             self.as_setSelectedServerIndexS(self._servers.selectedServerIdx)
+        self.__tryWGCLogin()

@@ -663,32 +663,34 @@ def minimizedTitleFormat(title):
     return text_styles.stats(title)
 
 
-def _titleRelationFormat(value, relation, relationI18nType = RELATIONS_SCHEME.DEFAULT):
+def _titleRelationFormat(value, relation, relationI18nType = RELATIONS_SCHEME.DEFAULT, titleKey = None):
     if value is not None:
         relation = relation or 'equal'
         if type(value) not in types.StringTypes:
             value = BigWorld.wg_getNiceNumberFormat(value)
-        relation = i18n.makeString('#quests:details/relations%d/%s' % (relationI18nType, relation))
+        relation = i18n.makeString('#quests:details/relations%s/%s' % (relationI18nType, relation))
         return '%s %s' % (relation, value)
+    elif titleKey:
+        return i18n.makeString(titleKey)
     else:
         return i18n.makeString(QUESTS.DETAILS_CONDITIONS_TARGET_TITLE)
         return
 
 
-def titleRelationFormat(value, relation, relationI18nType = RELATIONS_SCHEME.DEFAULT):
-    return text_styles.promoSubTitle(_titleRelationFormat(value, relation, relationI18nType))
+def titleRelationFormat(value, relation, relationI18nType = RELATIONS_SCHEME.DEFAULT, titleKey = None):
+    return text_styles.promoSubTitle(_titleRelationFormat(value, relation, relationI18nType, titleKey))
 
 
-def titleComplexRelationFormat(value, relation, relationI18nType = RELATIONS_SCHEME.DEFAULT):
-    return titleRelationFormat(value, relation, relationI18nType) + icons.makeImageTag(RES_ICONS.MAPS_ICONS_LIBRARY_STORE_CONDITION_ON, 16, 16, 8, -4)
+def titleComplexRelationFormat(value, relation, titleKey = None):
+    return titleRelationFormat(value, relation, RELATIONS_SCHEME.DEFAULT, titleKey) + icons.makeImageTag(RES_ICONS.MAPS_ICONS_LIBRARY_STORE_CONDITION_ON, 16, 16, 8, -4)
 
 
-def minimizedTitleRelationFormat(value, relation, relationI18nType = RELATIONS_SCHEME.DEFAULT):
-    return text_styles.stats(_titleRelationFormat(value, relation, relationI18nType))
+def minimizedTitleRelationFormat(value, relation, relationI18nType = RELATIONS_SCHEME.DEFAULT, titleKey = None):
+    return text_styles.stats(_titleRelationFormat(value, relation, relationI18nType, titleKey))
 
 
-def minimizedTitleComplexRelationFormat(value, relation, relationI18nType = RELATIONS_SCHEME.DEFAULT):
-    return minimizedTitleRelationFormat(value, relation, relationI18nType) + icons.makeImageTag(RES_ICONS.MAPS_ICONS_LIBRARY_STORE_CONDITION_ON, 16, 16, 2, -4)
+def minimizedTitleComplexRelationFormat(value, relation, titleKey = None):
+    return minimizedTitleRelationFormat(value, relation, RELATIONS_SCHEME.DEFAULT, titleKey) + icons.makeImageTag(RES_ICONS.MAPS_ICONS_LIBRARY_STORE_CONDITION_ON, 16, 16, 2, -4)
 
 
 def titleCumulativeFormat(current, total):

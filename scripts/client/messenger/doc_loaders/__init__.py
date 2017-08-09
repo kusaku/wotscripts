@@ -23,4 +23,5 @@ def load(messengerSettings):
         elif isRequired:
             raise XMLError(xmlCtx, 'Tag "{0:>s}" not found'.format(tag))
 
+    ResMgr.purge(MESSENGER_XML_FILE_PATH, True)
     return

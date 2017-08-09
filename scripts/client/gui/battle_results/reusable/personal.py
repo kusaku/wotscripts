@@ -14,8 +14,8 @@ from gui.ranked_battles.ranked_models import PostBattleRankInfo
 from helpers import dependency
 from skeletons.gui.server_events import IEventsCache
 from skeletons.gui.shared import IItemsCache
+from gui.shared.money import Currency
 _LifeTimeInfo = namedtuple('_LifeTimeInfo', ('isKilled', 'lifeTime'))
-_FortTotalResourceInfo = namedtuple('_FortTotalResourceInfo', ('totalInfluencePoints', 'totalFortResource'))
 
 class _SquadBonusInfo(object):
     itemsCache = dependency.descriptor(IItemsCache)
@@ -62,14 +62,15 @@ class _SquadBonusInfo(object):
 
 class _PersonalAvatarInfo(object):
     """Class contains information about personal avatar."""
-    __slots__ = ('__accountDBID', '__clanDBID', '__team', '__isPrematureLeave', '__fairplayViolations', '__squadBonusInfo', '__winnerIfDraw')
+    __slots__ = ('__accountDBID', '__clanDBID', '__team', '__isPrematureLeave', '__fairplayViolations', '__squadBonusInfo', '__winnerIfDraw', '__eligibleForCrystalRewards')
 
-    def __init__(self, accountDBID = 0, clanDBID = 0, team = 0, isPrematureLeave = False, fairplayViolations = None, squadBonusInfo = None, winnerIfDraw = 0, **kwargs):
+    def __init__(self, accountDBID = 0, clanDBID = 0, team = 0, isPrematureLeave = False, fairplayViolations = None, squadBonusInfo = None, winnerIfDraw = 0, eligibleForCrystalRewards = False, **kwargs):
         super(_PersonalAvatarInfo, self).__init__()
         self.__accountDBID = accountDBID
         self.__clanDBID = clanDBID
         self.__team = team
         self.__isPrematureLeave = isPrematureLeave
+        self.__eligibleForCrystalRewards = eligibleForCrystalRewards
         self.__fairplayViolations = shared.FairplayViolationsInfo(*(fairplayViolations or ()))
         self.__squadBonusInfo = _SquadBonusInfo(**(squadBonusInfo or {}))
         self.__winnerIfDraw = winnerIfDraw
@@ -98,6 +99,11 @@ class _PersonalAvatarInfo(object):
     def winnerIfDraw(self):
         """Get winner id if draw."""
         return self.__winnerIfDraw
+
+    @property
+    def eligibleForCrystalRewards(self):
+        """Gets if crystals are awarded in this battle."""
+        return self.__eligibleForCrystalRewards
 
     def getPersonalSquadFlags(self, vehicles):
         """Gets flags to resolve wherever showing squad bonus and squad labels.
@@ -193,7 +199,7 @@ class _FreeXPReplayRecords(records.ReplayRecords):
 
 
 class _EconomicsRecordsChains(object):
-    __slots__ = ('_baseCredits', '_premiumCredits', '_goldRecords', '_autoRecords', '_baseXP', '_premiumXP', '_baseFreeXP', '_premiumFreeXP', '_fortResource')
+    __slots__ = ('_baseCredits', '_premiumCredits', '_goldRecords', '_autoRecords', '_baseXP', '_premiumXP', '_baseFreeXP', '_premiumFreeXP', '_fortResource', '_crystal')
 
     def __init__(self):
         super(_EconomicsRecordsChains, self).__init__()
@@ -205,7 +211,7 @@ class _EconomicsRecordsChains(object):
         self._premiumXP = records.RecordsIterator()
         self._baseFreeXP = records.RecordsIterator()
         self._premiumFreeXP = records.RecordsIterator()
-        self._fortResource = records.RecordsIterator()
+        self._crystal = records.RecordsIterator()
 
     def getBaseCreditsRecords(self):
         return self._baseCredits
@@ -225,20 +231,20 @@ class _EconomicsRecordsChains(object):
     def getMoneyRecords(self):
         return itertools.izip(self._baseCredits, self._premiumCredits, self._goldRecords, self._autoRecords)
 
+    def getCrystalRecords(self):
+        return itertools.izip(self._crystal, self._crystal)
+
     def getXPRecords(self):
         return itertools.izip(self._baseXP, self._premiumXP, self._baseFreeXP, self._premiumFreeXP)
 
     def getXPDiff(self):
         return self._premiumXP.getRecord('xp') - self._baseXP.getRecord('xp')
 
-    def getFortResourceRecords(self):
-        return self._fortResource
-
     def addResults(self, _, results):
         connector = ValueReplayConnector(VEH_FULL_RESULTS, results)
         self._addMoneyResults(connector, results)
         self._addXPResults(connector, results)
-        self._addFortResourceResults(connector, results)
+        self._addCrystalResults(connector, results)
 
     def _addMoneyResults(self, connector, results):
         if 'creditsReplay' in results and results['creditsReplay'] is not None:
@@ -283,19 +289,19 @@ class _EconomicsRecordsChains(object):
             LOG_ERROR('Free XP replay is not found', results)
         return
 
-    def _addFortResourceResults(self, connector, results):
-        if 'fortResourceReplay' in results and results['fortResourceReplay'] is not None:
-            replay = ValueReplay(connector, recordName='fortResource', replay=results['fortResourceReplay'])
-            self._fortResource.addRecords(records.ReplayRecords(replay, 'fortResource'))
+    def _addCrystalResults(self, connector, results):
+        if Currency.CRYSTAL in results and results[Currency.CRYSTAL] is not None:
+            replay = ValueReplay(connector, recordName=Currency.CRYSTAL, replay=results['crystalReplay'])
+            self._crystal.addRecords(records.ReplayRecords(replay, Currency.CRYSTAL))
         else:
-            LOG_ERROR('Fort resource replay is not found', results)
+            LOG_ERROR('crystal replay is not found', results)
         return
 
 
 class PersonalInfo(shared.UnpackedInfo):
     """Class contains reusable personal information about player.
     This information is fetched from battle_results['personal']"""
-    __slots__ = ('__avatar', '__vehicles', '__lifeTimeInfo', '__isObserver', '__economicsRecords', '__isPremium', '__fortResources', '__questsProgress', '__rankInfo')
+    __slots__ = ('__avatar', '__vehicles', '__lifeTimeInfo', '__isObserver', '__economicsRecords', '__isPremium', '__questsProgress', '__rankInfo')
     itemsCache = dependency.descriptor(IItemsCache)
 
     def __init__(self, personal):
@@ -310,7 +316,6 @@ class PersonalInfo(shared.UnpackedInfo):
         self.__isPremium = False
         self.__economicsRecords = _EconomicsRecordsChains()
         self.__lifeTimeInfo = _LifeTimeInfo(False, 0)
-        self.__fortResources = _FortTotalResourceInfo(0, 0)
         self.__questsProgress = {}
         self.__rankInfo = PostBattleRankInfo(0, 0, 0, 0, 0)
         if not self.hasUnpackedItems():
@@ -410,6 +415,10 @@ class PersonalInfo(shared.UnpackedInfo):
         """Gets money (credits and gold) records without/with premium factor."""
         return self.__economicsRecords.getMoneyRecords()
 
+    def getCrystalRecords(self):
+        """Gets crystal records without premium factor."""
+        return self.__economicsRecords.getCrystalRecords()
+
     def getBaseXPRecords(self):
         """Gets XPs records without premium factor."""
         return self.__economicsRecords.getBaseXPRecords()
@@ -427,21 +436,10 @@ class PersonalInfo(shared.UnpackedInfo):
         record "xp" without premium factor."""
         return self.__economicsRecords.getXPDiff()
 
-    def getFortResourceRecords(self):
-        """Gets fortification resources records."""
-        return self.__economicsRecords.getFortResourceRecords()
-
-    def getFortTotalResourcesInfo(self):
-        """Gets total information about earned fortification resources.
-        :return: instance of _FortTotalResourceInfo.
-        """
-        return self.__fortResources
-
     def __collectRequiredData(self, info):
         getItemByCD = self.itemsCache.items.getItemByCD
         items = sorted(map(getItemByCD, filter(lambda key: isinstance(key, (int, long, float)), info.keys())))
         lifeTimes = []
-        totalResource, totalInfluence = (0, 0)
         team = self.__avatar.team
         infoAvatar = info['avatar']
         if infoAvatar:
@@ -463,15 +461,9 @@ class PersonalInfo(shared.UnpackedInfo):
                 lifeTime = data['lifeTime'] if 'lifeTime' in data else 0
                 if killerID and lifeTime:
                     lifeTimes.append(lifeTime)
-                if not self.__isPremium and data.get('isPremium', False):
-                    self.__isPremium = True
-                if data.get('team', 0) == team:
-                    totalResource += data.get('fortResource', 0)
-                    influencePoints = data.get('influencePoints')
-                    influencePoints is not None and totalInfluence += influencePoints
+                self.__isPremium = not self.__isPremium and data.get('isPremium', False) and True
             self.__questsProgress.update(data.get('questsProgress', {}))
 
         if lifeTimes:
             self.__lifeTimeInfo = _LifeTimeInfo(True, min(lifeTimes))
-        self.__fortResources = _FortTotalResourceInfo(totalInfluence, totalResource)
         return

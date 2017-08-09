@@ -13,7 +13,7 @@ from PlayerEvents import g_playerEvents
 from debug_utils import *
 from CTFManager import g_ctfManager
 from helpers.EffectsList import FalloutDestroyEffect
-import arena_components.client_arena_component_assembler as assembler
+import arena_component_system.client_arena_component_assembler as assembler
 
 class ClientArena(object):
     __onUpdate = {ARENA_UPDATE.VEHICLE_LIST: '_ClientArena__onVehicleListUpdate',
@@ -73,8 +73,10 @@ class ClientArena(object):
         self.onRespawnRandomVehicle = Event.Event(em)
         self.onRespawnResurrected = Event.Event(em)
         self.onInteractiveStats = Event.Event(em)
+        self.onGameModeSpecifcStats = Event.Event(em)
         self.onVehicleWillRespawn = Event.Event(em)
         self.onViewPoints = Event.Event(em)
+        self.onTeamHealthPercentUpdate = Event.Event(em)
         self.arenaUniqueID = arenaUniqueID
         self.arenaType = ArenaType.g_cache.get(arenaTypeID, None)
         if self.arenaType is None:
@@ -84,7 +86,7 @@ class ClientArena(object):
         self.extraData = arenaExtraData
         self.__arenaBBCollider = None
         self.__spaceBBCollider = None
-        self.componentSystem = assembler.createComponentSystem(self.bonusType)
+        self.componentSystem = assembler.createComponentSystem(self.bonusType, self.arenaType)
         return
 
     vehicles = property(lambda self: self.__vehicles)
@@ -96,7 +98,7 @@ class ClientArena(object):
     periodAdditionalInfo = property(lambda self: self.__periodInfo[3])
     viewPoints = property(lambda self: self.__viewPoints)
     hasFogOfWarHiddenVehicles = property(lambda self: self.__hasFogOfWarHiddenVehicles)
-    hasObservers = property(lambda self: any(('observer' in v['vehicleType'].type.tags for v in self.__vehicles.itervalues())))
+    hasObservers = property(lambda self: any(('observer' in v['vehicleType'].type.tags for v in self.__vehicles.itervalues() if v['vehicleType'] is not None)))
 
     def destroy(self):
         self.__eventManager.clear()
@@ -122,6 +124,9 @@ class ClientArena(object):
                     self.__positions[indexToId[indices[i]]] = positionTuple
 
         self.onPositionsUpdated()
+
+    def updateTeamHealthPercent(self, list):
+        self.onTeamHealthPercentUpdate(list)
 
     def collideWithArenaBB(self, start, end):
         if self.__arenaBBCollider is None:
