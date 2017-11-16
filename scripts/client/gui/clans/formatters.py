@@ -141,10 +141,10 @@ class _BaseClanAppHtmlTextFormatter(object):
     def getText(self, entity):
         result = []
         text = self.getTitle(entity)
-        if len(text):
+        if text:
             result.append(text)
         text = self.getComment(entity)
-        if len(text):
+        if text:
             result.append(text)
         return ''.join(result)
 
@@ -215,9 +215,9 @@ class ClanAppActionHtmlTextFormatter(object):
     def getText(self, clanName):
         result = []
         text = self.getTitle()
-        if len(text):
+        if text:
             result.append(text)
         text = self.getComment(clanName)
-        if len(text):
+        if text:
             result.append(text)
         return ''.join(result)

@@ -156,9 +156,6 @@ class SearchCriteria(_NotificationDecorator):
 
 class MessageDecorator(_NotificationDecorator):
 
-    def __init__(self, clientID, formatted, settings):
-        super(MessageDecorator, self).__init__(clientID, formatted, settings)
-
     def getSavedData(self):
         return self._vo['message'].get('savedData')
 
@@ -188,6 +185,15 @@ class MessageDecorator(_NotificationDecorator):
          'entityID': self.getID(),
          'message': message,
          'notify': self.isNotify()}
+
+
+class GiftDecorator(MessageDecorator):
+
+    def getGroup(self):
+        return NOTIFICATION_GROUP.OFFER
+
+    def getType(self):
+        return NOTIFICATION_TYPE.GIFT
 
 
 class PrbInviteDecorator(_NotificationDecorator):
@@ -348,11 +354,11 @@ class WGNCPopUpDecorator(_NotificationDecorator):
                 self._settings = settings
             layout, states = self._makeButtonsLayout(item)
             topic = i18n.encodeUtf8(item.getTopic())
-            if len(topic):
+            if topic:
                 topic = g_settings.htmlTemplates.format('notificationsCenterTopic', ctx={'topic': topic})
             body = i18n.encodeUtf8(item.getBody())
             note = item.getNote()
-            len(note) and body += g_settings.htmlTemplates.format('notificationsCenterNote', ctx={'note': note})
+            note and body += g_settings.htmlTemplates.format('notificationsCenterNote', ctx={'note': note})
         bgSource, (_, bgHeight) = item.getLocalBG()
         message = g_settings.msgTemplates.format('wgncNotification_v2', ctx={'topic': topic,
          'body': body}, data={'icon': makePathToIcon(item.getLocalIcon()),
@@ -519,9 +525,6 @@ class ClanSingleAppDecorator(_ClanSingleDecorator):
 
 
 class ClanSingleInviteDecorator(_ClanSingleDecorator):
-
-    def __init__(self, entityID, entity = None, settings = None):
-        super(ClanSingleInviteDecorator, self).__init__(entityID, entity, settings)
 
     def getInviteID(self):
         return self._entity.getInviteId()

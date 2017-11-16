@@ -6,10 +6,11 @@ import BigWorld
 import CommandMapping
 import SoundGroups
 from constants import EQUIPMENT_STAGES
-from debug_utils import LOG_ERROR
+from debug_utils import LOG_ERROR, LOG_DEBUG
 from gui import GUI_SETTINGS
 from gui import TANKMEN_ROLES_ORDER_DICT
 from gui.Scaleform.daapi.view.meta.ConsumablesPanelMeta import ConsumablesPanelMeta
+from gui.Scaleform.genConsts.CONSUMABLES_PANEL_SETTINGS import CONSUMABLES_PANEL_SETTINGS
 from gui.Scaleform.locale.INGAME_GUI import INGAME_GUI
 from gui.Scaleform.managers.battle_input import BattleGUIKeyHandler
 from gui.battle_control.battle_constants import VEHICLE_DEVICE_IN_COMPLEX_ITEM, GUN_RELOADING_VALUE_TYPE
@@ -27,7 +28,7 @@ from skeletons.gui.lobby_context import ILobbyContext
 AMMO_ICON_PATH = '../maps/icons/ammopanel/battle_ammo/%s'
 NO_AMMO_ICON_PATH = '../maps/icons/ammopanel/battle_ammo/NO_%s'
 COMMAND_AMMO_CHOICE_MASK = 'CMD_AMMO_CHOICE_{0:d}'
-PANEL_MAX_LENGTH = 12
+PANEL_MAX_LENGTH = 15
 AMMO_START_IDX = 0
 AMMO_END_IDX = 2
 AMMO_RANGE = xrange(AMMO_START_IDX, AMMO_END_IDX + 1)
@@ -45,6 +46,10 @@ OPT_DEVICE_END_IDX = 11
 OPT_DEVICE_RANGE = xrange(OPT_DEVICE_START_IDX, OPT_DEVICE_END_IDX + 1)
 OPT_DEVICE_FULL_MASK = sum([ 1 << idx for idx in OPT_DEVICE_RANGE ])
 EQUIPMENT_ICON_PATH = '../maps/icons/artefact/%s.png'
+SUB_AMMO_IDX = 12
+SUB_AMMO_END_IDX = 14
+SUB_AMMO_RANGE = xrange(SUB_AMMO_IDX, SUB_AMMO_END_IDX + 1)
+SUB_AMMO_FULL_MASK = sum([ 1 << idx for idx in SUB_AMMO_RANGE ])
 EMPTY_EQUIPMENTS_SLICE = [0] * (EQUIPMENT_END_IDX - EQUIPMENT_START_IDX + 1)
 EMPTY_ORDERS_SLICE = [0] * (ORDERS_START_IDX - ORDERS_END_IDX + 1)
 EMPTY_EQUIPMENT_TOOLTIP = i18n.makeString('#ingame_gui:consumables_panel/equipment/tooltip/empty')
@@ -85,20 +90,23 @@ class ConsumablesPanel(ConsumablesPanelMeta, BattleGUIKeyHandler):
         if isDown:
             self.__collapseEquipmentSlot()
             return True
-        else:
-            return False
+        return False
 
     def _populate(self):
         super(ConsumablesPanel, self)._populate()
         if self.sessionProvider.isReplayPlaying:
             self.as_handleAsReplayS()
         self.__addListeners()
+        self.as_setPanelSettingsS(self._getPanelSettings())
 
     def _dispose(self):
         self.__clearAllEquipmentGlow()
         self.__removeListeners()
         self.__keys.clear()
         super(ConsumablesPanel, self)._dispose()
+
+    def _getPanelSettings(self):
+        return CONSUMABLES_PANEL_SETTINGS.DEFAULT_SETTINGS_ID
 
     def _addShellSlot(self, idx, keyCode, sfKeyCode, quantity, clipCapacity, shellIconPath, noShellIconPath, tooltipText):
         self.as_addShellSlotS(idx, keyCode, sfKeyCode, quantity, clipCapacity, shellIconPath, noShellIconPath, tooltipText)
@@ -121,11 +129,12 @@ class ConsumablesPanel(ConsumablesPanelMeta, BattleGUIKeyHandler):
         if ammoCtrl is not None:
             self.__fillShells(ammoCtrl)
             ammoCtrl.onShellsAdded += self.__onShellsAdded
+            ammoCtrl.onSubShellsAdded += self.__onSubShellsAdded
             ammoCtrl.onShellsUpdated += self.__onShellsUpdated
             ammoCtrl.onNextShellChanged += self.__onNextShellChanged
             ammoCtrl.onCurrentShellChanged += self.__onCurrentShellChanged
             ammoCtrl.onGunReloadTimeSet += self.__onGunReloadTimeSet
-            ammoCtrl.onGunSettingsSet += self.__onGunSettingsSet
+            ammoCtrl.onGunSettingsListSet += self.__onGunSettingsListSet
         eqCtrl = self.sessionProvider.shared.equipments
         if eqCtrl is not None:
             self.__fillEquipments(eqCtrl)
@@ -154,10 +163,11 @@ class ConsumablesPanel(ConsumablesPanelMeta, BattleGUIKeyHandler):
         if ammoCtrl is not None:
             ammoCtrl.onShellsAdded -= self.__onShellsAdded
             ammoCtrl.onShellsUpdated -= self.__onShellsUpdated
+            ammoCtrl.onSubShellsAdded -= self.__onSubShellsAdded
             ammoCtrl.onNextShellChanged -= self.__onNextShellChanged
             ammoCtrl.onCurrentShellChanged -= self.__onCurrentShellChanged
             ammoCtrl.onGunReloadTimeSet -= self.__onGunReloadTimeSet
-            ammoCtrl.onGunSettingsSet -= self.__onGunSettingsSet
+            ammoCtrl.onGunSettingsListSet -= self.__onGunSettingsListSet
         eqCtrl = self.sessionProvider.shared.equipments
         if eqCtrl is not None:
             eqCtrl.onEquipmentAdded -= self.__onEquipmentAdded
@@ -326,6 +336,14 @@ class ConsumablesPanel(ConsumablesPanelMeta, BattleGUIKeyHandler):
         self.__keys[bwKey] = partial(self.__handleAmmoPressed, intCD)
         self._addShellSlot(idx, bwKey, sfKey, quantity, gunSettings.clip.size, shellIconPath, noShellIconPath, toolTip)
 
+    def __onSubShellsAdded(self, intCD, descriptor, quantity, _, gunSettings):
+        toolTip = self.__makeShellTooltip(descriptor, int(gunSettings.getPiercingPower(intCD)))
+        idx = self.__genNextIdx(SUB_AMMO_FULL_MASK, SUB_AMMO_IDX)
+        self.__cds[idx] = intCD
+        bwKey, sfKey = self.__genKey(idx)
+        self.__keys[bwKey] = partial(self.__handleAmmoPressed, intCD)
+        self.as_addSubShellSlotS(idx, bwKey, sfKey, quantity, toolTip, True)
+
     def __onShellsUpdated(self, intCD, quantity, *args):
         if intCD in self.__cds:
             self.as_setItemQuantityInSlotS(self.__cds.index(intCD), quantity)
@@ -344,7 +362,7 @@ class ConsumablesPanel(ConsumablesPanelMeta, BattleGUIKeyHandler):
         else:
             LOG_ERROR('Ammo is not found in panel', intCD, self.__cds)
 
-    def __onGunReloadTimeSet(self, currShellCD, state):
+    def __onGunReloadTimeSet(self, gunIdx, currShellCD, state):
         if currShellCD in self.__cds:
             index = self.__cds.index(currShellCD)
             valueType = state.getValueType()
@@ -355,7 +373,7 @@ class ConsumablesPanel(ConsumablesPanelMeta, BattleGUIKeyHandler):
         else:
             LOG_ERROR('Ammo is not found in panel', currShellCD, self.__cds)
 
-    def __onGunSettingsSet(self, gunSettings):
+    def __onGunSettingsListSet(self, gunSettingsList):
         self.__reset()
 
     def __onEquipmentAdded(self, intCD, item):
@@ -568,7 +586,7 @@ class ConsumablesPanel(ConsumablesPanelMeta, BattleGUIKeyHandler):
         else:
             entityNames = [ name for name, state in equipment.getEntitiesIterator() if state == DEVICE_STATE_DESTROYED ]
             correction = hasDestroyed = len(entityNames)
-            entityName = hasDestroyed and entityNames[0] or None
+            entityName = entityNames[0] if hasDestroyed else None
         canActivate, info = equipment.canActivate(entityName)
         infoType = type(info)
         return correction and (canActivate or infoType == NeedEntitySelection) or infoType == IgnoreEntitySelection
@@ -602,7 +620,8 @@ class ConsumablesPanel(ConsumablesPanelMeta, BattleGUIKeyHandler):
         shellCD = ctrl.getNextShellCD()
         if shellCD is not None:
             self.__onNextShellChanged(shellCD)
-        shellCD = ctrl.getCurrentShellCD()
+        turretIndex = 0
+        shellCD = ctrl.getCurrentShellCD(turretIndex)
         if shellCD is not None:
             self.__onCurrentShellChanged(shellCD)
         return

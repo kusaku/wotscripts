@@ -59,7 +59,7 @@ class ModuleProcessor(ItemProcessor):
          'msg': msg}
 
     def _errorHandler(self, code, errStr = '', ctx = None):
-        if not len(errStr):
+        if not errStr:
             if code != AccountCommands.RES_CENTER_DISCONNECTED:
                 msg = 'server_error'
             else:
@@ -240,7 +240,7 @@ class OptDeviceInstaller(ModuleInstallProcessor):
             action = packActionTooltipData(ACTION_TOOLTIPS_TYPE.ECONOMICS, 'paidRemovalCost', True, self.removalPrice.price, self.removalPrice.defPrice)
         addPlugins = []
         if install:
-            addPlugins += (plugins.MessageConfirmator('installConfirmationNotRemovable', ctx={'name': item.userName}, isEnabled=not item.isRemovable and not skipConfirm),)
+            addPlugins += (plugins.MessageConfirmator('installConfirmationNotRemovable_%s' % self.removalPrice.price.getCurrency(), ctx={'name': item.userName}, isEnabled=not item.isRemovable and not skipConfirm),)
         else:
             addPlugins += (plugins.DemountDeviceConfirmator('removeConfirmationNotRemovableMoney', ctx={'name': item.userName,
               'price': self.removalPrice,
@@ -390,7 +390,7 @@ class PreviewVehicleTurretInstaller(TurretInstaller):
     def _request(self, callback):
         vehDescr = self.vehicle.descriptor
         vehDescr.installTurret(self.item.intCD, self.gunCD)
-        self.vehicle.turret = VehicleTurret(vehDescr.turret.compactDescr, descriptor=vehDescr.turret)
+        self.vehicle.turret = VehicleTurret(vehDescr.turrets[0].turret.compactDescr, descriptor=vehDescr.turrets[0].turret)
         if self.gunCD:
             self.vehicle.descriptor.installComponent(self.gunCD)
             self.vehicle.gun = VehicleGun(self.gunCD, descriptor=self.vehicle.descriptor.gun)
@@ -464,7 +464,8 @@ class BuyAndInstallItemProcessor(ModuleBuyer):
             if item.itemTypeID == GUI_ITEM_TYPE.TURRET:
                 self.addPlugin(plugins.TurretCompatibilityInstallValidator(vehicle, item, self.__gunCompDescr))
             elif item.itemTypeID == GUI_ITEM_TYPE.OPTIONALDEVICE:
-                self.addPlugin(plugins.MessageConfirmator('installConfirmationNotRemovable', ctx={'name': item.userName}, isEnabled=not item.isRemovable and not skipConfirm))
+                removalPrice = item.getRemovalPrice(self.itemsCache.items)
+                self.addPlugin(plugins.MessageConfirmator('installConfirmationNotRemovable_%s' % removalPrice.price.getCurrency(), ctx={'name': item.userName}, isEnabled=not item.isRemovable and not skipConfirm))
             self.addPlugin(plugins.MessageConfirmator('removeIncompatibleEqs', ctx={'name': "', '".join([ eq.userName for eq in conflictedEqs ])}, isEnabled=bool(conflictedEqs) and not skipConfirm))
         else:
             self.addPlugins([plugins.ModuleBuyerConfirmator('confirmBuyNotInstall', ctx={'userString': item.userName,
@@ -534,16 +535,14 @@ def getInstallerProcessor(vehicle, newComponentItem, slotIdx = 0, install = True
     """
     if newComponentItem.itemTypeID == GUI_ITEM_TYPE.EQUIPMENT:
         return EquipmentInstaller(vehicle, newComponentItem, slotIdx, install, conflictedEqs, skipConfirm)
-    elif newComponentItem.itemTypeID == GUI_ITEM_TYPE.OPTIONALDEVICE:
+    if newComponentItem.itemTypeID == GUI_ITEM_TYPE.OPTIONALDEVICE:
         return OptDeviceInstaller(vehicle, newComponentItem, slotIdx, install, isUseMoney, conflictedEqs, skipConfirm)
-    elif newComponentItem.itemTypeID == GUI_ITEM_TYPE.TURRET:
+    if newComponentItem.itemTypeID == GUI_ITEM_TYPE.TURRET:
         return TurretInstaller(vehicle, newComponentItem, conflictedEqs, skipConfirm)
-    else:
-        return OtherModuleInstaller(vehicle, newComponentItem, conflictedEqs, skipConfirm)
+    return OtherModuleInstaller(vehicle, newComponentItem, conflictedEqs, skipConfirm)
 
 
 def getPreviewInstallerProcessor(vehicle, newComponentItem, conflictedEqs = None):
     if newComponentItem.itemTypeID == GUI_ITEM_TYPE.TURRET:
         return PreviewVehicleTurretInstaller(vehicle, newComponentItem, conflictedEqs)
-    else:
-        return PreviewVehicleModuleInstaller(vehicle, newComponentItem, conflictedEqs)
+    return PreviewVehicleModuleInstaller(vehicle, newComponentItem, conflictedEqs)

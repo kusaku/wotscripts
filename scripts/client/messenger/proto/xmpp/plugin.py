@@ -136,4 +136,3 @@ class XmppPlugin(IProtoPlugin):
             return XmppClanListener()
         else:
             return None
-            return None

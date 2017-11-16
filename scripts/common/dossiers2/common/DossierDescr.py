@@ -1,7 +1,6 @@
 # Embedded file name: scripts/common/dossiers2/common/DossierDescr.py
 import struct
 from array import array
-from copy import deepcopy
 
 class DossierDescr(object):
 
@@ -60,8 +59,8 @@ class DossierDescr(object):
         self.__popUps[block, record] = value
 
     def popPopUps(self):
-        popUps = deepcopy(self.__popUps)
-        self.__popUps.clear()
+        popUps = self.__popUps
+        self.__popUps = {}
         return popUps
 
     def makeCompDescr(self):

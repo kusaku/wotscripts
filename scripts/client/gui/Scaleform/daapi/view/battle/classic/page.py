@@ -27,7 +27,8 @@ class _ClassicComponentsConfig(ComponentsConfig):
          (BATTLE_CTRL_ID.TEAM_BASES, (BATTLE_VIEW_ALIASES.TEAM_BASES_PANEL, DynamicAliases.DRONE_MUSIC_PLAYER)),
          (BATTLE_CTRL_ID.DEBUG, (BATTLE_VIEW_ALIASES.DEBUG_PANEL,)),
          (BATTLE_CTRL_ID.BATTLE_FIELD_CTRL, (DynamicAliases.DRONE_MUSIC_PLAYER,)),
-         (BATTLE_CTRL_ID.ARENA_LOAD_PROGRESS, (DynamicAliases.DRONE_MUSIC_PLAYER,))), ((DynamicAliases.PERIOD_MUSIC_LISTENER, lambda : period_music_listener.PeriodMusicListener()), (DynamicAliases.DRONE_MUSIC_PLAYER, lambda : drone_music_player.DroneMusicPlayer())))
+         (BATTLE_CTRL_ID.ARENA_LOAD_PROGRESS, (DynamicAliases.DRONE_MUSIC_PLAYER,)),
+         (BATTLE_CTRL_ID.GAME_MESSAGES_PANEL, (BATTLE_VIEW_ALIASES.GAME_MESSAGES_PANEL,))), ((DynamicAliases.PERIOD_MUSIC_LISTENER, lambda : period_music_listener.PeriodMusicListener()), (DynamicAliases.DRONE_MUSIC_PLAYER, lambda : drone_music_player.DroneMusicPlayer())))
 
 
 COMMON_CLASSIC_CONFIG = _ClassicComponentsConfig()
@@ -38,9 +39,14 @@ class ClassicPage(SharedPage):
     def __init__(self, components = None, external = None, fullStatsAlias = BATTLE_VIEW_ALIASES.FULL_STATS):
         self._fullStatsAlias = fullStatsAlias
         if components is None:
-            components = COMMON_CLASSIC_CONFIG if self.sessionProvider.isReplayPlaying else EXTENDED_CLASSIC_CONFIG
+            components = self._getDefaultComponentsConfig()
         super(ClassicPage, self).__init__(components=components, external=external)
         return
+
+    def _getDefaultComponentsConfig(self):
+        if self.sessionProvider.isReplayPlaying:
+            return COMMON_CLASSIC_CONFIG
+        return EXTENDED_CLASSIC_CONFIG
 
     def __del__(self):
         LOG_DEBUG('ClassicPage is deleted')
@@ -79,7 +85,7 @@ class ClassicPage(SharedPage):
                 return
             if self.as_isComponentVisibleS(self._fullStatsAlias) != isShown:
                 if isShown:
-                    if len(self._fsToggling) == 0:
+                    if not self._fsToggling:
                         self._fsToggling.update(self.as_getComponentsVisibilityS())
                     if permanent is not None:
                         self._fsToggling.difference_update(permanent)

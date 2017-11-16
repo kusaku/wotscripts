@@ -10,14 +10,6 @@ class BCNationsWindow(BCNationsWindowMeta):
         super(BCNationsWindow, self).__init__()
         self.__removedCallback = ctx['callback']
 
-    def _populate(self):
-        nationsOrder = [NATIONS_INDICES['usa'], NATIONS_INDICES['germany'], NATIONS_INDICES['ussr']]
-        self.as_selectNationS(g_bootcamp.nation, nationsOrder)
-        super(BCNationsWindow, self)._populate()
-
-    def _dispose(self):
-        super(BCNationsWindow, self)._dispose()
-
     def onNationShow(self, nationId):
         pass
 
@@ -25,3 +17,8 @@ class BCNationsWindow(BCNationsWindowMeta):
         LOG_DEBUG('onNationSelected {0}'.format(nationId))
         g_bootcamp.changeNation(nationId, self.__removedCallback)
         self.destroy()
+
+    def _populate(self):
+        nationsOrder = [NATIONS_INDICES['usa'], NATIONS_INDICES['germany'], NATIONS_INDICES['ussr']]
+        self.as_selectNationS(g_bootcamp.nation, nationsOrder)
+        super(BCNationsWindow, self)._populate()

@@ -151,7 +151,7 @@ class PrbInviteHtmlTextFormatter(InviteFormatter):
                 note = getLeaveOrChangeText(self.prbDispatcher.getFunctionalState(), invite.type, invite.peripheryID)
         else:
             note = getAcceptNotAllowedText(invite.type, invite.peripheryID, invite.isActive(), invite.alreadyJoined)
-        if len(note):
+        if note:
             note = makeHtmlString('html_templates:lobby/prebattle', 'inviteNote', {'note': note})
         return note
 
@@ -167,16 +167,16 @@ class PrbInviteHtmlTextFormatter(InviteFormatter):
     def getText(self, invite):
         result = []
         text = self.getTitle(invite)
-        if len(text):
+        if text:
             result.append(text)
         text = self.getComment(invite)
-        if len(text):
+        if text:
             result.append(text)
         text = self.getNote(invite)
-        if len(text):
+        if text:
             result.append(text)
         text = self.getState(invite)
-        if len(text):
+        if text:
             result.append(text)
         return ''.join(result)
 

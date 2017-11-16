@@ -28,8 +28,7 @@ class FalloutVehicleMarker(markers.VehicleMarker):
         if self._flagBearer != bearer:
             self._flagBearer = bearer
             return True
-        else:
-            return False
+        return False
 
 
 class FlagMarker(markers.Marker):
@@ -479,9 +478,6 @@ class GasAttackSafeZonePlugin(plugins.MarkerPlugin):
         super(GasAttackSafeZonePlugin, self).fini()
         return
 
-    def start(self):
-        super(GasAttackSafeZonePlugin, self).start()
-
     def stop(self):
         self.__delSafeZoneMarker()
         super(GasAttackSafeZonePlugin, self).stop()
@@ -511,8 +507,7 @@ class FalloutMarkersManager(MarkersManager):
     def _createCanvas(self, arenaVisitor):
         if arenaVisitor.hasFlags():
             return GUI.WGVehicleFalloutMarkersCanvasFlashAS3(self.movie)
-        else:
-            return super(FalloutMarkersManager, self)._createCanvas(arenaVisitor)
+        return super(FalloutMarkersManager, self)._createCanvas(arenaVisitor)
 
     def _setupPlugins(self, arenaVisitor):
         setup = super(FalloutMarkersManager, self)._setupPlugins(arenaVisitor)

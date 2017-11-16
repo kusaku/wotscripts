@@ -2,7 +2,7 @@
 from collections import namedtuple
 from gui.shared.event_bus import SharedEvent
 from shared_utils import CONST_CONTAINER
-__all__ = ('ArgsEvent', 'LoadEvent', 'ComponentEvent', 'LoadViewEvent', 'ShowDialogEvent', 'LoginEvent', 'LoginCreateEvent', 'LoginEventEx', 'LobbySimpleEvent', 'FightButtonDisablingEvent', 'FightButtonEvent', 'CloseWindowEvent', 'BrowserEvent')
+__all__ = ('ArgsEvent', 'LoadEvent', 'ComponentEvent', 'LoadViewEvent', 'ShowDialogEvent', 'LoginEvent', 'LoginCreateEvent', 'LoginEventEx', 'LobbySimpleEvent', 'FightButtonDisablingEvent', 'FightButtonEvent', 'CloseWindowEvent', 'BrowserEvent', 'LeviathanPreviewEvent')
 
 class HasCtxEvent(SharedEvent):
 
@@ -30,9 +30,6 @@ class AppLifeCycleEvent(SharedEvent):
 class GlobalSpaceEvent(SharedEvent):
     GO_NEXT = 'globalSpace/goNext'
 
-    def __init__(self, eventType):
-        super(GlobalSpaceEvent, self).__init__(eventType)
-
 
 class GameEvent(HasCtxEvent):
     SCREEN_SHOT_MADE = 'game/screenShotMade'
@@ -55,22 +52,13 @@ class GameEvent(HasCtxEvent):
     CHANGE_APP_RESOLUTION = 'game/changeAppResolution'
     BATTLE_LOADING = 'game/battleLoading'
 
-    def __init__(self, eventType = None, ctx = None):
-        super(GameEvent, self).__init__(eventType, ctx)
-
 
 class GUICommonEvent(SharedEvent):
     LOBBY_VIEW_LOADED = 'lobbyViewLoaded'
 
-    def __init__(self, eventType = None):
-        super(GUICommonEvent, self).__init__(eventType)
-
 
 class GUIEditorEvent(HasCtxEvent):
     HIDE_GUIEditor = 'hideGUIEditor'
-
-    def __init__(self, eventType = None, ctx = None):
-        super(GUIEditorEvent, self).__init__(eventType, ctx)
 
 
 class ArgsEvent(HasCtxEvent):
@@ -193,9 +181,6 @@ class DestroyViewEvent(_ViewEvent):
 class BrowserEvent(HasCtxEvent):
     BROWSER_CREATED = 'onBrowserCreated'
 
-    def __init__(self, alias = None, ctx = None):
-        super(BrowserEvent, self).__init__(alias, ctx)
-
 
 class ShowDialogEvent(SharedEvent):
     SHOW_SIMPLE_DLG = 'showSimpleDialog'
@@ -215,6 +200,7 @@ class ShowDialogEvent(SharedEvent):
     SHOW_CHECK_BOX_DIALOG = 'showCheckBoxDialog'
     SHOW_DESERTER_DLG = 'showDeserterDialog'
     SHOW_EXECUTION_CHOOSER_DIALOG = 'showExecutionChooserDialog'
+    SHOW_USE_AWARD_SHEET_DIALOG = 'useAwardSheetDialog'
 
     def __init__(self, meta, handler):
         super(ShowDialogEvent, self).__init__(meta.getEventType())
@@ -283,8 +269,10 @@ class HideWindowEvent(HasCtxEvent):
     HIDE_LEGAL_INFO_WINDOW = 'showLegalInfoWindow'
     HIDE_SANDBOX_QUEUE_DIALOG = 'hideSandboxQueueDialog'
     HIDE_MISSION_DETAILS_VIEW = 'hideMissionDetailsView'
+    HIDE_PERSONAL_MISSION_DETAILS_VIEW = 'hidePersonalMissionDetailsView'
     HIDE_BROWSER_WINDOW = 'hideBrowserWindow'
     HIDE_BOOSTERS_WINDOW = 'hideBoostersWindow'
+    HIDE_VEHICLE_PREVIEW = 'hideVehiclePreview'
 
 
 class HidePopoverEvent(HasCtxEvent):
@@ -308,6 +296,10 @@ class MissionsEvent(HasCtxEvent):
     ON_FILTER_CHANGED = 'onFilterChanged'
     ON_FILTER_CLOSED = 'onFilterClosed'
     ON_GROUPS_DATA_CHANGED = 'onGroupsDataChanged'
+    ON_ACTIVATE = 'onActivate'
+    ON_DEACTIVATE = 'onDeactivate'
+    ON_TAB_CHANGED = 'onTabChanged'
+    PAGE_INVALIDATE = 'pageInvalidate'
 
 
 class TrainingSettingsEvent(HasCtxEvent):
@@ -453,9 +445,6 @@ class PreBattleChannelEvent(ChannelManagementEvent):
     REQUEST_TO_ADD_PRE_BATTLE_CHANNEL = 'loadSquad'
     REQUEST_TO_REMOVE_PRE_BATTLE_CHANNEL = 'removeSquad'
 
-    def __init__(self, clientID, eventType = None, ctx = None):
-        super(PreBattleChannelEvent, self).__init__(clientID, eventType, ctx)
-
 
 class ChannelCarouselEvent(SharedEvent):
     CAROUSEL_INITED = 'carouselInited'
@@ -486,22 +475,13 @@ class AutoInviteEvent(SharedEvent):
 class CSVehicleSelectEvent(HasCtxEvent):
     VEHICLE_SELECTED = 'CSVehicleSelectEvent/vehicleSelected'
 
-    def __init__(self, eventType = None, ctx = None):
-        super(CSVehicleSelectEvent, self).__init__(eventType, ctx)
-
 
 class CSReserveSelectEvent(HasCtxEvent):
     RESERVE_SELECTED = 'reserveSelected'
 
-    def __init__(self, eventType = None, ctx = None):
-        super(CSReserveSelectEvent, self).__init__(eventType, ctx)
-
 
 class CSRosterSlotSettingsWindow(HasCtxEvent):
     APPLY_SLOT_SETTINGS = 'applySlotSettings'
-
-    def __init__(self, eventType = None, ctx = None):
-        super(CSRosterSlotSettingsWindow, self).__init__(eventType, ctx)
 
 
 class StrongholdEvent(HasCtxEvent):
@@ -509,9 +489,6 @@ class StrongholdEvent(HasCtxEvent):
     STRONGHOLD_DEACTIVATED = 'strongholdDeactivated'
     STRONGHOLD_DATA_UNAVAILABLE = 'strongholdDataUnavailable'
     STRONGHOLD_ON_TIMER = 'strongholdOnTimer'
-
-    def __init__(self, eventType = None, ctx = None):
-        super(StrongholdEvent, self).__init__(eventType, ctx)
 
 
 class OpenLinkEvent(SharedEvent):
@@ -601,5 +578,12 @@ class MarkersManagerEvent(SharedEvent):
 class VehicleBuyEvent(HasCtxEvent):
     VEHICLE_SELECTED = 'vehicleBuyEvent/vehicleSelected'
 
-    def __init__(self, eventType = None, ctx = None):
-        super(VehicleBuyEvent, self).__init__(eventType, ctx)
+
+class LeviathanPreviewEvent(SharedEvent):
+    LEVIATHAN_WINDOW_OPENED = 'LeviathanWindowOpened'
+    LEVIATHAN_WINDOW_CLOSED = 'LeviathanWindowClosed'
+
+
+class SupplyDropEvent(SharedEvent):
+    SUPPLY_DROP_CLICKED = 'SupplyDropClicked'
+    SUPPLY_DROP_LEAVING = 'SupplyDropLeaving'

@@ -20,13 +20,6 @@ class CalendarMeta(BaseDAAPIComponent):
         if self._isDAAPIInited():
             return self.flashObject.as_selectDate(rawDate)
 
-    def as_updateMonthEventsS(self, items):
-        """
-        :param items: Represented by Array.<Object> (AS)
-        """
-        if self._isDAAPIInited():
-            return self.flashObject.as_updateMonthEvents(items)
-
     def as_setMinAvailableDateS(self, rawDate):
         if self._isDAAPIInited():
             return self.flashObject.as_setMinAvailableDate(rawDate)

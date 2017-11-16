@@ -1,6 +1,6 @@
 # Embedded file name: scripts/client/bootcamp/hints/HintsDamage.py
 import TriggersManager
-from constants import HINT_TYPE
+from bootcamp.BootcampConstants import HINT_TYPE
 from HintsBase import HintBase, HINT_COMMAND
 
 class HintDamage(HintBase, TriggersManager.ITriggerListener):

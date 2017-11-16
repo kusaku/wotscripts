@@ -122,8 +122,8 @@ class UsersInfoHelper(object):
         return '-1'
 
     def syncUsersInfo(self):
-        if len(self._invalid['names']):
+        if self._invalid['names']:
             self._rqCtrl.requestNicknames(list(self._invalid['names']), lambda names, _: self.onUserNamesReceived(names))
-        if len(self._invalid['ratings']):
+        if self._invalid['ratings']:
             self._rqCtrl.requestGlobalRatings(list(self._invalid['ratings']), self.onUserRatingsReceived)
         self._invalid.clear()

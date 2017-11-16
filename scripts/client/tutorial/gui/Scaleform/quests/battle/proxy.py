@@ -3,9 +3,6 @@ from tutorial.gui import GUIProxy
 
 class BattleQuestsProxy(GUIProxy):
 
-    def __init__(self):
-        super(BattleQuestsProxy, self).__init__()
-
     def init(self):
         self.onGUILoaded()
         return True

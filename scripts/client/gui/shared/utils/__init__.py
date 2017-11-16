@@ -5,6 +5,7 @@ import sys
 import inspect
 import uuid
 import struct
+from collections import namedtuple
 import BigWorld
 import AccountCommands
 import Settings
@@ -41,6 +42,7 @@ HYDRAULIC_ICON_PATH = RES_ICONS.MAPS_ICONS_MODULES_HYDRAULICCHASSISICON
 EXTRA_MODULE_INFO = 'extraModuleInfo'
 FIELD_HIGHLIGHT_TYPE = 'highlightType'
 _FLASH_OBJECT_SYS_ATTRS = ('isPrototypeOf', 'propertyIsEnumerable', 'hasOwnProperty')
+ValidationResult = namedtuple('ValidationResult', ['isValid', 'reason'])
 
 def flashObject2Dict(obj):
     if hasattr(obj, 'children'):
@@ -155,11 +157,8 @@ def copyToClipboard(text):
 
 class SettingRecord(dict):
 
-    def __init__(self, *args, **kwargs):
-        super(SettingRecord, self).__init__(*args, **kwargs)
-
     def __setattr__(self, name, value):
-        if len(self):
+        if self:
             raise AttributeError("can't set attribute")
         self.__setitem__(name, value)
 
@@ -256,8 +255,7 @@ def weightedAvg(*args):
 
     if weightSum != 0:
         return float(valSum) / weightSum
-    else:
-        return 0
+    return 0
 
 
 def makeSearchableString(inputString):

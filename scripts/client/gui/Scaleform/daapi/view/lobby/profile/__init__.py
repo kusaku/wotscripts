@@ -1,5 +1,4 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/profile/__init__.py
-from gui.Scaleform.daapi.view.lobby.profile import ProfileHof
 from gui.app_loader.settings import APP_NAME_SPACE
 from gui.shared import EVENT_BUS_SCOPE
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS

@@ -10,5 +10,8 @@ class BCOutroVideoPageMeta(View):
         self._printOverrideError('handleError')
 
     def as_playVideoS(self, data):
+        """
+        :param data: Represented by BCOutroVideoVO (AS)
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_playVideo(data)

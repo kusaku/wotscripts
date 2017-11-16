@@ -26,7 +26,7 @@ class ListenersCollection(IListenersCollection):
 
     def clear(self):
         LOG_DEBUG('Listeners collection was cleared: ', self)
-        while len(self._listeners):
+        while self._listeners:
             self._listeners.pop()
 
         self._clazz = None
@@ -70,7 +70,6 @@ class ListenersCollection(IListenersCollection):
             return itertools.chain(iter(self._listeners), self._mutualListeners.getListenersIterator())
         else:
             return iter(self._listeners)
-            return
 
     def _setListenerClass(self, listenerClass):
         self._clazz = listenerClass

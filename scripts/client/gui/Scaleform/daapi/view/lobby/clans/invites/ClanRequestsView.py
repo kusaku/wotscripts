@@ -66,9 +66,6 @@ class ClanRequestsView(ClanRequestsViewMeta):
         if self.actualRequestsPaginator.isSynced():
             self._enableRefreshBtn(True)
 
-    def _populate(self):
-        super(ClanRequestsView, self)._populate()
-
     def _onAttachedToWindow(self):
         super(ClanRequestsView, self)._onAttachedToWindow()
         self._cooldown.start()
@@ -107,8 +104,7 @@ class ClanRequestsView(ClanRequestsViewMeta):
     def _getSecondSortFields(self):
         if self.currentFilterName == CLANS_ALIASES.INVITE_WINDOW_FILTER_PROCESSED or self.currentFilterName == CLANS_ALIASES.INVITE_WINDOW_FILTER_EXPIRED:
             return ('updatedAt',)
-        else:
-            return ('createdAt',)
+        return ('createdAt',)
 
     def _createSearchDP(self):
         return RequestDataProvider(self)

@@ -29,7 +29,7 @@ class BaseRallyListDataProvider(SortableDAAPIDataProvider):
 
     def fini(self):
         self.clear()
-        self._dispose()
+        self.destroy()
 
     def clear(self):
         self.__list = []

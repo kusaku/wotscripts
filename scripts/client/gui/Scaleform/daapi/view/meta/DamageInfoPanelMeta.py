@@ -14,6 +14,10 @@ class DamageInfoPanelMeta(BaseDAAPIComponent):
         if self._isDAAPIInited():
             return self.flashObject.as_hide()
 
+    def as_tankIsMultiTurretS(self, isMulti):
+        if self._isDAAPIInited():
+            return self.flashObject.as_tankIsMultiTurret(isMulti)
+
     def as_updateEngineS(self, stateId, isHit):
         if self._isDAAPIInited():
             return self.flashObject.as_updateEngine(stateId, isHit)

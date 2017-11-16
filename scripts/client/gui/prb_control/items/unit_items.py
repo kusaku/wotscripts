@@ -106,7 +106,7 @@ class PlayerUnitInfo(object):
             slots = self.unit.getFreeSlots()
             if slotIdx in slots:
                 vehicles = self.getVehiclesToSlot(slotIdx)
-                return (len(vehicles) > 0, vehicles)
+                return (bool(vehicles), vehicles)
         return (False, [])
 
     def getVehiclesToSlots(self, allSlots = False):
@@ -310,8 +310,7 @@ class UnitRosterSettings(object):
     def getLevelsRange(self, minLevel = -1, maxLevel = -1):
         if minLevel == -1 and maxLevel == -1:
             return range(self._minLevel, self._maxLevel + 1)
-        else:
-            return range(minLevel, maxLevel + 1)
+        return range(minLevel, maxLevel + 1)
 
     def getAllSlotsRange(self):
         return xrange(CREATOR_SLOT_INDEX, self._maxSlots)

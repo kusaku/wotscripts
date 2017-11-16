@@ -79,7 +79,7 @@ class _BaseModuleComparator(object):
             maxLoad = getter(module.descriptor)
             res.append((maxLoad, module))
 
-        if len(res) == 0:
+        if not res:
             return (False, None)
         else:
             res = sorted(res)
@@ -172,7 +172,7 @@ class GunComparator(_BaseModuleComparator):
                 avgDamage = paramsDict.get('avgDamagePerMinute', 0.0)
                 res.append((avgDamage, module))
 
-        if len(res) == 0:
+        if not res:
             return (False, None)
         else:
             res = sorted(res)

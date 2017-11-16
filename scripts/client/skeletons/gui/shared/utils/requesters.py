@@ -383,6 +383,10 @@ class IShopCommonStats(object):
         tuple(price of item, item is hidden)."""
         raise NotImplementedError
 
+    def getAchievementReward(self, achievement, arenaType = 1):
+        """Get information about achievement rewards"""
+        raise NotImplementedError
+
     @property
     def revision(self):
         """Gets shop revision value."""
@@ -796,10 +800,6 @@ class IRankedRequester(IRequester):
         raise NotImplementedError
 
     @property
-    def badges(self):
-        raise NotImplementedError
-
-    @property
     def maxRank(self):
         raise NotImplementedError
 
@@ -813,4 +813,28 @@ class IRankedRequester(IRequester):
 
     @property
     def maxRankWithAwardReceived(self):
+        raise NotImplementedError
+
+    @property
+    def seasonLadderPts(self):
+        raise NotImplementedError
+
+    @property
+    def stepsCount(self):
+        raise NotImplementedError
+
+    @property
+    def seasonStepsCount(self):
+        raise NotImplementedError
+
+
+class IBadgesRequester(IRequester):
+    """Class provides tor badges data"""
+
+    @property
+    def available(self):
+        raise NotImplementedError
+
+    @property
+    def selected(self):
         raise NotImplementedError

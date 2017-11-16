@@ -161,10 +161,9 @@ class InventoryRequester(AbstractSyncDataRequester, IInventoryRequester):
     def __getMaker(self, itemTypeID):
         if itemTypeID == GUI_ITEM_TYPE.VEHICLE:
             return self.__makeVehicle
-        elif itemTypeID == GUI_ITEM_TYPE.TANKMAN:
+        if itemTypeID == GUI_ITEM_TYPE.TANKMAN:
             return self.__makeTankman
-        else:
-            return self.__makeSimpleItem
+        return self.__makeSimpleItem
 
     def __makeVehicle(self, vehInvID):
         if vehInvID not in self.__vehsCDsByID:

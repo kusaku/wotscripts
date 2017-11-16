@@ -96,7 +96,6 @@ class RankedBattlesController(IRankedBattlesController, Notifiable):
             return cycleID
         else:
             return None
-            return None
 
     def getSeasonPassed(self):
         now = time_utils.getServerRegionalTime()
@@ -125,7 +124,6 @@ class RankedBattlesController(IRankedBattlesController, Notifiable):
             currPoints = self.itemsCache.items.ranked.ladderPoints
             return RankedSeason(seasonInfo, settings.seasons.get(seasonID, {}), self.__getRankedDossier(), currPoints)
         else:
-            return None
             return None
 
     def getNextSeason(self):
@@ -234,35 +232,6 @@ class RankedBattlesController(IRankedBattlesController, Notifiable):
             lastProgress = self.itemsCache.items.ranked.clientVehRanks.get(vehCD, (0, 0))
             if currentProgress != lastProgress:
                 BigWorld.player().ranked.setClientVehRank(vehCD, *currentProgress)
-        return
-
-    def getAvailableBadges(self):
-        return set(self.__getSettings().clientBadgeIDs)
-
-    def getReceivedBadges(self):
-        result = {}
-        dossierBadges = self.itemsCache.items.getAccountDossier().getDossierDescr()['rankedBadges']
-        for bID in RANKED_BADGES_BLOCK_LAYOUT:
-            if bID in dossierBadges:
-                receivedTimestamp = dossierBadges[bID]
-                if receivedTimestamp > 0:
-                    result[bID] = receivedTimestamp
-
-        return result
-
-    def selectBadge(self, badgeID = None):
-        """ Selects badge which will be used as main icon in the client
-        :param badgeID: int id of desired for selection badge
-        :return: None
-        """
-        if badgeID is not None:
-            receivedBadges = self.getReceivedBadges()
-            if badgeID in receivedBadges:
-                BigWorld.player().ranked.selectBadges([badgeID])
-            else:
-                LOG_WARNING('Attempt to select not received badge {}.\nFrom {}'.format(badgeID, receivedBadges))
-        else:
-            BigWorld.player().ranked.selectBadges([])
         return
 
     @async
@@ -394,6 +363,9 @@ class RankedBattlesController(IRankedBattlesController, Notifiable):
                 stepsCount = vehStepsToProgress[rankIdx]
             else:
                 stepsCount = vehStepsToProgress[-1]
+            if rankID > settings.vehRanks and settings.vehRanks in settings.unburnableVehRanks:
+                unburnableRanks = set(settings.unburnableVehRanks)
+                unburnableRanks.add(rankID)
             result.append(VehicleRank(vehicle, accTopRankID, quest=quest, *self.__buildRank(rankID, stepsCount, currentProgress, maxProgress, lastProgress, unburnableRanks, unburnableVehStepRanks, points)))
 
         return result
@@ -510,13 +482,13 @@ class RankedBattlesController(IRankedBattlesController, Notifiable):
                 continue
             dayPeriods = primeTimes[peripheryID].getPeriodsBetween(dayStart, dayEnd)
             if groupIdentical and dayPeriods in serversPeriodsMapping.values():
-                serverInMapping = None
                 for name, period in serversPeriodsMapping.iteritems():
                     serverInMapping = name if period == dayPeriods else None
+                    if serverInMapping:
+                        newName = '{0}, {1}'.format(serverInMapping, serverShortName)
+                        serversPeriodsMapping[newName] = serversPeriodsMapping.pop(serverInMapping)
+                        break
 
-                if serverInMapping:
-                    newName = '{0}, {1}'.format(serverInMapping, serverShortName)
-                    serversPeriodsMapping[newName] = serversPeriodsMapping.pop(serverInMapping)
             else:
                 serversPeriodsMapping[serverShortName] = dayPeriods
 
@@ -622,8 +594,7 @@ class RankedBattlesController(IRankedBattlesController, Notifiable):
         settings = self.__getSettings()
         if isLoser:
             return settings.loserRankChanges
-        else:
-            return settings.winnerRankChanges
+        return settings.winnerRankChanges
 
     def getMinXp(self):
         settings = self.__getSettings()
@@ -802,8 +773,7 @@ class RankedBattlesController(IRankedBattlesController, Notifiable):
         _, timeLeft = self.getPrimeTimeStatus()
         if timeLeft > 0:
             return timeLeft + 1
-        else:
-            return time_utils.ONE_MINUTE
+        return time_utils.ONE_MINUTE
 
     def __resetTimer(self):
         self.startNotification()
@@ -812,3 +782,17 @@ class RankedBattlesController(IRankedBattlesController, Notifiable):
     def __timerUpdate(self):
         status, _ = self.getPrimeTimeStatus()
         self.onPrimeTimeStatusUpdated(status)
+
+    def getRanksTops(self, isLoser = False, earned = False, notRecieved = False, lost = False):
+        _STEP_EARNED = 1
+        _STEP_NOT_CHANGED = 0
+        _STEP_LOST = -1
+        settings = self.__getSettings()
+        rankChanges = settings.loserRankChanges if isLoser else settings.winnerRankChanges
+        if earned:
+            return rankChanges.count(_STEP_EARNED)
+        if notRecieved:
+            return rankChanges.count(_STEP_NOT_CHANGED)
+        if lost:
+            return rankChanges.count(_STEP_LOST)
+        return len(rankChanges)

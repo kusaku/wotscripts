@@ -1,5 +1,5 @@
 # Embedded file name: scripts/client/gui/shared/gui_items/dossier/achievements/ReadyForBattleHTAchievement.py
-from abstract import ClassProgressAchievement, getCompletedPotapovQuestsCount
+from abstract import ClassProgressAchievement, getCompletedPersonalMissionsCount
 from dossiers2.ui.achievements import ACHIEVEMENT_BLOCK as _AB
 
 class ReadyForBattleHTAchievement(ClassProgressAchievement):
@@ -16,4 +16,4 @@ class ReadyForBattleHTAchievement(ClassProgressAchievement):
         return dossier.getRecordValue(_AB.TOTAL, 'readyForBattleHT')
 
     def _readCurrentProgressValue(self, dossier):
-        return getCompletedPotapovQuestsCount(1, {'heavyTank'})
+        return getCompletedPersonalMissionsCount(1, {'heavyTank'})

@@ -13,21 +13,10 @@ class BCHighlights(BCHighlightsMeta):
         super(BCHighlights, self).__init__()
         self.__soundsByComponentID = {}
         self.__soundsBySoundID = {}
+        self.__orphanedSounds = []
         self.__activeHints = set()
         self.__descriptors = settings['descriptors']
         self.__componentsAnimationFinished = {}
-
-    def _populate(self):
-        super(BCHighlights, self)._populate()
-        self.setDescriptors(self.__descriptors)
-
-    def _dispose(self):
-        super(BCHighlights, self)._dispose()
-        for _, sound in self.__soundsByComponentID.itervalues():
-            sound.stop()
-
-        self.__soundsByComponentID.clear()
-        self.__soundsBySoundID.clear()
 
     def setDescriptors(self, descriptors):
         self.as_setDescriptorsS(descriptors)
@@ -72,14 +61,17 @@ class BCHighlights(BCHighlightsMeta):
 
     def hideHint(self, componentID, shouldStop = True):
         soundID, snd = self.__soundsByComponentID.pop(componentID, (None, None))
-        snd is not None and LOG_DEBUG_DEV_BOOTCAMP('BCHighlights_hideHint', componentID)
+        snd is not None and LOG_DEBUG_DEV_BOOTCAMP('BCHighlights_hideHint', componentID, shouldStop)
         activeSoundComponentID, activeSound = self.__soundsBySoundID.get(soundID, None)
         if activeSound is snd:
             if not activeSoundComponentID == componentID:
                 raise AssertionError
-                LOG_DEBUG_DEV_BOOTCAMP('BCHighlights_hideHint - stopping {0} and removing from active sounds'.format(soundID))
                 if shouldStop:
+                    LOG_DEBUG_DEV_BOOTCAMP('BCHighlights_hideHint - stopping', soundID)
                     snd.stop()
+                elif snd.isPlaying:
+                    self.__orphanedSounds.append(activeSound)
+                LOG_DEBUG_DEV_BOOTCAMP('BCHighlights_hideHint - removing from active sounds', soundID)
                 del self.__soundsBySoundID[soundID]
             else:
                 raise not snd.isPlaying or AssertionError
@@ -120,3 +112,16 @@ class BCHighlights(BCHighlightsMeta):
             vehicle = itemsCache.items.getItemByCD(vehicleCD)
             component['TankIndex'] = str(vehicle.invID)
         self.setDescriptors(g_bootcampHintsConfig.getItems())
+
+    def _populate(self):
+        super(BCHighlights, self)._populate()
+        self.setDescriptors(self.__descriptors)
+
+    def _dispose(self):
+        super(BCHighlights, self)._dispose()
+        for _, sound in self.__soundsByComponentID.itervalues():
+            sound.stop()
+
+        self.__soundsByComponentID.clear()
+        self.__soundsBySoundID.clear()
+        del self.__orphanedSounds[:]

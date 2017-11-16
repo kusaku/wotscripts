@@ -67,7 +67,6 @@ class Servers(object):
             return self._serverList[self._selectedServerIdx]
         else:
             return None
-            return None
 
     def __onServerUpdate(self, _ = None):
         self.updateServerList()

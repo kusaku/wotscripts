@@ -1,5 +1,7 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/battle/classic/players_panel.py
+import BigWorld
 from account_helpers.settings_core.settings_constants import GAME
+from constants import ARENA_GUI_TYPE
 from debug_utils import LOG_ERROR
 from gui.Scaleform.daapi.view.meta.PlayersPanelMeta import PlayersPanelMeta
 from gui.Scaleform.genConsts.PLAYERS_PANEL_STATE import PLAYERS_PANEL_STATE
@@ -8,7 +10,7 @@ from gui.shared import events, EVENT_BUS_SCOPE
 from helpers import dependency
 from skeletons.account_helpers.settings_core import ISettingsCore
 from skeletons.gui.battle_session import IBattleSessionProvider
-_PLAYERS_PANEL_STATE_RANGE = (PLAYERS_PANEL_STATE.HIDEN,
+_PLAYERS_PANEL_STATE_RANGE = (PLAYERS_PANEL_STATE.HIDDEN,
  PLAYERS_PANEL_STATE.SHORT,
  PLAYERS_PANEL_STATE.MEDIUM,
  PLAYERS_PANEL_STATE.LONG,
@@ -22,17 +24,15 @@ class PlayerPanelStateSetting(object):
         state = cls.settingsCore.getSetting(GAME.PLAYERS_PANELS_STATE)
         if state in _PLAYERS_PANEL_STATE_RANGE:
             return state
-        else:
-            return PLAYERS_PANEL_STATE.MEDIUM
+        return PLAYERS_PANEL_STATE.MEDIUM
 
     @classmethod
     def write(cls, state):
         if state in _PLAYERS_PANEL_STATE_RANGE:
             cls.settingsCore.applySetting(GAME.PLAYERS_PANELS_STATE, state)
             return True
-        else:
-            LOG_ERROR('State of players panel is invalid', state)
-            return False
+        LOG_ERROR('State of players panel is invalid', state)
+        return False
 
 
 class PlayersPanel(PlayersPanelMeta, IAbstractPeriodView):
@@ -59,6 +59,7 @@ class PlayersPanel(PlayersPanelMeta, IAbstractPeriodView):
 
     def _populate(self):
         super(PlayersPanel, self)._populate()
+        self.as_setEnemyHideStatusS(self.sessionProvider.arenaVisitor.getArenaGuiType() == ARENA_GUI_TYPE.EVENT_BATTLES_2)
         self.addListener(events.GameEvent.NEXT_PLAYERS_PANEL_MODE, self._handleNextMode, EVENT_BUS_SCOPE.BATTLE)
 
     def _dispose(self):

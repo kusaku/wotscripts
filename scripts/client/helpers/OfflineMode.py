@@ -1,13 +1,12 @@
 # Embedded file name: scripts/client/helpers/OfflineMode.py
+import math
+import sys
 import BigWorld
 import GUI
 import Keys
 import Math
 import ResMgr
 import WWISE
-import sys
-import math
-from functools import partial
 from post_processing import g_postProcessing
 g_offlineModeEnabled = False
 g_currentMoveRate = 0.5
@@ -199,8 +198,9 @@ def adjustFOV(diff):
 
 def handleKeyEvent(event):
     global g_enablePostProcessing
-    global g_curCameraTransform
     global g_enableTAA
+    global g_enableCinematicPostProcessing
+    global g_curCameraTransform
     if not g_offlineModeEnabled or not BigWorld.camera():
         return False
     BigWorld.camera().handleKeyEvent(event)

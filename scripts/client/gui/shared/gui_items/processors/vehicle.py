@@ -173,7 +173,7 @@ class VehicleRenter(VehicleReceiveProcessor):
         :param ctx: <obj> localization context
         :return: <ResultMsg> error message
         """
-        if not len(errStr):
+        if not errStr:
             msg = 'vehicle_rent/server_error' if code != AccountCommands.RES_CENTER_DISCONNECTED else 'vehicle_rent/server_error_centerDown'
         else:
             msg = 'vehicle_rent/%s' % errStr
@@ -230,7 +230,7 @@ class VehicleRestoreProcessor(VehicleBuyer):
         :param ctx: <obj> localization context
         :return: <ResultMsg> error message
         """
-        if not len(errStr):
+        if not errStr:
             msg = 'vehicle_restore/server_error' if code != AccountCommands.RES_CENTER_DISCONNECTED else 'vehicle_restore/server_error_centerDown'
         else:
             msg = 'vehicle_restore/%s' % errStr
@@ -598,7 +598,7 @@ class VehicleLayoutProcessor(Processor):
 
     def _successHandler(self, code, ctx = None):
         additionalMessages = []
-        if len(ctx.get('shells', [])):
+        if ctx.get('shells', []):
             totalPrice = MONEY_UNDEFINED
             for shellCompDescr, price, count in ctx.get('shells', []):
                 price = Money.makeFromMoneyTuple(price)
@@ -607,7 +607,7 @@ class VehicleLayoutProcessor(Processor):
                 totalPrice += price
 
             additionalMessages.append(makeI18nSuccess('layout_apply/success_money_spent', money=formatPrice(totalPrice), type=self._getSysMsgType(totalPrice)))
-        if len(ctx.get('eqs', [])):
+        if ctx.get('eqs', []):
             for eqCompDescr, price, count in ctx.get('eqs', []):
                 price = Money.makeFromMoneyTuple(price)
                 equipment = self.itemsCache.items.getItemByCD(eqCompDescr)
@@ -616,7 +616,7 @@ class VehicleLayoutProcessor(Processor):
         return makeSuccess(auxData=additionalMessages)
 
     def _errorHandler(self, code, errStr = '', ctx = None):
-        if not len(errStr):
+        if not errStr:
             msg = 'server_error' if code != AccountCommands.RES_CENTER_DISCONNECTED else 'server_error_centerDown'
         else:
             msg = errStr
@@ -750,7 +750,7 @@ def tryToLoadDefaultShellsLayout(vehicle, callback = None):
             for m in result.auxData:
                 SystemMessages.pushI18nMessage(m.userMsg, type=m.sysMsgType)
 
-        if result and len(result.userMsg):
+        if result and result.userMsg:
             SystemMessages.pushI18nMessage(result.userMsg, type=result.sysMsgType)
         if callback is not None:
             callback(True)

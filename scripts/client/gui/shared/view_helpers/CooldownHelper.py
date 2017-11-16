@@ -7,7 +7,7 @@ from gui.shared.rq_cooldown import getRequestCoolDown
 class CooldownHelper(object):
 
     def __init__(self, requestIDs, handler, eventType, eventScope = EVENT_BUS_SCOPE.LOBBY):
-        raise len(requestIDs) or AssertionError
+        raise requestIDs or AssertionError
         self._eventType = eventType
         self._eventScope = eventScope
         self._requestIDs = requestIDs
@@ -53,7 +53,7 @@ class CooldownHelper(object):
         for requestID in self._requestIDs:
             cooldowns[requestID] = getRequestCoolDown(self._eventScope, requestID)
 
-        if len(cooldowns):
+        if cooldowns:
             requestID, cooldown = max(cooldowns.items(), key=operator.itemgetter(1))
             if cooldown > 0:
                 self.__isInCooldown = True

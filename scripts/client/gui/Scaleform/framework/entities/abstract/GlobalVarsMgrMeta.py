@@ -42,8 +42,8 @@ class GlobalVarsMgrMeta(BaseDAAPIComponent):
     def isRentalsEnabled(self):
         self._printOverrideError('isRentalsEnabled')
 
-    def isPotapovQuestEnabled(self):
-        self._printOverrideError('isPotapovQuestEnabled')
+    def isPersonalMissionsEnabled(self):
+        self._printOverrideError('isPersonalMissionsEnabled')
 
     def isLoginLoadedAtFirstTime(self):
         self._printOverrideError('isLoginLoadedAtFirstTime')
@@ -53,6 +53,3 @@ class GlobalVarsMgrMeta(BaseDAAPIComponent):
 
     def isTradeInEnabled(self):
         self._printOverrideError('isTradeInEnabled')
-
-    def isBootcampFinished(self):
-        self._printOverrideError('isBootcampFinished')

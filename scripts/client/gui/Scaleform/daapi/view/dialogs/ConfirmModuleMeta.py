@@ -100,7 +100,7 @@ class SellModuleMeta(ConfirmModuleMeta):
     @process('sellItem')
     def submit(self, item, count, currency):
         result = yield ModuleSeller(item, min(count, MAX_ITEMS_FOR_OPERATION)).request()
-        if len(result.userMsg):
+        if result.userMsg:
             SystemMessages.pushI18nMessage(result.userMsg, type=result.sysMsgType)
 
     def getActualPrices(self, module):
@@ -165,5 +165,5 @@ class BuyModuleMeta(ConfirmModuleMeta):
     @process('buyItem')
     def submit(self, item, count, currency):
         result = yield ModuleBuyer(item, count, currency).request()
-        if len(result.userMsg):
+        if result.userMsg:
             SystemMessages.pushI18nMessage(result.userMsg, type=result.sysMsgType)

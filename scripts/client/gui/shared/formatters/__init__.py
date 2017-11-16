@@ -50,7 +50,6 @@ def moneyWithIcon(money, currType = None):
     else:
         LOG_ERROR('Unsupported currency for displaying with icon:', currType)
         return formatter(value)
-        return
 
 
 def getMoneyVO(moneyObj):

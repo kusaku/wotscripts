@@ -53,7 +53,7 @@ class ResearchView(LobbySubView, ResearchViewMeta):
         Value of credits updated.
         """
         result = self._data.invalidateCredits()
-        if len(result):
+        if result:
             self.as_setNodesStatesS(NODE_STATE_FLAGS.ENOUGH_MONEY, result)
 
     def invalidateGold(self):
@@ -61,7 +61,7 @@ class ResearchView(LobbySubView, ResearchViewMeta):
         Value of gold updated.
         """
         result = self._data.invalidateGold()
-        if len(result):
+        if result:
             self.as_setNodesStatesS(NODE_STATE_FLAGS.ENOUGH_MONEY, result)
         self.invalidateFreeXP()
         self.invalidateCredits()
@@ -71,7 +71,7 @@ class ResearchView(LobbySubView, ResearchViewMeta):
         Value of free experience updated.
         """
         result = self._data.invalidateFreeXP()
-        if len(result):
+        if result:
             self.as_setNodesStatesS(NODE_STATE_FLAGS.ENOUGH_XP, result)
 
     def invalidateElites(self, elites):
@@ -80,7 +80,7 @@ class ResearchView(LobbySubView, ResearchViewMeta):
         :param elites: set([<compactDescr>, ...])
         """
         result = self._data.invalidateElites(elites)
-        if len(result):
+        if result:
             self.as_setNodesStatesS(NODE_STATE_FLAGS.ELITE, result)
 
     def invalidateVTypeXP(self, xps):
@@ -90,7 +90,7 @@ class ResearchView(LobbySubView, ResearchViewMeta):
         """
         self.as_setVehicleTypeXPS(xps.items())
         result = self._data.invalidateVTypeXP()
-        if len(result):
+        if result:
             self.as_setNodesStatesS(NODE_STATE_FLAGS.ENOUGH_XP, result)
 
     def invalidateUnlocks(self, unlocks):
@@ -99,10 +99,10 @@ class ResearchView(LobbySubView, ResearchViewMeta):
         :param unlocks: set([<int:compactDescr>, ...])
         """
         next2Unlock, unlocked = self._data.invalidateUnlocks(unlocks)
-        if len(unlocked):
+        if unlocked:
             LOG_DEBUG('unlocked', unlocked)
             self.as_setNodesStatesS(NODE_STATE_FLAGS.UNLOCKED, unlocked)
-        if len(next2Unlock):
+        if next2Unlock:
             LOG_DEBUG('next2Unlock', next2Unlock)
             self.as_setNext2UnlockS(next2Unlock)
 
@@ -112,7 +112,7 @@ class ResearchView(LobbySubView, ResearchViewMeta):
         :param data: set of int-type compact descriptors for  modified items (vehicles/modules).
         """
         result = self._data.invalidateInventory(data)
-        if len(result):
+        if result:
             self.as_setInventoryItemsS(result)
 
     def invalidatePrbState(self):
@@ -120,7 +120,7 @@ class ResearchView(LobbySubView, ResearchViewMeta):
         Player's state has been changed in prebattle, unit, prequeue.
         """
         result = self._data.invalidatePrbState()
-        if len(result):
+        if result:
             self.as_setNodesStatesS(NODE_STATE_FLAGS.VEHICLE_CAN_BE_CHANGED, result)
 
     def invalidateDiscounts(self, data):

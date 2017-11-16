@@ -171,10 +171,9 @@ class ArenaDataProvider(IArenaDataProvider):
             vStatsVO = self.__vStatsVOs[vehicleID]
             flags = vStatsVO.updateGameModeSpecificStats(stats)
             return (flags, vStatsVO)
-        else:
-            vInfoVO = self.__vInfoVOs[vehicleID]
-            flags = vInfoVO.updateGameModeSpecificStats(stats)
-            return (flags, vInfoVO)
+        vInfoVO = self.__vInfoVOs[vehicleID]
+        flags = vInfoVO.updateGameModeSpecificStats(stats)
+        return (flags, vInfoVO)
 
     def updateInvitationStatus(self, accountDBID, include, exclude = _INVITATION_STATUS.NONE):
         """Invitations states has been changed.
@@ -251,8 +250,7 @@ class ArenaDataProvider(IArenaDataProvider):
     def getNumberOfTeam(self, enemy = False):
         if enemy:
             return first(self.getEnemyTeams())
-        else:
-            return self.__playerTeam
+        return self.__playerTeam
 
     def getPersonalDescription(self):
         return self.__description

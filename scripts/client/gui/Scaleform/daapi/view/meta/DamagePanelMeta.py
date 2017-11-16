@@ -22,13 +22,14 @@ class DamagePanelMeta(BaseDAAPIComponent):
         if self._isDAAPIInited():
             return self.flashObject.as_setPlayerInfo(playerName, clanName, regionName, vehicleTypeName)
 
-    def as_setupS(self, healthStr, progress, indicatorType, crewLayout, yawLimits, hasTurretRotator, isAutoRotationOn):
+    def as_setupS(self, healthStr, progress, indicatorType, crewLayout, yawLimits, hasTurretRotator, hasSecondaryTurretRotator, SecYawLimits, isAutoRotationOn):
         """
         :param crewLayout: Represented by Array (AS)
         :param yawLimits: Represented by Array (AS)
+        :param SecYawLimits: Represented by Array (AS)
         """
         if self._isDAAPIInited():
-            return self.flashObject.as_setup(healthStr, progress, indicatorType, crewLayout, yawLimits, hasTurretRotator, isAutoRotationOn)
+            return self.flashObject.as_setup(healthStr, progress, indicatorType, crewLayout, yawLimits, hasTurretRotator, hasSecondaryTurretRotator, SecYawLimits, isAutoRotationOn)
 
     def as_updateHealthS(self, healthStr, progress):
         if self._isDAAPIInited():

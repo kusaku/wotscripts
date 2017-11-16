@@ -9,6 +9,9 @@ class BadgesPageMeta(WrapperViewMeta):
     def onSelectBadge(self, badgeID):
         self._printOverrideError('onSelectBadge')
 
+    def onDeselectBadge(self):
+        self._printOverrideError('onDeselectBadge')
+
     def onDummyButtonPress(self):
         self._printOverrideError('onDummyButtonPress')
 

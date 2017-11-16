@@ -99,10 +99,8 @@ class _CTFConfigReader():
         if self.__configSection is None:
             return
         else:
-            radiusModel = self.__configSection.readString(name, '')
-            if len(radiusModel) > 0:
-                return radiusModel
-            return
+            radiusModel = self.__configSection.readString(name)
+            return radiusModel or None
 
     def readFirstLvlSection(self, name):
         if self.__configSection is None:
@@ -710,6 +708,6 @@ class _UDOAttributeChecker():
     def checkAttribute(self, attributeName):
         self.__isCheckFailed = True
         attribute = getattr(self, attributeName, None)
-        raise attribute is not None and len(attribute) > 0 or AssertionError
+        raise attribute or AssertionError
         self.__isCheckFailed = False
         return

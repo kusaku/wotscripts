@@ -54,7 +54,7 @@ class ServersDataProvider(SortableDAAPIDataProvider):
     def fini(self):
         self.settingsCore.onSettingsChanged -= self.__onSettingsChanged
         self.clear()
-        self._dispose()
+        self.destroy()
 
     def getSelectedIdx(self):
         if self.__selectedID in self.__mapping:
@@ -135,7 +135,6 @@ class ServersDataProvider(SortableDAAPIDataProvider):
         if 'isColorBlind' in diff:
             self.__isColorBlind = diff['isColorBlind']
             for item in self._list:
-                item['colorBlind'] = self.__isColorBlind
                 pingValue, pingStatus = g_preDefinedHosts.getHostPingData(item['data'])
                 pingValueStr = formatPingStatus(item['csisStatus'], self.__isColorBlind, False, pingStatus, pingValue)
                 item['pingValue'] = pingValueStr
@@ -151,18 +150,16 @@ class ServersDataProvider(SortableDAAPIDataProvider):
             else:
                 LOG_ERROR('Mismatch ping status "{}" and available indicator statuses.'.format(income_status))
                 return None
-                return None
 
         csisStatus = item['csisStatus']
         if pingStatus == PING_STATUSES.REQUESTED:
             return _INDICATOR_STATUSES.WAITING
-        elif csisStatus == HOST_AVAILABILITY.RECOMMENDED or csisStatus == HOST_AVAILABILITY.UNKNOWN:
+        if csisStatus == HOST_AVAILABILITY.RECOMMENDED or csisStatus == HOST_AVAILABILITY.UNKNOWN:
             return __checkPingForValidStatus(pingStatus)
-        elif csisStatus in (HOST_AVAILABILITY.NOT_AVAILABLE, HOST_AVAILABILITY.NOT_RECOMMENDED):
+        if csisStatus in (HOST_AVAILABILITY.NOT_AVAILABLE, HOST_AVAILABILITY.NOT_RECOMMENDED):
             return _INDICATOR_STATUSES.IGNORED
-        elif csisStatus == HOST_AVAILABILITY.REQUESTED:
+        if csisStatus == HOST_AVAILABILITY.REQUESTED:
             return _INDICATOR_STATUSES.WAITING
-        elif item['data'] == AUTO_LOGIN_QUERY_URL:
+        if item['data'] == AUTO_LOGIN_QUERY_URL:
             return _INDICATOR_STATUSES.IGNORED
-        else:
-            return __checkPingForValidStatus(pingStatus)
+        return __checkPingForValidStatus(pingStatus)

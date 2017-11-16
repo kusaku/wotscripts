@@ -4,8 +4,9 @@ import math
 import weakref
 import CommandMapping
 import Math
+import constants
 from battleground.StunAreaManager import g_stunAreaManager
-from debug_utils import LOG_ERROR
+from debug_utils import LOG_ERROR, LOG_DEBUG
 from gui.battle_control import avatar_getter, minimap_utils
 from gui.battle_control.battle_constants import BATTLE_CTRL_ID, GUN_RELOADING_VALUE_TYPE
 from gui.battle_control.controllers.interfaces import IBattleController
@@ -159,11 +160,12 @@ class ChatCommandsController(IBattleController):
     def sendReloadingCommand(self):
         if not avatar_getter.isPlayerOnArena():
             return
-        state = self.__ammo.getGunReloadingState()
+        turretIndex = 0
+        state = self.__ammo.getGunReloadingState(turretIndex)
         if state.getValueType() != GUN_RELOADING_VALUE_TYPE.TIME:
             LOG_ERROR('Chat reloading command is not allowed')
             return
-        command = self.proto.battleCmd.create4Reload(self.__ammo.getGunSettings().isCassetteClip(), math.ceil(state.getTimeLeft()), self.__ammo.getShellsQuantityLeft())
+        command = self.proto.battleCmd.create4Reload(self.__ammo.getGunSettings(turretIndex).isCassetteClip(), math.ceil(state.getTimeLeft()), self.__ammo.getShellsQuantityLeft(turretIndex))
         if command:
             self.__sendChatCommand(command)
         else:
@@ -171,7 +173,8 @@ class ChatCommandsController(IBattleController):
 
     def __getReloadTime(self):
         reloadTime = 0
-        reloadState = self.__ammo.getGunReloadingState()
+        turretIndex = 0
+        reloadState = self.__ammo.getGunReloadingState(turretIndex)
         if reloadState.getValueType() == GUN_RELOADING_VALUE_TYPE.TIME:
             reloadTime = reloadState.getTimeLeft()
         return reloadTime
@@ -280,7 +283,7 @@ class ChatCommandsController(IBattleController):
             if target.isAlive():
                 if player is not None and isPlayerAvatar():
                     vInfo = self.__arenaDP.getVehicleInfo(target.id)
-                    return not vInfo.isActionsDisabled()
+                    return not vInfo.isActionsDisabled() or player.arenaBonusType == constants.ARENA_BONUS_TYPE.EVENT_BATTLES_2
         return False
 
     def __getCurrentVehicleDesc(self, player):

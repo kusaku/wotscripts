@@ -143,8 +143,7 @@ class FalloutStatsComponent(vehicle.VehicleStatsComponent):
             data = super(FalloutStatsComponent, self).get()
             data.update(stats)
             return data
-        else:
-            return {}
+        return {}
 
     def addStats(self, vStatsVO):
         self._vehicleID = vStatsVO.vehicleID
@@ -182,10 +181,9 @@ class FalloutStatisticsDataController(BattleStatisticsDataController):
     def _createExchangeCollector(self):
         if self._arenaVisitor.gui.isFalloutClassic():
             return FalloutClassicTotalWinPoints(self._personalInfo.vehicleID)
-        elif self._arenaVisitor.gui.isFalloutMultiTeam():
+        if self._arenaVisitor.gui.isFalloutMultiTeam():
             return FalloutMltiteamTotalWinPoints(self._personalInfo.vehicleID)
-        else:
-            return broker.NoCollectableStats()
+        return broker.NoCollectableStats()
 
     def __getStatsComponentClass(self):
         if self._arenaVisitor.hasResourcePoints():

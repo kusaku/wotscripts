@@ -133,6 +133,7 @@ class ConnectionManager(IConnectionManager):
             if stage == 1:
                 if self.__connectionMethod == CONNECTION_METHOD.TOKEN and 'token2' in responseData:
                     self.__swtichToToken2(responseData['token2'])
+                BigWorld.WGC_onServerResponse(True)
                 self.onLoggedOn(responseData)
                 self.onConnected()
         else:
@@ -144,9 +145,9 @@ class ConnectionManager(IConnectionManager):
             if status == LOGIN_STATUS.LOGIN_REJECTED_RATE_LIMITED:
                 self.__reconnect()
             if stage == 6:
+                BigWorld.WGC_onServerResponse(False)
                 self.onDisconnected()
                 g_playerEvents.onDisconnected()
-        BigWorld.WGC_onServerResponse()
         return
 
     def __setConnectionData(self, params, password):

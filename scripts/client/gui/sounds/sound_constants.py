@@ -20,8 +20,7 @@ class HQRenderState(object):
     def isEnabled(cls, status, isMSR):
         if status == cls.LQ_HQ_ENABLED:
             return not isMSR
-        else:
-            return status == cls.HQ_FOR_ALL
+        return status == cls.HQ_FOR_ALL
 
 
 PLAYING_SOUND_CHECK_PERIOD = 1.0

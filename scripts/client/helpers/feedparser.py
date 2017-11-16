@@ -615,7 +615,7 @@ class _FeedParserMixin():
                 return method(attrsD)
             except AttributeError:
                 unknown_tag = prefix + suffix
-                if len(attrsD) == 0:
+                if not attrsD:
                     return self.push(unknown_tag, 1)
                 context = self._getContext()
                 context[unknown_tag] = attrsD

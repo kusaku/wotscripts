@@ -1,9 +1,6 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/MinimapGrid.py
 import weakref
-import Math
-import ArenaType
 from gui.Scaleform.daapi.view.meta.MinimapGridMeta import MinimapGridMeta
-from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from helpers import dependency
 from skeletons.account_helpers.settings_core import ISettingsCore
 
@@ -15,12 +12,6 @@ class MinimapGrid(MinimapGridMeta):
         self._channel = None
         self._controller = None
         return
-
-    def _populate(self):
-        super(MinimapGrid, self)._populate()
-
-    def _dispose(self):
-        super(MinimapGrid, self)._dispose()
 
     def setController(self, controller):
         controller.activate()

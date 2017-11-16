@@ -128,7 +128,6 @@ class BattleContext(IBattleContext):
             return self.__arenaDP.isObserver(vID)
         else:
             return False
-            return
 
     def isPlayerObserver(self):
         return self.__arenaDP.isPlayerObserver()

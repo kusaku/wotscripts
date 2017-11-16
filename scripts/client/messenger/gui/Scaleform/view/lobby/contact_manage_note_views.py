@@ -60,9 +60,6 @@ class ContactManageNoteView(ContactNoteManageViewMeta):
 
 class ContactEditNoteView(ContactManageNoteView):
 
-    def __init__(self):
-        super(ContactEditNoteView, self).__init__()
-
     def sendData(self, data):
         super(ContactEditNoteView, self).sendData(data)
         self.as_setOkBtnEnabledS(False)
@@ -77,9 +74,6 @@ class ContactEditNoteView(ContactManageNoteView):
 
 
 class ContactCreateNoteView(ContactManageNoteView):
-
-    def __init__(self):
-        super(ContactCreateNoteView, self).__init__()
 
     def _populate(self):
         super(ContactCreateNoteView, self)._populate()

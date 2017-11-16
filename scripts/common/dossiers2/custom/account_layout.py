@@ -385,7 +385,10 @@ _SINGLE_ACHIEVEMENTS_VALUES = ['titleSniper',
  'xmasTreeBronze',
  'xmasTreeSilver',
  'xmasTreeGold',
- 'rankedBattlesPioneer']
+ 'rankedBattlesPioneer',
+ 'HE17A1',
+ 'HE17A2',
+ 'HE17A3']
 _singleAchievementsPopUps = ['titleSniper',
  'invincible',
  'diehard',
@@ -413,7 +416,10 @@ _singleAchievementsPopUps = ['titleSniper',
  'xmasTreeBronze',
  'xmasTreeSilver',
  'xmasTreeGold',
- 'rankedBattlesPioneer']
+ 'rankedBattlesPioneer',
+ 'HE17A1',
+ 'HE17A2',
+ 'HE17A3']
 _singleAchievementsBlockBuilder = BinarySetDossierBlockBuilder('singleAchievements', _SINGLE_ACHIEVEMENTS_VALUES, {}, _singleAchievementsPopUps)
 FORT_ACHIEVEMENTS_BLOCK_LAYOUT = ['conqueror',
  'fireAndSword',
@@ -435,16 +441,7 @@ RANKED_BADGES_BLOCK_LAYOUT = ['1',
  '7',
  '8',
  '9']
-rankedBadgesPopUps = ['1',
- '2',
- '3',
- '4',
- '5',
- '6',
- '7',
- '8',
- '9']
-_rankedBadgesBlockBuilder = StaticSizeBlockBuilder('rankedBadges', RANKED_BADGES_BLOCK_LAYOUT, RANKED_BADGES_DEPENDENCIES, rankedBadgesPopUps)
+_playerBadgesBlockBuilder = DictBlockBuilder('playerBadges', 'I', 'I', {})
 _rankedSeasonsBlockBuilder = DictBlockBuilder('rankedSeasons', 'II', 'BBHHH', {})
 _rareAchievementsBlockBuilder = ListBlockBuilder('rareAchievements', 'I', {})
 UNIQUE_ACHIEVEMENT_VALUES = ['histBattle1_battlefield',
@@ -548,7 +545,6 @@ accountDossierLayout = (_a15x15BlockBuilder,
  _rankedBlockBuilder,
  _maxRankedBlockBuilder,
  _rankedCutBlockBuilder,
- _rankedBadgesBlockBuilder,
  _rankedSeasonsBlockBuilder,
  _rankedCurrentBlockBuilder,
  _rankedPreviousBlockBuilder,
@@ -561,7 +557,8 @@ accountDossierLayout = (_a15x15BlockBuilder,
  _a30x30BlockBuilder,
  _a30x30CutBlockBuilder,
  _max30x30BlockBuilder,
- _markOfMasteryCut)
+ _markOfMasteryCut,
+ _playerBadgesBlockBuilder)
 ACCOUNT_DOSSIER_BLOCKS = {b.name:b for b in accountDossierLayout}
 ACCOUNT_DOSSIER_STATIC_BLOCKS = frozenset((b.name for b in accountDossierLayout if type(b) == StaticSizeBlockBuilder))
 ACCOUNT_DOSSIER_BINARY_SET_BLOCKS = [ b.name for b in accountDossierLayout if type(b) == BinarySetDossierBlockBuilder ]

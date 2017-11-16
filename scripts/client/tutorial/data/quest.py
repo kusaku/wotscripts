@@ -1,5 +1,5 @@
 # Embedded file name: scripts/client/tutorial/data/quest.py
-from gui.server_events.events_helpers import EVENT_STATUS
+from gui.server_events.events_helpers import MISSIONS_STATES
 from tutorial.data.has_id import HasID
 from tutorial.data.chapter import Chapter
 
@@ -43,14 +43,13 @@ class QuestChapter(Chapter):
     def getChapterStatus(self, descriptor, completed):
         unlockChapter = descriptor.getChapter(self.getUnlockChapter())
         if self.isHidden():
-            return EVENT_STATUS.NOT_AVAILABLE
+            return MISSIONS_STATES.NOT_AVAILABLE
         elif self.isBonusReceived(completed):
-            return EVENT_STATUS.COMPLETED
+            return MISSIONS_STATES.COMPLETED
         elif unlockChapter is None or unlockChapter.isBonusReceived(completed):
-            return EVENT_STATUS.NONE
+            return MISSIONS_STATES.NONE
         else:
-            return EVENT_STATUS.NOT_AVAILABLE
-            return
+            return MISSIONS_STATES.NOT_AVAILABLE
 
 
 class ProgressCondition(HasID):

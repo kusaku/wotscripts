@@ -1,6 +1,5 @@
 # Embedded file name: scripts/client/bootcamp/Assistant.py
 import BigWorld
-import SoundGroups
 from debug_utils_bootcamp import LOG_CURRENT_EXCEPTION_BOOTCAMP
 from hints.HintsSystem import HintSystem
 from BootCampEvents import g_bootcampEvents
@@ -36,6 +35,9 @@ class BaseAssistant(object):
     def onAction(self, actionId, actionParams):
         self._hintSystem.onAction(actionId, actionParams)
 
+    def getHintSystem(self):
+        return self._hintSystem
+
     def _update(self):
         try:
             self._hintSystem.update()
@@ -49,9 +51,6 @@ class BaseAssistant(object):
 
     def _doStop(self):
         pass
-
-    def getHintSystem(self):
-        return self._hintSystem
 
 
 class BattleAssistant(BaseAssistant):

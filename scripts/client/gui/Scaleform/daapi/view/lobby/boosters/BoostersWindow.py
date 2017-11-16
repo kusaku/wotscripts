@@ -112,10 +112,9 @@ class BoostersWindow(BoostersWindowMeta):
             return {'title': text_styles.middleTitle(MENU.BOOSTERSWINDOW_BOOSTERSTABLE_NOINFO_NOTFOUND_TITLE),
              'message': text_styles.main(MENU.BOOSTERSWINDOW_BOOSTERSTABLE_NOINFO_NOTFOUND_MESSAGE),
              'returnBtnLabel': _ms(MENU.BOOSTERSWINDOW_RETURNBTN_LABEL)}
-        else:
-            return {'title': '',
-             'returnBtnLabel': '',
-             'message': text_styles.alignStandartText(MENU.BOOSTERSWINDOW_BOOSTERSTABLE_NOINFO_EMPTY_MESSAGE, TEXT_ALIGN.CENTER)}
+        return {'title': '',
+         'returnBtnLabel': '',
+         'message': text_styles.alignStandartText(MENU.BOOSTERSWINDOW_BOOSTERSTABLE_NOINFO_EMPTY_MESSAGE, TEXT_ALIGN.CENTER)}
 
     @staticmethod
     def __packFiltersData(items):

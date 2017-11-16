@@ -38,7 +38,7 @@ class SearchDataProvider(DAAPIDataProvider, ISearchHandler):
         return
 
     def fini(self):
-        self._dispose()
+        self.destroy()
         if self._processor is not None:
             self._processor.fini()
             self._processor = None
@@ -48,7 +48,7 @@ class SearchDataProvider(DAAPIDataProvider, ISearchHandler):
         return self._processor.find(token, **kwargs)
 
     def onSearchComplete(self, result):
-        if not len(result):
+        if not result:
             SystemMessages.pushI18nMessage(MESSENGER.CLIENT_INFORMATION_EMPTYSEARCHRESULT_MESSAGE, type=SystemMessages.SM_TYPE.Warning)
         self.buildList(result)
         self.refresh()

@@ -107,10 +107,14 @@ class DIALOGS(object):
     CHANGECONFIRMATIONNOTREMOVABLE_MESSAGECOMBINE = '#dialogs:changeConfirmationNotRemovable/messageCombine'
     CHANGECONFIRMATIONNOTREMOVABLE_SUBMIT = '#dialogs:changeConfirmationNotRemovable/submit'
     CHANGECONFIRMATIONNOTREMOVABLE_CANCEL = '#dialogs:changeConfirmationNotRemovable/cancel'
-    INSTALLCONFIRMATIONNOTREMOVABLE_TITLE = '#dialogs:installConfirmationNotRemovable/title'
-    INSTALLCONFIRMATIONNOTREMOVABLE_MESSAGE = '#dialogs:installConfirmationNotRemovable/message'
-    INSTALLCONFIRMATIONNOTREMOVABLE_SUBMIT = '#dialogs:installConfirmationNotRemovable/submit'
-    INSTALLCONFIRMATIONNOTREMOVABLE_CANCEL = '#dialogs:installConfirmationNotRemovable/cancel'
+    INSTALLCONFIRMATIONNOTREMOVABLE_GOLD_TITLE = '#dialogs:installConfirmationNotRemovable_gold/title'
+    INSTALLCONFIRMATIONNOTREMOVABLE_GOLD_MESSAGE = '#dialogs:installConfirmationNotRemovable_gold/message'
+    INSTALLCONFIRMATIONNOTREMOVABLE_GOLD_SUBMIT = '#dialogs:installConfirmationNotRemovable_gold/submit'
+    INSTALLCONFIRMATIONNOTREMOVABLE_GOLD_CANCEL = '#dialogs:installConfirmationNotRemovable_gold/cancel'
+    INSTALLCONFIRMATIONNOTREMOVABLE_CRYSTAL_TITLE = '#dialogs:installConfirmationNotRemovable_crystal/title'
+    INSTALLCONFIRMATIONNOTREMOVABLE_CRYSTAL_MESSAGE = '#dialogs:installConfirmationNotRemovable_crystal/message'
+    INSTALLCONFIRMATIONNOTREMOVABLE_CRYSTAL_SUBMIT = '#dialogs:installConfirmationNotRemovable_crystal/submit'
+    INSTALLCONFIRMATIONNOTREMOVABLE_CRYSTAL_CANCEL = '#dialogs:installConfirmationNotRemovable_crystal/cancel'
     REMOVECONFIRMATIONNOTREMOVABLE_TITLE = '#dialogs:removeConfirmationNotRemovable/title'
     REMOVECONFIRMATIONNOTREMOVABLE_MESSAGE = '#dialogs:removeConfirmationNotRemovable/message'
     REMOVECONFIRMATIONNOTREMOVABLE_SUBMIT = '#dialogs:removeConfirmationNotRemovable/submit'
@@ -858,6 +862,9 @@ class DIALOGS(object):
     FORTDISABLED_TITLE = '#dialogs:fortDisabled/title'
     FORTDISABLED_MESSAGE = '#dialogs:fortDisabled/message'
     FORTDISABLED_CANCEL = '#dialogs:fortDisabled/cancel'
+    ELENDISABLED_TITLE = '#dialogs:elenDisabled/title'
+    ELENDISABLED_MESSAGE = '#dialogs:elenDisabled/message'
+    ELENDISABLED_CANCEL = '#dialogs:elenDisabled/cancel'
     CLAN_DATA_NOT_AVAILABLE_TITLE = '#dialogs:clan_data_not_available/title'
     CLAN_DATA_NOT_AVAILABLE_MESSAGE = '#dialogs:clan_data_not_available/message'
     CLAN_DATA_NOT_AVAILABLE_CANCEL = '#dialogs:clan_data_not_available/cancel'
@@ -920,6 +927,20 @@ class DIALOGS(object):
     HOFDISABLED_TITLE = '#dialogs:hofDisabled/title'
     HOFDISABLED_MESSAGE = '#dialogs:hofDisabled/message'
     HOFDISABLED_CANCEL = '#dialogs:hofDisabled/cancel'
+    LEAVEEVENT_TITLE = '#dialogs:leaveEvent/title'
+    LEAVEEVENT_MESSAGE = '#dialogs:leaveEvent/message'
+    LEAVEEVENT_SUBMIT = '#dialogs:leaveEvent/submit'
+    LEAVEEVENT_CANCEL = '#dialogs:leaveEvent/cancel'
+    LEAVESTARTEDEVENT_TITLE = '#dialogs:leaveStartedEvent/title'
+    LEAVESTARTEDEVENT_MESSAGE = '#dialogs:leaveStartedEvent/message'
+    LEAVESTARTEDEVENT_SUBMIT = '#dialogs:leaveStartedEvent/submit'
+    LEAVESTARTEDEVENT_CANCEL = '#dialogs:leaveStartedEvent/cancel'
+    HALLOWEEN_SUPPLY_DROP_CLAIM_FAILED_TITLE = '#dialogs:halloween/supply_drop/claim/failed/title'
+    HALLOWEEN_SUPPLY_DROP_CLAIM_FAILED_MESSAGE = '#dialogs:halloween/supply_drop/claim/failed/message'
+    HALLOWEEN_SUPPLY_DROP_CLAIM_FAILED_CANCEL = '#dialogs:halloween/supply_drop/claim/failed/cancel'
+    HALLOWEEN_SUPPLY_DROP_CLAIM_PLATOON_TITLE = '#dialogs:halloween/supply_drop/claim/platoon/title'
+    HALLOWEEN_SUPPLY_DROP_CLAIM_PLATOON_MESSAGE = '#dialogs:halloween/supply_drop/claim/platoon/message'
+    HALLOWEEN_SUPPLY_DROP_CLAIM_PLATOON_CANCEL = '#dialogs:halloween/supply_drop/claim/platoon/cancel'
     RECRUITWINDOW_VEHICLECLASSDROPDOWN_ENUM = (RECRUITWINDOW_VEHICLECLASSDROPDOWN_ALL,
      RECRUITWINDOW_VEHICLECLASSDROPDOWN_LIGHTTANK,
      RECRUITWINDOW_VEHICLECLASSDROPDOWN_MEDIUMTANK,
@@ -1023,10 +1044,14 @@ class DIALOGS(object):
      CHANGECONFIRMATIONNOTREMOVABLE_MESSAGECOMBINE,
      CHANGECONFIRMATIONNOTREMOVABLE_SUBMIT,
      CHANGECONFIRMATIONNOTREMOVABLE_CANCEL,
-     INSTALLCONFIRMATIONNOTREMOVABLE_TITLE,
-     INSTALLCONFIRMATIONNOTREMOVABLE_MESSAGE,
-     INSTALLCONFIRMATIONNOTREMOVABLE_SUBMIT,
-     INSTALLCONFIRMATIONNOTREMOVABLE_CANCEL,
+     INSTALLCONFIRMATIONNOTREMOVABLE_GOLD_TITLE,
+     INSTALLCONFIRMATIONNOTREMOVABLE_GOLD_MESSAGE,
+     INSTALLCONFIRMATIONNOTREMOVABLE_GOLD_SUBMIT,
+     INSTALLCONFIRMATIONNOTREMOVABLE_GOLD_CANCEL,
+     INSTALLCONFIRMATIONNOTREMOVABLE_CRYSTAL_TITLE,
+     INSTALLCONFIRMATIONNOTREMOVABLE_CRYSTAL_MESSAGE,
+     INSTALLCONFIRMATIONNOTREMOVABLE_CRYSTAL_SUBMIT,
+     INSTALLCONFIRMATIONNOTREMOVABLE_CRYSTAL_CANCEL,
      REMOVECONFIRMATIONNOTREMOVABLE_TITLE,
      REMOVECONFIRMATIONNOTREMOVABLE_MESSAGE,
      REMOVECONFIRMATIONNOTREMOVABLE_SUBMIT,
@@ -1774,6 +1799,9 @@ class DIALOGS(object):
      FORTDISABLED_TITLE,
      FORTDISABLED_MESSAGE,
      FORTDISABLED_CANCEL,
+     ELENDISABLED_TITLE,
+     ELENDISABLED_MESSAGE,
+     ELENDISABLED_CANCEL,
      CLAN_DATA_NOT_AVAILABLE_TITLE,
      CLAN_DATA_NOT_AVAILABLE_MESSAGE,
      CLAN_DATA_NOT_AVAILABLE_CANCEL,
@@ -1835,7 +1863,21 @@ class DIALOGS(object):
      HOF_EXCLUDERATING_CANCEL,
      HOFDISABLED_TITLE,
      HOFDISABLED_MESSAGE,
-     HOFDISABLED_CANCEL)
+     HOFDISABLED_CANCEL,
+     LEAVEEVENT_TITLE,
+     LEAVEEVENT_MESSAGE,
+     LEAVEEVENT_SUBMIT,
+     LEAVEEVENT_CANCEL,
+     LEAVESTARTEDEVENT_TITLE,
+     LEAVESTARTEDEVENT_MESSAGE,
+     LEAVESTARTEDEVENT_SUBMIT,
+     LEAVESTARTEDEVENT_CANCEL,
+     HALLOWEEN_SUPPLY_DROP_CLAIM_FAILED_TITLE,
+     HALLOWEEN_SUPPLY_DROP_CLAIM_FAILED_MESSAGE,
+     HALLOWEEN_SUPPLY_DROP_CLAIM_FAILED_CANCEL,
+     HALLOWEEN_SUPPLY_DROP_CLAIM_PLATOON_TITLE,
+     HALLOWEEN_SUPPLY_DROP_CLAIM_PLATOON_MESSAGE,
+     HALLOWEEN_SUPPLY_DROP_CLAIM_PLATOON_CANCEL)
 
     @classmethod
     def recruitwindow_vehicleclassdropdown(cls, key0):

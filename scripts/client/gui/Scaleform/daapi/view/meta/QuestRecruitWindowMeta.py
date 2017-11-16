@@ -8,7 +8,7 @@ class QuestRecruitWindowMeta(AbstractWindowView):
 
     def as_setInitDataS(self, data):
         """
-        :param data: Represented by TankmanCardVO (AS)
+        :param data: Represented by QuestRecruitWindowVO (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_setInitData(data)

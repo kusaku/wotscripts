@@ -1,7 +1,8 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/RoleChangeWindow.py
 import BigWorld
+from gui.shared.utils.functions import makeTooltip
 from helpers import dependency
-from helpers.i18n import makeString
+from helpers.i18n import makeString as _ms
 from gui import SystemMessages
 from gui.ClientUpdateManager import g_clientUpdateManager
 from gui.Scaleform.daapi.view.meta.RoleChangeMeta import RoleChangeMeta
@@ -13,6 +14,7 @@ from gui.shared.money import Currency
 from gui.shared.utils import decorators, isVehicleObserver
 from gui.shared.utils.requesters.ItemsRequester import REQ_CRITERIA
 from gui.shared.formatters import icons, text_styles
+from items import tankmen
 from nations import NAMES
 from skeletons.gui.shared import IItemsCache
 
@@ -26,6 +28,26 @@ def _getTankmanVO(tankman):
      'faceIcon': packedTankman['icon']['big'],
      'rankIcon': packedTankman['iconRank']['big'],
      'roleIcon': packedTankman['iconRole']['medium']}
+
+
+def _isRoleAvailableToChange(tankman, role):
+    td = tankman.descriptor
+    if td.role == role:
+        return False
+    if not tankmen.tankmenGroupHasRole(td.nationID, td.gid, td.isPremium, role):
+        return False
+    return True
+
+
+def _getTooltip(tankman, role):
+    """Return empty string '' - if role available, else clarify why role not available for change
+    """
+    td = tankman.descriptor
+    if not tankmen.tankmenGroupHasRole(td.nationID, td.gid, td.isPremium, role):
+        return makeTooltip(TOOLTIPS.ROLECHANGE_ROLECHANGEFORBIDDEN_HEADER, _ms(TOOLTIPS.ROLECHANGE_ROLECHANGEFORBIDDEN_BODY, role=_ms(TOOLTIPS.roleForSkill(role))))
+    if td.role == role:
+        return makeTooltip(TOOLTIPS.ROLECHANGE_CURRENTROLEWARNING_HEADER, TOOLTIPS.ROLECHANGE_CURRENTROLEWARNING_BODY)
+    return ''
 
 
 def _isRoleSlotTaken(tankmen, vehicle, role):
@@ -47,7 +69,7 @@ def _isRoleSlotTaken(tankmen, vehicle, role):
 
 def _getTooltipHeader(tankmenCountWithSameRole, isAvailable):
     if tankmenCountWithSameRole > 0 and isAvailable:
-        return makeString(TOOLTIPS.ROLECHANGE_ROLEANDVEHICLETAKEN_HEADER)
+        return _ms(TOOLTIPS.ROLECHANGE_ROLEANDVEHICLETAKEN_HEADER)
     return ''
 
 
@@ -55,9 +77,9 @@ def _getTooltipBody(sameTankmen, isAvailable, roleSlotIsTaken, role, selectedVeh
     bodyStr = ''
     if sameTankmen > 0 and isAvailable:
         if roleSlotIsTaken:
-            bodyStr = makeString(TOOLTIPS.ROLECHANGE_ROLEANDVEHICLETAKEN_BODY, count=sameTankmen, role=role, vehicleName=selectedVehicle.shortUserName)
+            bodyStr = _ms(TOOLTIPS.ROLECHANGE_ROLEANDVEHICLETAKEN_BODY, count=sameTankmen, role=role, vehicleName=selectedVehicle.shortUserName)
         else:
-            bodyStr = makeString(TOOLTIPS.ROLECHANGE_ROLETAKEN_BODY, count=sameTankmen)
+            bodyStr = _ms(TOOLTIPS.ROLECHANGE_ROLETAKEN_BODY, count=sameTankmen)
     return bodyStr
 
 
@@ -91,11 +113,12 @@ class RoleChangeWindow(RoleChangeMeta):
                 sameTankmen = len(roleTankmen)
                 roleSlotIsTaken = _isRoleSlotTaken(roleTankmen, selectedVehicle, mainRole)
                 roleStr = Tankman.getRoleUserName(mainRole)
-                isAvailable = self.__tankman.descriptor.role != mainRole
+                isAvailable = _isRoleAvailableToChange(self.__tankman, mainRole)
                 data.append({'id': mainRole,
                  'name': roleStr,
                  'icon': Tankman.getRoleMediumIconPath(mainRole),
                  'available': isAvailable,
+                 'tooltip': _getTooltip(self.__tankman, mainRole),
                  'warningHeader': _getTooltipHeader(sameTankmen, isAvailable),
                  'warningBody': _getTooltipBody(sameTankmen, isAvailable, roleSlotIsTaken, roleStr, selectedVehicle)})
 
@@ -104,7 +127,7 @@ class RoleChangeWindow(RoleChangeMeta):
     @decorators.process('changingRole')
     def changeRole(self, role, vehicleId):
         result = yield TankmanChangeRole(self.__tankman, role, int(vehicleId)).request()
-        if len(result.userMsg):
+        if result.userMsg:
             SystemMessages.pushMessage(result.userMsg, type=result.sysMsgType)
         if result.auxData:
             SystemMessages.pushMessage(result.auxData.userMsg, type=result.auxData.sysMsgType)
@@ -153,7 +176,7 @@ class RoleChangeWindow(RoleChangeMeta):
 
     def __getVehiclesData(self, nationID, nativeVehicleCD):
         items = []
-        criteria = REQ_CRITERIA.NATIONS([nationID]) | REQ_CRITERIA.UNLOCKED
+        criteria = REQ_CRITERIA.NATIONS([nationID]) | REQ_CRITERIA.UNLOCKED | ~REQ_CRITERIA.VEHICLE.CREW_LOCKED
         vehicles = self.itemsCache.items.getVehicles(criteria)
         vehiclesData = vehicles.values()
         if nativeVehicleCD not in vehicles:

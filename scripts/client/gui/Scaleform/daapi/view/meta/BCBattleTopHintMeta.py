@@ -6,9 +6,9 @@ class BCBattleTopHintMeta(BaseDAAPIComponent):
     def animFinish(self):
         self._printOverrideError('animFinish')
 
-    def as_showHintS(self, msgId, msgStr, isCompleted):
+    def as_showHintS(self, frame, msgStr, isCompleted):
         if self._isDAAPIInited():
-            return self.flashObject.as_showHint(msgId, msgStr, isCompleted)
+            return self.flashObject.as_showHint(frame, msgStr, isCompleted)
 
     def as_hideHintS(self):
         if self._isDAAPIInited():

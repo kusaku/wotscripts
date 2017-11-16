@@ -297,7 +297,6 @@ def _getPropertyGetter(idx):
             return component.getVO()
         else:
             return
-            return
 
     return _getter
 
@@ -332,20 +331,13 @@ class PropertyMeta(DictMeta):
             raise StatsComponentError('Meta must be tuple')
         converted = {}
         self._bind = []
-        for idx, item in enumerate(meta):
-            if not isinstance(item, tuple):
-                raise StatsComponentError('Each item must be tuple in meta')
-            length = len(item)
-            if length > 1:
-                field, default = item[:2]
-                converted[field] = default
-                if length > 2:
-                    self._bind.append((idx,
-                     field,
-                     item[2],
-                     default))
-            else:
-                raise StatsComponentError('Number of items must be more than 1')
+        for idx, field, attribute, default in self.unpack(meta):
+            converted[field] = default
+            if attribute:
+                self._bind.append((idx,
+                 field,
+                 attribute,
+                 default))
 
         super(PropertyMeta, self).__init__(converted)
 
@@ -355,6 +347,37 @@ class PropertyMeta(DictMeta):
             auto.append((index, component))
 
         return DictMeta(self._meta, auto)
+
+    def merge(self, *merging):
+        bind = self._bind[:]
+        meta = self._meta.copy()
+        previousField = None
+        for idx, field, attribute, default in self.unpack(merging):
+            if field not in meta:
+                if attribute:
+                    if previousField is None:
+                        bindIndex = 0
+                    else:
+                        bindIndex = self.findBindIndexByField(bind, previousField) + 1
+                    bind.insert(bindIndex, (bindIndex,
+                     field,
+                     attribute,
+                     default))
+            meta[field] = default
+            previousField = field
+
+        for idx, item in enumerate(bind):
+            buffer = list(item)
+            bind[idx] = (idx,
+             buffer[1],
+             buffer[2],
+             buffer[3])
+
+        merging = PropertyMeta(())
+        merging._bind = bind
+        merging._meta = meta
+        merging._unregistered = set(meta.keys())
+        return merging
 
     def bind(self, clazz):
         """Binds meta to specified class of component. Creates properties of component.
@@ -379,6 +402,35 @@ class PropertyMeta(DictMeta):
                 yield (idx, default.clone())
             else:
                 yield (idx, DirectStatsItem(field, default))
+
+    @classmethod
+    def unpack(cls, meta):
+        for idx, item in enumerate(meta):
+            if not isinstance(item, tuple):
+                raise StatsComponentError('Each item must be tuple in meta')
+            length = len(item)
+            if length > 1:
+                field, default = item[:2]
+                if length > 2:
+                    yield (idx,
+                     field,
+                     item[2],
+                     default)
+                else:
+                    yield (idx,
+                     field,
+                     '',
+                     default)
+            else:
+                raise StatsComponentError('Number of items must be more than 1')
+
+    @classmethod
+    def findBindIndexByField(self, bind, token):
+        for idx, (_, field, __, ___) in enumerate(bind):
+            if field == token:
+                return idx
+
+        return -1
 
 
 @ReprInjector.simple(('_field', 'field'), ('_path', 'path'))
@@ -442,7 +494,6 @@ class StatsBlock(StatsComponent):
         if -1 < index < len(self._components):
             return self._components[index]
         else:
-            return None
             return None
 
     def addNextComponent(self, component):

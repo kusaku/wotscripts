@@ -65,7 +65,7 @@ class ClientChat(object):
         return
 
     def broadcast(self, channelId, message):
-        if not len(message) or message.isspace():
+        if not message or message.isspace():
             return
         message = message.rstrip()
         if not isCommandMessage(message):

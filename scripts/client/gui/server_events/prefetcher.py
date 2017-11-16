@@ -98,11 +98,10 @@ class TokenImagesSubRequester(SubRequester):
         ticket = (styleID, size)
         if styleID in _DEFAULT_TOKENS_STYLES:
             return RES_ICONS.getTokenImage(size, styleID)
-        else:
-            content = self._storage.get(ticket)
-            if content:
-                return 'img://{}'.format(mapTextureToTheMemory(content))
-            return RES_ICONS.getTokenUndefinedImage(size)
+        content = self._storage.get(ticket)
+        if content:
+            return 'img://{}'.format(mapTextureToTheMemory(content))
+        return RES_ICONS.getTokenUndefinedImage(size)
 
     def _handler(self, ticket, content):
         _, expectedSize = ticket
@@ -114,7 +113,7 @@ class TokenImagesSubRequester(SubRequester):
     def _tickets(self):
         tickets = []
         for quest in self._eventsCache.getQuests().itervalues():
-            if quest.getType() not in (EVENT_TYPE.TOKEN_QUEST, EVENT_TYPE.BATTLE_QUEST):
+            if quest.getType() not in (EVENT_TYPE.TOKEN_QUEST, EVENT_TYPE.BATTLE_QUEST, EVENT_TYPE.PERSONAL_QUEST):
                 continue
             for token in quest.accountReqs.getTokens():
                 styleID = token.getStyleID()
@@ -136,8 +135,7 @@ class TokenInfoSubRequester(SubRequester):
         ticket = (styleID,)
         if styleID in _DEFAULT_TOKENS_STYLES:
             return QUESTS.getTokenTitle(styleID)
-        else:
-            return self._storage.get(ticket) or QUESTS.TOKEN_UNDEFINED
+        return self._storage.get(ticket) or QUESTS.TOKEN_UNDEFINED
 
     def _handler(self, ticket, content):
         section = ResMgr.DataSection()
@@ -151,7 +149,7 @@ class TokenInfoSubRequester(SubRequester):
 
     def _tickets(self):
         for quest in self._eventsCache.getQuests().itervalues():
-            if quest.getType() not in (EVENT_TYPE.TOKEN_QUEST, EVENT_TYPE.BATTLE_QUEST):
+            if quest.getType() not in (EVENT_TYPE.TOKEN_QUEST, EVENT_TYPE.BATTLE_QUEST, EVENT_TYPE.PERSONAL_QUEST):
                 continue
             for token in quest.accountReqs.getTokens():
                 styleID = token.getStyleID()
@@ -189,8 +187,7 @@ class DecorationRequester(SubRequester):
         content = self._storage.get(ticket)
         if content:
             return 'img://{}'.format(mapTextureToTheMemory(content))
-        else:
-            return default
+        return default
 
     def _handler(self, ticket, content):
         _, expectedSize = ticket
@@ -286,8 +283,7 @@ class TokenSaleSubRequester(SubRequester):
 
         if tokens:
             return [[ token.getWebID() for token in tokens ]]
-        else:
-            return []
+        return []
 
     def _handler(self, ticket, content):
         tokenWebIDs = ticket

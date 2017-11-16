@@ -78,15 +78,13 @@ OTHER_GROUP_NAME = 'group3'
 def getBonusIcon16x16(qualifierType):
     if qualifierType == QUALIFIER_TYPE.CAMOUFLAGE:
         return BONUS_ICONS['16x16'][qualifierType]
-    else:
-        return BONUS_ICONS['16x16']['main_skill'].format(qualifierType)
+    return BONUS_ICONS['16x16']['main_skill'].format(qualifierType)
 
 
 def getBonusIcon42x42(qualifierType):
     if qualifierType == QUALIFIER_TYPE.CAMOUFLAGE:
         return BONUS_ICONS['42x42'][qualifierType]
-    else:
-        return BONUS_ICONS['42x42']['main_skill'].format(qualifierType)
+    return BONUS_ICONS['42x42']['main_skill'].format(qualifierType)
 
 
 @dependency.replace_none_kwargs(itemsCache=IItemsCache)
@@ -95,7 +93,6 @@ def formatPriceGold(value, itemsCache = None):
         return text_styles.goldTextBig(value)
     else:
         return formatPriceAlert(value)
-        return
 
 
 @dependency.replace_none_kwargs(itemsCache=IItemsCache)
@@ -104,7 +101,6 @@ def formatPriceCredits(value, itemsCache = None):
         return text_styles.creditsTextBig(value)
     else:
         return formatPriceAlert(value)
-        return
 
 
 def formatPriceAlert(value):
@@ -145,8 +141,7 @@ def getAdjustedSlotIndex(initialIndex, cType, slotsData):
         adjacentSlotItem = slotsData[cType][0]
         if slotItem['spot'] != adjacentSlotItem['spot']:
             return initialIndex - 1
-        else:
-            return initialIndex
+        return initialIndex
     return initialIndex
 
 

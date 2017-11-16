@@ -784,7 +784,7 @@ class LegacyEntity(_LegacyEntity):
         """
         LOG_DEBUG('prb_onKickedFromQueue')
         message = messages.getPrbKickedFromQueueMessage(prb_getters.getPrebattleTypeName(self.getEntityType()))
-        if len(message):
+        if message:
             SystemMessages.pushMessage(message, type=SystemMessages.SM_TYPE.Warning)
 
     def _createActionsValidator(self):

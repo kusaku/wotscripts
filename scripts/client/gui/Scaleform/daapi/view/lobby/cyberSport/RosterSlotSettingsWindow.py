@@ -131,7 +131,6 @@ class RosterSlotSettingsWindow(RosterSlotSettingsWindowMeta, VehicleSelectorBase
             return (makeFiltersVO(currentSlotSetting.nationIDRange, currentSlotSetting.vTypeRange, levelsRange), RANGE_SELECTOR_TAB_ID)
         else:
             return (None, None)
-            return
 
     def __convertLevelsRange(self, levels):
         return levels[::len(levels) - 1]

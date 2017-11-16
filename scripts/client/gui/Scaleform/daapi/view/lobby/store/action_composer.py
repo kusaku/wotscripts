@@ -36,8 +36,7 @@ class SimpleMixCollection(ComposedActionsCollection):
         actionsGroups = self._separateActions()
         if len(self._actions) == 1 or len(actionsGroups) == 1:
             return [self._findBetter(self._actions)]
-        else:
-            return self._composeActions(map(self._findBetter, actionsGroups.values()))
+        return self._composeActions(map(self._findBetter, actionsGroups.values()))
 
     def _composeActions(self, actions, compositionKey = 'mixed'):
         result = []
@@ -151,8 +150,7 @@ class PremiumActionsCollection(SimpleMixCollection):
         actionsGroups = self._separateActions()
         if len(self._actions) == 1 or len(actionsGroups) == 1:
             return [self._findBetter(self._actions)]
-        else:
-            return map(self._findBetter, actionsGroups.values())
+        return map(self._findBetter, actionsGroups.values())
 
 
 class CompositionRule(object):

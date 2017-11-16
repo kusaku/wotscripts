@@ -187,7 +187,6 @@ class SfLobbyProxy(GUIProxy):
             return self.app.tutorialManager.getFoundComponentsIDs()
         else:
             return set()
-            return
 
     def clearScene(self):
         app = self.app

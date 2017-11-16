@@ -636,7 +636,6 @@ class VehicleStateController(IBattleController):
             return self.__cachedStateValues[stateID]
         else:
             return None
-            return None
 
     def refreshVehicleStateValue(self, stateID):
         """

@@ -20,15 +20,13 @@ _STATE_ID_TO_ACTIONS = {REPAIR_STATE_ID.DISABLED: (_ACTION.BECOME_DISABLED,),
 def _getActionName(action):
     if action in _ACTIONS_NAMES:
         return '{}::{}'.format(_ACTIONS_NAMES[action], action)
-    else:
-        return 'N/A'
+    return 'N/A'
 
 
 def _getStateName(stateID):
     if stateID in _STATE_NAMES:
         return _STATE_NAMES[stateID]
-    else:
-        return 'N/A'
+    return 'N/A'
 
 
 class RepairState(object):

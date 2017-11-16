@@ -4,7 +4,7 @@ from items import ITEM_TYPE_NAMES, vehicles, ITEM_TYPE_INDICES, EQUIPMENT_TYPES
 from gui.shared.money import Currency
 CLAN_LOCK = 1
 GUI_ITEM_TYPE_NAMES = tuple(ITEM_TYPE_NAMES) + tuple(['reserved'] * (16 - len(ITEM_TYPE_NAMES)))
-GUI_ITEM_TYPE_NAMES += ('dossierAccount', 'dossierVehicle', 'dossierTankman', 'achievement', 'tankmanSkill', 'battleBooster')
+GUI_ITEM_TYPE_NAMES += ('dossierAccount', 'dossierVehicle', 'dossierTankman', 'achievement', 'tankmanSkill', 'battleBooster', 'badge')
 GUI_ITEM_TYPE_INDICES = dict(((n, idx) for idx, n in enumerate(GUI_ITEM_TYPE_NAMES)))
 
 class GUI_ITEM_TYPE(CONST_CONTAINER):
@@ -27,11 +27,13 @@ class GUI_ITEM_TYPE(CONST_CONTAINER):
     TANKMAN_DOSSIER = GUI_ITEM_TYPE_INDICES['dossierTankman']
     ACHIEVEMENT = GUI_ITEM_TYPE_INDICES['achievement']
     SKILL = GUI_ITEM_TYPE_INDICES['tankmanSkill']
+    BADGE = GUI_ITEM_TYPE_INDICES['badge']
     GUI = (ACCOUNT_DOSSIER,
      VEHICLE_DOSSIER,
      TANKMAN_DOSSIER,
      ACHIEVEMENT,
-     SKILL)
+     SKILL,
+     BADGE)
     VEHICLE_MODULES = (GUN,
      TURRET,
      ENGINE,
@@ -136,7 +138,7 @@ def getVehicleComponentsByType(vehicle, itemTypeIdx):
     return ItemsCollection()
 
 
-def getVehicleSuitablesByType(vehDescr, itemTypeId, turretPID = 0):
+def getVehicleSuitablesByType(vehDescr, itemTypeId, turretPID = 0, onlySpecificTurretPID = False):
     """
     Returns all suitable items for given @vehicle.
     
@@ -177,13 +179,19 @@ def getVehicleSuitablesByType(vehDescr, itemTypeId, turretPID = 0):
         descriptorsList = [ eq for eq in eqs.itervalues() if eq.equipmentType == EQUIPMENT_TYPES.battleBoosters and eq.checkCompatibilityWithVehicle(vehDescr)[0] ]
     elif itemTypeId == vehicles._GUN:
         current = [vehDescr.gun.compactDescr]
-        for gun in vehDescr.turret.guns:
-            descriptorsList.append(gun)
-
-        for turret in vehDescr.type.turrets[turretPID]:
-            if turret is not vehDescr.turret:
+        if onlySpecificTurretPID:
+            for turret in vehDescr.type.turrets[turretPID]:
                 for gun in turret.guns:
                     descriptorsList.append(gun)
+
+        else:
+            for gun in vehDescr.turret.guns:
+                descriptorsList.append(gun)
+
+            for turret in vehDescr.type.turrets[turretPID]:
+                if turret is not vehDescr.turret:
+                    for gun in turret.guns:
+                        descriptorsList.append(gun)
 
     elif itemTypeId == vehicles._SHELL:
         for shot in vehDescr.gun.shots:

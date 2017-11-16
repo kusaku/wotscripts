@@ -4,7 +4,7 @@ from items.components import skills_constants
 from gui.shared.gui_items.fitting_item import ICONS_MASK
 from gui.shared.gui_items import Tankman, Vehicle
 
-def packTankmanSkill(skill, isPermanent = False):
+def packTankmanSkill(skill, isPermanent = False, tankman = None):
     if skill.roleType in skills_constants.ACTIVE_SKILLS or skill.roleType in skills_constants.ROLES:
         roleIconPath = Tankman.getRoleSmallIconPath(skill.roleType)
     else:
@@ -14,8 +14,8 @@ def packTankmanSkill(skill, isPermanent = False):
      'userName': skill.userName,
      'description': skill.description,
      'shortDescription': skill.shortDescription,
-     'icon': {'big': Tankman.getSkillBigIconPath(skill.name),
-              'small': Tankman.getSkillSmallIconPath(skill.name),
+     'icon': {'big': skill.bigIconPath,
+              'small': skill.smallIconPath,
               'role': roleIconPath},
      'isActive': skill.isActive,
      'isEnable': skill.isEnable,
@@ -43,11 +43,12 @@ def packTankman(tankman, isCountPermanentSkills = True):
          'icon': vehicleIcon(tankman.vehicleDescr),
          'iconContour': vehicleIcon(tankman.vehicleDescr, 'contour/')}
     skills = []
-    tManFreeSkillsNum = tankman.descriptor.freeSkillsNumber
+    td = tankman.descriptor
+    tManFreeSkillsNum = td.freeSkillsNumber
     startSkillNumber = 0 if isCountPermanentSkills else tManFreeSkillsNum
     tManSkills = tankman.skills
     for i in range(startSkillNumber, len(tManSkills)):
-        skills.append(packTankmanSkill(tManSkills[i], isPermanent=True if i < tManFreeSkillsNum else False))
+        skills.append(packTankmanSkill(tManSkills[i], isPermanent=True if i < tManFreeSkillsNum else False, tankman=tankman))
 
     return {'strCD': cPickle.dumps(tankman.strCD),
      'inventoryID': tankman.invID,
@@ -61,14 +62,15 @@ def packTankman(tankman, isCountPermanentSkills = True):
      'efficiencyRoleLevel': tankman.efficiencyRoleLevel,
      'realRoleLevel': tankman.realRoleLevel,
      'roleLevel': tankman.roleLevel,
+     'isEventCrew': tankman.isEvent,
      'icon': {'big': Tankman.getBigIconPath(tankman.nationID, tankman.descriptor.iconID),
               'small': Tankman.getSmallIconPath(tankman.nationID, tankman.descriptor.iconID),
               'barracks': Tankman.getBarracksIconPath(tankman.nationID, tankman.descriptor.iconID)},
      'iconRole': {'big': Tankman.getRoleBigIconPath(tankman.descriptor.role),
                   'medium': Tankman.getRoleMediumIconPath(tankman.descriptor.role),
                   'small': Tankman.getRoleSmallIconPath(tankman.descriptor.role)},
-     'iconRank': {'big': Tankman.getRankBigIconPath(tankman.nationID, tankman.descriptor.rankID),
-                  'small': Tankman.getRankSmallIconPath(tankman.nationID, tankman.descriptor.rankID)},
+     'iconRank': {'big': Tankman.getRankBigIconPath(tankman.nationID, tankman.descriptor.rankID, tankman.descriptor.isEvent),
+                  'small': Tankman.getRankSmallIconPath(tankman.nationID, tankman.descriptor.rankID, tankman.descriptor.isEvent)},
      'isInTank': tankman.isInTank,
      'newSkillsCount': tankman.newSkillCount,
      'nativeVehicle': nativeVehicleData,
@@ -143,6 +145,7 @@ def packVehicle(vehicle):
      'eqs': [ (packFittingItem(eq) if eq else None) for eq in vehicle.equipment.regularConsumables ],
      'eqsLayout': [ (packFittingItem(eq) if eq else None) for eq in vehicle.equipmentLayout.regularConsumables ],
      'type': vehicle.type,
+     'isCrewLocked': vehicle.isCrewLocked,
      'isPremium': vehicle.isPremium,
      'isElite': vehicle.isElite,
      'icon': vehicle.icon,

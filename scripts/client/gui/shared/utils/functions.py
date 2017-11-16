@@ -38,8 +38,7 @@ def clamp(value, minRange, maxRange):
 def roundToMinOrZero(value, minValue):
     if value == 0:
         return value
-    else:
-        return max(minValue, value)
+    return max(minValue, value)
 
 
 def getShortDescr(descr):
@@ -49,7 +48,7 @@ def getShortDescr(descr):
     """
     res_str = ''
     res = re.findall('<shortDesc>(.*?)</shortDesc>', descr)
-    if len(res) > 0:
+    if res:
         res_str = res[0]
     else:
         res_str = descr
@@ -223,7 +222,7 @@ def getArenaShortName(arenaTypeID):
 def getArenaFullName(arenaTypeID):
     arenaType = ArenaType.g_cache[arenaTypeID]
     arenaName = arenaType.name
-    if arenaType.gameplayName not in ('ctf', 'ctf30x30'):
+    if arenaType.gameplayName != 'ctf':
         arenaName = '%s - %s' % (arenaName, makeString('#arenas:type/%s/name' % arenaType.gameplayName))
     return arenaName
 
@@ -253,7 +252,7 @@ def isBaseExists(arenaTypeID, team):
     teamBasePositions = ArenaType.g_cache[arenaTypeID].teamBasePositions
     if len(teamBasePositions) >= team:
         points = teamBasePositions[team - 1]
-        if len(points) > 0:
+        if points:
             return True
     return False
 

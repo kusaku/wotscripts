@@ -22,9 +22,6 @@ _STATE_TO_MESSAGE = {COUNTDOWN_STATE.WAIT: i18n.makeString('#ingame_gui:timer/wa
 
 class PreBattleTimer(PrebattleTimerMeta, IAbstractPeriodView):
 
-    def __init__(self):
-        super(PreBattleTimer, self).__init__()
-
     def updateBattleCtx(self, battleCtx):
         self.as_setWinConditionTextS(battleCtx.getArenaWinString())
 

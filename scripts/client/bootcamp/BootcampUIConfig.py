@@ -1,6 +1,8 @@
 # Embedded file name: scripts/client/bootcamp/BootcampUIConfig.py
+from collections import namedtuple
 import ResMgr
 from copy import copy
+import resource_helper
 from debug_utils_bootcamp import LOG_DEBUG_DEV_BOOTCAMP
 g_defaultBattleUiSettings = {'hideDebugPanel': True,
  'hideTeamBasesPanel': True,
@@ -131,6 +133,29 @@ def readUISettingsFile(path):
 
 
 g_prebattleSettings, g_battleRibbonsSettings, g_battleUiSettings, g_lobbyUiSettings = readUISettingsFile(XML_CONFIG_PATH)
+
+class _BootcampManagerObserverConfig(namedtuple('_BootcampManagerObserverConfig', ['viewClassName', 'observerClassName', 'daapiAlias'])):
+
+    def getVO(self):
+        return self._asdict()
+
+
+def readBootcampManagerConfig(xmlPath):
+    observers = []
+    ctx, section = resource_helper.getRoot(xmlPath)
+    for ctx, subSection in resource_helper.getIterator(ctx, section['observers']):
+        item = resource_helper.readItem(ctx, subSection)
+        if not item.name:
+            continue
+        if 'observerClassName' not in item.value or not item.value['observerClassName']:
+            raise Exception('Empty observer class name', item)
+        if 'daapiAlias' not in item.value or not item.value['daapiAlias']:
+            raise Exception('Empty daapiAlias', item)
+        observer = _BootcampManagerObserverConfig(item.name, item.value['observerClassName'], item.value['daapiAlias'])
+        observers.append(observer)
+
+    return {'observers': observers}
+
 
 def getBattleUISettings(lessonId):
     return g_battleUiSettings[lessonId]

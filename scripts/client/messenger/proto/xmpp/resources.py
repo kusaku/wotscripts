@@ -110,8 +110,7 @@ class ResourceDictionary(object):
         resource = self.getHighestPriority()
         if resource:
             return resource.getTags()
-        else:
-            return set()
+        return set()
 
     def isEmpty(self):
         return not self.__resources
@@ -131,7 +130,7 @@ class ResourceDictionary(object):
             return None
 
     def __initHighestData(self):
-        if len(self.__resources) > 0 and self.__highest is None:
+        if self.__resources and self.__highest is None:
             wotId = g_settings.server.XMPP.resource
             if wotId in self.__resources:
                 self.__highest = (wotId, self.__resources[wotId])

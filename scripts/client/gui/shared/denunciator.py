@@ -100,8 +100,7 @@ class BattleDenunciator(Denunciator):
         violator = arenaDP.getVehicleInfo(vehicleID)
         if player.team == violator.team:
             return constants.VIOLATOR_KIND.ALLY
-        else:
-            return constants.VIOLATOR_KIND.ENEMY
+        return constants.VIOLATOR_KIND.ENEMY
 
     def _makeNotification(self, message):
         MessengerEntry.g_instance.gui.addClientMessage(g_settings.htmlTemplates.format('battleErrorMessage', ctx={'error': message}))

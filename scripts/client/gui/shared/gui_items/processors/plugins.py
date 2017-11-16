@@ -4,7 +4,8 @@ from adisp import process, async
 from debug_utils import LOG_WARNING
 from account_helpers import isLongDisconnectedFromCenter
 from account_helpers.AccountSettings import AccountSettings
-from items import tankmen as tmen_core
+from items import tankmen
+from gui.Scaleform.daapi.view.dialogs.missions_dialogs_meta import UseAwardSheetDialogMeta
 from gui import DialogsInterface
 from gui.game_control import restore_contoller
 from gui.shared.formatters.tankmen import formatDeletedTankmanStr
@@ -124,10 +125,11 @@ class VehicleValidator(SyncValidator):
 
 class VehicleRoleValidator(SyncValidator):
 
-    def __init__(self, vehicle, role, isEnabled = True):
+    def __init__(self, vehicle, role, tankman, isEnabled = True):
         super(VehicleRoleValidator, self).__init__(isEnabled)
         self.vehicle = vehicle
         self.role = role
+        self.tankman = tankman
 
     def _validate(self):
         if self.vehicle is None:
@@ -136,6 +138,9 @@ class VehicleRoleValidator(SyncValidator):
             if self.vehicle is not None:
                 mainRoles = set(map(lambda r: r[0], self.vehicle.descriptor.type.crewRoles))
                 if self.role not in mainRoles:
+                    return makeError('invalid_role')
+                td = self.tankman.descriptor
+                if not tankmen.tankmenGroupHasRole(td.nationID, td.gid, td.isPremium, self.role):
                     return makeError('invalid_role')
             return makeSuccess()
 
@@ -288,9 +293,6 @@ class TurretCompatibilityInstallValidator(SyncValidator):
 
 class CompatibilityRemoveValidator(CompatibilityValidator):
 
-    def __init__(self, vehicle, module):
-        super(CompatibilityRemoveValidator, self).__init__(vehicle, module)
-
     def _checkCompatibility(self):
         return self.module.mayRemove(self.vehicle)
 
@@ -318,9 +320,6 @@ class MoneyValidator(SyncValidator):
 
 
 class WalletValidator(SyncValidator):
-
-    def __init__(self, isEnabled = True):
-        super(WalletValidator, self).__init__(isEnabled)
 
     def _validate(self):
         stats = self.itemsCache.items.stats
@@ -364,12 +363,12 @@ class VehicleLayoutValidator(SyncValidator):
         shortage = money.getShortage(price)
         if shortage:
             currency = shortage.getCurrency(byWeight=True)
-            if currency in errors:
-                return makeError(errors[currency])
-            else:
+            if currency not in errors:
                 LOG_WARNING('Unexpected case: unknown currency!')
                 return makeError()
-        return None
+            return makeError(errors[currency])
+        else:
+            return None
 
 
 class BarracksSlotsValidator(SyncValidator):
@@ -404,7 +403,7 @@ class TankmanDropSkillValidator(SyncValidator):
         self.__tankman = tankman
 
     def _validate(self):
-        if self.__tankman is not None and len(self.__tankman.skills):
+        if self.__tankman is not None and self.__tankman.skills:
             return makeSuccess()
         else:
             return makeError('server_error')
@@ -419,7 +418,7 @@ class GroupOperationsValidator(SyncValidator):
         self.operation = operation
 
     def _validate(self):
-        if len(self.group) == 0:
+        if not self.group:
             return makeError('empty_list')
         if self.operation not in self.AVAILABLE_OPERATIONS:
             return makeError('invalid_operation')
@@ -541,9 +540,6 @@ class IconPriceMessageConfirmator(I18nMessageAbstractConfirmator):
     Invoke dialog window contains icon, text and component with price
     """
 
-    def __init__(self, localeKey, ctx = None, activeHandler = None, isEnabled = True):
-        super(IconPriceMessageConfirmator, self).__init__(localeKey, ctx, activeHandler, isEnabled)
-
     def _makeMeta(self):
         return IconPriceDialogMeta(self.localeKey, self.ctx, self.ctx, focusedID=DIALOG_BUTTON_ID.SUBMIT)
 
@@ -553,9 +549,6 @@ class DemountDeviceConfirmator(IconPriceMessageConfirmator):
     Invoke dialog window contains icon, text and component with price
     """
 
-    def __init__(self, localeKey, ctx = None, activeHandler = None, isEnabled = True):
-        super(DemountDeviceConfirmator, self).__init__(localeKey, ctx, activeHandler, isEnabled)
-
     def _makeMeta(self):
         return DemountDeviceDialogMeta(self.localeKey, self.ctx, self.ctx, focusedID=DIALOG_BUTTON_ID.SUBMIT)
 
@@ -564,9 +557,6 @@ class IconMessageConfirmator(I18nMessageAbstractConfirmator):
     """
     Invoke dialog window contains icon, text and component with price
     """
-
-    def __init__(self, localeKey, ctx = None, activeHandler = None, isEnabled = True):
-        super(IconMessageConfirmator, self).__init__(localeKey, ctx, activeHandler, isEnabled)
 
     def _makeMeta(self):
         return IconDialogMeta(self.localeKey, self.ctx, self.ctx, focusedID=DIALOG_BUTTON_ID.SUBMIT)
@@ -609,10 +599,10 @@ class VehicleFreeLimitConfirmator(MessageInformator):
         return not self.vehicle.buyPrices.itemPrice.isDefined() and self.crewType < 1 and not self.itemsCache.items.stats.freeVehiclesLeft
 
 
-class PotapovQuestValidator(SyncValidator):
+class PersonalMissionValidator(SyncValidator):
 
     def __init__(self, quests):
-        super(PotapovQuestValidator, self).__init__()
+        super(PersonalMissionValidator, self).__init__()
         self.quests = quests
 
     def _validate(self):
@@ -625,14 +615,30 @@ class PotapovQuestValidator(SyncValidator):
         return makeSuccess()
 
 
+class PersonalMissionPawnValidator(SyncValidator):
+
+    def __init__(self, quests):
+        super(PersonalMissionPawnValidator, self).__init__()
+        self.quests = quests
+
+    def _validate(self):
+        for quest in self.quests:
+            if quest is None:
+                return makeError('WRONG_ARGS_TYPE')
+            if not quest.canBePawned():
+                return makeError('CANNOT_BE_PAWNED')
+
+        return makeSuccess()
+
+
 class _EventsCacheValidator(SyncValidator):
     eventsCache = dependency.descriptor(IEventsCache)
 
 
-class PotapovQuestsLockedByVehicle(_EventsCacheValidator):
+class PersonalMissionsLockedByVehicle(_EventsCacheValidator):
 
     def __init__(self, quests, messageKeyPrefix = ''):
-        super(PotapovQuestsLockedByVehicle, self).__init__()
+        super(PersonalMissionsLockedByVehicle, self).__init__()
         self._messageKeyPrefix = messageKeyPrefix
         self._lockedChains = self.eventsCache.getLockedQuestTypes()
         self.quests = quests
@@ -645,58 +651,54 @@ class PotapovQuestsLockedByVehicle(_EventsCacheValidator):
         return makeSuccess()
 
 
-class PotapovQuestSlotsValidator(SyncValidator):
+class PersonalMissionSlotsValidator(SyncValidator):
 
     def __init__(self, questsProgress, isEnabled = True, removedCount = 0):
-        super(PotapovQuestSlotsValidator, self).__init__(isEnabled)
+        super(PersonalMissionSlotsValidator, self).__init__(isEnabled)
         self.__removedCount = removedCount
         self._questsProgress = questsProgress
 
     def _validate(self):
-        if not self._questsProgress.getPotapovQuestsFreeSlots(self.__removedCount):
+        if not self._questsProgress.getPersonalMissionsFreeSlots(self.__removedCount):
             return makeError('NOT_ENOUGH_SLOTS')
         return makeSuccess()
 
 
-class PotapovQuestChainsValidator(_EventsCacheValidator):
+class PersonalMissionChainsValidator(_EventsCacheValidator):
 
     def __init__(self, quest):
-        super(PotapovQuestChainsValidator, self).__init__()
+        super(PersonalMissionChainsValidator, self).__init__()
         self.quest = quest
 
     def _validate(self):
-        for quest in self.eventsCache.potapov.getSelectedQuests().itervalues():
+        for quest in self.eventsCache.personalMissions.getSelectedQuests().itervalues():
             if quest.getChainID() == self.quest.getChainID():
                 return makeError('TOO_MANY_QUESTS_IN_CHAIN')
 
         return makeSuccess()
 
 
-class PotapovQuestSeasonsValidator(_EventsCacheValidator):
+class PersonalMissionRewardValidator(SyncValidator):
 
     def __init__(self, quest):
-        super(PotapovQuestSeasonsValidator, self).__init__()
-        self.quest = quest
-
-    def _validate(self):
-        qVehClasses = self.quest.getVehicleClasses()
-        if len(qVehClasses) == 1:
-            for quest in self.eventsCache.potapov.getSelectedQuests().itervalues():
-                if len(quest.getVehicleClasses() & qVehClasses) and quest.getSeasonID() == self.quest.getSeasonID():
-                    return makeError('SEASON_LIMIT_THE_SAME_CLASS')
-
-        return makeSuccess()
-
-
-class PotapovQuestRewardValidator(SyncValidator):
-
-    def __init__(self, quest):
-        super(PotapovQuestRewardValidator, self).__init__()
+        super(PersonalMissionRewardValidator, self).__init__()
         self.quest = quest
 
     def _validate(self):
         if not self.quest.needToGetReward():
             return makeError('NO_REWARD')
+        return makeSuccess()
+
+
+class PersonalMissionFreeTokensValidator(_EventsCacheValidator):
+
+    def __init__(self, quest, isEnabled = True):
+        super(PersonalMissionFreeTokensValidator, self).__init__(isEnabled)
+        self.quest = quest
+
+    def _validate(self):
+        if self.eventsCache.random.getFreeTokensCount() < self.quest.getPawnCost():
+            return makeError('NOT_ENOUGH_FREE_TOKENS')
         return makeSuccess()
 
 
@@ -731,16 +733,30 @@ class CheckBoxConfirmator(DialogAbstractConfirmator):
         AccountSettings.setSettings(CheckBoxConfirmator.__ACC_SETT_MAIN_KEY, settings)
 
 
-class PotapovQuestSelectConfirmator(CheckBoxConfirmator):
+class PersonalMissionSelectConfirmator(CheckBoxConfirmator):
 
     def __init__(self, quest, oldQuest, activeHandler = None, isEnabled = True):
-        super(PotapovQuestSelectConfirmator, self).__init__(settingFieldName='questsConfirmDialogShow', activeHandler=activeHandler, isEnabled=isEnabled)
+        super(PersonalMissionSelectConfirmator, self).__init__(settingFieldName='questsConfirmDialogShow', activeHandler=activeHandler, isEnabled=isEnabled)
         self.quest = quest
         self.oldQuest = oldQuest
 
     def _makeMeta(self):
         return CheckBoxDialogMeta('questsConfirmDialog', messageCtx={'newQuest': self.quest.getUserName(),
          'oldQuest': self.oldQuest.getUserName()})
+
+
+class PersonalMissionPawnConfirmator(DialogAbstractConfirmator):
+    eventsCache = dependency.descriptor(IEventsCache)
+
+    def __init__(self, quest, activeHandler = None, isEnabled = True):
+        super(PersonalMissionPawnConfirmator, self).__init__(activeHandler=activeHandler, isEnabled=isEnabled)
+        self.quest = quest
+
+    def _activeHandler(self):
+        return self.quest.canBePawned()
+
+    def _makeMeta(self):
+        return UseAwardSheetDialogMeta(self.quest, self.eventsCache.random.getFreeTokensCount())
 
 
 class BoosterActivateValidator(SyncValidator):
@@ -804,7 +820,7 @@ class TankmanLockedValidator(SyncValidator):
         self._tankman = tankman
 
     def _validate(self):
-        if tmen_core.ownVehicleHasTags(self._tankman.strCD, (VEHICLE_TAGS.CREW_LOCKED,)):
+        if tankmen.ownVehicleHasTags(self._tankman.strCD, (VEHICLE_TAGS.CREW_LOCKED,)):
             return makeError('FORBIDDEN')
         return makeSuccess()
 
@@ -814,8 +830,7 @@ class TankmanChangePassportValidator(TankmanLockedValidator):
     def _validate(self):
         if self._tankman.descriptor.getRestrictions().isPassportReplacementForbidden():
             return makeError('FORBIDDEN')
-        else:
-            return super(TankmanChangePassportValidator, self)._validate()
+        return super(TankmanChangePassportValidator, self)._validate()
 
 
 class BattleBoosterConfirmator(I18nMessageAbstractConfirmator):
@@ -835,3 +850,23 @@ class BattleBoosterConfirmator(I18nMessageAbstractConfirmator):
         ctx = {'devices': ', '.join([ device.userName for device in optDevicesList ])}
         localeKey = self.localeKey if optDevicesList else self.__notSuitableLocaleKey
         return I18nConfirmDialogMeta(localeKey, meta=HtmlMessageLocalDialogMeta('html_templates:lobby/dialogs', localeKey, ctx=ctx))
+
+
+class BadgesValidator(SyncValidator):
+
+    def __init__(self, badges):
+        super(BadgesValidator, self).__init__()
+        self.badges = badges
+
+    def _validate(self):
+        allBadges = self.itemsCache.items.getBadges()
+        for badgeID in self.badges:
+            if badgeID not in allBadges:
+                return makeError('WRONG_ARGS_TYPE')
+            badge = allBadges[badgeID]
+            if not badge.isAchieved:
+                return makeError('NOT_UNLOCKED_BADGE')
+            if badge.isSelected:
+                return makeError('ALREADY_SELECTED_BADGE')
+
+        return makeSuccess()

@@ -159,7 +159,7 @@ class I18nDialogMeta(SimpleDialogMeta):
         result = None
         if self._meta is not None:
             result = self._meta.getTitle()
-        if result is None or not len(result):
+        if not result:
             result = self._makeString(I18N_TITLE_KEY.format(self._key), self._titleCtx)
         return result
 
@@ -167,7 +167,7 @@ class I18nDialogMeta(SimpleDialogMeta):
         result = None
         if self._meta is not None:
             result = self._meta.getMessage()
-        if result is None or not len(result):
+        if not result:
             result = self._makeString(I18N_MESSAGE_KEY.format(self._key), self._messageCtx)
         return result
 
@@ -193,7 +193,6 @@ class I18nDialogMeta(SimpleDialogMeta):
             return self._meta.getViewScopeType()
         else:
             return super(I18nDialogMeta, self).getViewScopeType()
-            return
 
 
 class I18nInfoDialogMeta(I18nDialogMeta):
@@ -221,8 +220,7 @@ class TankmanOperationDialogMeta(I18nConfirmDialogMeta):
     def getEventType(self):
         if self.__tankman.isDismissed:
             return events.ShowDialogEvent.SHOW_RESTORE_TANKMAN_DIALOG
-        else:
-            return events.ShowDialogEvent.SHOW_DISMISS_TANKMAN_DIALOG
+        return events.ShowDialogEvent.SHOW_DISMISS_TANKMAN_DIALOG
 
     def getTankman(self):
         return self.__tankman
@@ -234,9 +232,6 @@ class TankmanOperationDialogMeta(I18nConfirmDialogMeta):
 
 class IconDialogMeta(I18nConfirmDialogMeta):
 
-    def __init__(self, key, titleCtx = None, messageCtx = None, meta = None, focusedID = None):
-        super(IconDialogMeta, self).__init__(key, titleCtx, messageCtx, meta, focusedID)
-
     def getEventType(self):
         return events.ShowDialogEvent.SHOW_ICON_DIALOG
 
@@ -244,7 +239,7 @@ class IconDialogMeta(I18nConfirmDialogMeta):
         result = None
         if self._meta is not None:
             result = self._meta.getIcon()
-        if result is None or not len(result):
+        if not result:
             result = self._messageCtx.get('icon')
         return result
 
@@ -261,7 +256,7 @@ class IconPriceDialogMeta(IconDialogMeta):
         result = None
         if self._meta is not None:
             result = self._meta.getMessagePrice()
-        if result is None or not len(result):
+        if not result:
             result = self._messageCtx.get('price')
         return result
 
@@ -269,7 +264,7 @@ class IconPriceDialogMeta(IconDialogMeta):
         result = None
         if self._meta is not None:
             result = self._meta.getAction()
-        if result is None or not len(result):
+        if not result:
             result = self._messageCtx.get('action')
         return result
 
@@ -284,9 +279,6 @@ class IconPriceDialogMeta(IconDialogMeta):
 
 
 class DestroyDeviceDialogMeta(IconDialogMeta):
-
-    def __init__(self, key, titleCtx = None, messageCtx = None, meta = None, focusedID = None):
-        super(DestroyDeviceDialogMeta, self).__init__(key, titleCtx, messageCtx, meta, focusedID)
 
     def getEventType(self):
         return events.ShowDialogEvent.SHOW_DESTROY_DEVICE_DIALOG

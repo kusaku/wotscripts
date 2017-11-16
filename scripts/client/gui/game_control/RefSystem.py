@@ -8,9 +8,10 @@ from constants import REF_SYSTEM_FLAG, EVENT_TYPE
 from debug_utils import LOG_ERROR, LOG_CURRENT_EXCEPTION, LOG_DEBUG
 from gui.ClientUpdateManager import g_clientUpdateManager
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
-from gui.Scaleform.daapi.view.lobby.AwardWindow import ExplosionBackAward
 from gui.Scaleform.locale.MENU import MENU
+from gui.Scaleform.locale.QUESTS import QUESTS
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
+from gui.server_events.awards import ExplosionBackAward
 from gui.shared import events, g_eventBus, event_dispatcher as shared_events, EVENT_BUS_SCOPE
 from gui.shared.formatters import icons, text_styles
 from helpers import time_utils, dependency
@@ -34,7 +35,6 @@ def _getRefSysCfg(itemsCache = None):
         return itemsCache.items.shop.refSystem or default
     else:
         return default
-        return
 
 
 def _getRefSystemPeriods():
@@ -98,7 +98,7 @@ class VehicleAward(ExplosionBackAward):
     def getAdditionalText(self):
         result = []
         for _, xpFactor in _getRefSystemPeriods():
-            result.append('%s<nobr>x%s' % (icons.makeImageTag(RES_ICONS.MAPS_ICONS_LIBRARY_XPCOSTICON, 18, 18, -8, 0), BigWorld.wg_getNiceNumberFormat(xpFactor)))
+            result.append('%s<nobr>x%s' % (icons.makeImageTag(RES_ICONS.MAPS_ICONS_LIBRARY_XPCOSTICON, 18, 18, -5, 0), BigWorld.wg_getNiceNumberFormat(xpFactor)))
 
         return text_styles.main(_ms(MENU.AWARDWINDOW_REFERRAL_COMPLETE, modifiers=', '.join(result)))
 
@@ -117,15 +117,14 @@ class TankmanAward(ExplosionBackAward):
     def getAwardImage(self):
         if self.__tankman.isFemale:
             return RES_ICONS.MAPS_ICONS_QUESTS_TANKMANFEMALEORANGE
-        else:
-            return RES_ICONS.MAPS_ICONS_REFERRAL_TANKMANMALE
+        return RES_ICONS.MAPS_ICONS_REFERRAL_TANKMANMALE
 
     def getHeader(self):
         return text_styles.highTitle(_ms(MENU.AWARDWINDOW_REFERRAL_TANKMAN_HEADER))
 
     def getDescription(self):
         if self.__tankman.isFemale:
-            tankman = '%s %s' % (_ms('#quests:bonuses/item/tankwoman'), self.__tankman.roleUserName)
+            tankman = '%s %s' % (_ms(QUESTS.BONUSES_ITEM_TANKWOMAN), self.__tankman.roleUserName)
         else:
             tankman = self.__tankman.roleUserName
         if self.__achievedXp is not None:
@@ -262,7 +261,7 @@ class RefSystem(IRefSystemController):
         g_clientUpdateManager.removeObjectCallbacks(self)
 
     def __getAwardParams(self, completedQuestIDs):
-        completedQuestID = completedQuestIDs.pop() if len(completedQuestIDs) else -1
+        completedQuestID = completedQuestIDs.pop() if completedQuestIDs else -1
         currentXP = nextXP = None
         for xp, quests in reversed(self.getQuests()):
             if completedQuestID in map(methodcaller('getID'), quests):

@@ -13,7 +13,11 @@ BACKWARD_QUALITY_PARAMS = ['aimingTime',
  'reloadMagazineTime',
  'weight',
  'switchOnTime',
- 'switchOffTime']
+ 'switchOffTime',
+ 'aimingTime_Secondary',
+ 'shotDispersionAngle_Secondary',
+ 'reloadTimeSecs_Secondary',
+ 'clipFireRate_Secondary']
 NEGATIVE_PARAMS = ['switchOnTime', 'switchOffTime']
 CUSTOM_QUALITY_PARAMS = {'vehicleWeight': (True, False),
  'clipFireRate': (True, True, False),
@@ -113,8 +117,7 @@ class VehiclesComparator(ItemsComparator):
         """
         if paramName in CONDITIONAL_BONUSES:
             return self.__getConditionalBonuses(paramName, possibleBonuses)
-        else:
-            return (possibleBonuses.intersection(self.__bonuses), {})
+        return (possibleBonuses.intersection(self.__bonuses), {})
 
     def __getConditionalBonuses(self, paramName, possibleBonuses):
         """
@@ -197,16 +200,14 @@ def _getParamStateInfo(paramName, val1, val2, customReverted = False):
     if paramName in NEGATIVE_PARAMS and hasNoParam:
         if val1 is None:
             return (PARAM_STATE.BETTER, diff)
-        else:
-            return (PARAM_STATE.WORSE, diff)
-    if diff == 0:
+        return (PARAM_STATE.WORSE, diff)
+    elif diff == 0:
         return (PARAM_STATE.NORMAL, diff)
+    isInverted = paramName in BACKWARD_QUALITY_PARAMS or customReverted
+    if isInverted and diff > 0 or not isInverted and diff < 0:
+        return (PARAM_STATE.WORSE, diff)
     else:
-        isInverted = paramName in BACKWARD_QUALITY_PARAMS or customReverted
-        if isInverted and diff > 0 or not isInverted and diff < 0:
-            return (PARAM_STATE.WORSE, diff)
         return (PARAM_STATE.BETTER, diff)
-        return
 
 
 def rateParameterState(paramName, val1, val2, customQualityParams = None):

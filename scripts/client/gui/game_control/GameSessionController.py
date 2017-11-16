@@ -8,7 +8,7 @@ import account_shared
 import constants
 from debug_utils import LOG_DEBUG
 from gui.ClientUpdateManager import g_clientUpdateManager
-from gui.shared.utils.scheduled_notifications import Notifiable, PeriodicNotifier
+from gui.shared.utils.scheduled_notifications import Notifiable, PeriodicNotifier, SimpleNotifier
 from helpers import dependency
 from helpers import time_utils
 from skeletons.gui.game_control import IGameSessionController
@@ -50,7 +50,7 @@ class GameSessionController(IGameSessionController, Notifiable):
     lobbyContext = dependency.descriptor(ILobbyContext)
 
     def init(self):
-        self.addNotificators(PeriodicNotifier(self.__getClosestPremiumNotification, self.__notifyPremiumTime), PeriodicNotifier(lambda : self.NOTIFY_PERIOD, self.__notifyClient), PeriodicNotifier(self.__getClosestNewDayNotification, self.__notifyNewDay))
+        self.addNotificators(PeriodicNotifier(self.__getClosestPremiumNotification, self.__notifyPremiumTime), SimpleNotifier(self.__getClosestSessionTimeNotification, self.__notifyClient), PeriodicNotifier(self.__getClosestNewDayNotification, self.__notifyNewDay))
         self.__sessionStartedAt = -1
         self.__banCallback = None
         self.__lastBanMsg = None
@@ -58,6 +58,7 @@ class GameSessionController(IGameSessionController, Notifiable):
         self.__curfewUnblockTime = None
         self.__doNotifyInStart = False
         self.__battles = 0
+        self.__lastNotifyTime = None
         LOG_DEBUG('GameSessionController::init')
         return
 
@@ -72,8 +73,10 @@ class GameSessionController(IGameSessionController, Notifiable):
         super(GameSessionController, self).fini()
 
     def onLobbyStarted(self, ctx):
+        self.__sessionStartedAt = ctx.get('aogasStartedAt', -1)
         LOG_DEBUG('GameSessionController::start', self.__sessionStartedAt)
-        self.__sessionStartedAt = ctx.get('sessionStartedAt', -1)
+        if self.__lastNotifyTime is None:
+            self.__lastNotifyTime = time_utils.getCurrentTimestamp()
         self.__curfewBlockTime, self.__curfewUnblockTime = self.__getCurfewBlockTime(self._stats.restrictions)
         if self.__doNotifyInStart:
             self.__notifyClient()
@@ -82,12 +85,15 @@ class GameSessionController(IGameSessionController, Notifiable):
         g_clientUpdateManager.addCallbacks({'account': self.__onAccountChanged,
          'stats.restrictions': self.__onRestrictionsChanged,
          'stats.playLimits': self.__onPlayLimitsChanged})
+        return
 
     def onAvatarBecomePlayer(self):
         self._stop(doNotifyInStart=True)
 
     def onDisconnected(self):
         self._stop()
+        self.__lastNotifyTime = None
+        return
 
     def isSessionStartedThisDay(self):
         svrDaysCount = int(_getSvrLocal()) / time_utils.ONE_DAY
@@ -150,14 +156,13 @@ class GameSessionController(IGameSessionController, Notifiable):
         from gui.Scaleform.daapi.view.dialogs import I18nInfoDialogMeta
         if self.isPlayTimeBlock:
             return I18nInfoDialogMeta('koreaPlayTimeNotification')
-        else:
-            notifyStartTime, blockTime = self.getCurfewBlockTime()
+        notifyStartTime, blockTime = self.getCurfewBlockTime()
 
-            def formatter(t):
-                return time.strftime('%H:%M', time.localtime(t))
+        def formatter(t):
+            return time.strftime('%H:%M', time.localtime(t))
 
-            return I18nInfoDialogMeta('koreaParentNotification', messageCtx={'preBlockTime': formatter(notifyStartTime),
-             'blockTime': formatter(blockTime)})
+        return I18nInfoDialogMeta('koreaParentNotification', messageCtx={'preBlockTime': formatter(notifyStartTime),
+         'blockTime': formatter(blockTime)})
 
     @property
     def _stats(self):
@@ -196,6 +201,15 @@ class GameSessionController(IGameSessionController, Notifiable):
     def __getClosestPremiumNotification(self):
         return time_utils.getTimeDeltaFromNow(time_utils.makeLocalServerTime(self._stats.premiumExpiryTime))
 
+    def __getClosestSessionTimeNotification(self):
+        delay = self.NOTIFY_PERIOD
+        if self.__lastNotifyTime is not None:
+            timeSinceLastNotify = time_utils.getCurrentTimestamp() - self.__lastNotifyTime
+            delay -= timeSinceLastNotify
+            if delay <= 0:
+                delay = 1
+        return delay
+
     def __getBlockTimeLeft(self):
         playTimeLeft = min(self.getDailyPlayTimeLeft(), self.getWeeklyPlayTimeLeft())
         if self.__curfewBlockTime is not None:
@@ -220,6 +234,7 @@ class GameSessionController(IGameSessionController, Notifiable):
         return
 
     def __notifyClient(self):
+        self.__lastNotifyTime = time_utils.getCurrentTimestamp()
         if self.isParentControlEnabled:
             playTimeLeft = min([self.getDailyPlayTimeLeft(), self.getWeeklyPlayTimeLeft()])
             playTimeLeft = max(playTimeLeft, 0)
@@ -237,7 +252,7 @@ class GameSessionController(IGameSessionController, Notifiable):
 
     def __onBanNotifyHandler(self):
         LOG_DEBUG('GameSessionController:__onBanNotifyHandler')
-        banTime = time.strftime('%H:%M', time.localtime(time.time() + self.PLAY_TIME_LEFT_NOTIFY))
+        banTime = time.strftime('%H:%M', time.localtime(time_utils.getCurrentTimestamp() + self.PLAY_TIME_LEFT_NOTIFY))
         self.__lastBanMsg = (self.isPlayTimeBlock, banTime)
         self.onTimeTillBan(*self.__lastBanMsg)
         self.__loadBanCallback()
@@ -257,7 +272,7 @@ class GameSessionController(IGameSessionController, Notifiable):
 
     @classmethod
     def __getCurfewBlockTime(cls, restrictions):
-        if _BAN_RESTR in restrictions and len(restrictions[_BAN_RESTR]):
+        if _BAN_RESTR in restrictions and restrictions[_BAN_RESTR]:
             _, ban = max(restrictions[_BAN_RESTR].items(), key=operator.itemgetter(0))
             if ban.get('reason') == '#ban_reason:curfew_ban' and 'curfew' in ban:
                 return (ban['curfew'].get('from', time_utils.ONE_DAY) + cls.TIME_RESERVE, ban['curfew'].get('to', time_utils.ONE_DAY))

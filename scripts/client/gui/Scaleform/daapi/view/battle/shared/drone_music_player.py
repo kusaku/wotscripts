@@ -146,9 +146,6 @@ class _DeadVehiclesCondition(_Condition):
     """ The common implementation for conditions that go off when critical amount of alive vehicles remain in team.
     """
 
-    def __init__(self, criticalValue, severity):
-        super(_DeadVehiclesCondition, self).__init__(criticalValue, severity)
-
     @_initCondition
     def updateDeadVehicles(self, aliveAllies, deadAllies, aliveEnemies, deadEnemies):
         return super(_DeadVehiclesCondition, self).updateDeadVehicles(aliveAllies, deadAllies, aliveEnemies, deadEnemies)
@@ -265,8 +262,7 @@ class _BaseCaptureCondition(_Condition):
             self.__pointsToBase.clear()
             self.__setRtpcGlobal(0, 0)
             return self._validatePoints()
-        else:
-            return False
+        return False
 
     def _getValidBaseMask(self):
         raise NotImplementedError

@@ -14,6 +14,8 @@ from gui.app_loader.interfaces import IAppFactory
 from gui.app_loader.settings import APP_NAME_SPACE as _SPACE
 from gui.shared import g_eventBus, events, EVENT_BUS_SCOPE
 from shared_utils import AlwaysValidObject
+from helpers import dependency
+from skeletons.gui.game_control import IBootcampController
 
 class NoAppFactory(AlwaysValidObject, IAppFactory):
 
@@ -35,6 +37,7 @@ class NoAppFactory(AlwaysValidObject, IAppFactory):
 
 class AS3_AppFactory(IAppFactory):
     __slots__ = ('__apps', '__packages', '__importer')
+    bootcampCtrl = dependency.descriptor(IBootcampController)
 
     def __init__(self):
         super(AS3_AppFactory, self).__init__()
@@ -204,6 +207,14 @@ class AS3_AppFactory(IAppFactory):
     def goToLobby(self, appNS):
         if appNS != _SPACE.SF_LOBBY:
             return
+        app = self.getApp(appNS=appNS)
+        libs = ['guiControlsLobbyBattleDynamic.swf',
+         'guiControlsLobbyDynamic.swf',
+         'popovers.swf',
+         'IconLibrary.swf']
+        if self.bootcampCtrl.isInBootcamp():
+            libs.extend(['BCGuiControlsLobbyBattle.swf', 'BCGuiControlsLobby.swf'])
+        app.as_loadLibrariesS(libs)
         g_eventBus.handleEvent(events.LoadViewEvent(VIEW_ALIAS.LOBBY), EVENT_BUS_SCOPE.LOBBY)
 
     def loadBattlePage(self, appNS, arenaGuiType = ARENA_GUI_TYPE.UNKNOWN):
@@ -241,7 +252,6 @@ class AS3_AppFactory(IAppFactory):
             return app.handleKey(isDown, key, mods)
         else:
             return False
-            return
 
     def _setActive(self, appNS, isActive):
         app = self.__apps[appNS]
@@ -263,6 +273,10 @@ class AS3_AppFactory(IAppFactory):
             event = events.LoadViewEvent(VIEW_ALIAS.RANKED_BATTLE_PAGE)
         elif arenaGuiType == ARENA_GUI_TYPE.BOOTCAMP:
             event = events.LoadViewEvent(VIEW_ALIAS.BOOTCAMP_BATTLE_PAGE)
+        elif arenaGuiType == ARENA_GUI_TYPE.EVENT_BATTLES:
+            event = events.LoadViewEvent(VIEW_ALIAS.HALLOWEEN_PVP_BATTLE_PAGE)
+        elif arenaGuiType == ARENA_GUI_TYPE.EVENT_BATTLES_2:
+            event = events.LoadViewEvent(VIEW_ALIAS.BOSS_MODE_BATTLE_PAGE)
         else:
             event = events.LoadViewEvent(VIEW_ALIAS.CLASSIC_BATTLE_PAGE)
         g_eventBus.handleEvent(event, EVENT_BUS_SCOPE.BATTLE)

@@ -143,14 +143,13 @@ class UnitAutoSearchHandler(object):
         if not self.__hasResult:
             LOG_ERROR('First, sends request for search.')
             return False
-        else:
-            browser = prb_getters.getClientUnitBrowser()
-            if browser:
-                self.__lastErrorCode = UNIT_ERROR.OK
-                browser.acceptSearch()
-                return True
-            LOG_ERROR('Unit browser is not defined')
-            return False
+        browser = prb_getters.getClientUnitBrowser()
+        if browser:
+            self.__lastErrorCode = UNIT_ERROR.OK
+            browser.acceptSearch()
+            return True
+        LOG_ERROR('Unit browser is not defined')
+        return False
 
     def decline(self):
         """
@@ -159,14 +158,13 @@ class UnitAutoSearchHandler(object):
         if not self.__hasResult:
             LOG_ERROR('First, sends request for search.')
             return False
-        else:
-            browser = prb_getters.getClientUnitBrowser()
-            if browser:
-                self.__lastErrorCode = UNIT_ERROR.OK
-                browser.declineSearch()
-                return True
-            LOG_ERROR('Unit browser is not defined')
-            return False
+        browser = prb_getters.getClientUnitBrowser()
+        if browser:
+            self.__lastErrorCode = UNIT_ERROR.OK
+            browser.declineSearch()
+            return True
+        LOG_ERROR('Unit browser is not defined')
+        return False
 
     def pe_onDequeuedUnitAssembler(self):
         """

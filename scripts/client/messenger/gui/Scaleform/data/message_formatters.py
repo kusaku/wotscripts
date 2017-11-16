@@ -14,8 +14,7 @@ _DYN_SQUAD_IMAGE = 'squad_silver_{0}'
 def getMessageFormatter(actionMessage):
     if actionMessage.getType() == ACTION_MESSAGE_TYPE.WARNING:
         return WarningMessageFormatter(actionMessage)
-    else:
-        return BaseMessageFormatter(actionMessage)
+    return BaseMessageFormatter(actionMessage)
 
 
 class BaseMessageFormatter(object):

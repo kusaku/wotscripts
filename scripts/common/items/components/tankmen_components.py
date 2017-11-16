@@ -8,7 +8,7 @@ class GROUP_TAG(object):
     """Class contains all available tags in group configuration."""
     PASSPORT_REPLACEMENT_FORBIDDEN = 'passportReplacementForbidden'
     RESTRICTIONS = (PASSPORT_REPLACEMENT_FORBIDDEN,)
-    RANGE = RESTRICTIONS
+    RANGE = RESTRICTIONS + tuple(skills_constants.ROLES)
 
 
 class Rank(legacy_stuff.LegacyStuff):
@@ -175,10 +175,11 @@ class RoleRanks(legacy_stuff.LegacyStuff):
 
 class NationGroup(legacy_stuff.LegacyStuff):
     """Class contains information about group of tankmen."""
-    __slots__ = ('__isFemales', '__notInShop', '__firstNamesIDs', '__lastNamesIDs', '__iconsIDs', '__weight', '__tags')
+    __slots__ = ('__name', '__isFemales', '__notInShop', '__firstNamesIDs', '__lastNamesIDs', '__iconsIDs', '__weight', '__tags', '__roles')
 
-    def __init__(self, isFemales, notInShop, firstNamesIDs, lastNamesIDs, iconsIDs, weight, tags):
+    def __init__(self, name, isFemales, notInShop, firstNamesIDs, lastNamesIDs, iconsIDs, weight, tags, roles):
         super(NationGroup, self).__init__()
+        self.__name = name
         self.__isFemales = isFemales
         self.__notInShop = notInShop
         self.__firstNamesIDs = firstNamesIDs
@@ -186,9 +187,14 @@ class NationGroup(legacy_stuff.LegacyStuff):
         self.__iconsIDs = iconsIDs
         self.__weight = weight
         self.__tags = tags
+        self.__roles = roles
 
     def __repr__(self):
         return 'NationGroup(isFemales={}, notInShop={}, weight={})'.format(self.__isFemales, self.__notInShop, self.__weight)
+
+    @property
+    def name(self):
+        return self.__name
 
     @property
     def isFemales(self):
@@ -234,22 +240,32 @@ class NationGroup(legacy_stuff.LegacyStuff):
     def tags(self):
         return self.__tags
 
+    @property
+    def roles(self):
+        return self.__roles
+
+    @property
+    def isUnique(self):
+        return 1 == len(self.__firstNamesIDs) * len(self.__lastNamesIDs) * len(self.__iconsIDs)
+
 
 class NationConfig(legacy_stuff.LegacyStuff):
     """Class to holds nation-specific configuration of tankmen that are read
     from item_def/tankmen/<nation_name>.xml."""
-    __slots__ = ('__name', '__normalGroups', '__premiumGroups', '__roleRanks', '__firstNames', '__lastNames', '__icons', '__ranks')
+    __slots__ = ('__name', '__normalGroups', '__premiumGroups', '__eventGroups', '__roleRanks', '__firstNames', '__lastNames', '__icons', '__ranks', '__eventRanks')
 
-    def __init__(self, name, normalGroups = None, premiumGroups = None, roleRanks = None, firstNames = None, lastNames = None, icons = None, ranks = None):
+    def __init__(self, name, normalGroups = None, premiumGroups = None, eventGroups = None, roleRanks = None, firstNames = None, lastNames = None, icons = None, ranks = None, eventRanks = None):
         super(NationConfig, self).__init__()
         self.__name = name
         self.__normalGroups = normalGroups or component_constants.EMPTY_TUPLE
         self.__premiumGroups = premiumGroups or component_constants.EMPTY_TUPLE
+        self.__eventGroups = eventGroups or component_constants.EMPTY_TUPLE
         self.__roleRanks = roleRanks
         self.__firstNames = firstNames or {}
         self.__lastNames = lastNames or {}
         self.__icons = icons or {}
         self.__ranks = ranks
+        self.__eventRanks = eventRanks
 
     def __repr__(self):
         return 'NationConfig({})'.format(self.__name)
@@ -261,6 +277,10 @@ class NationConfig(legacy_stuff.LegacyStuff):
     @property
     def premiumGroups(self):
         return self.__premiumGroups
+
+    @property
+    def eventGroups(self):
+        return self.__eventGroups
 
     @property
     def roleRanks(self):
@@ -282,6 +302,10 @@ class NationConfig(legacy_stuff.LegacyStuff):
     def ranks(self):
         return self.__ranks
 
+    @property
+    def eventRanks(self):
+        return self.__eventRanks
+
     def hasFirstName(self, nameID):
         """Does config have first name by ID of name (index)."""
         return nameID in self.__firstNames
@@ -294,9 +318,11 @@ class NationConfig(legacy_stuff.LegacyStuff):
         """Does config have icon by ID (index)."""
         return iconID in self.__icons
 
-    def getGroups(self, isPremium):
+    def getGroups(self, isPremium, isEvent = False):
         """Gets tuple of groups by premium flag."""
-        if isPremium:
+        if isEvent:
+            return self.__eventGroups
+        elif isPremium:
             return self.__premiumGroups
         else:
             return self.__normalGroups
@@ -333,9 +359,11 @@ class NationConfig(legacy_stuff.LegacyStuff):
         else:
             return component_constants.EMPTY_STRING
 
-    def getRank(self, rankID):
+    def getRank(self, rankID, isEvent = False):
         """Gets instance of Rank containing information about rank (user-friendly name, icon, ...) or None."""
-        if self.__ranks is not None:
+        if isEvent:
+            return self.__eventRanks.getRankByID(rankID)
+        elif self.__ranks is not None:
             return self.__ranks.getRankByID(rankID)
         else:
             return

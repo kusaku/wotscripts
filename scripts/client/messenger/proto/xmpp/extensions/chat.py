@@ -114,7 +114,7 @@ class PrivateHistoryItem(PyExtension):
     def parseTag(self, pyGlooxTag):
         requestID = pyGlooxTag.findAttribute('request-id')
         isFinal = pyGlooxTag.findAttribute('final')
-        if len(isFinal):
+        if isFinal:
             isFinal = json.loads(isFinal)
         else:
             isFinal = False

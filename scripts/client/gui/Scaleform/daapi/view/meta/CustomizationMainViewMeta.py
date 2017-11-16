@@ -54,12 +54,12 @@ class CustomizationMainViewMeta(View):
         if self._isDAAPIInited():
             return self.flashObject.as_setHeaderData(data)
 
-    def as_setBonusPanelDataS(self, data):
+    def as_setBonusDeltaDataS(self, data):
         """
-        :param data: Represented by CustomizationBonusPanelVO (AS)
+        :param data: Represented by CustomizationBonusDeltaVO (AS)
         """
         if self._isDAAPIInited():
-            return self.flashObject.as_setBonusPanelData(data)
+            return self.flashObject.as_setBonusDeltaData(data)
 
     def as_setCarouselDataS(self, data):
         """

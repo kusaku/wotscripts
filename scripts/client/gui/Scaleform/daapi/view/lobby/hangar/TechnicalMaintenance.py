@@ -116,7 +116,7 @@ class TechnicalMaintenance(TechnicalMaintenanceMeta):
          Currency.GOLD: money.getSignValue(Currency.GOLD)}
         if g_currentVehicle.isPresent():
             vehicle = g_currentVehicle.item
-            casseteCount = vehicle.descriptor.gun.clip[0]
+            casseteCount = vehicle.descriptor.turrets[0].gun.clip[0]
             casseteText = makeString('#menu:technicalMaintenance/ammoTitleEx') % casseteCount
             data.update({'vehicleId': str(vehicle.intCD),
              'repairCost': vehicle.repairCost,
@@ -227,7 +227,7 @@ class TechnicalMaintenance(TechnicalMaintenanceMeta):
         installed = map(lambda e: (e.intCD if e is not None else None), installedItems)
         setup = map(lambda e: (e.intCD if e is not None else None), selectedItems)
         self.__seveCurrentLayout(eId1=eId1, currency1=currency1, eId2=eId2, currency2=currency2, eId3=eId3, currency3=currency3)
-        self.as_setEquipmentS(installed, setup, modules)
+        self._setEquipment(installed, setup, modules)
         return
 
     @decorators.process('updateMyVehicles')
@@ -235,7 +235,7 @@ class TechnicalMaintenance(TechnicalMaintenanceMeta):
         vehicle = g_currentVehicle.item
         if vehicle.isBroken:
             result = yield VehicleRepairer(vehicle).request()
-            if result and len(result.userMsg):
+            if result and result.userMsg:
                 SystemMessages.pushI18nMessage(result.userMsg, type=result.sysMsgType)
 
     def fillVehicle(self, needRepair, needAmmo, needEquipment, isPopulate, isUnload, isOrderChanged, shells, equipment):
@@ -283,6 +283,9 @@ class TechnicalMaintenance(TechnicalMaintenanceMeta):
                 DialogsInterface.showDialog(I18nConfirmDialogMeta('technicalMaintenanceConfirm', messageCtx={'content': msg}), fillConfirmationCallback)
                 self.__isConfirmDialogShown = True
         return
+
+    def _setEquipment(self, installed, setup, modules):
+        self.as_setEquipmentS(installed, setup, modules)
 
     def __onCurrentVehicleChanged(self, *args):
         if g_currentVehicle.isLocked() or not g_currentVehicle.isPresent():

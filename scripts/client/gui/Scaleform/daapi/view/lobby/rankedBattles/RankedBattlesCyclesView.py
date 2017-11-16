@@ -154,10 +154,9 @@ class RankedBattlesCyclesView(LobbySubView, RankedBattlesCyclesViewMeta):
         cycle = self.__getCycle(int(cycleID))
         if cycle.status == CYCLE_STATUS.CURRENT:
             return self.__getCurrentCycle()
-        elif cycle.points == 0:
+        if cycle.points == 0:
             return self.__getCycleWithoutAchievements(cycle)
-        else:
-            return self.__getPastCycleWithPoints(cycle)
+        return self.__getPastCycleWithPoints(cycle)
 
     def __getCycleWithoutAchievements(self, cycle):
         if cycle.status == CYCLE_STATUS.PAST:
@@ -222,7 +221,11 @@ class RankedBattlesCyclesView(LobbySubView, RankedBattlesCyclesViewMeta):
          'cycleAwards': rank.getAwardsVOs(forCycleFinish=True)}
 
     def __getCurrentCycleVehicleRankRow(self):
-        vehicleRank = first(self.rankedController.getVehicleRanksChain(g_currentVehicle.item))
+        isMaxRank = self.rankedController.getCurrentRank(g_currentVehicle.item) == self.rankedController.getMaxRank()
+        if self.rankedController.isAccountMastered() and not isMaxRank:
+            vehicleRank = self.rankedController.getCurrentRank(g_currentVehicle.item)
+        else:
+            vehicleRank = first(self.rankedController.getVehicleRanksChain(g_currentVehicle.item))
         rankIcon = {'imageSrc': vehicleRank.getIcon('small'),
          'isEnabled': vehicleRank.isAcquired(),
          'rankID': str(vehicleRank.getID())}

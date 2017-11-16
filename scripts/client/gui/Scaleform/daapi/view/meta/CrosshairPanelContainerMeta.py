@@ -63,9 +63,9 @@ class CrosshairPanelContainerMeta(DAAPISimpleContainerMeta):
         if self._isDAAPIInited():
             return self.flashObject.as_setZoom(zoomStr)
 
-    def as_createGunMarkerS(self, viewID, linkage, name):
+    def as_createGunMarkerS(self, viewID, linkage, name, subGun, id):
         if self._isDAAPIInited():
-            return self.flashObject.as_createGunMarker(viewID, linkage, name)
+            return self.flashObject.as_createGunMarker(viewID, linkage, name, subGun, id)
 
     def as_destroyGunMarkerS(self, name):
         if self._isDAAPIInited():
@@ -75,9 +75,9 @@ class CrosshairPanelContainerMeta(DAAPISimpleContainerMeta):
         if self._isDAAPIInited():
             return self.flashObject.as_setGunMarkerColor(name, colorName)
 
-    def as_setNetVisibleS(self, value):
+    def as_setNetVisibleS(self, mask):
         if self._isDAAPIInited():
-            return self.flashObject.as_setNetVisible(value)
+            return self.flashObject.as_setNetVisible(mask)
 
     def as_setNetTypeS(self, netType):
         if self._isDAAPIInited():
@@ -90,3 +90,23 @@ class CrosshairPanelContainerMeta(DAAPISimpleContainerMeta):
     def as_hideHintS(self):
         if self._isDAAPIInited():
             return self.flashObject.as_hideHint()
+
+    def as_setSubGunsS(self, value):
+        if self._isDAAPIInited():
+            return self.flashObject.as_setSubGuns(value)
+
+    def as_setSubGunReloadingS(self, id, duration, baseTime, startTime, isReloading):
+        if self._isDAAPIInited():
+            return self.flashObject.as_setSubGunReloading(id, duration, baseTime, startTime, isReloading)
+
+    def as_setSubGunReloadingAsPercentS(self, percent, isReloading):
+        if self._isDAAPIInited():
+            return self.flashObject.as_setSubGunReloadingAsPercent(percent, isReloading)
+
+    def as_setVerticalDeviationLowS(self, value):
+        if self._isDAAPIInited():
+            return self.flashObject.as_setVerticalDeviationLow(value)
+
+    def as_setMergeS(self, value):
+        if self._isDAAPIInited():
+            return self.flashObject.as_setMerge(value)

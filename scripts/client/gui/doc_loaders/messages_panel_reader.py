@@ -19,8 +19,8 @@ def _getDefaultSettings():
 def _readSettings(ctx, root):
     ctx, section = resource_helper.getSubSection(ctx, root, 'settings')
     settings = _getDefaultSettings()
-    for ctx, subSection in resource_helper.getIterator(ctx, section):
-        item = resource_helper.readItem(ctx, subSection, 'setting')
+    for xmlCtx, subSection in resource_helper.getIterator(ctx, section):
+        item = resource_helper.readItem(xmlCtx, subSection, 'setting')
         settings[item.name] = item.value
 
     return settings
@@ -30,8 +30,8 @@ def _readStyles(ctx, root):
     ctx, section = resource_helper.getSubSection(ctx, root, 'styles', safe=True)
     styles = {}
     if section is not None:
-        for ctx, subSection in resource_helper.getIterator(ctx, section):
-            item = resource_helper.readItem(ctx, subSection, 'style')
+        for xmlCtx, subSection in resource_helper.getIterator(ctx, section):
+            item = resource_helper.readItem(xmlCtx, subSection, 'style')
             raise item.name in _EXPECTED_STYLES or AssertionError('Style section %s is not expected!' % item.name)
             expectedKeys = _EXPECTED_STYLES[item.name]
             for key in expectedKeys:
@@ -45,8 +45,8 @@ def _readStyles(ctx, root):
 def _readMessages(ctx, root):
     ctx, section = resource_helper.getSubSection(ctx, root, 'messages')
     messages = {}
-    for ctx, subSection in resource_helper.getIterator(ctx, section):
-        item = resource_helper.readItem(ctx, subSection, 'message')
+    for xmlCtx, subSection in resource_helper.getIterator(ctx, section):
+        item = resource_helper.readItem(xmlCtx, subSection, 'message')
         text, aliases = item.value
         aliases = aliases.split(',', 1)
         if len(aliases) == 1:

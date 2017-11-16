@@ -127,7 +127,8 @@ _DEFAULT_SETTINGS = {'registrationURL': '',
  'useDefaultGunMarkers': False,
  'spgAlternativeAimingCameraEnabled': False,
  'tokenShopAvailabilityURL': '',
- 'tokenShopAPIKey': ''}
+ 'tokenShopAPIKey': '',
+ 'personalMissions': {}}
 
 class GuiSettings(object):
 
@@ -148,7 +149,7 @@ class GuiSettings(object):
 
         if constants.IS_DEVELOPMENT:
             diff = set(self.__settings.keys()) - set(settings.keys())
-            if len(diff):
+            if diff:
                 LOG_NOTE('Settings are not in {0}:'.format(GUI_SETTINGS_FILE_PATH), diff)
         self.__settings.update(settings)
 

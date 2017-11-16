@@ -101,7 +101,7 @@ class _ItemsData(object):
         :param full: if value equals True than removes references that
         set in __init__, otherwise - clears nodes data only.
         """
-        while len(self._nodes):
+        while self._nodes:
             self._nodes.pop().clear()
 
         self._nodesIdx.clear()
@@ -451,7 +451,7 @@ class ResearchItemsData(_ItemsData):
         self._enableInstallItems = False
 
     def clear(self, full = False):
-        while len(self._topLevel):
+        while self._topLevel:
             self._topLevel.pop().clear()
 
         self._topLevelCDs.clear()
@@ -888,7 +888,7 @@ class NationTreeData(_ItemsData):
         Gets root vehicle.
         :return: instance of Vehicle or None. @see gui.shared.gui_items.
         """
-        if len(self._nodes):
+        if self._nodes:
             return self._nodes[0]
         else:
             return None
@@ -912,10 +912,10 @@ class NationTreeData(_ItemsData):
         unlocked = []
         unlockStats = self.getUnlockStats()
         items = g_techTreeDP.getNext2UnlockByItems(unlocks, **unlockStats._asdict())
-        if len(items):
+        if items:
             next2Unlock = map(lambda item: (item[0], self._changeNext2Unlock(item[0], item[1], unlockStats), item[1]._makeTuple()), items.iteritems())
         filtered = filter(lambda unlock: getTypeOfCD(unlock) == GUI_ITEM_TYPE.VEHICLE, unlocks)
-        if len(filtered):
+        if filtered:
             unlocked = map(lambda item: (item, self._change2UnlockedByCD(item)), filtered)
         return (next2Unlock, unlocked)
 

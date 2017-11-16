@@ -403,8 +403,7 @@ class ArenaPeriodPlayer(ArenaPeriodController):
     def _getHideSpeed(self):
         if self._playingTime > _COUNTDOWN_HIDE_SPEED:
             return 0
-        else:
-            return super(ArenaPeriodPlayer, self)._getHideSpeed()
+        return super(ArenaPeriodPlayer, self)._getHideSpeed()
 
     def _calculate(self):
         if self.__replay is None:
@@ -422,9 +421,6 @@ class ArenaPeriodPlayer(ArenaPeriodController):
         if self.__replay is not None and not self.__replay.isFinished():
             super(ArenaPeriodPlayer, self)._setTotalTime(totalTime)
         return
-
-    def _updateCountdown(self, timeLeft):
-        super(ArenaPeriodPlayer, self)._updateCountdown(timeLeft)
 
     def _updateSound(self, timeLeft):
         if timeLeft and not self.__replay.playbackSpeed == 0:

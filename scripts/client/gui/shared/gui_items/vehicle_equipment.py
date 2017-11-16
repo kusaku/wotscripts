@@ -89,8 +89,7 @@ class _VehicleConsumables(object):
                     return False
 
             return True
-        else:
-            return False
+        return False
 
     def containsIntCD(self, intCD, slotIdx = None):
         """
@@ -105,7 +104,6 @@ class _VehicleConsumables(object):
             return intCD in installed
         else:
             return self[slotIdx] != EMPTY_ITEM and self[slotIdx].intCD == intCD
-            return
 
     def getIntCDs(self, default = 0):
         """

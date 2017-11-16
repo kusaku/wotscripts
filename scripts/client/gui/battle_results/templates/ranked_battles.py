@@ -12,7 +12,7 @@ _RANK_COMMON_VO_META = base.PropertyMeta((('state', '', 'state'),
  ('topIcon', '', 'topIcon'),
  ('icon', '', 'rankIcon')))
 _RANK_COMMON_VO_META.bind(common.RankChangesBlock)
-RANKED_COMMON_STATS_BLOCK.addNextComponent(common.RankChangesBlock(_RANK_COMMON_VO_META, 'rank'))
+RANKED_COMMON_STATS_BLOCK.addNextComponent(common.RankChangesBlock(_RANK_COMMON_VO_META, 'rank', _RECORD.VEHICLES))
 regular.TEAM_ITEM_VO_META.bind(vehicles.RankedBattlesVehicleStatsBlock)
 RANKED_TEAMS_STATS_BLOCK = vehicles.TwoTeamsStatsBlock(regular.TEAMS_VO_META.clone(), '', _RECORD.VEHICLES)
 RANKED_TEAMS_STATS_BLOCK.addNextComponent(vehicles.RankedBattlesTeamStatsBlock(meta=base.ListMeta(), field='team1'))
@@ -32,7 +32,8 @@ _RANKED_RESULTS_TEAM_PART_DATA_VO_META = base.PropertyMeta((('listData', [], 'li
  ('backgroundType', '', 'backgroundType'),
  ('backgroundBlink', False, 'backgroundBlink'),
  ('topIcon', '', 'icon'),
- ('topCapacity', 0, 'capacity')))
+ ('topCapacity', 0, 'capacity'),
+ ('isColorBlind', False, 'isColorBlind')))
 _RANKED_RESULTS_TEAM_PART_DATA_VO_META.bind(vehicles.RankedResultsTeamPartDataStatsBlock)
 RANKED_RESULTS_TEAMS_STATS_BLOCK = vehicles.RankedResultsTeamStatsBlock(_RANKED_RESULTS_TEAMS_VO_META.clone(), '', _RECORD.VEHICLES)
 RANKED_RESULTS_TEAMS_STATS_BLOCK.addNextComponent(vehicles.RankedResultsTeamDataStatsBlock(field='leftData'))

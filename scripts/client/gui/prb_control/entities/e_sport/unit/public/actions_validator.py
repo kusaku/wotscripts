@@ -12,7 +12,7 @@ class ESportLevelsValidator(CommanderValidator):
     def _validate(self):
         stats = self._entity.getStats()
         levels = self._getInvalidLevels(stats)
-        if stats.occupiedSlotsCount > 1 and stats.freeSlotsCount > 0 and len(levels):
+        if stats.occupiedSlotsCount > 1 and stats.freeSlotsCount > 0 and levels:
             return ValidationResult(False, UNIT_RESTRICTION.INVALID_TOTAL_LEVEL, {'vehLevels': levels})
         return super(ESportLevelsValidator, self)._validate()
 

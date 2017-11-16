@@ -14,9 +14,6 @@ from debug_utils import LOG_DEBUG
 
 class ClanInvitesView(ClanInvitesViewMeta):
 
-    def __init__(self):
-        super(ClanInvitesView, self).__init__()
-
     @property
     def allInvitesPaginator(self):
         return self._getPaginatorByFilterName(CLANS_ALIASES.INVITE_WINDOW_FILTER_ALL)
@@ -77,8 +74,7 @@ class ClanInvitesView(ClanInvitesViewMeta):
     def _getSecondSortFields(self):
         if self.currentFilterName == CLANS_ALIASES.INVITE_WINDOW_FILTER_PROCESSED:
             return ('updatedAt',)
-        else:
-            return ('createdAt',)
+        return ('createdAt',)
 
     def _makeFilters(self):
         return [{'alias': CLANS_ALIASES.INVITE_WINDOW_FILTER_ALL,
@@ -102,9 +98,6 @@ class ClanInvitesView(ClanInvitesViewMeta):
 
 
 class InviteDataProvider(ClanInvitesAbstractDataProvider):
-
-    def __init__(self, proxy):
-        super(InviteDataProvider, self).__init__(proxy)
 
     def _makeVO(self, item, extra):
         return {'dbID': item.getDbID(),

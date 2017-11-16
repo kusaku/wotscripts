@@ -164,9 +164,9 @@ class WalletController(IWalletController):
         if filters['isFreeXPInfoDialogShowed']:
             return
         self.__weaver = Weaver()
-        if self.__weaver.findPointcut(ResearchViewPointcut) is -1:
+        if self.__weaver.findPointcut(ResearchViewPointcut) == -1:
             self.__weaver.weave(pointcut=ResearchViewPointcut, aspects=[ShowXPInfoDialogAspect(self.cleanWeave)])
-        if self.__weaver.findPointcut(ExchangeFreeXPToTankmanPointcut) is -1:
+        if self.__weaver.findPointcut(ExchangeFreeXPToTankmanPointcut) == -1:
             self.__weaver.weave(pointcut=ExchangeFreeXPToTankmanPointcut, aspects=[ShowXPInfoDialogAspect(self.cleanWeave)])
 
 

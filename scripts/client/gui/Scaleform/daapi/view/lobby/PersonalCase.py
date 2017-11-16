@@ -25,12 +25,15 @@ from gui.shared.money import Money
 from gui.shared.tooltips import ACTION_TOOLTIPS_TYPE
 from gui.shared.tooltips.formatters import packActionTooltipData
 from gui.shared.utils import decorators, roundByModulo
-from gui.shared.utils.functions import getViewName
+from gui.shared.utils.functions import getViewName, makeTooltip
 from gui.shared.utils.requesters import REQ_CRITERIA
 from helpers import dependency
 from helpers import i18n, strcmp
 from items import tankmen
 from skeletons.gui.shared import IItemsCache
+from gui.Scaleform.genConsts.PERSONALCASE_CONSTANTS import PERSONALCASE_CONSTANTS
+from gui.shared.gui_items.processors.tankman import TankmanDropSkills
+from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 
 class PersonalCase(PersonalCaseMeta, IGlobalListener):
     itemsCache = dependency.descriptor(IItemsCache)
@@ -66,7 +69,7 @@ class PersonalCase(PersonalCaseMeta, IGlobalListener):
                 if vehicle.isLocked:
                     return self.destroy()
                 vehsDiff = inventory.get(GUI_ITEM_TYPE.VEHICLE, {})
-                isTankmanVehicleChanged = len(filter(lambda hive: vehicle.invID in hive or (vehicle.invID, '_r') in hive, vehsDiff.itervalues())) > 0
+                isTankmanVehicleChanged = any((vehicle.invID in hive or (vehicle.invID, '_r') in hive for hive in vehsDiff.itervalues()))
         if isTankmanChanged or isTankmanVehicleChanged or isFreeXpChanged:
             self.__setCommonData()
         if isTankmanChanged or isTankmanVehicleChanged:
@@ -125,7 +128,7 @@ class PersonalCase(PersonalCaseMeta, IGlobalListener):
         tankman = self.itemsCache.items.getTankman(int(tmanInvID))
         proc = TankmanDismiss(tankman)
         result = yield proc.request()
-        if len(result.userMsg):
+        if result.userMsg:
             SystemMessages.pushMessage(result.userMsg, type=result.sysMsgType)
 
     @decorators.process('retraining')
@@ -134,7 +137,7 @@ class PersonalCase(PersonalCaseMeta, IGlobalListener):
         vehicleToRecpec = self.itemsCache.items.getItem(GUI_ITEM_TYPE.VEHICLE, tankman.nationID, int(innationID))
         proc = TankmanRetraining(tankman, vehicleToRecpec, tankmanCostTypeIdx)
         result = yield proc.request()
-        if len(result.userMsg):
+        if result.userMsg:
             SystemMessages.pushI18nMessage(result.userMsg, type=result.sysMsgType)
 
     @decorators.process('unloading')
@@ -147,7 +150,7 @@ class PersonalCase(PersonalCaseMeta, IGlobalListener):
         else:
             unloader = TankmanUnload(tmanVehicle, tankman.vehicleSlotIdx)
             result = yield unloader.request()
-            if len(result.userMsg):
+            if result.userMsg:
                 SystemMessages.pushI18nMessage(result.userMsg, type=result.sysMsgType)
             return
 
@@ -165,7 +168,7 @@ class PersonalCase(PersonalCaseMeta, IGlobalListener):
         iconID = checkFlashInt(iconID)
         tankman = self.itemsCache.items.getTankman(int(invengoryID))
         result = yield TankmanChangePassport(tankman, firstNameID, firstNameGroup, lastNameID, lastNameGroup, iconID, iconGroup).request()
-        if len(result.userMsg):
+        if result.userMsg:
             SystemMessages.pushI18nMessage(result.userMsg, type=result.sysMsgType)
 
     @decorators.process('studying')
@@ -173,14 +176,25 @@ class PersonalCase(PersonalCaseMeta, IGlobalListener):
         tankman = self.itemsCache.items.getTankman(int(invengoryID))
         processor = TankmanAddSkill(tankman, skillName)
         result = yield processor.request()
-        if len(result.userMsg):
+        if result.userMsg:
             SystemMessages.pushI18nMessage(result.userMsg, type=result.sysMsgType)
 
     def openExchangeFreeToTankmanXpWindow(self):
         self.fireEvent(events.LoadViewEvent(VIEW_ALIAS.EXCHANGE_FREE_TO_TANKMAN_XP_WINDOW, getViewName(VIEW_ALIAS.EXCHANGE_FREE_TO_TANKMAN_XP_WINDOW, self.tmanInvID), {'tankManId': self.tmanInvID}), EVENT_BUS_SCOPE.LOBBY)
 
     def dropSkills(self):
-        self.fireEvent(LoadViewEvent(VIEW_ALIAS.TANKMAN_SKILLS_DROP_WINDOW, getViewName(VIEW_ALIAS.TANKMAN_SKILLS_DROP_WINDOW, self.tmanInvID), {'tankmanID': self.tmanInvID}), EVENT_BUS_SCOPE.LOBBY)
+        tankman = self.itemsCache.items.getTankman(self.tmanInvID)
+        if tankman.isEvent:
+            self._eventCrewDropFromPersonalCase(tankman)
+        else:
+            self.fireEvent(LoadViewEvent(VIEW_ALIAS.TANKMAN_SKILLS_DROP_WINDOW, getViewName(VIEW_ALIAS.TANKMAN_SKILLS_DROP_WINDOW, self.tmanInvID), {'tankmanID': self.tmanInvID}), EVENT_BUS_SCOPE.LOBBY)
+
+    @decorators.process('deleting')
+    def _eventCrewDropFromPersonalCase(self, tankman):
+        proc = TankmanDropSkills(tankman, 2)
+        result = yield proc.request()
+        if result.success:
+            self.fireEvent(events.SkillDropEvent(events.SkillDropEvent.SKILL_DROPPED_SUCCESSFULLY))
 
     def _populate(self):
         super(PersonalCase, self)._populate()
@@ -228,6 +242,15 @@ class PersonalCase(PersonalCaseMeta, IGlobalListener):
             self.destroy()
 
 
+STATS_TAB_INDEX = 0
+TRAINING_TAB_INDEX = 1
+SKILLS_TAB_INDEX = 2
+DOCS_TAB_INDEX = 3
+PERSONAL_CASE_STATS = 'crewTankmanStats'
+PERSONAL_CASE_RETRAINING = 'CrewTankmanRetraining'
+PERSONAL_CASE_SKILLS = 'PersonalCaseSkills'
+PERSONAL_CASE_DOCS = 'PersonalCaseDocs'
+
 class PersonalCaseDataProvider(object):
     itemsCache = dependency.descriptor(IItemsCache)
 
@@ -241,7 +264,10 @@ class PersonalCaseDataProvider(object):
     def getCommonData(self, callback):
         items = self.itemsCache.items
         tankman = items.getTankman(self.tmanInvID)
-        rate = items.shop.freeXPToTManXPRate
+        if tankman.isEvent:
+            rate = 0
+        else:
+            rate = items.shop.freeXPToTManXPRate
         if rate:
             toNextPrcLeft = roundByModulo(tankman.getNextLevelXpCost(), rate)
             enoughFreeXPForTeaching = items.stats.freeXP - max(1, toNextPrcLeft / rate) >= 0
@@ -252,7 +278,15 @@ class PersonalCaseDataProvider(object):
         if tankman.isInTank:
             currentVehicle = items.getItemByCD(tankman.vehicleDescr.type.compactDescr)
         isLocked, reason = self.__getTankmanLockMessage(currentVehicle)
+        td = tankman.descriptor
+        changeRoleEnabled = tankmen.tankmenGroupCanChangeRole(td.nationID, td.gid, td.isPremium)
+        if changeRoleEnabled:
+            tooltipChangeRole = ''
+        else:
+            tooltipChangeRole = makeTooltip(TOOLTIPS.CREW_ROLECHANGEFORBID_HEADER, TOOLTIPS.CREW_ROLECHANGEFORBID_TEXT)
+        showDocumentTab = not td.getRestrictions().isPassportReplacementForbidden()
         bonuses = tankman.realRoleLevel[1]
+        isCrewLocked = tankman.isEvent
         modifiers = []
         if bonuses[0]:
             modifiers.append({'id': 'fromCommander',
@@ -272,8 +306,32 @@ class PersonalCaseDataProvider(object):
          'isOpsLocked': isLocked or g_currentVehicle.isLocked(),
          'lockMessage': reason,
          'modifiers': modifiers,
-         'enoughFreeXPForTeaching': enoughFreeXPForTeaching})
+         'enoughFreeXPForTeaching': enoughFreeXPForTeaching,
+         'tabsData': self.getTabsButtons(showDocumentTab, isCrewLocked),
+         'tooltipDismiss': TOOLTIPS.BARRACKS_TANKMEN_DISMISS,
+         'tooltipUnload': TOOLTIPS.BARRACKS_TANKMEN_UNLOAD,
+         'dismissEnabled': False if isCrewLocked else True,
+         'unloadEnabled': False if isCrewLocked else True,
+         'changeRoleEnabled': False if isCrewLocked else changeRoleEnabled,
+         'tooltipChangeRole': tooltipChangeRole})
         return
+
+    def getTabsButtons(self, showDocumentTab, isCrewLocked):
+        tabs = [{'index': STATS_TAB_INDEX,
+          'label': MENU.TANKMANPERSONALCASE_TABBATTLEINFO,
+          'linkage': PERSONAL_CASE_STATS,
+          'enabled': False if isCrewLocked else True}, {'index': TRAINING_TAB_INDEX,
+          'label': MENU.TANKMANPERSONALCASE_TABTRAINING,
+          'linkage': PERSONAL_CASE_RETRAINING,
+          'enabled': False if isCrewLocked else True}, {'index': SKILLS_TAB_INDEX,
+          'label': MENU.TANKMANPERSONALCASE_TABSKILLS,
+          'linkage': PERSONAL_CASE_SKILLS}]
+        if showDocumentTab:
+            tabs.append({'index': DOCS_TAB_INDEX,
+             'label': MENU.TANKMANPERSONALCASE_TABDOCS,
+             'linkage': PERSONAL_CASE_DOCS,
+             'enabled': False if isCrewLocked else True})
+        return tabs
 
     @async
     def getDossierData(self, callback):

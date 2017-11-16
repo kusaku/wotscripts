@@ -65,7 +65,7 @@ class _RaresCache(object):
 
     def request(self, listOfIds):
         LOG_DEBUG('Request action achievements data', listOfIds)
-        if not len(listOfIds):
+        if not listOfIds:
             return
         landId = getClientLanguage()
         for achieveId in listOfIds:

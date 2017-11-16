@@ -85,8 +85,7 @@ def _getAvgStringValue(dataList, key, formatter = None):
     if count > 0:
         value = float(total) / count
         return (True, formatter(value) if formatter else value)
-    else:
-        return (False, clans_fmts.DUMMY_UNAVAILABLE_DATA)
+    return (False, clans_fmts.DUMMY_UNAVAILABLE_DATA)
 
 
 def _getWeighedAvgStringValue(dataList, key, weightKey, formatter = None):
@@ -253,7 +252,7 @@ class _ClanMembersDataProvider(SortableDAAPIDataProvider, UsersInfoHelper):
 
     def fini(self):
         self.clear()
-        self._dispose()
+        self.destroy()
 
     def getSelectedIdx(self):
         if self.__selectedID in self.__mapping:
@@ -291,7 +290,7 @@ class _ClanMembersDataProvider(SortableDAAPIDataProvider, UsersInfoHelper):
         return self.getSelectedIdx()
 
     def onUserNamesReceived(self, names):
-        if self.__accountsList and len(names):
+        if self.__accountsList and names:
             self.buildList(self.__accountsList)
             self.refresh()
 
@@ -376,14 +375,12 @@ class _ClanMembersDataProvider(SortableDAAPIDataProvider, UsersInfoHelper):
     def __getMemberBattlesPerformance(self, memberData):
         if memberData.getBattlesCount() > 0:
             return memberData.getBattlesPerformanceAvg()
-        else:
-            return _UNAVAILABLE_EFFICIENCY_VALUE
+        return _UNAVAILABLE_EFFICIENCY_VALUE
 
     def __getMemberAwgExp(self, memberData):
         if memberData.getBattlesCount() > 0:
             return memberData.getBattleXpAvg()
-        else:
-            return _UNAVAILABLE_EFFICIENCY_VALUE
+        return _UNAVAILABLE_EFFICIENCY_VALUE
 
     def __getMemberDaysInClan(self, memberData):
         return memberData.getDaysInClan()

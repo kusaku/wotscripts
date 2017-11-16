@@ -75,7 +75,7 @@ class VehicleSellDialog(VehicleSellDialogMeta):
         otherVehsShells = set()
         for invVeh in invVehs.itervalues():
             if invVeh.invID != self.vehInvID:
-                for shot in invVeh.descriptor.gun.shots:
+                for shot in invVeh.descriptor.turrets[0].gun.shots:
                     otherVehsShells.add(shot.shell.compactDescr)
 
         vehicleAction = None
@@ -237,7 +237,7 @@ class VehicleSellDialog(VehicleSellDialogMeta):
         checkUsefullTankmen = False
         for tankman in vehicle.crew:
             if tankman[1]:
-                if tankman[1].roleLevel >= 100 or len(tankman[1].skills):
+                if tankman[1].roleLevel >= 100 or tankman[1].skills:
                     checkUsefullTankmen = dismiss
                     break
 
@@ -253,7 +253,7 @@ class VehicleSellDialog(VehicleSellDialogMeta):
     @decorators.process('sellVehicle')
     def __doSellVehicle(self, vehicle, shells, eqs, optDevs, inventory, isDismissCrew):
         result = yield VehicleSeller(vehicle, shells, eqs, optDevs, inventory, isDismissCrew).request()
-        if len(result.userMsg):
+        if result.userMsg:
             SystemMessages.pushMessage(result.userMsg, type=result.sysMsgType)
 
     def sell(self, vehicleCD, shells, eqs, optDevs, inventory, isDismissCrew):

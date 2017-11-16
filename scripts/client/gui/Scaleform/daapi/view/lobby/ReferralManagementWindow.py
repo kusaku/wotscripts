@@ -79,7 +79,7 @@ class ReferralManagementWindow(ReferralManagementWindowMeta, IGlobalListener, No
     @classmethod
     def __getClosestNotification(cls):
         updates = map(lambda r: r.getBonus()[1], cls.refSystem.getReferrals())
-        if len(updates):
+        if updates:
             return min(updates)
         return 0
 

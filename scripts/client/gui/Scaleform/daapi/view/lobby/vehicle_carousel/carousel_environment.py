@@ -67,7 +67,6 @@ class CarouselEnvironment(CarouselEnvironmentMeta, IGlobalListener):
             return self._carouselDP.filter
         else:
             return
-            return
 
     def getTotalVehiclesCount(self):
         return self._carouselDP.getTotalVehiclesCount()

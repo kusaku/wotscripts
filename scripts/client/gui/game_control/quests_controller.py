@@ -98,12 +98,11 @@ class _QuestCache(object):
     def __filterFunc(cls, event):
         if event.getType() in (EVENT_TYPE.TOKEN_QUEST, EVENT_TYPE.REF_SYSTEM_QUEST):
             return False
-        elif not event.getFinishTimeLeft():
+        if not event.getFinishTimeLeft():
             return False
-        elif event.getType() == EVENT_TYPE.MOTIVE_QUEST:
+        if event.getType() == EVENT_TYPE.MOTIVE_QUEST:
             return not event.isCompleted() and event.isAvailable()[0]
-        else:
-            return True
+        return True
 
 
 class QuestsController(IQuestsController):

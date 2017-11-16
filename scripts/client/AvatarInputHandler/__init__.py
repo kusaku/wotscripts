@@ -21,6 +21,7 @@ import CommandMapping
 from AvatarInputHandler import aih_global_binding, aih_constants, gun_marker_ctrl
 from AvatarInputHandler.AimingSystems.SniperAimingSystem import SniperAimingSystem
 from AvatarInputHandler import AimingSystems
+from AvatarInputHandler.commands.bootcamp_mode_control import BootcampModeControl
 from AvatarInputHandler.commands.siege_mode_control import SiegeModeControl
 from AvatarInputHandler.siege_mode_player_notifications import SiegeModeSoundNotifications, SiegeModeCameraShaker
 from AvatarInputHandler.remote_camera_sender import RemoteCameraSender
@@ -35,6 +36,7 @@ from helpers import dependency
 from helpers.CallbackDelayer import CallbackDelayer
 from post_processing.post_effect_controllers import g_postProcessingEvents
 from skeletons.account_helpers.settings_core import ISettingsCore
+from skeletons.gui.game_control import IBootcampController
 from svarog_script.py_component_system import ComponentSystem, ComponentDescriptor
 _INPUT_HANDLER_CFG = 'gui/avatar_input_handler.xml'
 
@@ -118,6 +120,7 @@ class DynamicCameraSettings(object):
 
 
 class AvatarInputHandler(CallbackDelayer, ComponentSystem):
+    bootcampCtrl = dependency.descriptor(IBootcampController)
     ctrl = property(lambda self: self.__curCtrl)
     ctrls = property(lambda self: self.__ctrls)
     isSPG = property(lambda self: self.__isSPG)
@@ -169,6 +172,7 @@ class AvatarInputHandler(CallbackDelayer, ComponentSystem):
         self.onCameraChanged = Event()
         self.onPostmortemVehicleChanged = Event()
         self.onPostmortemKillerVision = Event()
+        self.onTurretIndexChanged = Event()
         self.__isArenaStarted = False
         self.__isStarted = False
         self.__targeting = _Targeting()
@@ -202,6 +206,8 @@ class AvatarInputHandler(CallbackDelayer, ComponentSystem):
             self.siegeModeControl.onSiegeStateChanged += self.siegeModeSoundNotifications.onSiegeStateChanged
             self.siegeModeControl.onRequestFail += self.__onRequestFail
             self.siegeModeControl.onSiegeStateChanged += SiegeModeCameraShaker.shake
+        if self.bootcampCtrl.isInBootcamp() and constants.HAS_DEV_RESOURCES:
+            self.__commands.append(BootcampModeControl())
 
     def prerequisites(self):
         out = []
@@ -272,18 +278,18 @@ class AvatarInputHandler(CallbackDelayer, ComponentSystem):
             return
         return self.__curCtrl.updateShootingStatus(canShoot)
 
-    def getDesiredShotPoint(self, ignoreAimingMode = False):
+    def getDesiredShotPoint(self, ignoreCurrentAimingMode = False):
         if self.__isDetached:
             return None
         else:
             g_postProcessingEvents.onFocalPlaneChanged()
-            return self.__curCtrl.getDesiredShotPoint(ignoreAimingMode)
+            return self.__curCtrl.getDesiredShotPoint(ignoreCurrentAimingMode)
 
     def getMarkerPoint(self):
         point = None
         if self.__ctrlModeName in (_CTRL_MODE.ARCADE, _CTRL_MODE.STRATEGIC, _CTRL_MODE.ARTY):
             AimingSystems.shootInSkyPoint.has_been_called = False
-            point = self.getDesiredShotPoint(ignoreAimingMode=True)
+            point = self.getDesiredShotPoint(ignoreCurrentAimingMode=True)
             if AimingSystems.shootInSkyPoint.has_been_called:
                 point = None
         return point
@@ -299,13 +305,14 @@ class AvatarInputHandler(CallbackDelayer, ComponentSystem):
             replayCtrl = BattleReplay.g_replayCtrl
             replayCtrl.setUseServerAim(isShown)
 
-    def updateGunMarker(self, pos, dir, size, relaxTime, collData):
+    def updateGunMarker(self, pos, dir, size, relaxTime, collData, index = 0):
         """ Updates client's gun marker."""
-        self.__curCtrl.updateGunMarker(_GUN_MARKER_TYPE.CLIENT, pos, dir, size, relaxTime, collData)
+        markerType = _GUN_MARKER_TYPE.SUB if index > 0 else _GUN_MARKER_TYPE.CLIENT
+        self.__curCtrl.updateGunMarker(markerType, pos, dir, size, relaxTime, collData, index)
 
     def updateGunMarker2(self, pos, dir, size, relaxTime, collData):
         """ Updates server's gun marker."""
-        self.__curCtrl.updateGunMarker(_GUN_MARKER_TYPE.SERVER, pos, dir, size, relaxTime, collData)
+        self.__curCtrl.updateGunMarker(_GUN_MARKER_TYPE.SERVER, pos, dir, size, relaxTime, collData, 0)
 
     def setAimingMode(self, enable, mode):
         self.__curCtrl.setAimingMode(enable, mode)
@@ -437,6 +444,8 @@ class AvatarInputHandler(CallbackDelayer, ComponentSystem):
         self.onPostmortemVehicleChanged = None
         self.onPostmortemKillerVision.clear()
         self.onPostmortemKillerVision = None
+        self.onTurretIndexChanged.clear()
+        self.onTurretIndexChanged = None
         self.__targeting.enable(False)
         self.__killerVehicleID = None
         if self.__onRecreateDevice in g_guiResetters:
@@ -630,7 +639,7 @@ class AvatarInputHandler(CallbackDelayer, ComponentSystem):
             avatarVehicle = BigWorld.player().getVehicleAttached()
             if avatarVehicle is None or avatarVehicle is vehicle:
                 return
-            caliber = vehicle.typeDescriptor.shot.shell.caliber
+            caliber = vehicle.typeDescriptor.turrets[0].shot.shell.caliber
             impulseValue = self.__dynamicCameraSettings.getGunImpulse(caliber)
             avatarVehicleWeightInTons = avatarVehicle.typeDescriptor.physics['weight'] / 1000.0
             vehicleSensitivity = self.__dynamicCameraSettings.getSensitivityToImpulse(avatarVehicleWeightInTons)
@@ -754,8 +763,13 @@ class AvatarInputHandler(CallbackDelayer, ComponentSystem):
     def __onArenaStarted(self, period, *args):
         self.__isArenaStarted = period == ARENA_PERIOD.BATTLE
         self.__curCtrl.setGunMarkerFlag(self.__isArenaStarted, _GUN_MARKER_FLAG.CONTROL_ENABLED)
-        self.showGunMarker2(gun_marker_ctrl.useServerGunMarker())
-        self.showGunMarker(gun_marker_ctrl.useClientGunMarker())
+        player = BigWorld.player()
+        if player.vehicleTypeDescriptor.isMultiTurret:
+            self.showGunMarker2(False)
+            self.showGunMarker(True)
+        else:
+            self.showGunMarker2(gun_marker_ctrl.useServerGunMarker())
+            self.showGunMarker(gun_marker_ctrl.useClientGunMarker())
 
     def __onRecreateDevice(self):
         self.__curCtrl.onRecreateDevice()

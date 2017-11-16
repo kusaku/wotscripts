@@ -94,4 +94,3 @@ class BattleResultsWindow(BattleResultsMeta):
             return False
         else:
             return True
-            return

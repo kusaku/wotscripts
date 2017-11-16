@@ -42,7 +42,7 @@ class ConditionsParser(object):
             return conditions.AndGroup()
         startParsingPoint = self._section
         unionOps = set(self.LOGICAL_OPS.keys()).intersection(dict(self._section).keys())
-        if len(unionOps):
+        if unionOps:
             rootGroup = self.LOGICAL_OPS[unionOps.pop()]()
             startParsingPoint = self._section[0][1]
         else:
@@ -164,6 +164,8 @@ class VehicleRequirements(ConditionsParser):
         conds = self.getConditions()
         if not conds.isEmpty():
             return conds.isAvailable(vehicle)
+        if vehicle.isOnlyForEventBattles:
+            return False
         return True
 
     def isAnyVehicleAcceptable(self):
@@ -199,6 +201,10 @@ class VehicleRequirements(ConditionsParser):
             return conditions.XPMultipliedVehicle(uniqueName, data)
         if name == 'vehicleDescr':
             return conditions.VehicleDescr(uniqueName, data)
+        if name == 'installedModules':
+            return conditions.InstalledModulesOnVehicle(uniqueName, data)
+        if name == 'correspondedCamouflage':
+            return conditions.CorrespondedCamouflage(uniqueName, data)
 
 
 class PreBattleConditions(ConditionsParser):
@@ -247,8 +253,12 @@ class PostBattleConditions(ConditionsParser):
             return conditions.ClanKills(uniqueName, data)
         if name == 'results':
             return conditions.BattleResults(uniqueName, data)
+        if name == 'crits':
+            return conditions.CritsGroup(uniqueName, data)
         if name == 'unit':
             return conditions.UnitResults(uniqueName, data, self.__preBattleCond)
+        if name == 'multiStunEvent':
+            return conditions.MultiStunEvent(uniqueName, data)
 
 
 class BonusConditions(ConditionsParser):
@@ -293,14 +303,14 @@ class BonusConditions(ConditionsParser):
             return conditions.VehicleStunCumulative(uniqueName, data, self)
         if name == 'cumulative':
             result = []
-            for idx, data in enumerate(data):
-                result.append(conditions.CumulativeResult('%s%d' % (uniqueName, idx), (data,), self))
+            for idx, element in enumerate(data):
+                result.append(conditions.CumulativeResult('%s%d' % (uniqueName, idx), (element,), self))
 
             return result
         if name == 'unit':
             result = []
-            for idx, data in enumerate(dict(data)['cumulative']):
-                result.append(conditions.CumulativeResult('%s%d' % (uniqueName, idx), (data,), self, isUnit=True, preBattleCond=self.__preBattleCond))
+            for idx, element in enumerate(dict(data)['cumulative']):
+                result.append(conditions.CumulativeResult('%s%d' % (uniqueName, idx), (element,), self, isUnit=True, preBattleCond=self.__preBattleCond))
 
             return result
 

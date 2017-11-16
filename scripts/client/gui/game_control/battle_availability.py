@@ -26,8 +26,7 @@ def getForbiddenPeriods(hours, formatter = None):
     def _formatPeriod(fromHour, endHour):
         if formatter:
             return formatter(fromHour, endHour)
-        else:
-            return (fromHour, endHour)
+        return (fromHour, endHour)
 
     if hours:
         currRange = None

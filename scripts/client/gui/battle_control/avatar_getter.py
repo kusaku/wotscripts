@@ -128,7 +128,8 @@ def isVehicleBarrelUnderWater(avatar = None):
     if avatar is None:
         avatar = BigWorld.player()
     try:
-        result = avatar.isOwnBarrelUnderWater
+        turretIndex = 0
+        result = avatar.isOwnBarrelUnderWater(turretIndex)
     except AttributeError:
         LOG_WARNING('Attribute "isOwnBarrelUnderWater" is not found')
         result = False
@@ -241,14 +242,14 @@ def getArenaUniqueID(avatar = None):
     return None
 
 
-def updateVehicleSetting(code, value, avatar = None):
+def updateVehicleSetting(code, value, index, avatar = None):
     if avatar is None:
         avatar = BigWorld.player()
     vehicleid = avatar.playerVehicleID
     if avatar.getVehicleAttached() is not None:
         vehicleid = avatar.getVehicleAttached().id
     try:
-        avatar.updateVehicleSetting(vehicleid, code, value)
+        avatar.updateVehicleSetting(vehicleid, code, value, index)
     except AttributeError:
         LOG_CURRENT_EXCEPTION()
         LOG_WARNING('Attribute "updateVehicleSetting" is not found')
@@ -334,7 +335,6 @@ def getDistanceToTarget(target, avatar = None):
         return (target.position - ownPosition).length
     else:
         return 0.0
-        return
 
 
 def getDistanceToGunMarker(avatar = None):
@@ -384,3 +384,24 @@ def getHealthPercentage(avatar = None):
         return [0.0, 0.0]
 
     return hp
+
+
+def getEvilEyePrimaryStatus():
+    """gets whether leviathan primary turret is targetting current player
+    :return: True if being targetted by primary, False otherwise
+    """
+    player = BigWorld.player()
+    if not player:
+        return None
+    else:
+        return player.evilEyePrimaryStatus
+
+
+def getEvilEyeSecondaryStatus():
+    """Gets number of Leviathan secondary turrets are currently targetting this player
+    :return: number of secondary turrets targetting the player
+    """
+    player = BigWorld.player()
+    if not player:
+        return 0
+    return player.evilEyeSecondaryStatus

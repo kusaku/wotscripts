@@ -10,11 +10,10 @@ from gui.shared import events, g_eventBus
 from gui.shared.event_bus import EVENT_BUS_SCOPE
 from gui.shared.utils.functions import getViewName, getUniqueViewName
 from gui.shared.utils import isPopupsWindowsOpenDisabled
+from CurrentVehicle import HeroTankPreviewAppearance
 from helpers import dependency
 from skeletons.gui.shared import IItemsCache
 import constants
-if constants.IS_BOOTCAMP_ENABLED:
-    from bootcamp.Bootcamp import g_bootcamp
 
 class SETTINGS_TAB_INDEX(object):
     GAME = 0
@@ -27,10 +26,6 @@ class SETTINGS_TAB_INDEX(object):
 
 
 def showBattleResultsWindow(arenaUniqueID):
-    if constants.IS_BOOTCAMP_ENABLED:
-        if g_bootcamp.isRunning():
-            g_eventBus.handleEvent(events.LoadViewEvent(VIEW_ALIAS.BOOTCAMP_BATTLE_RESULT, getViewName(VIEW_ALIAS.BOOTCAMP_BATTLE_RESULT, str(arenaUniqueID)), ctx={'arenaUniqueID': arenaUniqueID}), EVENT_BUS_SCOPE.LOBBY)
-            return
     g_eventBus.handleEvent(events.LoadViewEvent(VIEW_ALIAS.BATTLE_RESULTS, getViewName(VIEW_ALIAS.BATTLE_RESULTS, str(arenaUniqueID)), {'arenaUniqueID': arenaUniqueID}), EVENT_BUS_SCOPE.LOBBY)
 
 
@@ -59,9 +54,6 @@ def showVehicleInfo(vehTypeCompDescr):
 
 
 def showModuleInfo(itemCD, vehicleDescr):
-    if constants.IS_BOOTCAMP_ENABLED:
-        if g_bootcamp.isRunning():
-            return
     itemCD = int(itemCD)
     g_eventBus.handleEvent(events.LoadViewEvent(VIEW_ALIAS.MODULE_INFO_WINDOW, getViewName(VIEW_ALIAS.MODULE_INFO_WINDOW, itemCD), {'moduleCompactDescr': itemCD,
      'vehicleDescr': vehicleDescr}), EVENT_BUS_SCOPE.LOBBY)
@@ -72,11 +64,6 @@ def showVehicleSellDialog(vehInvID):
 
 
 def showVehicleBuyDialog(vehicle, isTradeIn = False):
-    if constants.IS_BOOTCAMP_ENABLED:
-        if g_bootcamp.isRunning():
-            g_eventBus.handleEvent(events.LoadViewEvent(VIEW_ALIAS.BOOTCAMP_VEHICLE_BUY_WINDOW, ctx={'nationID': vehicle.nationID,
-             'itemID': vehicle.innationID}), EVENT_BUS_SCOPE.LOBBY)
-            return
     alias = VIEW_ALIAS.VEHICLE_RESTORE_WINDOW if vehicle.isRestoreAvailable() else VIEW_ALIAS.VEHICLE_BUY_WINDOW
     g_eventBus.handleEvent(events.LoadViewEvent(alias, ctx={'nationID': vehicle.nationID,
      'itemID': vehicle.innationID,
@@ -89,13 +76,6 @@ def showBattleBoosterBuyDialog(battleBoosterIntCD, install = False):
 
 
 def showResearchView(vehTypeCompDescr):
-    if constants.IS_BOOTCAMP_ENABLED:
-        if g_bootcamp.isRunning():
-            exitEvent = events.LoadViewEvent(VIEW_ALIAS.LOBBY_HANGAR)
-            loadEvent = events.LoadViewEvent(VIEW_ALIAS.BOOTCAMP_LOBBY_RESEARCH, ctx={'rootCD': vehTypeCompDescr,
-             'exit': exitEvent})
-            g_eventBus.handleEvent(loadEvent, scope=EVENT_BUS_SCOPE.LOBBY)
-            return
     exitEvent = events.LoadViewEvent(VIEW_ALIAS.LOBBY_HANGAR)
     loadEvent = events.LoadViewEvent(VIEW_ALIAS.LOBBY_RESEARCH, ctx={'rootCD': vehTypeCompDescr,
      'exit': exitEvent})
@@ -115,16 +95,13 @@ def showVehiclePreview(vehTypeCompDescr, previewAlias = VIEW_ALIAS.LOBBY_HANGAR,
     if g_currentPreviewVehicle.isPresent():
         g_currentPreviewVehicle.selectVehicle(vehTypeCompDescr)
     else:
-        if constants.IS_BOOTCAMP_ENABLED:
-            if g_bootcamp.isRunning():
-                from debug_utils_bootcamp import LOG_DEBUG_DEV_BOOTCAMP
-                LOG_DEBUG_DEV_BOOTCAMP('showVehiclePreview', vehTypeCompDescr, previewAlias)
-                g_eventBus.handleEvent(events.LoadViewEvent(VIEW_ALIAS.BOOTCAMP_VEHICLE_PREVIEW, ctx={'itemCD': vehTypeCompDescr,
-                 'previewAlias': previewAlias}), scope=EVENT_BUS_SCOPE.LOBBY)
-                return
         g_eventBus.handleEvent(events.LoadViewEvent(VIEW_ALIAS.VEHICLE_PREVIEW, ctx={'itemCD': vehTypeCompDescr,
          'previewAlias': previewAlias,
          'vehicleStrCD': vehStrCD}), scope=EVENT_BUS_SCOPE.LOBBY)
+
+
+def hideVehiclePreview():
+    g_eventBus.handleEvent(events.HideWindowEvent(events.HideWindowEvent.HIDE_VEHICLE_PREVIEW), scope=EVENT_BUS_SCOPE.LOBBY)
 
 
 def hideBattleResults():
@@ -206,13 +183,6 @@ def showPersonalCase(tankmanInvID, tabIndex, scope = EVENT_BUS_SCOPE.DEFAULT):
     :param tabIndex: int-type tab index
     :param scope:
     """
-    from bootcamp.BootcampGarage import g_bootcampGarage
-    if constants.IS_BOOTCAMP_ENABLED:
-        if g_bootcamp.isRunning():
-            g_bootcampGarage.closeAllPopUps()
-            g_eventBus.handleEvent(events.LoadViewEvent(VIEW_ALIAS.BOOTCAMP_PERSONAL_CASE, getViewName(VIEW_ALIAS.BOOTCAMP_PERSONAL_CASE, tankmanInvID), {'tankmanID': tankmanInvID,
-             'page': tabIndex}), scope)
-            return
     g_eventBus.handleEvent(events.LoadViewEvent(VIEW_ALIAS.PERSONAL_CASE, getViewName(VIEW_ALIAS.PERSONAL_CASE, tankmanInvID), {'tankmanID': tankmanInvID,
      'page': tabIndex}), scope)
 

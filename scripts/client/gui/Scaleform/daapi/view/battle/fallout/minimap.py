@@ -131,9 +131,6 @@ class AbsorptionFlagsPlugin(common.EntriesPlugin):
 class FlagsAndPersonalEntriesPlugin(plugins.PersonalEntriesPlugin):
     __slots__ = ()
 
-    def __init__(self, parentObj):
-        super(FlagsAndPersonalEntriesPlugin, self).__init__(parentObj)
-
     def start(self):
         super(FlagsAndPersonalEntriesPlugin, self).start()
         g_ctfManager.onFlagCapturedByVehicle += self.__onFlagCapturedByVehicle
@@ -404,8 +401,7 @@ class RepairPointEntry(entries.MinimapEntry):
         if self._isInCooldown != isInCooldown:
             self._isInCooldown = isInCooldown
             return True
-        else:
-            return False
+        return False
 
     def clear(self):
         self._isInCooldown = False

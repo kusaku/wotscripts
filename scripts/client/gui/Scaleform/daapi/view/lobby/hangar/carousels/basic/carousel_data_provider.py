@@ -7,7 +7,6 @@ from gui.shared.money import Money
 from gui.shared.tooltips import ACTION_TOOLTIPS_TYPE
 from gui.shared.tooltips.formatters import packActionTooltipData
 from gui.shared.utils.requesters import REQ_CRITERIA
-from bootcamp.Bootcamp import g_bootcamp
 
 class _SUPPLY_ITEMS(object):
     BUY_TANK = 0
@@ -96,9 +95,6 @@ class HangarCarouselDataProvider(CarouselDataProvider):
 
 
 class BCCarouselDataProvider(CarouselDataProvider):
-
-    def __init__(self, carouselFilter, itemsCache, currentVehicle):
-        super(BCCarouselDataProvider, self).__init__(carouselFilter, itemsCache, currentVehicle)
 
     @property
     def collection(self):

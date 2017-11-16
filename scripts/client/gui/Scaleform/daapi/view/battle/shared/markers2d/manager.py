@@ -145,7 +145,6 @@ class MarkersManager(ExternalFlashComponent, VehicleMarkersManagerMeta, plugins.
             return self.__plugins.getPlugin(name)
         else:
             return
-            return
 
     def startPlugins(self):
         sessionProvider = dependency.instance(IBattleSessionProvider)

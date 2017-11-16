@@ -22,7 +22,7 @@ class process(object):
         return
 
     def __nextWaiting(self):
-        if len(self.__messages2Show):
+        if self.__messages2Show:
             self.__hideWaiting()
             self.__currentMessage = self.__messages2Show.pop(0)
             Waiting.show(self.__currentMessage)
@@ -118,8 +118,7 @@ def makeArr(obj):
     if isinstance(obj, tuple):
         if len(obj) > 1:
             return [obj[0], obj[1]]
-        else:
-            return [obj[0], obj[0]]
+        return [obj[0], obj[0]]
     return [obj, obj]
 
 

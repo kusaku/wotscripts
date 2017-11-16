@@ -19,7 +19,6 @@ def _getTooltip(headerKey, bodyKey, ratingOutdated = False):
         return makeTooltip(headerKey, bodyKey, None, CL.GLOBALMAPVIEW_TOOLTIP_RATINGOUTDATED)
     else:
         return makeTooltip(headerKey, bodyKey)
-        return None
 
 
 def _getDataObject(key, i18nFunc, value, ratingOutdated = False, tooltipData = None):

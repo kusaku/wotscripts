@@ -30,7 +30,7 @@ class InventoryItemsTab(StoreItemsTab):
 
     def _getExtraCriteria(self, extra, requestCriteria, invVehicles):
         if 'onVehicle' in extra:
-            requestCriteria |= ~REQ_CRITERIA.CUSTOM(lambda item: len(item.getInstalledVehicles(invVehicles)) == 0 and item.inventoryCount == 0)
+            requestCriteria |= ~REQ_CRITERIA.CUSTOM(lambda item: not item.getInstalledVehicles(invVehicles) and item.inventoryCount == 0)
         else:
             requestCriteria |= REQ_CRITERIA.INVENTORY
         return requestCriteria
@@ -38,8 +38,7 @@ class InventoryItemsTab(StoreItemsTab):
     def _getDiscountCriteria(self):
         if self._actionsSelected:
             return REQ_CRITERIA.DISCOUNT_SELL
-        else:
-            return REQ_CRITERIA.EMPTY
+        return REQ_CRITERIA.EMPTY
 
     def _getStatusParams(self, item):
         disabled = False

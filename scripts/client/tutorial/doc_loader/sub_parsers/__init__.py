@@ -14,7 +14,7 @@ _COND_STATE = conditions.CONDITION_STATE
 
 def parseID(xmlCtx, section, msg):
     entityID = section.asString
-    if entityID is None or not len(entityID):
+    if not entityID:
         _xml.raiseWrongXml(xmlCtx, section.name, msg)
     return entityID
 
@@ -64,12 +64,10 @@ def _readGameItemCondition(xmlCtx, section, _):
         if state.base in _COND_STATE.GAME_ITEM_RELATE_STATE:
             otherID = parseID(xmlCtx, section[tag], 'Specify a other ID')
             return conditions.GameItemRelateStateCondition(varID, otherID, state)
-        else:
-            return conditions.GameItemSimpleStateCondition(varID, state)
+        return conditions.GameItemSimpleStateCondition(varID, state)
     else:
         _xml.raiseWrongXml(xmlCtx, 'var', 'State of vehicle condition is not found: {0}'.format(section.keys()))
         return None
-    return None
 
 
 def _readVarCondition(xmlCtx, section, _):
@@ -85,7 +83,6 @@ def _readVarCondition(xmlCtx, section, _):
         return conditions.VarCompareCondition(varID, _xml.readString(xmlCtx, section, 'not-equals'), ~_COND_STATE.EQUALS)
     else:
         _xml.raiseWrongXml(xmlCtx, 'var', 'State of var condition is not found')
-        return None
         return None
 
 
@@ -464,7 +461,7 @@ def _readAsDictSection(_, section):
 
 
 def _readAsIntSequence(_, section):
-    return map(lambda item: (int(item) if len(item) else None), section.asString.split(' '))
+    return map(lambda item: (int(item) if item else None), section.asString.split(' '))
 
 
 def _readAsVehTypeNameSection(_, section):
@@ -559,7 +556,7 @@ def _parseDialog(xmlCtx, section, flags):
     bSec = _xml.getSubsection(xmlCtx, section, 'buttons')
     submitID = bSec.readString('submit', '')
     cancelID = bSec.readString('cancel', '')
-    if not len(submitID) and not len(cancelID):
+    if not submitID and not cancelID:
         _xml.raiseWrongXml(xmlCtx, '', 'Tag submit or cancel must be specified.')
     content = {'type': dialogType,
      'dialogID': dialogID,
@@ -783,4 +780,5 @@ def parseHint(xmlCtx, section):
         sectionInfo['padding'] = None
     sectionInfo['hasBox'] = section.readBool('has-box', True)
     sectionInfo['conditions'] = _parseConditions(xmlCtx, section, [])
+    sectionInfo['equalActions'] = section.readBool('equal-actions', False)
     return sectionInfo

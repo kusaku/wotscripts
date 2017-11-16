@@ -116,7 +116,7 @@ class RecruitWindow(RecruitWindowMeta):
         return
 
     def __getNationsCriteria(self):
-        return REQ_CRITERIA.UNLOCKED | ~REQ_CRITERIA.VEHICLE.OBSERVER
+        return REQ_CRITERIA.UNLOCKED | ~REQ_CRITERIA.VEHICLE.OBSERVER | ~REQ_CRITERIA.VEHICLE.CREW_LOCKED
 
     def updateNationDropdown(self):
         vehsItems = self.itemsCache.items.getVehicles(self.__getNationsCriteria())
@@ -207,7 +207,7 @@ class RecruitWindow(RecruitWindowMeta):
         recruiter = TankmanRecruit(int(nationID), int(vehTypeID), role, int(studyType))
         success, msg, msgType, tmanInvID = yield recruiter.request()
         tankman = None
-        if len(msg):
+        if msg:
             SystemMessages.pushI18nMessage(msg, type=msgType)
         if success:
             tankman = self.itemsCache.items.getTankman(tmanInvID)
@@ -218,7 +218,7 @@ class RecruitWindow(RecruitWindowMeta):
     @process
     def __equipTankman(self, tankman, vehicle, slot, callback):
         result = yield TankmanEquip(tankman, vehicle, slot).request()
-        if len(result.userMsg):
+        if result.userMsg:
             SystemMessages.pushI18nMessage(result.userMsg, type=result.sysMsgType)
         callback(result.success)
 
@@ -226,7 +226,7 @@ class RecruitWindow(RecruitWindowMeta):
     @process
     def __buyAndEquipTankman(self, vehicle, slot, studyType, callback):
         result = yield TankmanRecruitAndEquip(vehicle, slot, studyType).request()
-        if len(result.userMsg):
+        if result.userMsg:
             SystemMessages.pushI18nMessage(result.userMsg, type=result.sysMsgType)
         callback(result.success)
 

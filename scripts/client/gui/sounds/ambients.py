@@ -114,8 +114,7 @@ class SoundEvent(Notifiable):
         """
         if self._isStarted:
             return PLAYING_SOUND_CHECK_PERIOD
-        else:
-            return 0
+        return 0
 
     def _onCheckAmbientNotification(self):
         SOUND_DEBUG('Current ambient playing check: is playing now', self, self.isPlaying())
@@ -529,7 +528,7 @@ class GuiAmbientsCtrl(object):
 
         return env
 
-    def _clearSoundEnv(self, env):
+    def _clearSoundEnv(self, env, view = None):
         env.stop()
         env.onChanged -= self.__onAmbientChanged
         for fID in env.getFilters():
@@ -537,6 +536,8 @@ class GuiAmbientsCtrl(object):
             if self._filters[fID] <= 0:
                 f = snd_filters.get(fID)
                 f.stop()
+                if view is not None:
+                    f.stopView(view)
                 SOUND_DEBUG('Filter has been stopped', f)
 
         return env
@@ -585,7 +586,7 @@ class GuiAmbientsCtrl(object):
     def __onViewDisposed(self, view):
         uniqueName = view.getUniqueName()
         if uniqueName in self._customEnvs[view.settings.type]:
-            env = self._clearSoundEnv(self._customEnvs[view.settings.type][uniqueName])
+            env = self._clearSoundEnv(self._customEnvs[view.settings.type][uniqueName], view)
             SOUND_DEBUG('Custom sound environ has been stopped', view.settings.alias, env)
             del self._customEnvs[view.settings.type][uniqueName]
             view.onDispose -= self.__onViewDisposed

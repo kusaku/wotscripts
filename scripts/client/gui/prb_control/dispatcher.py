@@ -1,7 +1,6 @@
 # Embedded file name: scripts/client/gui/prb_control/dispatcher.py
 import time
 import types
-import BigWorld
 from CurrentVehicle import g_currentVehicle
 from PlayerEvents import g_playerEvents
 from adisp import async, process
@@ -56,6 +55,7 @@ class _PreBattleDispatcher(ListenersCollection):
         self.__factories = ControlFactoryComposite()
         self.__entity = NotSupportedEntity()
         self.__prevEntity = NotSupportedEntity()
+        self.__isStarted = False
         self._setListenerClass(IGlobalListener)
 
     def __del__(self):
@@ -68,6 +68,9 @@ class _PreBattleDispatcher(ListenersCollection):
         """
         Start is called when dispatcher should start its job and process events.
         """
+        if self.__isStarted:
+            return
+        self.__isStarted = True
         g_eventDispatcher.init(self)
         result = self.__setDefault()
         self.__startListening()
@@ -81,6 +84,9 @@ class _PreBattleDispatcher(ListenersCollection):
         """
         Is called when its time to stop dispatchers work.
         """
+        if not self.__isStarted:
+            return
+        self.__isStarted = False
         self.__stopListening()
         finiDevFunctional()
         self.__clear(woEvents=True)
@@ -1070,7 +1076,6 @@ class _PrbControlLoader(object):
         if self.__storage is None:
             self.__storage = PrbStorageDecorator()
             self.__storage.init()
-        g_playerEvents.onBootcampShowGUI += self.pe_onBootcampShowGUI
         return
 
     def fini(self):
@@ -1091,7 +1096,17 @@ class _PrbControlLoader(object):
         if self.__storage is not None:
             self.__storage.fini()
             self.__storage = None
-        g_playerEvents.onBootcampShowGUI -= self.pe_onBootcampShowGUI
+        return
+
+    def createBattleDispatcher(self):
+        """
+        Creates battle dispatcher. Called from Account.onAccountShowGUI or from Bootcamp to
+        start a battle without lobby
+        """
+        if self.__prbDispatcher is None:
+            self.__prbDispatcher = _PreBattleDispatcher()
+        if self.__isEnabled:
+            self.__doStart()
         return
 
     def getDispatcher(self):
@@ -1161,11 +1176,7 @@ class _PrbControlLoader(object):
         Args:
             ctx: gui init context
         """
-        if self.__prbDispatcher is None:
-            self.__prbDispatcher = _PreBattleDispatcher()
-        if self.__isEnabled:
-            self.__doStart()
-        return
+        self.createBattleDispatcher()
 
     def onAccountBecomeNonPlayer(self):
         """
@@ -1217,11 +1228,6 @@ class _PrbControlLoader(object):
             self.__prbDispatcher.stop()
             self.__prbDispatcher = None
         return
-
-    def pe_onBootcampShowGUI(self, prbEnable):
-        self.onAccountShowGUI({})
-        if prbEnable:
-            self.setEnabled(True)
 
 
 g_prbLoader = _PrbControlLoader()

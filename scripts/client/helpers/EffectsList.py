@@ -288,7 +288,7 @@ class _PixieEffectDesc(_EffectDesc):
     def __init__(self, dataSection):
         _EffectDesc.__init__(self, dataSection)
         self._files = [ f for f in dataSection.readStrings('file') if f ]
-        if len(self._files) == 0:
+        if not self._files:
             _raiseWrongConfig('file', self.TYPE)
         self._havokFiles = None
         if dataSection.readBool('hasHavokVersion', False):
@@ -618,7 +618,7 @@ class _NodeSoundEffectDesc(_BaseSoundEvent, object):
                         soundObject.setRTPC(soundStartParam.name, soundStartParam.value)
 
                     for sndName in soundName:
-                        if len(sndName) > 0:
+                        if sndName:
                             soundObject.play(sndName)
 
                     self._register(list, node, soundObject)
@@ -663,7 +663,6 @@ class _CollisionSoundEffectDesc(_NodeSoundEffectDesc):
             return (sounds[1 if isTracks else 0], id)
         else:
             return ('', id)
-            return
 
     def create(self, model, list, args):
         damageFactor = args.get('damageFactor', None)
@@ -778,7 +777,7 @@ class _SoundEffectDesc(_EffectDesc, object):
                 t = m.applyToOrigin()
                 m.setRotateY(hitdir.yaw)
                 m.translation = t
-            sound = SoundGroups.g_instance.WWgetSoundPos(soundName, soundName + '_MODEL_' + str(id(model)), m.translation)
+            sound = SoundGroups.g_instance.WWgetSoundObject(soundName + '_MODEL_' + str(id(model)), None, m.translation)
             if SoundGroups.DEBUG_TRACE_EFFECTLIST is True:
                 LOG_DEBUG('SOUND: EffectList impacts, ', soundName, args, str(id(model)), sound)
             if SoundGroups.DEBUG_TRACE_STACK is True:
@@ -796,19 +795,19 @@ class _SoundEffectDesc(_EffectDesc, object):
                     elif factor > 8925.0 / 100.0:
                         damage_size = 'SWITCH_ext_damage_size_large'
                 sound.setSwitch('SWITCH_ext_damage_size', damage_size)
-                sound.play()
+                sound.play(soundName)
                 for soundStartParam in startParams:
                     sound.setRTPC(soundStartParam.name, soundStartParam.value)
 
-        elif len(startParams) > 0:
-            sound = SoundGroups.g_instance.WWgetSoundPos(soundName, soundName + '_POS_' + str(id(pos)), pos)
+        elif startParams:
+            sound = SoundGroups.g_instance.WWgetSoundObject(soundName + '_POS_' + str(id(pos)), None, pos)
             if SoundGroups.DEBUG_TRACE_EFFECTLIST is True:
                 LOG_DEBUG('SOUND: EffectList WWgetSoundPos, ', soundName, args, sound, pos)
             if SoundGroups.DEBUG_TRACE_STACK is True:
                 import traceback
                 traceback.print_stack()
             if sound is not None:
-                sound.play()
+                sound.play(soundName)
                 for soundStartParam in startParams:
                     sound.setRTPC(soundStartParam.name, soundStartParam.value)
 
@@ -1064,7 +1063,7 @@ _effectDescFactory = {'pixie': _PixieEffectDesc,
  'light': _LightEffectDesc}
 
 def _createEffectDesc(type, dataSection):
-    if len(dataSection.values()) == 0:
+    if not dataSection.values():
         return
     else:
         factoryMethod = _effectDescFactory.get(type, None)
@@ -1168,7 +1167,7 @@ def _findTargetNode(model, nodes, localTransform = None, orientByClosestSurfaceN
 
 def _findTargetNodeSafe(model, nodes, local = None):
     node = None
-    if len(nodes) > 0:
+    if nodes:
         node = _findTargetNode(model, nodes, local)
     if node is None:
         node = _NodeWithLocal(model, '', local)
@@ -1257,15 +1256,16 @@ class FalloutDestroyEffect:
         vehicle = BigWorld.entity(vehicle_id)
         if vehicle is None:
             return
+        effects = vehicle.typeDescriptor.type.effects['fullDestruction']
+        if not effects:
+            return
+        vehicle.appearance.hide()
+        if vehicle.model is not None:
+            fakeModel = helpers.newFakeModel()
+            BigWorld.addModel(fakeModel)
+            fakeModel.position = vehicle.model.position
+            effectsPlayer = EffectsListPlayer(effects[0][1], effects[0][0])
+            effectsPlayer.play(fakeModel, SpecialKeyPointNames.START, partial(BigWorld.delModel, fakeModel))
+            return effectsPlayer
         else:
-            effects = vehicle.typeDescriptor.type.effects['fullDestruction']
-            if not effects:
-                return
-            vehicle.show(False)
-            if vehicle.model is not None:
-                fakeModel = helpers.newFakeModel()
-                BigWorld.addModel(fakeModel)
-                fakeModel.position = vehicle.model.position
-                effectsPlayer = EffectsListPlayer(effects[0][1], effects[0][0])
-                effectsPlayer.play(fakeModel, SpecialKeyPointNames.START, partial(BigWorld.delModel, fakeModel))
             return

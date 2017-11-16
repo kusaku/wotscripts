@@ -81,6 +81,9 @@ class VEHICLE_TAGS(CONST_CONTAINER):
     FALLOUT = 'fallout'
     UNRECOVERABLE = 'unrecoverable'
     CREW_LOCKED = 'lockCrew'
+    LEVIATHAN = 'leviathan'
+    MULTI_TURRET = 'multi_turret'
+    CANNOT_BE_RESEARCHED = 'cannot_be_researched'
 
 
 class Vehicle(FittingItem, HasStrCD):
@@ -189,8 +192,8 @@ class Vehicle(FittingItem, HasStrCD):
             self._xp = proxy.stats.vehiclesXPs.get(self.intCD, self._xp)
             if proxy.shop.winXPFactorMode == WIN_XP_FACTOR_MODE.ALWAYS or self.intCD not in proxy.stats.multipliedVehicles and not self.isOnlyForEventBattles:
                 self._dailyXPFactor = proxy.shop.dailyXPFactor
-            self._isElite = len(vehDescr.type.unlocksDescrs) == 0 or self.intCD in proxy.stats.eliteVehicles
-            self._isFullyElite = self.isElite and len([ data for data in vehDescr.type.unlocksDescrs if data[1] not in proxy.stats.unlocks ]) == 0
+            self._isElite = not vehDescr.type.unlocksDescrs or self.intCD in proxy.stats.eliteVehicles
+            self._isFullyElite = self.isElite and not any((data[1] not in proxy.stats.unlocks for data in vehDescr.type.unlocksDescrs))
             clanDamageLock = proxy.stats.vehicleTypeLocks.get(self.intCD, {}).get(CLAN_LOCK, 0)
             clanNewbieLock = proxy.stats.globalVehicleLocks.get(CLAN_LOCK, 0)
             self._clanLock = clanDamageLock or clanNewbieLock
@@ -206,19 +209,24 @@ class Vehicle(FittingItem, HasStrCD):
             self._rotationBattlesLeft = proxy.vehicleRotation.getBattlesCount(self.rotationGroupNum)
             self._isRotationGroupLocked = proxy.vehicleRotation.isGroupLocked(self.rotationGroupNum)
             self._isInfiniteRotationGroup = proxy.vehicleRotation.isInfinite(self.rotationGroupNum)
-        self._inventoryCount = 1 if len(invData.keys()) else 0
+        self._inventoryCount = 1 if invData.keys() else 0
         data = invData.get('rent')
         if data is not None:
             self._rentInfo = RentalInfoProvider(isRented=True, *data)
         self._settings = invData.get('settings', 0)
         self._lock = invData.get('lock', (0, 0))
         self._repairCost, self._health = invData.get('repair', (0, 0))
-        self._gun = self.itemsFactory.createVehicleGun(vehDescr.gun.compactDescr, proxy, vehDescr.gun)
-        self._turret = self.itemsFactory.createVehicleTurret(vehDescr.turret.compactDescr, proxy, vehDescr.turret)
-        self._engine = self.itemsFactory.createVehicleEngine(vehDescr.engine.compactDescr, proxy, vehDescr.engine)
-        self._chassis = self.itemsFactory.createVehicleChassis(vehDescr.chassis.compactDescr, proxy, vehDescr.chassis)
-        self._radio = self.itemsFactory.createVehicleRadio(vehDescr.radio.compactDescr, proxy, vehDescr.radio)
-        self._fuelTank = self.itemsFactory.createVehicleFuelTank(vehDescr.fuelTank.compactDescr, proxy, vehDescr.fuelTank)
+        itemsFactory = self.itemsFactory
+        turretIndex = 0
+        turretDescr = vehDescr.turrets[turretIndex]
+        gun = turretDescr.gun
+        self.gun = itemsFactory.createVehicleGun(gun.compactDescr, proxy, gun)
+        turret = turretDescr.turret
+        self.turret = itemsFactory.createVehicleTurret(turret.compactDescr, proxy, turret)
+        self.engine = itemsFactory.createVehicleEngine(vehDescr.engine.compactDescr, proxy, vehDescr.engine)
+        self.chassis = itemsFactory.createVehicleChassis(vehDescr.chassis.compactDescr, proxy, vehDescr.chassis)
+        self.radio = itemsFactory.createVehicleRadio(vehDescr.radio.compactDescr, proxy, vehDescr.radio)
+        self.fuelTank = itemsFactory.createVehicleFuelTank(vehDescr.fuelTank.compactDescr, proxy, vehDescr.fuelTank)
         sellPrice = self._calcSellPrice(proxy)
         defaultSellPrice = self._calcDefaultSellPrice(proxy)
         self._sellPrices = ItemPrices(itemPrice=ItemPrice(price=sellPrice, defPrice=defaultSellPrice), itemAltPrice=ITEM_PRICE_EMPTY)
@@ -364,7 +372,7 @@ class Vehicle(FittingItem, HasStrCD):
         shellsDict = dict(((cd, count) for cd, count, _ in LayoutIterator(layoutList)))
         defaultsDict = dict(((cd, (count, isBoughtForCredits)) for cd, count, isBoughtForCredits in LayoutIterator(defaultLayoutList)))
         layoutList = list(layoutList)
-        for shot in self.descriptor.gun.shots:
+        for shot in self.descriptor.turrets[0].gun.shots:
             cd = shot.shell.compactDescr
             if cd not in shellsDict:
                 layoutList.extend([cd, 0])
@@ -651,13 +659,13 @@ class Vehicle(FittingItem, HasStrCD):
 
     @property
     def maxRentDuration(self):
-        if len(self.rentPackages) > 0:
+        if self.rentPackages:
             return max((item['days'] for item in self.rentPackages)) * self.MAX_RENT_MULTIPLIER * time_utils.ONE_DAY
         return 0
 
     @property
     def minRentDuration(self):
-        if len(self.rentPackages) > 0:
+        if self.rentPackages:
             return min((item['days'] for item in self.rentPackages)) * time_utils.ONE_DAY
         return 0
 
@@ -701,7 +709,7 @@ class Vehicle(FittingItem, HasStrCD):
 
     @property
     def ammoMaxSize(self):
-        return self.descriptor.gun.maxAmmo
+        return self.descriptor.turrets[0].gun.maxAmmo
 
     @property
     def isAmmoFull(self):
@@ -904,6 +912,18 @@ class Vehicle(FittingItem, HasStrCD):
         return self.isPremiumIGR and self.igrCtrl.getRoomType() != constants.IGR_TYPE.PREMIUM
 
     @property
+    def isMultiTurret(self):
+        return _checkForTags(self.tags, VEHICLE_TAGS.MULTI_TURRET)
+
+    @property
+    def isLeviathan(self):
+        return _checkForTags(self.tags, VEHICLE_TAGS.LEVIATHAN)
+
+    @property
+    def canNotBeResearched(self):
+        return _checkForTags(self.tags, VEHICLE_TAGS.CANNOT_BE_RESEARCHED)
+
+    @property
     def name(self):
         return self.descriptor.type.name
 
@@ -977,7 +997,6 @@ class Vehicle(FittingItem, HasStrCD):
             return None
         else:
             return self.lock[1]
-            return None
 
     @property
     def isBroken(self):
@@ -1073,8 +1092,7 @@ class Vehicle(FittingItem, HasStrCD):
     def isAutoEquipFull(self):
         if self.isAutoEquip:
             return self.equipment.regularConsumables == self.equipmentLayout.regularConsumables
-        else:
-            return True
+        return True
 
     def mayPurchase(self, money):
         if self.isOnlyForEventBattles:
@@ -1088,15 +1106,14 @@ class Vehicle(FittingItem, HasStrCD):
     def mayRent(self, money):
         if getattr(BigWorld.player(), 'isLongDisconnectedFromCenter', False):
             return (False, GUI_ITEM_ECONOMY_CODE.CENTER_UNAVAILABLE)
-        elif self.isDisabledForBuy and not self.isRentable:
+        if self.isDisabledForBuy and not self.isRentable:
             return (False, GUI_ITEM_ECONOMY_CODE.RENTAL_DISABLED)
-        elif self.isRentable and not self.isRentAvailable:
+        if self.isRentable and not self.isRentAvailable:
             return (False, GUI_ITEM_ECONOMY_CODE.RENTAL_TIME_EXCEEDED)
         minRentPrice = self.minRentPrice
         if minRentPrice:
             return self._isEnoughMoney(minRentPrice, money)
-        else:
-            return (False, GUI_ITEM_ECONOMY_CODE.NO_RENT_PRICE)
+        return (False, GUI_ITEM_ECONOMY_CODE.NO_RENT_PRICE)
 
     def mayRestore(self, money):
         """
@@ -1120,12 +1137,11 @@ class Vehicle(FittingItem, HasStrCD):
         mayRestore, reason = self.mayRestore(money)
         if mayRestore:
             return mayRestore
-        elif reason == GUI_ITEM_ECONOMY_CODE.NOT_ENOUGH_CREDITS and money.isSet(Currency.GOLD):
+        if reason == GUI_ITEM_ECONOMY_CODE.NOT_ENOUGH_CREDITS and money.isSet(Currency.GOLD):
             money = money.exchange(Currency.GOLD, Currency.CREDITS, exchangeRate, default=0)
             mayRestore, reason = self._isEnoughMoney(self.restorePrice, money)
             return mayRestore
-        else:
-            return False
+        return False
 
     def getRentPackage(self, days = None):
         """
@@ -1140,7 +1156,7 @@ class Vehicle(FittingItem, HasStrCD):
                 if package.get('days', None) == days:
                     return package
 
-        elif len(self.rentPackages) > 0:
+        elif self.rentPackages:
             return min(self.rentPackages, key=itemgetter('rentPrice'))
         return
 
@@ -1314,7 +1330,7 @@ class Vehicle(FittingItem, HasStrCD):
 
     def _getShortInfo(self, vehicle = None, expanded = False):
         description = i18n.makeString('#menu:descriptions/' + self.itemTypeName)
-        caliber = self.descriptor.gun.shots[0].shell.caliber
+        caliber = self.descriptor.turrets[0].gun.shots[0].shell.caliber
         armor = findVehicleArmorMinMax(self.descriptor)
         return description % {'weight': BigWorld.wg_getNiceNumberFormat(float(self.descriptor.physics['weight']) / 1000),
          'hullArmor': BigWorld.wg_getIntegralFormat(armor[1]),
@@ -1339,8 +1355,7 @@ class Vehicle(FittingItem, HasStrCD):
 def getTypeUserName(vehType, isElite):
     if isElite:
         return i18n.makeString('#menu:header/vehicleType/elite/%s' % vehType)
-    else:
-        return i18n.makeString('#menu:header/vehicleType/%s' % vehType)
+    return i18n.makeString('#menu:header/vehicleType/%s' % vehType)
 
 
 def getTypeShortUserName(vehType):
@@ -1378,27 +1393,22 @@ def getSmallIconPath(vehicleName):
 def getUniqueIconPath(vehicleName, withLightning = False):
     if withLightning:
         return '../maps/icons/vehicle/unique/%s' % getItemIconName(vehicleName)
-    else:
-        return '../maps/icons/vehicle/unique/normal_%s' % getItemIconName(vehicleName)
+    return '../maps/icons/vehicle/unique/normal_%s' % getItemIconName(vehicleName)
 
 
-def getTypeIconName(vehicleType):
-    return '%s.png' % vehicleType
-
-
-def getTypeEliteIconName(vehicleType, isElite):
+def getTypeSmallIconPath(vehicleType, isElite = False):
+    key = vehicleType + '.png'
     if isElite:
-        return '%s_elite.png' % vehicleType
-    else:
-        return getTypeIconName(vehicleType)
-
-
-def getTypeSmallIconPath(vehicleType):
-    return '../maps/icons/vehicleTypes/%s' % getTypeIconName(vehicleType)
+        return RES_ICONS.maps_icons_vehicletypes_elite(key)
+    return RES_ICONS.maps_icons_vehicletypes(key)
 
 
 def getTypeBigIconPath(vehicleType, isElite):
-    return '../maps/icons/vehicleTypes/big/%s' % getTypeEliteIconName(vehicleType, isElite)
+    key = 'big/' + vehicleType
+    if isElite:
+        key += '_elite'
+    key += '.png'
+    return RES_ICONS.maps_icons_vehicletypes(key)
 
 
 def getUserName(vehicleType, textPrefix = False):
@@ -1465,7 +1475,7 @@ def getOrderByVehicleClass(className = None):
 def getVehicleClassTag(tags):
     subSet = vehicles.VEHICLE_CLASS_TAGS & tags
     result = None
-    if len(subSet):
+    if subSet:
         result = list(subSet).pop()
     return result
 
@@ -1497,5 +1507,4 @@ def getVehicleStateIcon(vState):
 def getBattlesLeft(vehicle):
     if vehicle.isInfiniteRotationGroup:
         return i18n.makeString('#menu:infinitySymbol')
-    else:
-        return str(vehicle.rotationBattlesLeft)
+    return str(vehicle.rotationBattlesLeft)

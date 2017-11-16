@@ -10,7 +10,7 @@ import zlib
 import Event
 from constants import ARENA_PERIOD, ARENA_UPDATE, FLAG_STATE
 from PlayerEvents import g_playerEvents
-from debug_utils import *
+from debug_utils import LOG_DEBUG, LOG_DEBUG_DEV, LOG_ERROR
 from CTFManager import g_ctfManager
 from helpers.EffectsList import FalloutDestroyEffect
 import arena_component_system.client_arena_component_assembler as assembler
@@ -40,7 +40,8 @@ class ClientArena(object):
      ARENA_UPDATE.OWN_VEHICLE_INSIDE_RP: '_ClientArena__onOwnVehicleInsideRP',
      ARENA_UPDATE.OWN_VEHICLE_LOCKED_FOR_RP: '_ClientArena__onOwnVehicleLockedForRP',
      ARENA_UPDATE.VIEW_POINTS: '_ClientArena__onViewPoints',
-     ARENA_UPDATE.FOG_OF_WAR: '_ClientArena__onFogOfWar'}
+     ARENA_UPDATE.FOG_OF_WAR: '_ClientArena__onFogOfWar',
+     ARENA_UPDATE.DISAPPEAR: '_ClientArena__onDisappearVehicle'}
 
     def __init__(self, arenaUniqueID, arenaTypeID, arenaBonusType, arenaGuiType, arenaExtraData, weatherPresetID):
         self.__vehicles = {}
@@ -76,6 +77,8 @@ class ClientArena(object):
         self.onGameModeSpecifcStats = Event.Event(em)
         self.onVehicleWillRespawn = Event.Event(em)
         self.onViewPoints = Event.Event(em)
+        self.onDisappearVehicle = Event.Event(em)
+        self.onFogOfWarHiddenVehiclesSet = Event.Event(em)
         self.onTeamHealthPercentUpdate = Event.Event(em)
         self.arenaUniqueID = arenaUniqueID
         self.arenaType = ArenaType.g_cache.get(arenaTypeID, None)
@@ -84,6 +87,7 @@ class ClientArena(object):
         self.bonusType = arenaBonusType
         self.guiType = arenaGuiType
         self.extraData = arenaExtraData
+        self.effectsPlayersList = []
         self.__arenaBBCollider = None
         self.__spaceBBCollider = None
         self.componentSystem = assembler.createComponentSystem(self.bonusType, self.arenaType)
@@ -102,6 +106,10 @@ class ClientArena(object):
 
     def destroy(self):
         self.__eventManager.clear()
+        for effectsPlayer in self.effectsPlayersList:
+            effectsPlayer.stop(forceCallback=True)
+
+        self.effectsPlayersList[:] = []
         assembler.destroyComponentSystem(self.componentSystem)
 
     def update(self, updateType, argStr):
@@ -186,6 +194,7 @@ class ClientArena(object):
 
     def __onFogOfWar(self, argStr):
         self.__hasFogOfWarHiddenVehicles = cPickle.loads(argStr)
+        self.onFogOfWarHiddenVehiclesSet(self.__hasFogOfWarHiddenVehicles)
 
     def __onStatisticsUpdate(self, argStr):
         self.__statistics = {}
@@ -256,8 +265,12 @@ class ClientArena(object):
 
     def __onDisappearVehicleBeforeRespawn(self, argStr):
         vehID = cPickle.loads(argStr)
-        FalloutDestroyEffect.play(vehID)
+        self.effectsPlayersList.append(FalloutDestroyEffect.play(vehID))
         self.onVehicleWillRespawn(vehID)
+
+    def __onDisappearVehicle(self, argStr):
+        vehID = cPickle.loads(argStr)
+        self.onDisappearVehicle(vehID)
 
     def __onFlagTeamsReceived(self, argStr):
         data = cPickle.loads(argStr)
@@ -309,7 +322,7 @@ class ClientArena(object):
          'forbidInBattleInvitations': bool(info[12]),
          'events': info[13],
          'igrType': info[14],
-         'potapovQuestIDs': info[15],
+         'personalMissionIDs': info[15],
          'crewGroup': info[16],
          'ranked': info[17]}
         return (info[0], infoAsDict)
@@ -353,9 +366,9 @@ class _BBCollider():
 
             if finalPoint is not None:
                 return finalPoint
-            else:
-                return start
-        return
+            return start
+        else:
+            return
 
 
 class Plane():

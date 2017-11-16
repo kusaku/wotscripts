@@ -39,8 +39,7 @@ class SquadActionButtonStateVO(ActionButtonStateVO):
         allowedLevelsList = list(config.allowedLevels)
         if len(allowedLevelsList) > 1:
             return (CYBERSPORT.WINDOW_UNIT_MESSAGE_FALLOUTMIN_LEVELRANGE, {'level': toRomanRangeString(allowedLevelsList, 1)})
-        else:
-            return (CYBERSPORT.WINDOW_UNIT_MESSAGE_FALLOUTMIN_REQUIREDLEVEL, {'level': int2roman(config.vehicleLevelRequired)})
+        return (CYBERSPORT.WINDOW_UNIT_MESSAGE_FALLOUTMIN_REQUIREDLEVEL, {'level': int2roman(config.vehicleLevelRequired)})
 
     def _getFalloutVehBrokenStr(self):
         return ('#cyberSport:window/unit/message/falloutGroupNotReady', {})

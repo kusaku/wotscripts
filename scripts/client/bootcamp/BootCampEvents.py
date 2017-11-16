@@ -1,5 +1,4 @@
 # Embedded file name: scripts/client/bootcamp/BootCampEvents.py
-import BigWorld
 import Event
 
 class _BootCampEvents(object):
@@ -14,9 +13,11 @@ class _BootCampEvents(object):
         self.onOutroVideoStop = self._createEvent()
         self.onIntroVideoLoaded = self._createEvent()
         self.onIntroVideoGoNext = self._createEvent()
+        self.onIntroVideoAccept = self._createEvent()
         self.onUIStateChanged = self._createEvent()
         self.onBattleAction = self._createEvent()
         self.onArenaLoadCompleted = self._createEvent()
+        self.onArenaStarted = self._createEvent()
         self.onGarageLessonFinished = self._createEvent()
         self.onBattleLessonFinished = self._createEvent()
         self.onRequestBootcampFinish = self._createEvent()
@@ -30,7 +31,13 @@ class _BootCampEvents(object):
         self.onRequestChangeResearchButtonState = self._createEvent()
         self.onRequestChangeVehiclePreviewBuyButtonState = self._createEvent()
         self.onRequestBootcampMessageWindowClose = self._createEvent()
+        self.onRequestCloseTechnicalMaintenance = self._createEvent()
         self.onHangarDispose = self._createEvent()
+        self.onBattleFinishAnimationComplete = self._createEvent()
+        self.onEnterPreview = self._createEvent()
+        self.onExitPreview = self._createEvent()
+        self.onIntroVideoSkip = self._createEvent()
+        self.onIntroVideoAccept = self._createEvent()
 
     def destroy(self):
         self.__manager.clear()

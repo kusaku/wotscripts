@@ -140,7 +140,6 @@ class RankedTipsCriteria(_TipsCriteria):
             return _FoundTip(i18n.makeString(TIPS.getRankedTipTittle(tipNum)), i18n.makeString(TIPS.getRankedTipBody(tipNum)), RES_ICONS.getRankedBattleLoadingTipImage(tipNum))
         else:
             return _FoundTip('', '', '')
-            return
 
 
 def _getEpicRandomTipIterator():
@@ -170,25 +169,83 @@ class EpicRandomTipsCriteria(_TipsCriteria):
             return _FoundTip(i18n.makeString(TIPS.getEpicRandomTipTitle(tipNum)), i18n.makeString(TIPS.getEpicRandomTipBody(tipNum)), RES_ICONS.getEpicRandomBattleLoadingTipImage(tipNum))
         else:
             return _FoundTip('', '', '')
-            return
+
+
+def _getHalloweenPVPRandomTipIterator():
+    tipSize = len(RES_ICONS.MAPS_ICONS_BATTLELOADING_TIPS_HALLOWEENPVP_ENUM)
+    raise tipSize == len(TIPS.HALLOWEENPVP_ALL_BODY_ENUM) or AssertionError
+    if not tipSize == len(TIPS.HALLOWEENPVP_ALL_TITLE_ENUM):
+        raise AssertionError
+        items = tipSize > 0 and range(tipSize)
+        return rnd_choice_loop(*items)
+    else:
+        return None
+
+
+class HalloweenPVPTipsCriteria(_TipsCriteria):
+    __tipIterator = None
+
+    def __init__(self):
+        super(HalloweenPVPTipsCriteria, self).__init__()
+        if HalloweenPVPTipsCriteria.__tipIterator is None:
+            HalloweenPVPTipsCriteria.__tipIterator = _getHalloweenPVPRandomTipIterator()
+        return
+
+    def find(self):
+        iterator = HalloweenPVPTipsCriteria.__tipIterator
+        if iterator is not None:
+            tipNum = next(iterator)
+            return _FoundTip(i18n.makeString(TIPS.getHalloweenPVPRandomTipTitle(tipNum)), i18n.makeString(TIPS.getHalloweenPVPRandomTipBody(tipNum)), RES_ICONS.getHalloweenPVPRandomBattleLoadingTipImage(tipNum))
+        else:
+            return _FoundTip('', '', '')
+
+
+def _getHalloweenPVERandomTipIterator():
+    tipSize = len(RES_ICONS.MAPS_ICONS_BATTLELOADING_TIPS_HALLOWEENPVE_ENUM)
+    raise tipSize == len(TIPS.HALLOWEENPVE_ALL_BODY_ENUM) or AssertionError
+    if not tipSize == len(TIPS.HALLOWEENPVE_ALL_TITLE_ENUM):
+        raise AssertionError
+        items = tipSize > 0 and range(tipSize)
+        return rnd_choice_loop(*items)
+    else:
+        return None
+
+
+class HalloweenPVETipsCriteria(_TipsCriteria):
+    __tipIterator = None
+
+    def __init__(self):
+        super(HalloweenPVETipsCriteria, self).__init__()
+        if HalloweenPVETipsCriteria.__tipIterator is None:
+            HalloweenPVETipsCriteria.__tipIterator = _getHalloweenPVERandomTipIterator()
+        return
+
+    def find(self):
+        iterator = HalloweenPVETipsCriteria.__tipIterator
+        if iterator is not None:
+            tipNum = next(iterator)
+            return _FoundTip(i18n.makeString(TIPS.getHalloweenPVERandomTipTitle(tipNum)), i18n.makeString(TIPS.getHalloweenPVERandomTipBody(tipNum)), RES_ICONS.getHalloweenPVERandomBattleLoadingTipImage(tipNum))
+        else:
+            return _FoundTip('', '', '')
 
 
 def getTipsCriteria(arenaVisitor):
     if arenaVisitor.gui.isSandboxBattle():
         return SandboxTipsCriteria()
-    elif arenaVisitor.gui.isEventBattle():
-        return EventTipsCriteria()
-    elif arenaVisitor.gui.isRankedBattle():
+    if arenaVisitor.gui.isEventBattle():
+        return HalloweenPVPTipsCriteria()
+    if arenaVisitor.gui.isRankedBattle():
         return RankedTipsCriteria()
-    elif arenaVisitor.gui.isEpicRandomBattle():
+    if arenaVisitor.gui.isEpicRandomBattle():
         return EpicRandomTipsCriteria()
-    else:
-        return RandomTipsCriteria()
+    if arenaVisitor.gui.isEventBattlesTwo():
+        return HalloweenPVETipsCriteria()
+    return RandomTipsCriteria()
 
 
 def getTipsIterator(arenaGuiType, battlesCount, vehicleType, vehicleNation, vehicleLvl):
     tipsItems = _getConditionedTips(arenaGuiType, battlesCount, vehicleType, vehicleNation, vehicleLvl)
-    if len(tipsItems) > 0:
+    if tipsItems:
         return rnd_choice_loop(*tipsItems)
     else:
         return None
@@ -199,14 +256,13 @@ class _ArenaGuiTypeCondition(namedtuple('_SquadExtra', ('mainPart', 'additionalP
     def validate(self, arenaGuiType):
         if self.mainPart == ALL:
             return True
-        elif self.mainPart == ANY:
+        if self.mainPart == ANY:
             arenaGuiTypes = map(_getIntValue, self.additionalPart)
             return arenaGuiType in arenaGuiTypes
-        elif self.mainPart == EXCEPT:
+        if self.mainPart == EXCEPT:
             arenaGuiTypes = map(_getIntValue, self.additionalPart)
             return arenaGuiType not in arenaGuiTypes
-        else:
-            return False
+        return False
 
 
 _ArenaGuiTypeCondition.__new__.__defaults__ = (ALL, None)
@@ -221,9 +277,9 @@ def _readTips():
         return result
 
     for key in translator._catalog.iterkeys():
-        if len(key) > 0:
+        if key:
             sreMatch = tipsPattern.match(key)
-            if sreMatch is not None and len(sreMatch.groups()) > 0:
+            if sreMatch is not None and sreMatch.groups():
                 strTipsConditions = key.split('/')
                 if len(strTipsConditions) == TIPS_PATTERN_PARTS_COUNT:
                     tipID, status, group, battlesCountConditions, arenaGuiType, vehicleTypeCondition, nation, vehLevel = strTipsConditions
@@ -260,7 +316,6 @@ def _getIntValue(strCondition):
             LOG_CURRENT_EXCEPTION()
 
         return intValue
-        return
 
 
 _predefinedTips = _readTips()

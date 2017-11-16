@@ -20,8 +20,8 @@ class ArenasCache(object):
             if arenaType.explicitRequestOnly or not gameplay_ctx.isCreationEnabled(arenaType.gameplayName):
                 continue
             try:
-                nameSuffix = '' if arenaType.gameplayName in ('ctf', 'ctf30x30') else i18n.makeString('#arenas:type/%s/name' % arenaType.gameplayName)
-                self.__cache.append({'label': '%s - %s' % (arenaType.name, nameSuffix) if len(nameSuffix) else arenaType.name,
+                nameSuffix = '' if arenaType.gameplayName == 'ctf' else i18n.makeString('#arenas:type/%s/name' % arenaType.gameplayName)
+                self.__cache.append({'label': '%s - %s' % (arenaType.name, nameSuffix) if nameSuffix else arenaType.name,
                  'name': arenaType.name,
                  'arenaType': nameSuffix,
                  'key': arenaTypeID,

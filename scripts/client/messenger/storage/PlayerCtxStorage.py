@@ -103,7 +103,6 @@ class PlayerCtxStorage(SimpleCachedStorage):
             return self.__cachedItems[key]
         else:
             return None
-            return None
 
     def _getCachedData(self):
         data = []

@@ -98,7 +98,6 @@ class BWProtoPlugin(ChatActionsListener, IProtoPlugin):
             return None
         else:
             return ClanListener()
-            return None
 
     __errorsHandlers = {CHAT_RESPONSES.channelNotExists: '_BWProtoPlugin__onChannelNotExists',
      CHAT_RESPONSES.memberBanned: '_BWProtoPlugin__onMemberBanned',

@@ -33,7 +33,6 @@ class _WGMCurrencyTooltip(DynamicBlocksTooltipData):
             return BigWorld.wg_getIntegralFormat(int(self.__data[key]))
         else:
             return _UNKNOWN_VALUE
-            return
 
     def stopUpdates(self):
         self.__requester.clearCallbacks()

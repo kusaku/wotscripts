@@ -31,6 +31,10 @@ class IItemsRequester(requesters.IRequester):
     def ranked(self):
         raise NotImplementedError
 
+    @property
+    def badges(self):
+        raise NotImplementedError
+
     def requestUserDossier(self, databaseID, callback):
         raise NotImplementedError
 
@@ -49,6 +53,9 @@ class IItemsRequester(requesters.IRequester):
     def getStockVehicle(self, typeCompDescr, useInventory = False):
         raise NotImplementedError
 
+    def getVehicleCopy(self, vehicle):
+        raise NotImplementedError
+
     def getTankman(self, tmanInvID):
         raise NotImplementedError
 
@@ -59,6 +66,9 @@ class IItemsRequester(requesters.IRequester):
         raise NotImplementedError
 
     def getVehicles(self, criteria = None):
+        raise NotImplementedError
+
+    def getBadges(self, criteria = None):
         raise NotImplementedError
 
     def getItemByCD(self, typeCompDescr):

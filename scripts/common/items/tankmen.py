@@ -1,6 +1,7 @@
 # Embedded file name: scripts/common/items/tankmen.py
 import random
 import struct
+from functools import partial
 import nations
 from items import vehicles, ITEM_TYPES
 from items.components import skills_components
@@ -8,8 +9,9 @@ from items.components import skills_constants
 from items.components import tankmen_components
 from items.readers import skills_readers
 from items.readers import tankmen_readers
+from items.passports import PassportCache, passport_generator, maxAttempts, distinctFrom, acceptOn
 from vehicles import VEHICLE_CLASS_TAGS
-from debug_utils import LOG_ERROR
+from debug_utils import LOG_ERROR, LOG_WARNING
 from constants import ITEM_DEFS_PATH
 from account_shared import AmmoIterator
 SKILL_NAMES = skills_constants.SKILL_NAMES
@@ -72,9 +74,13 @@ def getNationConfig(nationID):
     return _g_nationsConfig[nationID]
 
 
-def generatePassport(nationID, isPremium = False):
+def generatePassport(nationID, isPremium = False, isEvent = False):
+    return passportProducer(nationID, isPremium, isEvent)[1]
+
+
+def passportProducer(nationID, isPremium = False, isEvent = False):
     isPremium = False
-    groups = getNationConfig(nationID).getGroups(isPremium)
+    groups = getNationGroups(nationID, isPremium, isEvent)
     w = random.random()
     summWeight = 0.0
     group = None
@@ -84,50 +90,75 @@ def generatePassport(nationID, isPremium = False):
             break
         summWeight += weight
 
-    return (nationID,
-     isPremium,
-     group.isFemales,
-     random.choice(group.firstNamesList),
-     random.choice(group.lastNamesList),
-     random.choice(group.iconsList))
+    return (group, (nationID,
+      isPremium,
+      group.isFemales,
+      random.choice(group.firstNamesList),
+      random.choice(group.lastNamesList),
+      random.choice(group.iconsList)))
 
 
-def generateTankmen(nationID, vehicleTypeID, roles, isPremium, roleLevel, skillsMask):
+def crewMemberPreviewProducer(nationID, isPremium = False, vehicleTypeID = None, role = None):
+    vehicleName = vehicles.g_cache.vehicle(nationID, vehicleTypeID).name if vehicleTypeID else None
+    nationalGroups = getNationGroups(nationID, isPremium)
+    groups = [ g for g in nationalGroups if vehicleName in g.tags and role in g.tags ]
+    if not groups:
+        groups = [ g for g in nationalGroups if vehicleName in g.tags ]
+    if not groups:
+        groups = [ g for g in nationalGroups if role in g.tags ]
+    if not groups:
+        groups = nationalGroups
+    group = random.choice(groups)
+    pos = random.randint(0, min(map(len, (group.firstNamesList, group.lastNamesList, group.iconsList))) - 1)
+    return (group, (nationID,
+      isPremium,
+      group.isFemales,
+      group.firstNamesList[pos],
+      group.lastNamesList[pos],
+      group.iconsList[pos]))
+
+
+def generateSkills(role, skillsMask):
+    """
+    builds skills list with all skills according to role or particular skills according to mask
+    :param role: string name of role, see ROLES
+    :param skillsMask: mask to add roles from SKILLS_BY_ROLES
+    :return: list containing subset of SKILLS_BY_ROLES[role]
+    """
+    skills = []
+    if skillsMask != 0:
+        tankmanSkills = set()
+        for i in xrange(len(role)):
+            roleSkills = SKILLS_BY_ROLES[role[i]]
+            if skillsMask == ALL_SKILLS_MASK:
+                tankmanSkills.update(roleSkills)
+            else:
+                for skill, idx in SKILL_INDICES.iteritems():
+                    if 1 << idx & skillsMask and skill in roleSkills:
+                        tankmanSkills.add(skill)
+
+        skills.extend(tankmanSkills)
+    return skills
+
+
+def generateTankmen(nationID, vehicleTypeID, roles, isPremium, roleLevel, skillsMask, isPreview = False, isEvent = False):
     tankmenList = []
-    prevPassports = []
+    prevPassports = PassportCache()
     for i in xrange(len(roles)):
         role = roles[i]
-        for j in xrange(10):
-            passport = generatePassport(nationID, isPremium)
-            for prevPassport in prevPassports:
-                if passport[5] == prevPassport[5]:
-                    break
-                if passport[3:5] == prevPassport[3:5]:
-                    break
-            else:
-                break
-
+        pg = passport_generator(nationID, isPremium, partial(crewMemberPreviewProducer, vehicleTypeID=vehicleTypeID, role=role[0]) if isPreview else partial(passportProducer, isEvent=isEvent), maxAttempts(10), distinctFrom(prevPassports), acceptOn('roles', role[0]))
+        passport = next(pg)
         prevPassports.append(passport)
-        skills = []
-        if skillsMask != 0:
-            tankmanSkills = set()
-            for i in xrange(len(role)):
-                roleSkills = SKILLS_BY_ROLES[role[i]]
-                if skillsMask == ALL_SKILLS_MASK:
-                    tankmanSkills.update(roleSkills)
-                else:
-                    for skill, idx in SKILL_INDICES.iteritems():
-                        if 1 << idx & skillsMask and skill in roleSkills:
-                            tankmanSkills.add(skill)
-
-            skills.extend(tankmanSkills)
+        skills = generateSkills(role, skillsMask)
         tmanCompDescr = generateCompactDescr(passport, vehicleTypeID, role[0], roleLevel, skills)
         tankmenList.append(tmanCompDescr)
 
-    return tankmenList
+    if len(tankmenList) == len(roles):
+        return tankmenList
+    return []
 
 
-def generateCompactDescr(passport, vehicleTypeID, role, roleLevel, skills = [], lastSkillLevel = MAX_SKILL_LEVEL, dossierCompactDescr = '', freeSkills = []):
+def generateCompactDescr(passport, vehicleTypeID, role, roleLevel, skills = (), lastSkillLevel = MAX_SKILL_LEVEL, dossierCompactDescr = '', freeSkills = ()):
     pack = struct.pack
     if not MIN_ROLE_LEVEL <= roleLevel <= MAX_SKILL_LEVEL:
         raise AssertionError
@@ -188,7 +219,7 @@ def getNextUniqueID(databaseID, lastID, nationID, isPremium, groupID, name):
 
 
 def stripNonBattle(compactDescr):
-    return compactDescr[:6 + ord(compactDescr[4]) + 1]
+    return compactDescr[:6 + ord(compactDescr[4]) + 1 + 6]
 
 
 def parseNationSpecAndRole(compactDescr):
@@ -285,6 +316,14 @@ class TankmanDescr(object):
             level = MAX_SKILL_LEVEL if skillName != self.__skills[-1] else self.__lastSkillLevel
             yield (skillName, level)
 
+    @property
+    def isUnique(self):
+        groups = getNationGroups(self.nationID, self.isPremium)
+        if 0 <= self.gid < len(groups):
+            return groups[self.gid].isUnique
+        else:
+            return False
+
     def efficiencyFactorOnVehicle(self, vehicleDescrType):
         _, _, vehicleTypeID = vehicles.parseIntCompactDescr(vehicleDescrType.compactDescr)
         factor = 1.0
@@ -373,6 +412,8 @@ class TankmanDescr(object):
         if self.lastSkillNumber < 1 + self.freeSkillsNumber:
             return True
         if self.lastSkillNumber == 1 + self.freeSkillsNumber and self.__lastSkillLevel == 0:
+            return True
+        if self.isEvent:
             return True
         return False
 
@@ -516,7 +557,7 @@ class TankmanDescr(object):
         Returns tankman composite group.
         TODO: add additional group range when implemented
         """
-        return self.isFemale | self.isPremium >> 1
+        return int(self.isFemale) | int(self.isPremium) << 1 | int(self.gid) << 2
 
     def makeCompactDescr(self):
         pack = struct.pack
@@ -581,10 +622,13 @@ class TankmanDescr(object):
                 if self.freeSkillsNumber == len(self.__skills) and self.freeSkillsNumber:
                     self.__lastSkillLevel = MAX_SKILL_LEVEL
                 cd = cd[1:]
-                if battleOnly:
-                    return
+                self.isEvent = True if 'event_battles' in self.__vehicleTags else False
                 nationConfig = getNationConfig(nationID)
-                self.firstNameID, self.lastNameID, self.iconID, rank, self.freeXP = unpack('<4Hi', cd[:12])
+                self.firstNameID, self.lastNameID, self.iconID, rank, self.freeXP = unpack('<4Hi', cd[:12].ljust(12, '\x00'))
+                self.gid, _ = findGroupsByIDs(getNationGroups(nationID, self.isPremium), self.isFemale, self.firstNameID, self.lastNameID, self.iconID).pop(0)
+                if battleOnly:
+                    del self.freeXP
+                    return
                 cd = cd[12:]
                 self.dossierCompactDescr = cd
                 self.__rankIdx = rank & 31
@@ -654,13 +698,14 @@ def makeTmanDescrByTmanData(tmanData):
         raise Exception('Free skills count is too big.')
     isFemale = tmanData.get('isFemale', False)
     isPremium = tmanData.get('isPremium', False)
+    isEvent = tmanData.get('isEvent', False)
     fnGroupID = tmanData.get('fnGroupID', 0)
     firstNameID = tmanData.get('firstNameID', None)
     lnGroupID = tmanData.get('lnGroupID', 0)
     lastNameID = tmanData.get('lastNameID', None)
     iGroupID = tmanData.get('iGroupID', 0)
     iconID = tmanData.get('iconID', None)
-    groups = getNationConfig(nationID).getGroups(isPremium)
+    groups = getNationConfig(nationID).getGroups(isPremium, isEvent)
     if fnGroupID >= len(groups):
         raise Exception('Invalid group fn ID')
     group = groups[fnGroupID]
@@ -717,13 +762,72 @@ def ownVehicleHasTags(tankmanCD, tags = ()):
     return bool(vehicleType.tags.intersection(tags))
 
 
-def getNationGroups(nationID, isPremium):
+def hasTagInTankmenGroup(nationID, groupID, isPremium, tag):
+    """
+    Checks if tankmen group has specified tag.
+    :param nationID: int
+    :param groupID: int
+    :param isPremium: bool
+    :param tag: str
+    :return bool
+    """
+    nationGroups = getNationGroups(nationID, isPremium)
+    if groupID < 0 or groupID >= len(nationGroups):
+        LOG_WARNING('tankmen.hasTagInTankmenGroup: wrong value of the groupID (index out of range)', groupID)
+        return False
+    return tag in nationGroups[groupID].tags
+
+
+def unpackCrewParams(crewGroup):
+    """
+    :param crewGroup: int
+    :return tuple(groupID<int>, isFemale<bool>, isPremium<bool>)
+    """
+    groupID = crewGroup >> 2
+    isFemale = bool(crewGroup & 1)
+    isPremium = bool(crewGroup & 2)
+    return (groupID, isFemale, isPremium)
+
+
+def tankmenGroupHasRole(nationID, groupID, isPremium, role):
+    """
+    Checks if tankmen group can have specified role.
+    :param nationID: int
+    :param groupID: int
+    :param isPremium: bool
+    :param role: str
+    :return bool
+    """
+    nationGroups = getNationGroups(nationID, isPremium)
+    if 0 <= groupID < len(nationGroups):
+        return role in nationGroups[groupID].roles
+    else:
+        return False
+
+
+def tankmenGroupCanChangeRole(nationID, groupID, isPremium):
+    """
+    Checks if tankmen group can change role.
+    :param nationID: int
+    :param groupID: int
+    :param isPremium: bool
+    :param role: str
+    :return bool
+    """
+    nationGroups = getNationGroups(nationID, isPremium)
+    if 0 <= groupID < len(nationGroups):
+        return len(nationGroups[groupID].roles) > 1
+    else:
+        return True
+
+
+def getNationGroups(nationID, isPremium, isEvent = False):
     """Gets nation-specific configuration of tankmen.
     :param nationID: integer containing ID of nation.
     :param isPremium: if value equals True that gets premium groups, otherwise - normal.
-    :return: dictionary containing nation-specific configuration.
+    :return: tuple containing nation-specific configuration.
     """
-    return getNationConfig(nationID).getGroups(isPremium)
+    return getNationConfig(nationID).getGroups(isPremium, isEvent)
 
 
 def findGroupsByIDs(groups, isFemale, firstNameID, secondNameID, iconID):
@@ -736,7 +840,7 @@ def findGroupsByIDs(groups, isFemale, firstNameID, secondNameID, iconID):
     :param iconID: integer containing ID of icon.
     :return: list where each item is tuple(ID/index of group, weight) and first item has max. overlaps.
     """
-    found = []
+    found = [(-1, 0)]
     for groupID, group in enumerate(groups):
         if isFemale != group.isFemales:
             continue
@@ -754,7 +858,7 @@ def findGroupsByIDs(groups, isFemale, firstNameID, secondNameID, iconID):
     return found
 
 
-def getGroupTags(nationID, isPremium, isFemale, firstNameID, secondNameID, iconID):
+def getGroupTags(nationID, isPremium, isFemale, firstNameID, secondNameID, iconID, isEvent = False):
     """ Gets tags of group if all ids equals desired, otherwise - empty value.
     :param nationID: integer containing ID of nation.
     :param isPremium: if value equals True that gets premium groups, otherwise - normal.
@@ -764,7 +868,7 @@ def getGroupTags(nationID, isPremium, isFemale, firstNameID, secondNameID, iconI
     :param iconID: integer containing ID of icon.
     :return: frozenset containing tags of group.
     """
-    groups = getNationGroups(nationID, isPremium)
+    groups = getNationGroups(nationID, isPremium, isEvent)
     found = findGroupsByIDs(groups, isFemale, firstNameID, secondNameID, iconID)
     if found:
         groupID, overlap = found[0]

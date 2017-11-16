@@ -186,8 +186,7 @@ class RandomSquadEntity(SquadEntity):
     def _createActionsValidator(self):
         if self.isBalancedSquadEnabled():
             return SPGForbiddenBalancedSquadActionsValidator(self)
-        else:
-            return SPGForbiddenSquadActionsValidator(self)
+        return SPGForbiddenSquadActionsValidator(self)
 
     def _vehicleStateCondition(self, v):
         result = True

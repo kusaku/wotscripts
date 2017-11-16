@@ -6,6 +6,7 @@ import Keys
 from Event import EventManager, Event
 from debug_utils import LOG_WARNING
 from gui import InputHandler
+from gui.Scaleform.daapi.view.bootcamp.component_override import BootcampComponentOverride
 from gui.Scaleform.framework.entities.abstract.ContextMenuManagerMeta import ContextMenuManagerMeta
 _SEPARATOR_ID = 'separate'
 _handlers = {}
@@ -15,12 +16,14 @@ def registerHandlers(*handlers):
     for item in handlers:
         if len(item) < 2:
             raise ValueError('Item {} is invalid'.format(item))
-        handlerType, handlerClass = item[:2]
+        handlerType, handler = item[:2]
         if handlerType in _handlers:
             raise ValueError('Type of handler {} already exists'.format(handlerType))
-        if not inspect.isclass(handlerClass) or AbstractContextMenuHandler not in inspect.getmro(handlerClass):
-            raise ValueError('Handler {} is invalid'.format(handlerClass))
-        _handlers[handlerType] = handlerClass
+        if isinstance(handler, BootcampComponentOverride):
+            handler = handler()
+        if not inspect.isclass(handler) or AbstractContextMenuHandler not in inspect.getmro(handler):
+            raise ValueError('Handler {} is invalid'.format(handler))
+        _handlers[handlerType] = handler
         handlerTypes.append(handlerType)
 
     return handlerTypes
@@ -38,7 +41,6 @@ def _getHandlerClass(handlerType):
         return _handlers[handlerType]
     else:
         LOG_WARNING('Unknown context menu handler type', handlerType)
-        return None
         return None
 
 
@@ -80,9 +82,6 @@ class ContextMenuManager(ContextMenuManagerMeta):
         return
 
     def _sendOptionsToFlash(self, options):
-        from bootcamp.Bootcamp import g_bootcamp
-        if g_bootcamp.isRunning():
-            g_bootcamp.disableContextMenuItems(options)
         self.as_setOptionsS({'options': options})
 
     def _onOptionsChanged(self, options):

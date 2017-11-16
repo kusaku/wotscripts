@@ -32,8 +32,7 @@ class VehCmpBattleBoosterSelectPopover(BattleBoosterSelectPopover):
             if battleBooster:
                 if battleBooster.isCrewBooster():
                     return _POPOVER_SECOND_TAB_IDX
-                else:
-                    return _POPOVER_FIRST_TAB_IDX
+                return _POPOVER_FIRST_TAB_IDX
         return self.__class__._TAB_IDX
 
     def _prepareInitialData(self):
@@ -120,8 +119,7 @@ class VehCmpConfigSelectPopover(CommonFittingSelectPopover):
              FITTING_TYPES.OPTIONAL_DEVICE_RENDERER_DATA_CLASS_NAME,
              FITTING_TYPES.LARGE_POPOVER_WIDTH,
              MENU.EQUIPMENTFITS_TITLE)
-        else:
-            return super(VehCmpConfigSelectPopover, self)._getCommonData()
+        return super(VehCmpConfigSelectPopover, self)._getCommonData()
 
     @staticmethod
     def __isEquipment(slotType):

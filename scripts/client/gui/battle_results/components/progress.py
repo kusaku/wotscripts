@@ -2,7 +2,6 @@
 import operator
 import BigWorld
 import math
-from constants import EVENT_TYPE
 from gui.Scaleform.daapi.view.lobby.techtree.techtree_dp import g_techTreeDP
 from gui.Scaleform.locale.BATTLE_RESULTS import BATTLE_RESULTS
 from gui.battle_results.components import base
@@ -13,7 +12,7 @@ from gui.shared.gui_items.Vehicle import getLevelIconPath
 from gui.shared.money import Currency
 from helpers import dependency
 from helpers.i18n import makeString as _ms
-import potapov_quests
+import personal_missions
 from skeletons.gui.server_events import IEventsCache
 from skeletons.gui.shared import IItemsCache
 MIN_BATTLES_TO_SHOW_PROGRESS = 5
@@ -93,7 +92,7 @@ class VehicleProgressHelper(object):
                         ready2BuyVehicles.append(self.__makeVehiclePurchaseVO(item, unlockProps, price.credits))
                     elif not item.isInstalled(self.__vehicle):
                         items = getVehicleComponentsByType(self.__vehicle, item.itemTypeID).values()
-                        if len(items) > 0:
+                        if items:
                             installedModule = max(items, key=operator.itemgetter('level'))
                             if item.level > installedModule.level:
                                 ready2BuyModules.append(self.__makeModulePurchaseVO(item, unlockProps, price.credits))
@@ -243,10 +242,9 @@ class QuestsProgressBlock(base.StatsBlock):
                         return res
                 return cmp(aQuest.getID(), bQuest.getID())
 
-            from gui.Scaleform.daapi.view.lobby.server_events import old_events_helpers
+            from gui.Scaleform.daapi.view.lobby.server_events import events_helpers
             quests = self.eventsCache.getQuests()
-            isFallout = reusable.common.arenaVisitor.gui.isFalloutBattle()
-            commonQuests, potapovQuests = [], {}
+            commonQuests, personalMissions = [], {}
             for qID, qProgress in questsProgress.iteritems():
                 pGroupBy, pPrev, pCur = qProgress
                 isCompleted = pCur.get('bonusCount', 0) - pPrev.get('bonusCount', 0) > 0
@@ -259,29 +257,26 @@ class QuestsProgressBlock(base.StatsBlock):
                          {pGroupBy: pPrev},
                          isProgressReset,
                          isCompleted))
-                elif potapov_quests.g_cache.isPotapovQuest(qID):
-                    pqID = potapov_quests.g_cache.getPotapovQuestIDByUniqueID(qID)
-                    if isFallout:
-                        questsCache = self.eventsCache.fallout
-                    else:
-                        questsCache = self.eventsCache.random
+                elif personal_missions.g_cache.isPersonalMission(qID):
+                    pqID = personal_missions.g_cache.getPersonalMissionIDByUniqueID(qID)
+                    questsCache = self.eventsCache.random
                     quest = questsCache.getQuests()[pqID]
-                    progress = potapovQuests.setdefault(quest, {})
+                    progress = personalMissions.setdefault(quest, {})
                     progress.update({qID: isCompleted})
 
-            for e, data in sorted(potapovQuests.items(), key=operator.itemgetter(0)):
+            for e, data in sorted(personalMissions.items(), key=operator.itemgetter(0)):
                 if data.get(e.getAddQuestID(), False):
                     complete = (True, True)
                 elif data.get(e.getMainQuestID(), False):
                     complete = (True, False)
                 else:
                     complete = (False, False)
-                info = old_events_helpers.getEventPostBattleInfo(e, quests, None, None, False, complete)
+                info = events_helpers.getEventPostBattleInfo(e, quests, None, None, False, complete)
                 if info is not None:
                     self.addComponent(self.getNextComponentIndex(), base.DirectStatsItem('', info))
 
             for e, pCur, pPrev, reset, complete in sorted(commonQuests, cmp=_sortCommonQuestsFunc):
-                info = old_events_helpers.getEventPostBattleInfo(e, quests, pCur, pPrev, reset, complete)
+                info = events_helpers.getEventPostBattleInfo(e, quests, pCur, pPrev, reset, complete)
                 if info is not None:
                     self.addComponent(self.getNextComponentIndex(), base.DirectStatsItem('', info))
 

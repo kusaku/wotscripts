@@ -51,7 +51,6 @@ class ProfileTechnique(ProfileTechniqueMeta):
 
     def _populate(self):
         super(ProfileTechnique, self)._populate()
-        self.as_setInitDataS(self._getInitData())
         self._setRatingButton()
         self.lobbyContext.getServerSettings().onServerSettingsChange += self.__onServerSettingChanged
 
@@ -77,13 +76,17 @@ class ProfileTechnique(ProfileTechniqueMeta):
          'selectedColumnSorting': storedData['selectedColumnSorting']}
 
     def _setRatingButton(self):
-        self.as_setRatingButtonS({'enabled': self.lobbyContext.getServerSettings().isHofEnabled(),
-         'visible': self._battlesType == PROFILE_DROPDOWN_KEYS.ALL})
-        if self._battlesType == PROFILE_DROPDOWN_KEYS.ALL and self.lobbyContext.getServerSettings().isHofEnabled() and isHofButtonNew(PROFILE_CONSTANTS.HOF_VIEW_RATING_BUTTON):
-            self.as_setBtnCountersS([{'componentId': PROFILE_CONSTANTS.HOF_VIEW_RATING_BUTTON,
-              'count': '1'}])
+        if self._battlesType == PROFILE_DROPDOWN_KEYS.ALL and self.lobbyContext.getServerSettings().isHofEnabled():
+            self.as_setRatingButtonS({'enabled': True,
+             'visible': True})
+            if isHofButtonNew(PROFILE_CONSTANTS.HOF_VIEW_RATING_BUTTON):
+                self.as_setBtnCountersS([{'componentId': PROFILE_CONSTANTS.HOF_VIEW_RATING_BUTTON,
+                  'count': '1'}])
+            else:
+                self.as_setBtnCountersS([])
         else:
-            self.as_setBtnCountersS([])
+            self.as_setRatingButtonS({'enabled': False,
+             'visible': False})
 
     def setSelectedTableColumn(self, index, sortDirection):
         storedDataId = self._getStorageId()
@@ -91,9 +94,6 @@ class ProfileTechnique(ProfileTechniqueMeta):
         storedData['selectedColumn'] = index
         storedData['selectedColumnSorting'] = sortDirection
         AccountSettings.setFilter(storedDataId, storedData)
-        if self._dossier is not None:
-            self.as_setInitDataS(self._getInitData(self._dossier, self._battlesType == PROFILE_DROPDOWN_KEYS.FALLOUT))
-        return
 
     def invokeUpdate(self):
         super(ProfileTechnique, self).invokeUpdate()
@@ -117,7 +117,7 @@ class ProfileTechnique(ProfileTechniqueMeta):
          self._createTableBtnInfo('battlesCount', 74, 3, PROFILE.SECTION_TECHNIQUE_SORT_TOOLTIP_BATTLESCOUNT, 'descending', label=PROFILE.SECTION_SUMMARY_SCORES_TOTALBATTLES),
          self._createTableBtnInfo('winsEfficiency', 74, 4, PROFILE.SECTION_TECHNIQUE_SORT_TOOLTIP_WINS if isFallout else PROFILE.SECTION_TECHNIQUE_SORT_TOOLTIP_WINRATE, 'descending', label=PROFILE.SECTION_TECHNIQUE_BUTTONBAR_TOTALWINS),
          self._createTableBtnInfo('avgExperience', 90, 5, PROFILE.SECTION_TECHNIQUE_SORT_TOOLTIP_AVGEXP, 'descending', label=PROFILE.SECTION_TECHNIQUE_BUTTONBAR_AVGEXPERIENCE),
-         self._createTableBtnInfo('markOfMastery', 83, 6, PROFILE.SECTION_TECHNIQUE_SORT_TOOLTIP_MARKSOFMASTERY, 'descending', label=PROFILE.SECTION_TECHNIQUE_BUTTONBAR_CLASSINESS, showSeparator=False, enabled=markOfMasteryEnabled))
+         self._createTableBtnInfo('markOfMastery', 83, 6, PROFILE.SECTION_TECHNIQUE_SORT_TOOLTIP_MARKSOFMASTERY, 'descending', label=PROFILE.SECTION_TECHNIQUE_BUTTONBAR_CLASSINESS, enabled=markOfMasteryEnabled))
 
     def _createTableBtnInfo(self, iconId, buttonWidth, sortOrder, toolTip, defaultSortDirection, label = '', iconSource = '', inverted = False, sortType = 'numeric', showSeparator = True, enabled = True):
         return {'id': iconId,
@@ -240,8 +240,6 @@ class ProfileTechnique(ProfileTechniqueMeta):
             stats = vehDossier.getRankedStats()
             achievementsList = self.__getAchievementsList(stats, vehDossier)
             specialRankedStats.append(self.__packAchievement(stats, vehDossier, HONORED_RANK_RECORD))
-            if self.__showMarksOnGun(vehicleIntCD):
-                specialMarksStats.append(self.__packAchievement(vehDossier.getRandomStats(), vehDossier, MARK_ON_GUN_RECORD))
         else:
             raise ValueError('Profile Technique: Unknown battle type: ' + self._battlesType)
         if achievementsList is not None:

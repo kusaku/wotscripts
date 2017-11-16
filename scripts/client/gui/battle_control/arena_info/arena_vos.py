@@ -1,7 +1,6 @@
 # Embedded file name: scripts/client/gui/battle_control/arena_info/arena_vos.py
 import operator
 from collections import defaultdict
-import BigWorld
 import nations
 from constants import IGR_TYPE, FLAG_ACTION, ARENA_GUI_TYPE
 from debug_utils import LOG_ERROR
@@ -10,8 +9,8 @@ from gui.battle_control import avatar_getter, vehicle_getter
 from gui.battle_control.arena_info import settings
 from gui.shared.gui_items import Vehicle
 from gui.shared.gui_items.Vehicle import VEHICLE_TAGS, VEHICLE_CLASS_NAME
-from skeletons.gui.server_events import IEventsCache
 from helpers import dependency
+from skeletons.gui.server_events import IEventsCache
 _INVALIDATE_OP = settings.INVALIDATE_OP
 _VEHICLE_STATUS = settings.VEHICLE_STATUS
 _PLAYER_STATUS = settings.PLAYER_STATUS
@@ -63,7 +62,6 @@ class GameModeDataVO(object):
             return self.__internalData[key]
         else:
             return None
-            return None
 
 
 def isObserver(tags):
@@ -78,17 +76,25 @@ def isPremiumIGR(tags):
     return VEHICLE_TAGS.PREMIUM_IGR in tags
 
 
+def isMultiTurret(tags):
+    return VEHICLE_TAGS.MULTI_TURRET in tags
+
+
+def isLeviathan(tags):
+    return VEHICLE_TAGS.LEVIATHAN in tags
+
+
 class PlayerInfoVO(object):
-    __slots__ = ('accountDBID', 'name', 'clanAbbrev', 'igrType', 'potapovQuestIDs', 'isPrebattleCreator', 'forbidInBattleInvitations')
+    __slots__ = ('accountDBID', 'name', 'clanAbbrev', 'igrType', 'personaMissionIDs', 'isPrebattleCreator', 'forbidInBattleInvitations')
     eventsCache = dependency.descriptor(IEventsCache)
 
-    def __init__(self, accountDBID = 0L, name = None, clanAbbrev = '', igrType = IGR_TYPE.NONE, potapovQuestIDs = None, isPrebattleCreator = False, forbidInBattleInvitations = False, **kwargs):
+    def __init__(self, accountDBID = 0L, name = None, clanAbbrev = '', igrType = IGR_TYPE.NONE, personalMissionIDs = None, isPrebattleCreator = False, forbidInBattleInvitations = False, **kwargs):
         super(PlayerInfoVO, self).__init__()
         self.accountDBID = accountDBID
         self.name = name
         self.clanAbbrev = clanAbbrev
         self.igrType = igrType
-        self.potapovQuestIDs = potapovQuestIDs or []
+        self.personaMissionIDs = personalMissionIDs or []
         self.isPrebattleCreator = isPrebattleCreator
         self.forbidInBattleInvitations = forbidInBattleInvitations
 
@@ -114,24 +120,20 @@ class PlayerInfoVO(object):
             return self.name
         return settings.UNKNOWN_PLAYER_NAME
 
-    def getRandomPotapovQuests(self):
+    def getRandomPersonalMissions(self):
         pQuests = self.eventsCache.random.getQuests()
-        return self.__getPotapovQuests(pQuests)
+        return self.__getPersonaMissionIDs(pQuests)
 
-    def getFalloutPotapovQuests(self):
-        pQuests = self.eventsCache.fallout.getQuests()
-        return self.__getPotapovQuests(pQuests)
-
-    def __getPotapovQuests(self, pQuests):
+    def __getPersonaMissionIDs(self, pQuests):
         try:
-            return map(lambda qID: pQuests[qID], self.potapovQuestIDs)
+            return map(lambda qID: pQuests[qID], self.personaMissionIDs)
         except KeyError as e:
-            LOG_ERROR('Key error trying to get potapov quests: no key in cache', e)
+            LOG_ERROR('Key error trying to get personal mission: no key in cache', e)
             return []
 
 
 class VehicleTypeInfoVO(object):
-    __slots__ = ('compactDescr', 'shortName', 'name', 'level', 'iconName', 'iconPath', 'isObserver', 'isPremiumIGR', 'guiName', 'shortNameWithPrefix', 'classTag', 'nationID', 'turretYawLimits', 'maxHealth')
+    __slots__ = ('compactDescr', 'shortName', 'name', 'level', 'iconName', 'iconPath', 'isObserver', 'isPremiumIGR', 'guiName', 'shortNameWithPrefix', 'classTag', 'nationID', 'turretYawLimits', 'maxHealth', 'isLeviathan', 'isMultiTurret')
 
     def __init__(self, vehicleType = None, **kwargs):
         super(VehicleTypeInfoVO, self).__init__()
@@ -171,6 +173,8 @@ class VehicleTypeInfoVO(object):
             self.nationID = vehicleType.id[0]
             self.level = vehicleType.level
             self.maxHealth = vehicleDescr.maxHealth
+            self.isLeviathan = isLeviathan(tags)
+            self.isMultiTurret = isMultiTurret(tags)
             vName = vehicleType.name
             self.iconName = settings.makeVehicleIconName(vName)
             self.iconPath = settings.makeContourIconSFPath(vName)
@@ -190,6 +194,8 @@ class VehicleTypeInfoVO(object):
             self.iconPath = settings.UNKNOWN_CONTOUR_ICON_SF_PATH
             self.shortNameWithPrefix = settings.UNKNOWN_VEHICLE_NAME
             self.maxHealth = None
+            self.isLeviathan = False
+            self.isMultiTurret = False
         return
 
     def getClassName(self):
@@ -197,7 +203,6 @@ class VehicleTypeInfoVO(object):
             return self.classTag
         else:
             return settings.UNKNOWN_VEHICLE_CLASS_NAME
-            return
 
     def getOrderByClass(self):
         return settings.getOrderByVehicleClass(self.classTag)
@@ -310,7 +315,6 @@ class VehicleArenaInfoVO(object):
             return False
         else:
             return self.playerStatus & _PLAYER_STATUS.IS_SQUAD_MAN > 0
-            return
 
     def isSquadCreator(self):
         return self.player.isPrebattleCreator and self.isSquadMan()
@@ -465,7 +469,6 @@ class VehicleArenaStatsVO(object):
             return self.__frags + self.__interactive.equipmentKills
         else:
             return self.__frags
-            return
 
     @property
     def interactive(self):
@@ -487,7 +490,6 @@ class VehicleArenaStatsVO(object):
             return self.__interactive.stopRespawn
         else:
             return False
-            return
 
     @property
     def winPoints(self):
@@ -495,7 +497,6 @@ class VehicleArenaStatsVO(object):
             return self.__interactive.winPoints
         else:
             return 0
-            return
 
     def clearInteractiveStats(self):
         if self.__interactive is not None:
@@ -520,7 +521,6 @@ class VehicleArenaStatsVO(object):
             return _INVALIDATE_OP.VEHICLE_STATS
         else:
             return _INVALIDATE_OP.NONE
-            return
 
 
 class PlayerRankedInfoVO(object):

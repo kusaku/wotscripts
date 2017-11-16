@@ -6,7 +6,7 @@ from BootcampContext import AreaMarker
 
 def _parseID(xmlCtx, section, msg):
     entityID = section.asString
-    if entityID is None or not len(entityID):
+    if not entityID:
         _xml.raiseWrongXml(xmlCtx, section.name, msg)
     return entityID
 
@@ -63,15 +63,6 @@ def _parseEntity(xmlCtx, name, section, flags):
 class BootcampParser(object):
 
     @staticmethod
-    def _parseEntities(xmlCtx, section, flags, chapter):
-        for name, subSec in _xml.getChildren(xmlCtx, section, 'has-id'):
-            entity = _parseEntity(xmlCtx, name, subSec, flags)
-            if entity is not None:
-                chapter.addEntity(entity)
-
-        return
-
-    @staticmethod
     def parse(chapter):
         filePath = chapter.getFilePath()
         section = ResMgr.openSection(filePath)
@@ -80,4 +71,13 @@ class BootcampParser(object):
         xmlCtx = (None, filePath)
         flags = []
         BootcampParser._parseEntities(xmlCtx, section, flags, chapter)
+        return
+
+    @staticmethod
+    def _parseEntities(xmlCtx, section, flags, chapter):
+        for name, subSec in _xml.getChildren(xmlCtx, section, 'has-id'):
+            entity = _parseEntity(xmlCtx, name, subSec, flags)
+            if entity is not None:
+                chapter.addEntity(entity)
+
         return

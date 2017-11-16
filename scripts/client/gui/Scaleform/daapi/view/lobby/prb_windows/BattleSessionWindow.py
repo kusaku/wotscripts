@@ -322,8 +322,7 @@ class BattleSessionWindow(BattleSessionWindowMeta):
             maxString = str(maxValue)
         if minValue == 0 and maxValue == 0:
             return '-'
-        else:
-            return '{0:>s}-{1:>s}'.format(minString, maxString)
+        return '{0:>s}-{1:>s}'.format(minString, maxString)
 
     def _showActionErrorMessage(self, errType):
         errors = {PREBATTLE_ERRORS.ROSTER_LIMIT: (SYSTEM_MESSAGES.BATTLESESSION_ERROR_LIMITS, {}),

@@ -1,7 +1,6 @@
 # Embedded file name: scripts/client/bootcamp/scenery/missions/mission_1.py
 import BigWorld
 from bootcamp.scenery.AbstractMission import AbstractMission
-import SoundGroups
 from constants import ARENA_PERIOD
 
 class Mission1(AbstractMission):

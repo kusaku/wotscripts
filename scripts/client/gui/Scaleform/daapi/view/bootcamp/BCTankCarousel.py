@@ -2,14 +2,10 @@
 from gui.Scaleform.daapi.view.lobby.hangar.carousels import TankCarousel
 from gui.Scaleform.daapi.view.lobby.hangar.carousels.basic.carousel_data_provider import BCCarouselDataProvider
 from gui.Scaleform.daapi.view.lobby.vehicle_carousel.carousel_filter import CarouselFilter, CriteriesGroup
-from debug_utils import LOG_DEBUG
 from account_helpers.settings_core import settings_constants
 import BigWorld
 
 class BCCriteriesGroup(CriteriesGroup):
-
-    def __init__(self):
-        super(BCCriteriesGroup, self).__init__()
 
     def apply(self, vehicle):
         return True
@@ -42,9 +38,6 @@ class BCTankCarousel(TankCarousel):
         self._carouselDPCls = BCCarouselDataProvider
         self._carouselFilterCls = BCCarouselFilter
         self._usedFilters = ()
-
-    def _populate(self):
-        super(BCTankCarousel, self)._populate()
 
     def _getFiltersVisible(self):
         return False

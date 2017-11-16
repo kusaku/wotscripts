@@ -62,7 +62,6 @@ class UserTagsItemData(broker.VehicleComponent):
              'userTags': tags}
         else:
             return {}
-            return
 
     def addVehicleInfo(self, vInfoVO):
         playerVO = vInfoVO.player

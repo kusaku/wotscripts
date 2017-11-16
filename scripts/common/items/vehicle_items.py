@@ -206,7 +206,7 @@ class Radio(InstallableItem):
 
 class Turret(InstallableItem):
     """Class provides configuration of vehicle's turret."""
-    __slots__ = ('gunPosition', 'rotationSpeed', 'turretRotatorHealth', 'surveyingDeviceHealth', 'invisibilityFactor', 'primaryArmor', 'ceilless', 'showEmblemsOnGun', 'guns', 'turretRotatorSoundManual', 'turretRotatorSoundGear', 'AODecals', 'turretDetachmentEffects', 'physicsShape', 'circularVisionRadius')
+    __slots__ = ('gunPosition', 'rotationSpeed', 'turretRotatorHealth', 'surveyingDeviceHealth', 'invisibilityFactor', 'primaryArmor', 'ceilless', 'showEmblemsOnGun', 'guns', 'turretRotatorSoundManual', 'turretRotatorSoundGear', 'AODecals', 'turretDetachmentEffects', 'physicsShape', 'circularVisionRadius', 'defaultTurretAngle')
 
     def __init__(self, typeID, componentID, componentName, compactDescr, level = 1):
         super(Turret, self).__init__(typeID, componentID, componentName, compactDescr, level)
@@ -214,6 +214,7 @@ class Turret(InstallableItem):
         self.rotationSpeed = component_constants.ZERO_FLOAT
         self.turretRotatorHealth = None
         self.surveyingDeviceHealth = None
+        self.defaultTurretAngle = None
         self.invisibilityFactor = component_constants.DEFAULT_INVISIBILITY_FACTOR
         self.guns = None
         self.circularVisionRadius = None
@@ -265,7 +266,7 @@ class Gun(InstallableItem):
 class Hull(BasicItem):
     """Class contains configuration of hull for each vehicle separately.
     This class is extended from BasicItem to unify access to properties."""
-    __slots__ = ('variantName', 'hitTester', 'materials', 'weight', 'maxHealth', 'ammoBayHealth', 'armorHomogenization', 'turretPositions', 'turretHardPoints', 'variantMatch', 'fakeTurrets', 'emblemSlots', 'models', 'swinging', 'customEffects', 'AODecals', 'camouflage', 'hangarShadowTexture', 'primaryArmor')
+    __slots__ = ('variantName', 'hitTester', 'materials', 'weight', 'maxHealth', 'ammoBayHealth', 'armorHomogenization', 'turretPositions', 'turretHardPoints', 'variantMatch', 'fakeTurrets', 'emblemSlots', 'models', 'swinging', 'customEffects', 'AODecals', 'camouflage', 'hangarShadowTexture', 'primaryArmor', 'turretRotations')
 
     def __init__(self):
         super(Hull, self).__init__(component_constants.UNDEFINED_ITEM_TYPE_ID, component_constants.ZERO_INT, component_constants.EMPTY_STRING, component_constants.ZERO_INT)
@@ -276,6 +277,7 @@ class Hull(BasicItem):
         self.maxHealth = component_constants.ZERO_INT
         self.ammoBayHealth = None
         self.turretPositions = component_constants.EMPTY_TUPLE
+        self.turretRotations = component_constants.EMPTY_TUPLE
         self.variantMatch = component_constants.DEFAULT_HULL_VARIANT_MATCH
         self.fakeTurrets = component_constants.DEFAULT_FAKE_TURRETS
         self.armorHomogenization = component_constants.DEFAULT_ARMOR_HOMOGENIZATION

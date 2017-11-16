@@ -63,7 +63,6 @@ class PluginsCollection(IPlugin):
             return self.__plugins[name]
         else:
             return None
-            return None
 
     def init(self, *args):
         self._invoke('init', *args)

@@ -112,8 +112,7 @@ class ActionButtonStateVO(dict):
     def _notInSlotMessage(self):
         if self.__canTakeSlot:
             return (CYBERSPORT.WINDOW_UNIT_MESSAGE_CANDIDATE, {})
-        else:
-            return (CYBERSPORT.WINDOW_UNIT_MESSAGE_UNITISFULL, {})
+        return (CYBERSPORT.WINDOW_UNIT_MESSAGE_UNITISFULL, {})
 
     def __getState(self):
         if self.__isEnabled:
@@ -121,36 +120,30 @@ class ActionButtonStateVO(dict):
                 if self._playerInfo.isReady:
                     if self.__restrictionType in self.__WARNING_UNIT_MESSAGES:
                         return self.__WARNING_UNIT_MESSAGES[self.__restrictionType]
-                    else:
-                        return self._getReadyValidInSlotStateStr()
-                else:
-                    return (CYBERSPORT.WINDOW_UNIT_MESSAGE_GETREADY, {})
-            elif self.__canTakeSlot:
+                    return self._getReadyValidInSlotStateStr()
+                return (CYBERSPORT.WINDOW_UNIT_MESSAGE_GETREADY, {})
+            if self.__canTakeSlot:
                 return (CYBERSPORT.WINDOW_UNIT_MESSAGE_CANDIDATE, {})
-            elif self.__flags.isLocked():
+            if self.__flags.isLocked():
                 return (CYBERSPORT.WINDOW_UNIT_MESSAGE_UNITISLOCKED, {})
-            else:
-                return (CYBERSPORT.WINDOW_UNIT_MESSAGE_UNITISFULL, {})
-        else:
-            print self.__restrictionType
-            if callable(self.__INVALID_UNIT_MESSAGES[self.__restrictionType]):
-                return self.__INVALID_UNIT_MESSAGES[self.__restrictionType]()
-            return self.__INVALID_UNIT_MESSAGES[self.__restrictionType]
+            return (CYBERSPORT.WINDOW_UNIT_MESSAGE_UNITISFULL, {})
+        if callable(self.__INVALID_UNIT_MESSAGES[self.__restrictionType]):
+            return self.__INVALID_UNIT_MESSAGES[self.__restrictionType]()
+        return self.__INVALID_UNIT_MESSAGES[self.__restrictionType]
 
     @property
     def __toolTipData(self):
         if not self._playerInfo.isInSlot:
             return TOOLTIPS.CYBERSPORT_UNIT_FIGHTBTN_NOTINSLOT
-        elif self.__restrictionType == UNIT_RESTRICTION.VEHICLE_NOT_VALID:
+        if self.__restrictionType == UNIT_RESTRICTION.VEHICLE_NOT_VALID:
             return TOOLTIPS.CYBERSPORT_UNIT_FIGHTBTN_VEHICLENOTVALID
-        elif self.__restrictionType == UNIT_RESTRICTION.VEHICLE_WRONG_MODE:
+        if self.__restrictionType == UNIT_RESTRICTION.VEHICLE_WRONG_MODE:
             return TOOLTIPS.CYBERSPORT_UNIT_FIGHTBTN_EVENTVEHICLEWRONGMODE
-        elif self.__isEnabled and not self._playerInfo.isReady:
+        if self.__isEnabled and not self._playerInfo.isReady:
             return TOOLTIPS.CYBERSPORT_UNIT_FIGHTBTN_PRESSFORREADY
-        elif self.__isEnabled and self._playerInfo.isReady:
+        if self.__isEnabled and self._playerInfo.isReady:
             return TOOLTIPS.CYBERSPORT_UNIT_FIGHTBTN_PRESSFORNOTREADY
-        else:
-            return ''
+        return ''
 
     def __stateTextStyleFormatter(self, state):
         if self.__restrictionType in self.__WARNING_UNIT_MESSAGES and self._playerInfo.isReady:
@@ -166,7 +159,7 @@ class ActionButtonStateVO(dict):
         else:
             vehLevels = ctx.get('vehLevels', ())
             stateString = CYBERSPORT.WINDOW_UNIT_MESSAGE_INVALIDLEVELERROR_UNRESOLVED
-            if len(vehLevels):
+            if vehLevels:
                 stateStringCandidate = CYBERSPORT.window_unit_message_invalidlevelerror('_'.join(map(lambda level: str(level), vehLevels)))
                 if stateStringCandidate is not None:
                     stateString = stateStringCandidate

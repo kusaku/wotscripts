@@ -148,7 +148,7 @@ class UnitRequestProcessor(IUnitRequestProcessor):
                     return
                 ctx.stopProcessing(result)
         else:
-            while len(self.__requests):
+            while self.__requests:
                 _, data = self.__requests.popitem()
                 data[0].stopProcessing(False)
 

@@ -21,8 +21,7 @@ class FunctionalFlagCondition(FunctionalCondition):
         result = self._tutorial.getFlags().isActiveFlag(condition.getID())
         if condition.isPositiveState():
             return result
-        else:
-            return not result
+        return not result
 
 
 class FunctionalGlobalFlagCondition(FunctionalCondition):
@@ -31,8 +30,7 @@ class FunctionalGlobalFlagCondition(FunctionalCondition):
         result = GlobalStorage(condition.getID(), False).value()
         if condition.isPositiveState():
             return result
-        else:
-            return not result
+        return not result
 
 
 class FunctionalWindowOnSceneCondition(FunctionalCondition):
@@ -41,8 +39,7 @@ class FunctionalWindowOnSceneCondition(FunctionalCondition):
         result = self._gui.isTutorialWindowDisplayed(condition.getID())
         if condition.isPositiveState():
             return result
-        else:
-            return not result
+        return not result
 
 
 class FunctionalVarDefinedCondition(FunctionalCondition):
@@ -76,8 +73,7 @@ class FunctionalEffectTriggeredCondition(FunctionalCondition):
         result = self._tutorial.isEffectTriggered(condition.getID())
         if condition.isPositiveState():
             return result
-        else:
-            return not result
+        return not result
 
 
 class FunctionalGameItemSimpleStateCondition(FunctionalCondition):
@@ -95,10 +91,8 @@ class FunctionalGameItemSimpleStateCondition(FunctionalCondition):
 
             if condition.isPositiveState():
                 return result
-            else:
-                return not result
-        else:
-            LOG_ERROR('State of item can not be resolved', condition)
+            return not result
+        LOG_ERROR('State of item can not be resolved', condition)
         return False
 
 
@@ -120,10 +114,8 @@ class FunctionalGameItemRelateStateCondition(FunctionalCondition):
 
             if condition.isPositiveState():
                 return result
-            else:
-                return not result
-        else:
-            LOG_ERROR('State of item can not be resolved', condition)
+            return not result
+        LOG_ERROR('State of item can not be resolved', condition)
         return False
 
 
@@ -142,7 +134,6 @@ class FunctionalBonusReceivedCondition(FunctionalCondition):
             if condition.isPositiveState():
                 return result
             return not result
-            return
 
 
 class FunctionalServiceCondition(FunctionalCondition):
@@ -160,16 +151,15 @@ class FunctionalServiceCondition(FunctionalCondition):
         if serviceClass is None:
             LOG_ERROR('Service cannot be loaded!', condition.getID(), condition.getPath())
             return False
+        service = dependency.instance(serviceClass)
+        if not hasattr(service, 'isEnabled'):
+            LOG_ERROR('Service does not implement isEnabled method!', service)
+            return False
+        result = service.isEnabled()
+        if condition.isPositiveState():
+            return result
         else:
-            service = dependency.instance(serviceClass)
-            if not hasattr(service, 'isEnabled'):
-                LOG_ERROR('Service does not implement isEnabled method!', service)
-                return False
-            result = service.isEnabled()
-            if condition.isPositiveState():
-                return result
             return not result
-            return
 
 
 _SUPPORTED_CONDITIONS = {CONDITION_TYPE.FLAG: FunctionalFlagCondition,
@@ -336,19 +326,15 @@ class FunctionalNextChapterEffect(FunctionalEffect):
 
     def triggerEffect(self):
         nextChapter = self._effect.getTargetID()
-        if nextChapter is None or not len(nextChapter):
+        if not nextChapter:
             nextChapter = self._descriptor.getInitialChapterID(completed=self._bonuses.getCompleted())
         if self._tutorial._currentChapter != nextChapter:
             self._gui.showWaiting('chapter-loading', isSingle=True)
             self._gui.clear()
             self._tutorial.goToNextChapter(nextChapter)
-        return
 
 
 class FunctionalRunTriggerEffect(FunctionalEffect):
-
-    def __init__(self, effect):
-        super(FunctionalRunTriggerEffect, self).__init__(effect)
 
     def isInstantaneous(self):
         return False

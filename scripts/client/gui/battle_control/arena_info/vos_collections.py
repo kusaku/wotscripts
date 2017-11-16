@@ -1,6 +1,9 @@
 # Embedded file name: scripts/client/gui/battle_control/arena_info/vos_collections.py
+import BigWorld
+import constants
 from collections import defaultdict
 from gui.shared.sort_key import SortKey
+from gui.battle_control.arena_info.arena_vos import EPIC_RANDOM_KEYS
 
 class VehicleInfoSortKey(SortKey):
     __slots__ = ('vInfoVO', 'vStatsVO')
@@ -44,12 +47,39 @@ class SquadmanVehicleInfoSortKey(VehicleInfoSortKey):
         return super(SquadmanVehicleInfoSortKey, self)._cmp(other)
 
 
+class SpawnGroupVehicleInfoSortKey(VehicleInfoSortKey):
+
+    def _cmp(self, other):
+        result = cmp(self.vInfoVO.gameModeSpecific.getValue(EPIC_RANDOM_KEYS.PLAYER_GROUP), other.vInfoVO.gameModeSpecific.getValue(EPIC_RANDOM_KEYS.PLAYER_GROUP))
+        if result:
+            return result
+        return super(SpawnGroupVehicleInfoSortKey, self)._cmp(other)
+
+
+class SquadmanSpawnGroupVehicleInfoSortKey(SpawnGroupVehicleInfoSortKey):
+    __slots__ = ('prebattleID',)
+
+    def __init__(self, prebattleID, item):
+        super(SquadmanSpawnGroupVehicleInfoSortKey, self).__init__(item)
+        self.prebattleID = prebattleID
+
+    def _cmp(self, other):
+        result = cmp(other.vInfoVO.isSquadMan(self.prebattleID), self.vInfoVO.isSquadMan(self.prebattleID))
+        if result:
+            return result
+        return super(SquadmanSpawnGroupVehicleInfoSortKey, self)._cmp(other)
+
+
 class FragCorrelationSortKey(VehicleInfoSortKey):
     __slots__ = ()
 
     def _cmp(self, other):
         xvInfoVO = self.vInfoVO
         yvInfoVO = other.vInfoVO
+        if BigWorld.player().arenaBonusType == constants.ARENA_BONUS_TYPE.EVENT_BATTLES_2:
+            result = cmp(yvInfoVO.vehicleType.isLeviathan, xvInfoVO.vehicleType.isLeviathan)
+            if result:
+                return result
         result = cmp(yvInfoVO.isAlive(), xvInfoVO.isAlive())
         if result:
             return result
@@ -110,8 +140,7 @@ class _WinPointsSortKey(SortKey):
         result = cmp(other.teamWinPoints, self.teamWinPoints)
         if result:
             return result
-        else:
-            return cmp(self.internal, other.internal)
+        return cmp(self.internal, other.internal)
 
     @classmethod
     def _createInternal(cls, item):

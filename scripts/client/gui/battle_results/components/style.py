@@ -11,6 +11,7 @@ from gui.shared.formatters import text_styles
 from helpers import i18n
 WIDE_STAT_ROW = 'wideLine'
 NORMAL_STAT_ROW = 'normalLine'
+SMALL_STAT_LINE = 'smallLineUI'
 _LINE_BRAKE_STR = '<br/>'
 _TIME_STATS_KEY_FORMAT = '#battle_results:details/time/lbl_{0}'
 _RESULT_LINE__FORMAT = '#battle_results:details/calculations/{0}'
@@ -24,8 +25,7 @@ _LINE_FEED = '\n'
 def getUnknownPlayerName(isEnemy = False):
     if isEnemy:
         return i18n.makeString(BATTLE_RESULTS.PLAYERS_ENEMY_UNKNOWN)
-    else:
-        return i18n.makeString(BATTLE_RESULTS.PLAYERS_TEAMMATE_UNKNOWN)
+    return i18n.makeString(BATTLE_RESULTS.PLAYERS_TEAMMATE_UNKNOWN)
 
 
 I18nDeathReason = namedtuple('I18nDeathReason', 'i18nString prefix suffix')
@@ -135,7 +135,7 @@ def makeStatRow(label = '', column1 = None, column2 = None, column3 = None, colu
         else:
             label = i18nText
     else:
-        raise len(htmlKey) > 0 or AssertionError('Can not find label')
+        raise htmlKey or AssertionError('Can not find label')
         label = makeHtmlString('html_templates:lobby/battle_results', htmlKey)
         import re
         i18nText = re.sub('<[^<]+?>', '', label)
@@ -189,6 +189,10 @@ def makeFreeXpLabel(value, canBeFaded = False):
     else:
         template = 'free_xp_small_label'
     return makeHtmlString('html_templates:lobby/battle_results', template, {'value': BigWorld.wg_getIntegralFormat(int(value))})
+
+
+def makeCrystalLabel(value):
+    return makeHtmlString('html_templates:lobby/battle_results', 'crystal_small_label', {'value': BigWorld.wg_getIntegralFormat(int(value))})
 
 
 def makePercentLabel(value):
@@ -248,7 +252,6 @@ def makeRankIcon(rank):
         if icon is not None:
             return icon
         return RES_ICONS.getRankIcon('24x24', 0)
-        return
 
 
 def makeBadgeIcon(badge):

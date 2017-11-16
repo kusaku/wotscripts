@@ -59,8 +59,7 @@ class Filter(object):
     def isDefaultFilterSet(self):
         if self.__currentType == CUSTOMIZATION_TYPE.CAMOUFLAGE:
             return self.__purchaseType == PURCHASE_TYPE.PURCHASE
-        else:
-            return not self.__bonusSelected() and self.__currentGroup == DEFAULT_GROUP_VALUE and self.__purchaseType == PURCHASE_TYPE.PURCHASE
+        return not self.__bonusSelected() and self.__currentGroup == DEFAULT_GROUP_VALUE and self.__purchaseType == PURCHASE_TYPE.PURCHASE
 
     def isGroupFilterEnabled(self):
         return self.__isGroupFilterEnabled
@@ -115,8 +114,7 @@ class Filter(object):
     def __isInSelectedGroup(self, item):
         if self.__currentGroup == DEFAULT_GROUP_VALUE:
             return True
-        else:
-            return item.getGroup() == self.__currentGroup
+        return item.getGroup() == self.__currentGroup
 
     def __bonusSelected(self):
         for key in QUALIFIER_TYPE_INDEX:

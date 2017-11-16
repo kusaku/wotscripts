@@ -37,8 +37,7 @@ class FragsCollectableStats(broker.CollectableStats):
         if allyScope or enemyScope:
             return {'leftScope': allyScope,
              'rightScope': enemyScope}
-        else:
-            return {}
+        return {}
 
 
 class VehicleFragsComponent(vehicle.VehicleStatsComponent):
@@ -57,8 +56,7 @@ class VehicleFragsComponent(vehicle.VehicleStatsComponent):
             data = super(VehicleFragsComponent, self).get()
             data['frags'] = self._frags
             return data
-        else:
-            return {}
+        return {}
 
     def addStats(self, vStatsVO):
         self._vehicleID = vStatsVO.vehicleID

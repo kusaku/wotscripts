@@ -14,7 +14,7 @@ class NotificationsCollection(object):
             if typeID not in self.__received:
                 continue
             notifications = self.__received[typeID]
-            while len(notifications):
+            while notifications:
                 notifications.pop().clear()
 
     def default(self):
@@ -62,7 +62,7 @@ class NotificationsCollection(object):
         result = True
         if typeID in self.__received:
             notifications = self.__received[typeID]
-            while len(notifications):
+            while notifications:
                 notifications.pop().clear()
 
         else:

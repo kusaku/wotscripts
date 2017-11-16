@@ -38,6 +38,7 @@ from skeletons.gui.login_manager import ILoginManager
 from skeletons.gui.server_events import IEventsCache
 from skeletons.gui.shared import IItemsCache
 from skeletons.gui.sounds import ISoundsController
+from skeletons.gui.event_boards_controllers import IEventBoardController
 from skeletons.helpers.statistics import IStatisticsCollector
 try:
     from gui import mods
@@ -62,6 +63,7 @@ class ServicesLocator(object):
     lobbyContext = dependency.descriptor(ILobbyContext)
     connectionMgr = dependency.descriptor(IConnectionManager)
     statsCollector = dependency.descriptor(IStatisticsCollector)
+    eventsController = dependency.descriptor(IEventBoardController)
 
     @classmethod
     def clear(cls):
@@ -104,13 +106,15 @@ def onAccountShowGUI(ctx):
         g_hangarSpace.init(premium)
     g_currentVehicle.init()
     g_currentPreviewVehicle.init()
-    if not g_prbLoader.isEnabled():
-        isLobbyLoaded = g_appLoader
-    g_appLoader.showLobby()
-    g_prbLoader.onAccountShowGUI(ServicesLocator.lobbyContext.getGuiCtx())
-    g_clanCache.onAccountShowGUI()
     ServicesLocator.clanCtrl.start()
     ServicesLocator.soundCtrl.start()
+    g_appLoader.showLobby()
+    g_prbLoader.onAccountShowGUI(ServicesLocator.lobbyContext.getGuiCtx())
+    if ServicesLocator.lobbyContext.getServerSettings().isElenEnabled():
+        yield ServicesLocator.eventsController.getEvents(onlySettings=True, onLogin=True)
+        yield ServicesLocator.eventsController.getHangarFlag(onLogin=True)
+    g_prbLoader.onAccountShowGUI(ServicesLocator.lobbyContext.getGuiCtx())
+    g_clanCache.onAccountShowGUI()
     SoundGroups.g_instance.enableLobbySounds(True)
     onCenterIsLongDisconnected(True)
     guiModsSendEvent('onAccountShowGUI', ctx)
@@ -135,7 +139,7 @@ def onAvatarBecomePlayer():
     yield ServicesLocator.settingsCache.update()
     ServicesLocator.settingsCore.serverSettings.applySettings()
     ServicesLocator.soundCtrl.stop()
-    ServicesLocator.clanCtrl.stop()
+    ServicesLocator.clanCtrl.stop(False)
     ServicesLocator.eventsCache.stop()
     g_prbLoader.onAvatarBecomePlayer()
     ServicesLocator.gameState.onAvatarBecomePlayer()
@@ -289,6 +293,7 @@ def onDisconnected():
     ServicesLocator.soundCtrl.stop(isDisconnected=True)
     ServicesLocator.gameState.onDisconnected()
     ServicesLocator.clanCtrl.stop()
+    ServicesLocator.eventsCache.personalMissions.stop()
     g_wgncProvider.clear()
     ServicesLocator.clear()
     UsersInfoHelper.clear()

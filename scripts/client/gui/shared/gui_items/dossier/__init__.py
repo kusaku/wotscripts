@@ -179,12 +179,12 @@ class TankmanDossier(_Dossier, stats.TankmanDossierStats):
         return self
 
     def __isNewSkillReady(self, tankman):
-        return self.tmanDescr.roleLevel == tankmen.MAX_SKILL_LEVEL and (not len(self.tmanDescr.skills) or self.tmanDescr.lastSkillLevel == tankmen.MAX_SKILL_LEVEL) and tankman.hasNewSkill(useCombinedRoles=True)
+        return self.tmanDescr.roleLevel == tankmen.MAX_SKILL_LEVEL and (not self.tmanDescr.skills or self.tmanDescr.lastSkillLevel == tankmen.MAX_SKILL_LEVEL) and tankman.hasNewSkill(useCombinedRoles=True)
 
     def __getCurrentSkillIcon(self, tankman):
         if self.__isNewSkillReady(tankman):
             return ('new_skill', 'new_skill.png')
-        if self.tmanDescr.roleLevel != tankmen.MAX_SKILL_LEVEL or not len(self.tmanDescr.skills):
+        if self.tmanDescr.roleLevel != tankmen.MAX_SKILL_LEVEL or not self.tmanDescr.skills:
             return ('role', '%s.png' % self.tmanDescr.role)
         return ('skill', tankmen.getSkillsConfig().getSkill(self.tmanDescr.skills[-1]).icon)
 
@@ -193,7 +193,7 @@ class TankmanDossier(_Dossier, stats.TankmanDossierStats):
             result = None
         else:
             avgExp = self.getAvgXP()
-            newSkillReady = self.tmanDescr.roleLevel == tankmen.MAX_SKILL_LEVEL and (len(self.tmanDescr.skills) == 0 or self.tmanDescr.lastSkillLevel == tankmen.MAX_SKILL_LEVEL)
+            newSkillReady = self.tmanDescr.roleLevel == tankmen.MAX_SKILL_LEVEL and (not self.tmanDescr.skills or self.tmanDescr.lastSkillLevel == tankmen.MAX_SKILL_LEVEL)
             if avgExp and not newSkillReady:
                 result = max(1, math.ceil(tankman.getNextLevelXpCost() / avgExp))
             else:
@@ -205,7 +205,6 @@ class TankmanDossier(_Dossier, stats.TankmanDossierStats):
             return i18n.makeString('#menu:profile/stats/items/empty')
         else:
             return BigWorld.wg_getIntegralFormat(value)
-            return
 
     def __getBattlesLeftOnPremiumVehicle(self, value):
         xpFactorToUse = self.PREMIUM_TANK_DEFAULT_CREW_XP_FACTOR

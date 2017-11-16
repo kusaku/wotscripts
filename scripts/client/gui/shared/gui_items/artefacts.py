@@ -113,7 +113,7 @@ class Equipment(VehicleArtefact):
     def isInstalled(self, vehicle, slotIdx = None):
         return vehicle.equipment.regularConsumables.containsIntCD(self.intCD, slotIdx)
 
-    def mayInstall(self, vehicle, slotIdx = None):
+    def mayInstall(self, vehicle, slotIdx = None, position = 0):
         for idx, eq in enumerate(vehicle.equipment.regularConsumables):
             if slotIdx is not None and idx == slotIdx or eq is None:
                 continue
@@ -221,7 +221,7 @@ class BattleBooster(Equipment):
 
         return result
 
-    def mayInstall(self, vehicle, slotIdx = None):
+    def mayInstall(self, vehicle, slotIdx = None, position = 0):
         return (True, None)
 
     def isOptionalDeviceCompatible(self, optionalDevice):
@@ -270,7 +270,6 @@ class BattleBooster(Equipment):
             return isSkillLearnt(self.getAffectedSkillName(), vehicle)
         else:
             return False
-            return
 
     def getCrewBoosterDescription(self, isPerkReplace, formatter = None):
         """
@@ -329,7 +328,6 @@ class BattleBooster(Equipment):
             return self.getCrewBoosterDescription(isPerkReplace=False, formatter=None)
         else:
             return self.getOptDeviceBoosterDescription(vehicle=None, valueFormatter=None)
-            return None
 
     def _getAltPrice(self, buyPrice, proxy):
         """
@@ -395,11 +393,11 @@ class OptionalDevice(RemovableDevice):
                 cost = proxy.shop.paidDeluxeRemovalCost
                 defaultCost = proxy.shop.defaults.paidDeluxeRemovalCost
                 return ItemPrice(price=cost, defPrice=defaultCost)
-            else:
-                cost = proxy.shop.paidRemovalCost
-                defaultCost = proxy.shop.defaults.paidRemovalCost
-                return ItemPrice(price=Money(gold=cost), defPrice=Money(gold=defaultCost))
-        return super(OptionalDevice, self).getRemovalPrice(proxy)
+            cost = proxy.shop.paidRemovalCost
+            defaultCost = proxy.shop.defaults.paidRemovalCost
+            return ItemPrice(price=Money(gold=cost), defPrice=Money(gold=defaultCost))
+        else:
+            return super(OptionalDevice, self).getRemovalPrice(proxy)
 
     def getBonusIcon(self, size = 'small'):
         iconName = self.descriptor.icon[0].split('/')[-1].split('.')[0]
@@ -432,7 +430,7 @@ class OptionalDevice(RemovableDevice):
 
         return False
 
-    def mayInstall(self, vehicle, slotIdx = None):
+    def mayInstall(self, vehicle, slotIdx = None, position = 0):
         return vehicle.descriptor.mayInstallOptionalDevice(self.intCD, slotIdx)
 
     def mayRemove(self, vehicle):

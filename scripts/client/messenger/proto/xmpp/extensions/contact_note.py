@@ -47,8 +47,7 @@ class NoteText(PyExtension):
     def getTag(self):
         if self._text:
             return super(NoteText, self).getTag()
-        else:
-            return ''
+        return ''
 
     def parseTag(self, pyGlooxTag):
         return pyGlooxTag.getCData()

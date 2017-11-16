@@ -18,7 +18,7 @@ class SquadBalanceValidator(BaseActionsValidator):
     def _validate(self):
         _, unit = self._entity.getUnit()
         levels = unit.getSelectedVehicleLevels()
-        distance = levels[-1] - levels[0] if len(levels) else 0
+        distance = levels[-1] - levels[0] if levels else 0
         unitHasPenalty = distance in self.eventsCache.getSquadPenaltyLevelDistance()
         if unitHasPenalty:
             return ValidationResult(True, UNIT_RESTRICTION.XP_PENALTY_VEHICLE_LEVELS)

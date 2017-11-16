@@ -102,9 +102,8 @@ class VideoSettingsStorage(ISettingsStorage):
 
             adapterOutputIndex == g_monitorSettings.activeMonitor and LOG_ERROR('Unable to find appropriate display mode for the target monitor, falling back to the current mode.')
             return g_monitorSettings.currentVideoMode
-        else:
-            LOG_ERROR('Unable to find appropriate display mode for the target monitor, falling back to the first supported mode.')
-            return adapterOutputExclusiveFullscreenModes[0]
+        LOG_ERROR('Unable to find appropriate display mode for the target monitor, falling back to the first supported mode.')
+        return adapterOutputExclusiveFullscreenModes[0]
 
     @property
     def windowSize(self):
@@ -184,12 +183,14 @@ class VideoSettingsStorage(ISettingsStorage):
             self._core.isDeviseRecreated = deviseRecreated
             if deviseRecreated:
 
-                def wrapper(monitorChanged, windowSizeChanged, cMonitor, cWindowSize, cVideoMode, cWindowMode, cAspectRation):
+                def wrapper(monitorChanged, windowSizeChanged, borderlessSizeChanged, cMonitor, cWindowSize, cVideoMode, cWindowMode, cAspectRation):
 
                     def revert():
                         if monitorChanged:
                             g_monitorSettings.changeMonitor(cMonitor)
-                        if windowSizeChanged and cWindowMode == BigWorld.WindowModeWindowed:
+                        if borderlessSizeChanged and cWindowMode == BigWorld.WindowModeBorderless:
+                            g_monitorSettings.changeBorderlessSize(cBorderlessSize.width, cBorderlessSize.height)
+                        elif windowSizeChanged and cWindowMode == BigWorld.WindowModeWindowed:
                             g_monitorSettings.changeWindowSize(cWindowSize.width, cWindowSize.height)
                         elif not monitorChanged and (videModeChanged or windowModeChanged):
                             BigWorld.changeVideoMode(cVideoMode.index, cWindowMode)
@@ -201,7 +202,7 @@ class VideoSettingsStorage(ISettingsStorage):
                 def confirmator(callback = None):
                     BigWorld.callback(0.0, lambda : DialogsInterface.showI18nConfirmDialog('graphicsChangeConfirmation', callback, TimerConfirmDialogMeta('graphicsChangeConfirmation', timer=15)))
 
-                return (confirmator, wrapper(monitorChanged, windowSizeChanged, cMonitor, cWindowSize, cVideoMode, cWindowMode, cAspectRation))
+                return (confirmator, wrapper(monitorChanged, windowSizeChanged, borderlessSizeChanged, cMonitor, cWindowSize, cVideoMode, cWindowMode, cAspectRation))
         return super(VideoSettingsStorage, self).apply(restartApproved)
 
 

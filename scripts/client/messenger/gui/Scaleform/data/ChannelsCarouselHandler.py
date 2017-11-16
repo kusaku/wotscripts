@@ -13,9 +13,6 @@ from messenger.gui.Scaleform.data.ChannelsDataProvider import ChannelsDataProvid
 
 class ChannelFindCriteria(ExternalCriteria):
 
-    def __init__(self, criteria = None):
-        super(ChannelFindCriteria, self).__init__(criteria)
-
     def find(self, name, obj):
         return getattr(obj, '_clientID', 0) == self._criteria
 

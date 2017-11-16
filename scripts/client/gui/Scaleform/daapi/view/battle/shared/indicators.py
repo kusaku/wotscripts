@@ -156,10 +156,8 @@ class _MarkerData(object):
         if hitData.getDamage() > 0:
             if hitData.isAttackerAlly():
                 return _MARKER_TYPE.HP_ALLAY_DAMAGE
-            else:
-                return _MARKER_TYPE.HP_DAMAGE
-        else:
-            return _MARKER_TYPE.CRITICAL_DAMAGE
+            return _MARKER_TYPE.HP_DAMAGE
+        return _MARKER_TYPE.CRITICAL_DAMAGE
 
 
 class _MarkerVOBuilder(object):
@@ -241,8 +239,7 @@ class _ExtendedCriticalMarkerVOBuilder(_ExtendedMarkerVOBuilder):
         critsCount = markerData.hitData.getCritsCount()
         if critsCount > 1:
             return i18n.makeString(INGAME_GUI.DAMAGEINDICATOR_MULTIPLIER, multiplier=str(critsCount))
-        else:
-            return ''
+        return ''
 
     @staticmethod
     def _getCritType(mask):
@@ -668,10 +665,10 @@ class SiegeModeIndicator(SiegeModeIndicatorMeta):
                         self.__onVehicleStateUpdated(stateID, value)
 
             self.__onCrosshairPositionChanged()
-            self.__updateIndicatorView()
             self.__updateDevicesView()
         else:
             self._isEnabled = False
+            self._siegeState = _SIEGE_STATE.DISABLED
             for deviceName in self._devices:
                 self._devices[deviceName] = 'normal'
 
@@ -734,8 +731,7 @@ class SiegeModeIndicator(SiegeModeIndicatorMeta):
             hintText = text_styles.tutorial(INGAME_GUI.siegeModeHint(self._siegeState))
             keyText = makeHtmlString('html_templates:battle/siegeMode', 'toggle', ctx={'key': keyName})
             return (keyText, pressText, hintText)
-        else:
-            return ('', '', text_styles.tutorial(INGAME_GUI.SIEGEMODE_HINT_NOBINDING))
+        return ('', '', text_styles.tutorial(INGAME_GUI.SIEGEMODE_HINT_NOBINDING))
 
 
 class IDirectionIndicator(object):

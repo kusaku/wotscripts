@@ -74,8 +74,8 @@ class _ClanDossier(object):
 
     def isSynced(self, key = None):
         if key is None:
-            for key in self.__vitalInfo.keys():
-                if not self.__syncState & key:
+            for syncKey in self.__vitalInfo.keys():
+                if not self.__syncState & syncKey:
                     return False
 
             return True
@@ -186,7 +186,7 @@ class _ClanDossier(object):
     @process
     def requestClanRatings(self, callback):
         result = yield self.__requestClanRatings()
-        if len(result) > 0:
+        if result:
             callback(result[0])
         else:
             callback(items.ClanRatingsData())
@@ -483,7 +483,7 @@ class ClanController(ClansListeners, IClanController):
         g_wgncEvents.onProxyDataItemShowByDefault += self._onProxyDataItemShowByDefault
         g_playerEvents.onClanMembersListChanged += self._onClanMembersListChanged
 
-    def stop(self):
+    def stop(self, logout = True):
         g_playerEvents.onClanMembersListChanged -= self._onClanMembersListChanged
         g_wgncEvents.onProxyDataItemShowByDefault -= self._onProxyDataItemShowByDefault
         g_clientUpdateManager.removeObjectCallbacks(self)
@@ -495,7 +495,8 @@ class ClanController(ClansListeners, IClanController):
         if self.__profile is not None:
             self.__profile.fini()
             self.__profile = None
-        self.__state.logout()
+        if logout:
+            self.__state.logout()
         self.__cleanDossiers()
         return
 
