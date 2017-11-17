@@ -35,13 +35,19 @@ class RareAchievement(RegularAchievement):
 
     @classmethod
     def checkIsValid(cls, block, name, dossier):
-        return not validators.accountIsRoaming(dossier)
+        if dossier is not None:
+            return not validators.accountIsRoaming(dossier)
+        else:
+            return True
 
     def getUserHeroInfo(self):
         return g_rareAchievesCache.getHeroInfo(self._rareID)
 
     def getUserCondition(self):
         return g_rareAchievesCache.getConditions(self._rareID)
+
+    def isAvailableInQuest(self):
+        return g_rareAchievesCache.isLocallyLoaded(self._rareID)
 
     def hasCounter(self):
         return self.SHOW_COUNTER and self._value > 1

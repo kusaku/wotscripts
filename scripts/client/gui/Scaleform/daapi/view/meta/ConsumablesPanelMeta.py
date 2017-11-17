@@ -40,10 +40,6 @@ class ConsumablesPanelMeta(BaseDAAPIComponent):
         if self._isDAAPIInited():
             return self.flashObject.as_addShellSlot(idx, keyCode, sfKeyCode, quantity, clipCapacity, shellIconPath, noShellIconPath, tooltipText)
 
-    def as_addSubShellSlotS(self, idx, keyCode, sfKeyCode, quantity, tooltipText, isInfinite):
-        if self._isDAAPIInited():
-            return self.flashObject.as_addSubShellSlot(idx, keyCode, sfKeyCode, quantity, tooltipText, isInfinite)
-
     def as_setNextShellS(self, idx):
         if self._isDAAPIInited():
             return self.flashObject.as_setNextShell(idx)

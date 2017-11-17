@@ -4,6 +4,12 @@ from gui.Scaleform.locale.BADGE import BADGE
 from gui.Scaleform.settings import getBadgeIconPath, getBadgeHighlightIconPath, BADGES_ICONS, BADGES_HIGHLIGHTS
 from gui.shared.gui_items.gui_item import GUIItem
 from helpers import i18n
+from shared_utils import CONST_CONTAINER
+
+class BADGE_TYPES(CONST_CONTAINER):
+    OBSOLETE = 1
+    COLLAPSIBLE = 2
+
 
 class Badge(GUIItem):
     """
@@ -32,7 +38,7 @@ class Badge(GUIItem):
         """
         Standard comparision method that compares two badges by:
         - is it achieved
-        - if both - by achievement date
+        - if both - by achievement date (latest first)
         - otherwise by weight
         """
         if self.achievedAt == other.achievedAt:
@@ -42,7 +48,7 @@ class Badge(GUIItem):
         elif other.achievedAt is None:
             return -1
         else:
-            return cmp(self.achievedAt, other.achievedAt)
+            return cmp(other.achievedAt, self.achievedAt)
 
     def getBadgeClass(self):
         return self.data.get('class', 0)
@@ -56,6 +62,12 @@ class Badge(GUIItem):
 
     def getWeight(self):
         return self.data['weight']
+
+    def isObsolete(self):
+        return self.__checkType(BADGE_TYPES.OBSOLETE)
+
+    def isCollapsible(self):
+        return self.__checkType(BADGE_TYPES.COLLAPSIBLE)
 
     def getHugeIcon(self):
         return getBadgeIconPath(BADGES_ICONS.X220, self.badgeID)
@@ -91,4 +103,9 @@ class Badge(GUIItem):
             return getBadgeHighlightIconPath(BADGES_HIGHLIGHTS.VIOLET)
         if self.getName().startswith('event_boards'):
             return getBadgeHighlightIconPath(BADGES_HIGHLIGHTS.GREEN)
+        if self.getName().startswith('global_map'):
+            return getBadgeHighlightIconPath(BADGES_HIGHLIGHTS.GOLD)
         return ''
+
+    def __checkType(self, badgeType):
+        return self.data['type'] & badgeType > 0

@@ -8,7 +8,7 @@ from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.shared.formatters import text_styles
 from gui.shared.items_parameters import RELATIVE_PARAMS
 from gui.shared.items_parameters.comparator import PARAM_STATE
-from gui.shared.items_parameters.params_helper import hasGroupPenalties, getCommonParam, PARAMS_GROUPS, isSubtitleParameter, PARAMS_GROUPS_MULTITURRET_FOR_VEHICLEINFO
+from gui.shared.items_parameters.params_helper import hasGroupPenalties, getCommonParam, PARAMS_GROUPS
 from items import vehicles, artefacts, getTypeOfCompactDescr, ITEM_TYPES
 from web_stubs import i18n
 MEASURE_UNITS = {'aimingTime': MENU.TANK_PARAMS_S,
@@ -69,9 +69,9 @@ NO_BONUS_SIMPLIFIED_SCHEME = (text_styles.warning, text_styles.warning, text_sty
 NO_BONUS_BASE_SCHEME = (text_styles.error, text_styles.stats, text_styles.stats)
 SIMPLIFIED_SCHEME = (text_styles.critical, text_styles.warning, text_styles.statInfo)
 BASE_SCHEME = (text_styles.error, text_styles.stats, text_styles.bonusAppliedText)
+EXTRACTED_BONUS_SCHEME = (text_styles.error, text_styles.bonusAppliedText, text_styles.bonusAppliedText)
 SITUATIONAL_SCHEME = (text_styles.critical, text_styles.warning, text_styles.bonusPreviewText)
 VEHICLE_PARAMS = tuple(chain(*[ PARAMS_GROUPS[param] for param in RELATIVE_PARAMS ]))
-VEHICLE_PARAMS_MULTITURRET = tuple(chain(*[ PARAMS_GROUPS_MULTITURRET_FOR_VEHICLEINFO[param] for param in RELATIVE_PARAMS ]))
 ITEMS_PARAMS_LIST = {ITEM_TYPES.vehicleRadio: ('radioDistance', 'weight'),
  ITEM_TYPES.vehicleChassis: ('maxLoad', 'rotationSpeed', 'weight'),
  ITEM_TYPES.vehicleEngine: ('enginePower', 'fireStartingChance', 'weight'),
@@ -117,8 +117,6 @@ def formatModuleParamName(paramName):
 def formatVehicleParamName(paramName, showMeasureUnit = True):
     if isRelativeParameter(paramName):
         return text_styles.middleTitle(MENU.tank_params(paramName))
-    elif isSubtitleParameter(paramName):
-        return text_styles.tankParamsSubtitle(MENU.tank_params(paramName))
     else:
         builder = text_styles.builder()
         builder.addStyledText(text_styles.main, MENU.tank_params(paramName))
@@ -145,7 +143,6 @@ FORMAT_SETTINGS = {'relativePower': _integralFormat,
  'damage': _niceRangeFormat,
  'piercingPower': _niceRangeFormat,
  'reloadTime': _niceRangeFormat,
- 'reloadTime_Secondary': _niceRangeFormat,
  'reloadTimeSecs': _niceFormat,
  'gunRotationSpeed': _niceFormat,
  'turretRotationSpeed': _niceFormat,
@@ -154,19 +151,13 @@ FORMAT_SETTINGS = {'relativePower': _integralFormat,
  'pitchLimits': _niceListFormat,
  'clipFireRate': _niceListFormat,
  'aimingTime': _niceRangeFormat,
- 'aimingTime_Secondary': _niceRangeFormat,
  'shotDispersionAngle': _niceFormat,
- 'shotDispersionAngle_Secondary': _niceFormat,
  'avgDamagePerMinute': _niceFormat,
- 'avgDamagePerMinute_Secondary': _niceFormat,
  'relativeArmor': _integralFormat,
  'avgDamage': _niceFormat,
- 'avgDamage_Secondary': _niceFormat,
  'maxHealth': _integralFormat,
  'hullArmor': _listFormat,
  'turretArmor': _listFormat,
- 'turretArmor_Primary': _listFormat,
- 'turretArmor_Secondary': _listFormat,
  'relativeMobility': _integralFormat,
  'vehicleWeight': _niceListFormat,
  'weight': _niceRangeFormat,
@@ -195,7 +186,6 @@ FORMAT_SETTINGS = {'relativePower': _integralFormat,
  'shellReloadingTime': _niceRangeFormat,
  'reloadMagazineTime': _niceRangeFormat,
  'avgPiercingPower': _listFormat,
- 'avgPiercingPower_Secondary': _listFormat,
  'avgDamageList': _listFormat,
  'dispertionRadius': _niceRangeFormat,
  'invisibilityStillFactor': _niceListFormat,
@@ -233,7 +223,7 @@ def _getDeltaSettings():
 
 
 DELTA_PARAMS_SETTING = _getDeltaSettings()
-_SMART_ROUND_PARAMS = ('damage', 'piercingPower', 'bombDamage', 'shellsCount', 'shellReloadingTime', 'reloadMagazineTime', 'reloadTime', 'reloadTime_Secondary', 'dispertionRadius', 'aimingTime', 'aimingTime_Secondary', 'weight')
+_SMART_ROUND_PARAMS = ('damage', 'piercingPower', 'bombDamage', 'shellsCount', 'shellReloadingTime', 'reloadMagazineTime', 'reloadTime', 'dispertionRadius', 'aimingTime', 'weight')
 _STATES_INDEX_IN_COLOR_MAP = {PARAM_STATE.WORSE: 0,
  PARAM_STATE.NORMAL: 1,
  PARAM_STATE.BETTER: 2}
@@ -262,7 +252,7 @@ def simlifiedDeltaParameter(parameter, isSituational = False):
     return mainFormatter(paramStr)
 
 
-def formatParameter(parameterName, paramValue, parameterState = None, colorScheme = None, formatSettings = None, allowSmartRound = True):
+def formatParameter(parameterName, paramValue, parameterState = None, colorScheme = None, formatSettings = None, allowSmartRound = True, showZeroDiff = False):
     formatSettings = formatSettings or FORMAT_SETTINGS
     settings = formatSettings.get(parameterName, _listFormat)
     rounder = settings['rounder']
@@ -291,10 +281,10 @@ def formatParameter(parameterName, paramValue, parameterState = None, colorSchem
         separator = settings['separator']
         paramsList = [ applyFormat(val, parameterState[idx]) for idx, val in enumerate(paramValue) ]
         return separator.join(paramsList)
-    elif paramValue != 0:
-        return applyFormat(paramValue, parameterState)
-    else:
+    elif not showZeroDiff and paramValue == 0:
         return
+    else:
+        return applyFormat(paramValue, parameterState)
 
 
 def formatParameterDelta(pInfo, deltaScheme = BASE_SCHEME, formatSettings = DELTA_PARAMS_SETTING):
@@ -302,10 +292,10 @@ def formatParameterDelta(pInfo, deltaScheme = BASE_SCHEME, formatSettings = DELT
     Gets formatted parameter delta value if parameter has diff, else return None
     """
     diff = pInfo.getParamDiff()
-    if diff:
-        return formatParameter(pInfo.name, diff, pInfo.state, deltaScheme, formatSettings, allowSmartRound=False)
+    if diff is not None:
+        return formatParameter(pInfo.name, diff, pInfo.state, deltaScheme, formatSettings, allowSmartRound=False, showZeroDiff=True)
     else:
-        return None
+        return
 
 
 def getFormattedParamsList(descriptor, parameters, excludeRelative = False):
@@ -317,8 +307,6 @@ def getFormattedParamsList(descriptor, parameters, excludeRelative = False):
     if itemTypeIdx == ITEM_TYPES.equipment:
         eqDescr = vehicles.getItemByCompactDescr(compactDescr)
         paramsList = ITEMS_PARAMS_LIST[itemTypeIdx].get(type(eqDescr), [])
-    elif itemTypeIdx == ITEM_TYPES.vehicle and descriptor.isMultiTurret:
-        paramsList = VEHICLE_PARAMS_MULTITURRET
     else:
         paramsList = ITEMS_PARAMS_LIST[itemTypeIdx]
     params = []

@@ -19,6 +19,10 @@ class MissionsPageMeta(View):
         if self._isDAAPIInited():
             return self.flashObject.as_setTabsDataProvider(dataProvider)
 
+    def as_showFilterS(self, visible):
+        if self._isDAAPIInited():
+            return self.flashObject.as_showFilter(visible)
+
     def as_showFilterCounterS(self, countText, isFilterApplied):
         if self._isDAAPIInited():
             return self.flashObject.as_showFilterCounter(countText, isFilterApplied)

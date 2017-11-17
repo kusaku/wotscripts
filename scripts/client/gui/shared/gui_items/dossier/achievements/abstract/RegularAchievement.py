@@ -145,6 +145,9 @@ class RegularAchievement(GUIItem):
             return i18n.makeString(condKey)
         return ''
 
+    def isAvailableInQuest(self):
+        return True
+
     @classmethod
     def checkIsInDossier(cls, block, name, dossier):
         if dossier is not None:

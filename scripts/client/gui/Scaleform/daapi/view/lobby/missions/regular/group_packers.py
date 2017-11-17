@@ -5,7 +5,6 @@ from collections import namedtuple, defaultdict, OrderedDict
 from CurrentVehicle import g_currentVehicle
 from Event import EventManager, Event
 from constants import EVENT_TYPE
-from gui.event_boards.event_boards_items import BGR_LANDING_BY_EVENT_ID
 from gui.Scaleform.daapi.settings import BUTTON_LINKAGES
 from gui.Scaleform.daapi.view.lobby.event_boards.event_helpers import EventInfo, EventHeader
 from gui.Scaleform.daapi.view.lobby.missions.awards_formatters import MarathonAwardComposer
@@ -22,9 +21,8 @@ from gui.server_events.cond_formatters.tokens import TokensMarathonFormatter
 from gui.server_events.event_items import DEFAULTS_GROUPS
 from gui.server_events.events_helpers import missionsSortFunc
 from gui.server_events.formatters import DECORATION_SIZES
-from gui.event_boards.settings import isGroupMinimized
+from gui.event_boards.settings import isGroupMinimized, expandGroup
 from gui.shared.formatters import text_styles
-from halloween_shared import HALLOWEEN_QUEST_PREFIX
 from helpers import dependency
 from helpers.i18n import makeString as _ms
 from skeletons.gui.server_events import IEventsCache
@@ -242,6 +240,7 @@ class ElenGroupsFinder(_EventsBlockBuilder):
         self._eventsData = None
         self._playerData = None
         self._myEventsTop = None
+        self._currentEventID = None
         return
 
     def invalidateBlocks(self):
@@ -253,14 +252,16 @@ class ElenGroupsFinder(_EventsBlockBuilder):
             return
         else:
             for event in events:
-                cachedGroups[event.getEventID()] = _ElenBlockInfo(event, self._myEventsTop, self._playerData)
+                isChosen = self._currentEventID == event.getEventID()
+                cachedGroups[event.getEventID()] = _ElenBlockInfo(event, self._myEventsTop, self._playerData, isChosen)
 
             return
 
-    def setEventsData(self, eventsData, playerData, myEventsTop):
+    def setEventsData(self, eventsData, playerData, myEventsTop, currentEventID):
         self._eventsData = weakref.proxy(eventsData)
         self._playerData = weakref.proxy(playerData)
         self._myEventsTop = weakref.proxy(myEventsTop)
+        self._currentEventID = currentEventID
         self.invalidateBlocks()
 
 
@@ -626,27 +627,23 @@ class _VehicleQuestsBlockInfo(_EventsBlockInfo):
          'bodyLinkage': QUESTS_ALIASES.MISSION_PACK_MARATHON_BODY_LINKAGE}
 
     def __applyFilter(self, quest):
-        vehicle = g_currentVehicle.item
         if quest.getType() in (EVENT_TYPE.TOKEN_QUEST, EVENT_TYPE.REF_SYSTEM_QUEST):
             return False
         if not quest.getFinishTimeLeft():
             return False
         if quest.getType() != EVENT_TYPE.MOTIVE_QUEST:
-            if vehicle.isOnlyForEventBattles:
-                if quest.getID().startswith(HALLOWEEN_QUEST_PREFIX):
-                    return quest.isValidVehicleCondition(vehicle)
-                return False
-            return quest.isValidVehicleCondition(vehicle)
-        return not vehicle.isOnlyForEventBattles and quest.isValidVehicleCondition(vehicle) and not quest.isCompleted() and quest.isAvailable()[0]
+            return quest.isValidVehicleCondition(g_currentVehicle.item)
+        return quest.isValidVehicleCondition(g_currentVehicle.item) and not quest.isCompleted() and quest.isAvailable()[0]
 
 
 class _ElenBlockInfo(_EventsBlockInfo):
 
-    def __init__(self, event, eventsTop, playerData):
+    def __init__(self, event, eventsTop, playerData, isChosen):
         super(_ElenBlockInfo, self).__init__()
         self._event = event
         self._eventsTop = eventsTop
         self._playerData = playerData
+        self._isChosen = isChosen
 
     def getEventsBlockID(self):
         return self._event.getEventID()
@@ -665,20 +662,23 @@ class _ElenBlockInfo(_EventsBlockInfo):
 
     def _getVO(self):
         data = super(_ElenBlockInfo, self)._getVO()
-        data.update({'isCollapsed': isGroupMinimized(self._event)})
+        minimized = isGroupMinimized(self._event)
+        if self._isChosen and minimized:
+            expandGroup(self._event, True)
+            minimized = False
+        data.update({'isCollapsed': minimized})
         data['bgAlpha'] = 1
         return data
 
     def _getBodyData(self):
         event = EventInfo(self._event, self._playerData, self._eventsTop)
-        eventID = self._event.getEventID()
         top = event.getTopInfo()
         result = {'missions': top,
          'taskBlock': event.getTaskInfo(),
          'conditionBlock': event.getConditionInfo(),
-         'awardBlock': event.getAwardInfo(eventID),
+         'awardBlock': event.getAwardInfo(),
          'isEventBegan': self._event.isStarted(),
-         'uiDecoration': BGR_LANDING_BY_EVENT_ID.get(eventID, BGR_LANDING_BY_EVENT_ID['event_1']),
+         'uiDecoration': self._event.getKeyArtBig(),
          'popoverAlias': event.getPopoverAlias(),
          'eventID': self._event.getEventID()}
         result.update(event.getServerData())
@@ -686,7 +686,7 @@ class _ElenBlockInfo(_EventsBlockInfo):
         if top:
             result.update({'taskBlock': event.getTaskInfo(),
              'conditionBlock': event.getConditionInfo(),
-             'awardBlock': event.getAwardInfo(eventID)})
+             'awardBlock': event.getAwardInfo()})
         return result
 
     @classmethod

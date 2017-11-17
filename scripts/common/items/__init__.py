@@ -1,10 +1,12 @@
 # Embedded file name: scripts/common/items/__init__.py
 import nations
-from realm_utils import ResMgr
 from items import _xml
 from constants import IS_CLIENT, IS_CELLAPP, ITEM_DEFS_PATH
 if IS_CLIENT:
+    import ResMgr
     from helpers import i18n
+else:
+    from realm_utils import ResMgr
 _g_itemTypes = None
 ITEM_TYPE_NAMES = ('_reserved', 'vehicle', 'vehicleChassis', 'vehicleTurret', 'vehicleGun', 'vehicleEngine', 'vehicleFuelTank', 'vehicleRadio', 'tankman', 'optionalDevice', 'shell', 'equipment')
 

@@ -3,7 +3,7 @@ import weakref
 import operator
 from collections import namedtuple
 import BigWorld
-from constants import ARENA_PERIOD, FINISH_REASON, ARENA_GUI_TYPE
+from constants import ARENA_PERIOD, FINISH_REASON
 from debug_utils import LOG_DEBUG, LOG_ERROR
 from gui.battle_control.arena_info.invitations import SquadInvitationsFilter
 from gui.battle_control.battle_constants import WinStatus
@@ -439,7 +439,7 @@ class ArenaTeamBasesListener(_Listener):
     def start(self, setup):
         super(ArenaTeamBasesListener, self).start(setup)
         arena = self._visitor.getArenaSubscription()
-        if arena is not None and self._visitor.getArenaGuiType() != ARENA_GUI_TYPE.EVENT_BATTLES_2:
+        if arena is not None:
             arena.onTeamBasePointsUpdate += self.__arena_onTeamBasePointsUpdate
             arena.onTeamBaseCaptured += self.__arena_onTeamBaseCaptured
             arena.onPeriodChange += self.__arena_onPeriodChange
@@ -503,42 +503,6 @@ class ArenaPeriodListener(_Listener):
         self._invokeListenersMethod('invalidatePeriodInfo', period, endTime, length, _getPeriodAdditionalInfo(self._arenaDP, period, additionalInfo))
 
 
-class ArenaRespawnListener(_Listener):
-    __slots__ = ()
-
-    def start(self, setup):
-        super(ArenaRespawnListener, self).start(setup)
-        arena = self._visitor.getArenaSubscription()
-        if arena is not None:
-            arena.onRespawnAvailableVehicles += self.__arena_onRespawnAvailableVehicles
-            arena.onRespawnCooldowns += self.__arena_onRespawnCooldowns
-            arena.onRespawnRandomVehicle += self.__arena_onRespawnRandomVehicle
-            arena.onRespawnResurrected += self.__arena_onRespawnResurrected
-        return
-
-    def stop(self):
-        arena = self._visitor.getArenaSubscription()
-        if arena is not None:
-            arena.onRespawnAvailableVehicles -= self.__arena_onRespawnAvailableVehicles
-            arena.onRespawnCooldowns -= self.__arena_onRespawnCooldowns
-            arena.onRespawnRandomVehicle -= self.__arena_onRespawnRandomVehicle
-            arena.onRespawnResurrected -= self.__arena_onRespawnResurrected
-        super(ArenaRespawnListener, self).stop()
-        return
-
-    def __arena_onRespawnAvailableVehicles(self, vehsList):
-        self._invokeListenersMethod('updateRespawnVehicles', vehsList)
-
-    def __arena_onRespawnCooldowns(self, cooldowns):
-        self._invokeListenersMethod('updateRespawnCooldowns', cooldowns)
-
-    def __arena_onRespawnRandomVehicle(self, respawnInfo):
-        self._invokeListenersMethod('updateRespawnInfo', respawnInfo)
-
-    def __arena_onRespawnResurrected(self, respawnInfo):
-        self._invokeListenersMethod('updateRespawnRessurectedInfo', respawnInfo)
-
-
 class PositionsListener(_Listener):
     __slots__ = ()
 
@@ -595,7 +559,7 @@ class ViewPointsListener(_Listener):
 
 
 class ListenersCollection(_Listener):
-    __slots__ = ('__vehicles', '__teamsBases', '__loader', '__contacts', '__period', '__respawn', '__invitations', '__positions', '__viewPoints', '__battleCtx')
+    __slots__ = ('__vehicles', '__teamsBases', '__loader', '__contacts', '__period', '__invitations', '__positions', '__viewPoints', '__battleCtx')
 
     def __init__(self):
         super(ListenersCollection, self).__init__()
@@ -605,7 +569,6 @@ class ListenersCollection(_Listener):
         self.__contacts = ContactsListener()
         self.__loader = ArenaSpaceLoadListener()
         self.__period = ArenaPeriodListener()
-        self.__respawn = ArenaRespawnListener()
         self.__invitations = PersonalInvitationsListener()
         self.__positions = PositionsListener()
         self.__viewPoints = ViewPointsListener()
@@ -630,8 +593,6 @@ class ListenersCollection(_Listener):
             result |= self.__period.addController(controller)
         if scope & _SCOPE.TEAMS_BASES > 0:
             result |= self.__teamsBases.addController(controller)
-        if scope & _SCOPE.RESPAWN > 0:
-            result |= self.__respawn.addController(controller)
         if scope & _SCOPE.INVITATIONS > 0:
             result |= self.__invitations.addController(controller)
         if scope & _SCOPE.POSITIONS > 0:
@@ -648,7 +609,6 @@ class ListenersCollection(_Listener):
         result |= self.__contacts.removeController(controller)
         result |= self.__loader.removeController(controller)
         result |= self.__period.removeController(controller)
-        result |= self.__respawn.removeController(controller)
         result |= self.__invitations.removeController(controller)
         result |= self.__positions.removeController(controller)
         result |= self.__viewPoints.removeController(controller)
@@ -662,7 +622,6 @@ class ListenersCollection(_Listener):
         self.__contacts.start(setup)
         self.__loader.start(setup)
         self.__period.start(setup)
-        self.__respawn.start(setup)
         self.__invitations.start(setup)
         self.__positions.start(setup)
         self.__viewPoints.start(setup)
@@ -673,7 +632,6 @@ class ListenersCollection(_Listener):
         self.__contacts.stop()
         self.__loader.stop()
         self.__period.stop()
-        self.__respawn.stop()
         self.__invitations.stop()
         self.__positions.stop()
         self.__viewPoints.stop()
@@ -687,7 +645,6 @@ class ListenersCollection(_Listener):
         self.__contacts.clear()
         self.__loader.clear()
         self.__period.clear()
-        self.__respawn.clear()
         self.__invitations.clear()
         self.__positions.clear()
         self.__viewPoints.clear()

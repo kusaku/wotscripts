@@ -113,7 +113,7 @@ class Equipment(VehicleArtefact):
     def isInstalled(self, vehicle, slotIdx = None):
         return vehicle.equipment.regularConsumables.containsIntCD(self.intCD, slotIdx)
 
-    def mayInstall(self, vehicle, slotIdx = None, position = 0):
+    def mayInstall(self, vehicle, slotIdx = None):
         for idx, eq in enumerate(vehicle.equipment.regularConsumables):
             if slotIdx is not None and idx == slotIdx or eq is None:
                 continue
@@ -221,7 +221,7 @@ class BattleBooster(Equipment):
 
         return result
 
-    def mayInstall(self, vehicle, slotIdx = None, position = 0):
+    def mayInstall(self, vehicle, slotIdx = None):
         return (True, None)
 
     def isOptionalDeviceCompatible(self, optionalDevice):
@@ -430,7 +430,18 @@ class OptionalDevice(RemovableDevice):
 
         return False
 
-    def mayInstall(self, vehicle, slotIdx = None, position = 0):
+    def isSimilarDevice(self, other):
+        """
+        Check if 'other' device is similar this, i.e. has the same effect as this device.
+        :param other: optional device
+        :return: boolean value
+        """
+        if other is not None:
+            return not self.descriptor.checkCompatibilityWithOther(other)
+        else:
+            return False
+
+    def mayInstall(self, vehicle, slotIdx = None):
         return vehicle.descriptor.mayInstallOptionalDevice(self.intCD, slotIdx)
 
     def mayRemove(self, vehicle):

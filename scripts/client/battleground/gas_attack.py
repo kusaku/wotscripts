@@ -4,7 +4,6 @@ import math
 from AvatarInputHandler import mathUtils
 import BigWorld
 from AvatarInputHandler.aih_constants import CTRL_MODE_NAME
-from CTFManager import g_ctfManager
 import Event
 import MapActivities
 from Math import Vector3
@@ -306,7 +305,6 @@ class GasAttackManager(CallbackDelayer):
             return
 
     def __startPreparation(self, alreadyStarted = False):
-        g_ctfManager.hideAll()
         self.__state = GasAttackState.PREPARE
         attackTime = self.__startTime + self.__gasAttackSettings.preparationPeriod
         curTime = BigWorld.serverTime()

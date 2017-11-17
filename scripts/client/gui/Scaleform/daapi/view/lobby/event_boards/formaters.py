@@ -42,7 +42,7 @@ def formatVehicleNameWithTypeIcon(vehicle, path):
     icon = icons.makeImageTag(Vehicle.getTypeSmallIconPath(vehicle.type, vehicle.isPremium))
     level = int2roman(vehicle.level)
     key = 'vehicle_prem' if vehicle.isPremium else 'vehicle'
-    return makeHtmlString(path, key, {'msg': '{}{}{}'.format(level, icon, vehicle.userName)})
+    return makeHtmlString(path, key, {'msg': '{} {}{}'.format(level, icon, vehicle.userName)})
 
 
 def formatVehicleNationAndTypeIcon(vehicle, path):
@@ -59,8 +59,10 @@ def getNationEmblemIcon(nation):
         return None
 
 
-def getNationBigFlagIcon(nation):
+def getNationBigFlagIcon(nation, forVehicle):
     if nation in nations.AVAILABLE_NAMES:
+        if forVehicle:
+            return RES_ICONS.getEventBoardNationTankFlagIcon(nation)
         return RES_ICONS.getEventBoardNationFlagIcon(nation)
     else:
         return None

@@ -61,7 +61,7 @@ class _EventInfo(EventInfoModel):
             for cond in self.event.bonusCond.getConditions().items:
                 if isinstance(cond, conditions._Cumulativable):
                     for groupByKey, (curProg, totalProg, diff, _) in cond.getProgressPerGroup(pCur, pPrev).iteritems():
-                        label = cond.getUserString(battleTypeName=self.event.getBattleTypeName())
+                        label = cond.getUserString()
                         if not diff or not label:
                             continue
                         index += 1
@@ -155,10 +155,6 @@ class _QuestInfo(_EventInfo, QuestInfoModel):
     def _getBonuses(self, svrEvents, bonuses = None):
         bonuses = bonuses or self.event.getBonuses()
         result = OldStyleBonusesFormatter(self.event).getFormattedBonuses(bonuses)
-        parents = [ qID for _, qIDs in self.event.getParents().iteritems() for qID in qIDs ]
-        for qID, q in self._getEventsByIDs(parents, svrEvents or {}).iteritems():
-            result.append(formatters.packTextBlock(i18n.makeString('#quests:bonuses/item/task', q.getUserName()), questID=qID))
-
         if result:
             return formatters.todict(result)
         return formatters.todict([formatters.packTextBlock(text_styles.alert('#quests:bonuses/notAvailable'))])

@@ -30,7 +30,3 @@ class BattlePageMeta(View):
     def as_toggleCtrlPressFlagS(self, isCtrlPressed):
         if self._isDAAPIInited():
             return self.flashObject.as_toggleCtrlPressFlag(isCtrlPressed)
-
-    def as_onBattleLoadCompletedS(self):
-        if self._isDAAPIInited():
-            return self.flashObject.as_onBattleLoadCompleted()

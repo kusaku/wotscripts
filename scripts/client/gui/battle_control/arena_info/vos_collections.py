@@ -1,6 +1,4 @@
 # Embedded file name: scripts/client/gui/battle_control/arena_info/vos_collections.py
-import BigWorld
-import constants
 from collections import defaultdict
 from gui.shared.sort_key import SortKey
 from gui.battle_control.arena_info.arena_vos import EPIC_RANDOM_KEYS
@@ -76,10 +74,6 @@ class FragCorrelationSortKey(VehicleInfoSortKey):
     def _cmp(self, other):
         xvInfoVO = self.vInfoVO
         yvInfoVO = other.vInfoVO
-        if BigWorld.player().arenaBonusType == constants.ARENA_BONUS_TYPE.EVENT_BATTLES_2:
-            result = cmp(yvInfoVO.vehicleType.isLeviathan, xvInfoVO.vehicleType.isLeviathan)
-            if result:
-                return result
         result = cmp(yvInfoVO.isAlive(), xvInfoVO.isAlive())
         if result:
             return result

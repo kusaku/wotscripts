@@ -1,7 +1,5 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/battle/classic/players_panel.py
-import BigWorld
 from account_helpers.settings_core.settings_constants import GAME
-from constants import ARENA_GUI_TYPE
 from debug_utils import LOG_ERROR
 from gui.Scaleform.daapi.view.meta.PlayersPanelMeta import PlayersPanelMeta
 from gui.Scaleform.genConsts.PLAYERS_PANEL_STATE import PLAYERS_PANEL_STATE
@@ -59,7 +57,6 @@ class PlayersPanel(PlayersPanelMeta, IAbstractPeriodView):
 
     def _populate(self):
         super(PlayersPanel, self)._populate()
-        self.as_setEnemyHideStatusS(self.sessionProvider.arenaVisitor.getArenaGuiType() == ARENA_GUI_TYPE.EVENT_BATTLES_2)
         self.addListener(events.GameEvent.NEXT_PLAYERS_PANEL_MODE, self._handleNextMode, EVENT_BUS_SCOPE.BATTLE)
 
     def _dispose(self):

@@ -70,8 +70,6 @@ def isShootPositionInsideOtherVehicle(vehicle, turretPosition, shootPosition):
 
     nearVehicles = getNearVehicles(vehicle, shootPosition)
     for v in nearVehicles:
-        if v.isDisappeared:
-            continue
         if shootPosition.distTo(v.position) < v.typeDescriptor.boundingRadius and isSegmentCollideWithVehicle(v, turretPosition, shootPosition):
             return True
 
@@ -99,8 +97,6 @@ def getPenetratedVehicles(vehicle, turretPosition, shootPosition):
     penetratedVehicles = []
     nearVehicles = getNearVehicles(vehicle, shootPosition)
     for v in nearVehicles:
-        if v.isDisappeared:
-            continue
         if shootPosition.distTo(v.position) < v.typeDescriptor.boundingRadius and isSegmentCollideWithVehicle(v, turretPosition, shootPosition):
             penetratedVehicles.append(v.id)
 
@@ -126,7 +122,7 @@ def isSegmentCollideWithVehicle(vehicle, startPoint, endPoint):
             return toVehSpace
 
         def getVehicleComponents(vehicle):
-            return vehicle.getComponents()
+            return vehicle.getComponents(vehicle.gunAngles)
 
     toVehSpace = getVehicleSpaceMatrix(vehicle)
     vehStartPoint = toVehSpace.applyPoint(startPoint)

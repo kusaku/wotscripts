@@ -171,75 +171,15 @@ class EpicRandomTipsCriteria(_TipsCriteria):
             return _FoundTip('', '', '')
 
 
-def _getHalloweenPVPRandomTipIterator():
-    tipSize = len(RES_ICONS.MAPS_ICONS_BATTLELOADING_TIPS_HALLOWEENPVP_ENUM)
-    raise tipSize == len(TIPS.HALLOWEENPVP_ALL_BODY_ENUM) or AssertionError
-    if not tipSize == len(TIPS.HALLOWEENPVP_ALL_TITLE_ENUM):
-        raise AssertionError
-        items = tipSize > 0 and range(tipSize)
-        return rnd_choice_loop(*items)
-    else:
-        return None
-
-
-class HalloweenPVPTipsCriteria(_TipsCriteria):
-    __tipIterator = None
-
-    def __init__(self):
-        super(HalloweenPVPTipsCriteria, self).__init__()
-        if HalloweenPVPTipsCriteria.__tipIterator is None:
-            HalloweenPVPTipsCriteria.__tipIterator = _getHalloweenPVPRandomTipIterator()
-        return
-
-    def find(self):
-        iterator = HalloweenPVPTipsCriteria.__tipIterator
-        if iterator is not None:
-            tipNum = next(iterator)
-            return _FoundTip(i18n.makeString(TIPS.getHalloweenPVPRandomTipTitle(tipNum)), i18n.makeString(TIPS.getHalloweenPVPRandomTipBody(tipNum)), RES_ICONS.getHalloweenPVPRandomBattleLoadingTipImage(tipNum))
-        else:
-            return _FoundTip('', '', '')
-
-
-def _getHalloweenPVERandomTipIterator():
-    tipSize = len(RES_ICONS.MAPS_ICONS_BATTLELOADING_TIPS_HALLOWEENPVE_ENUM)
-    raise tipSize == len(TIPS.HALLOWEENPVE_ALL_BODY_ENUM) or AssertionError
-    if not tipSize == len(TIPS.HALLOWEENPVE_ALL_TITLE_ENUM):
-        raise AssertionError
-        items = tipSize > 0 and range(tipSize)
-        return rnd_choice_loop(*items)
-    else:
-        return None
-
-
-class HalloweenPVETipsCriteria(_TipsCriteria):
-    __tipIterator = None
-
-    def __init__(self):
-        super(HalloweenPVETipsCriteria, self).__init__()
-        if HalloweenPVETipsCriteria.__tipIterator is None:
-            HalloweenPVETipsCriteria.__tipIterator = _getHalloweenPVERandomTipIterator()
-        return
-
-    def find(self):
-        iterator = HalloweenPVETipsCriteria.__tipIterator
-        if iterator is not None:
-            tipNum = next(iterator)
-            return _FoundTip(i18n.makeString(TIPS.getHalloweenPVERandomTipTitle(tipNum)), i18n.makeString(TIPS.getHalloweenPVERandomTipBody(tipNum)), RES_ICONS.getHalloweenPVERandomBattleLoadingTipImage(tipNum))
-        else:
-            return _FoundTip('', '', '')
-
-
 def getTipsCriteria(arenaVisitor):
     if arenaVisitor.gui.isSandboxBattle():
         return SandboxTipsCriteria()
     if arenaVisitor.gui.isEventBattle():
-        return HalloweenPVPTipsCriteria()
+        return EventTipsCriteria()
     if arenaVisitor.gui.isRankedBattle():
         return RankedTipsCriteria()
     if arenaVisitor.gui.isEpicRandomBattle():
         return EpicRandomTipsCriteria()
-    if arenaVisitor.gui.isEventBattlesTwo():
-        return HalloweenPVETipsCriteria()
     return RandomTipsCriteria()
 
 

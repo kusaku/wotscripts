@@ -33,7 +33,8 @@ class FalloutClassicTotalWinPoints(broker.CollectableStats):
     def addVehicleStatusUpdate(self, vInfoVO):
         pass
 
-    def getTotalStats(self, arenaDP):
+    def getTotalStats(self, arenaVisitor, sessionProvider):
+        arenaDP = sessionProvider.getArenaDP()
         isTeamEnemy = arenaDP.isAllyTeam
         alliesPoints, enemiesPoints = (0, 0)
         for teamIdx, vehicles in self._winPoints.iteritems():
@@ -66,7 +67,8 @@ class FalloutMltiteamTotalWinPoints(FalloutClassicTotalWinPoints):
         self._vehiclesIDs[vInfoVO.team].append(vInfoVO.vehicleID)
         super(FalloutMltiteamTotalWinPoints, self).addVehicleStatsUpdate(vInfoVO, vStatsVO)
 
-    def getTotalStats(self, arenaDP):
+    def getTotalStats(self, arenaDP, arenaVisitor, sessionProvider):
+        arenaDP = sessionProvider.getArenaDP()
         isTeamEnemy = arenaDP.isAllyTeam
         allyPoints, enemyPoints = (0, 0)
         allyLabel, enemyLabel = ('', '')
@@ -185,20 +187,12 @@ class FalloutStatisticsDataController(BattleStatisticsDataController):
             return FalloutMltiteamTotalWinPoints(self._personalInfo.vehicleID)
         return broker.NoCollectableStats()
 
-    def __getStatsComponentClass(self):
-        if self._arenaVisitor.hasResourcePoints():
-            clazz = FalloutResourceStatsComponent
-        else:
-            clazz = FalloutFlagsStatsComponent
-        return clazz
-
     def __configureClassicBroker(self, exchangeBroker):
         if self._arenaVisitor.hasRespawns():
             sortKey = vos_collections.RespawnSortKey
         else:
             sortKey = vos_collections.VehicleInfoSortKey
         exchangeBroker.setVehiclesInfoExchange(vehicle.VehiclesExchangeBlock(vehicle.VehicleInfoComponent(), positionComposer=broker.BiDirectionComposer(), idsComposers=(vehicle.TeamsSortedIDsComposer(sortKey=sortKey),), statsComposers=None))
-        exchangeBroker.setVehiclesStatsExchange(vehicle.VehiclesExchangeBlock(self.__getStatsComponentClass()(), positionComposer=broker.BiDirectionComposer(), idsComposers=None, statsComposers=(vehicle.TotalStatsComposer(),)))
         exchangeBroker.setVehicleStatusExchange(vehicle.VehicleStatusComponent(idsComposers=(vehicle.TeamsSortedIDsComposer(sortKey=sortKey),), statsComposers=None))
         return
 
@@ -208,6 +202,5 @@ class FalloutStatisticsDataController(BattleStatisticsDataController):
         else:
             sortKey = vos_collections.WinPointsAndVehicleInfoSortKey
         exchangeBroker.setVehiclesInfoExchange(vehicle.VehiclesExchangeBlock(vehicle.VehicleInfoComponent(), positionComposer=FalloutMultiTeamItemsComposer(), idsComposers=(FalloutMultiTeamSortedIDsComposer(sortKey=sortKey),), statsComposers=None))
-        exchangeBroker.setVehiclesStatsExchange(vehicle.VehiclesExchangeBlock(self.__getStatsComponentClass()(), positionComposer=FalloutMultiTeamItemsComposer(), idsComposers=(FalloutMultiTeamSortedIDsComposer(sortKey=sortKey),), statsComposers=(vehicle.TotalStatsComposer(),)))
         exchangeBroker.setVehicleStatusExchange(vehicle.VehicleStatusComponent(idsComposers=(FalloutMultiTeamSortedIDsComposer(sortKey=sortKey),), statsComposers=None))
         return

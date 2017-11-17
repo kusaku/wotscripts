@@ -83,6 +83,9 @@ class AvatarObserver(CallbackDelayer):
     def onBecomeNonPlayer(self):
         CallbackDelayer.destroy(self)
 
+    def handleKey(self, isDown, key, mods):
+        pass
+
     def onEnterWorld(self):
 
         def getFilterMethod(methodName):
@@ -133,9 +136,9 @@ class AvatarObserver(CallbackDelayer):
                 self.gunRotator.forceGunParams(turretYaw, gunPitch, extraData.dispAngle)
             self.guiSessionProvider.updateObservedVehicleData(self.__observedVehicleID, extraData)
             ammoCtrl = self.guiSessionProvider.shared.ammo
-            shotIdx = ammoCtrl.getGunSettings(0).getShotIndex(extraData.currentShellCD)
+            shotIdx = ammoCtrl.getGunSettings().getShotIndex(extraData.currentShellCD)
             if shotIdx > -1:
-                self.vehicle.typeDescriptor.turrets[0].shotIndex = shotIdx
+                self.vehicle.typeDescriptor.activeGunShotIndex = shotIdx
         return
 
     def vehicle_onEnterWorld(self, vehicle):
@@ -144,14 +147,14 @@ class AvatarObserver(CallbackDelayer):
                 extraData = self.observedVehicleData[self.__observedVehicleID]
                 extraData.gunSettings = vehicle.typeDescriptor.gun
 
-    def updateVehicleGunReloadTime(self, vehicleID, timeLeft, baseTime, index):
+    def updateVehicleGunReloadTime(self, vehicleID, timeLeft, baseTime):
         if self.isObserver():
             self.observedVehicleData[vehicleID].setReload(timeLeft, baseTime)
 
     def updateVehicleOptionalDeviceStatus(self, vehicleID, deviceID, isOn):
         self.observedVehicleData[vehicleID].setOptionalDevice(deviceID, isOn)
 
-    def updateVehicleSetting(self, vehicleID, code, value, index):
+    def updateVehicleSetting(self, vehicleID, code, value):
         if code == VEHICLE_SETTING.CURRENT_SHELLS:
             self.__observedVehicleData[vehicleID].currentShellCD = value
             return
@@ -183,7 +186,7 @@ class AvatarObserver(CallbackDelayer):
         vehicle = self.vehicle
         if vehicle is None:
             vehicle = BigWorld.entity(self.__observedVehicleID if self.__observedVehicleID else self.playerVehicleID)
-        if vehicle is None or not vehicle.inWorld or not vehicle.isStarted or vehicle.isDestroyed:
+        if vehicle is None or not vehicle.inWorld or not vehicle.isStarted or not vehicle.isAlive():
             return
         else:
             return vehicle

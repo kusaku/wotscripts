@@ -1,11 +1,9 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/battle/shared/crosshair/gm_components.py
 from collections import namedtuple
 import GUI
-from debug_utils import LOG_DEBUG, LOG_ERROR
+from debug_utils import LOG_DEBUG
 from gui.Scaleform.daapi.view.battle.shared.crosshair import settings
-from gui.Scaleform.genConsts.GUN_MARKER_VIEW_CONSTANTS import GUN_MARKER_VIEW_CONSTANTS
 from gui.battle_control.battle_constants import CROSSHAIR_VIEW_ID
-from AvatarInputHandler import aih_global_binding
 
 class IGunMarkerComponent(object):
 
@@ -46,12 +44,11 @@ class IGunMarkerComponent(object):
         raise NotImplementedError
 
 
-_ViewSettings = namedtuple('_ViewSettings', ('viewID', 'linkage', 'name', 'hasView', 'subGun', 'id', 'isSubArcade', 'verticalDeviation', 'screenPosition'))
+_ViewSettings = namedtuple('_ViewSettings', ('viewID', 'linkage', 'name', 'hasView'))
 
 class GunMarkerComponent(IGunMarkerComponent):
-    __aimOffset = aih_global_binding.bindRO(aih_global_binding.BINDING_ID.AIM_OFFSET)
 
-    def __init__(self, markerType, viewID, name, linkage, dataProvider, isActive = False, subGun = False, id = GUN_MARKER_VIEW_CONSTANTS.MAIN_GUN_MARKER_ID, isSubArcade = False):
+    def __init__(self, markerType, viewID, name, linkage, dataProvider, isActive = False):
         super(GunMarkerComponent, self).__init__()
         self._markerType = markerType
         self._viewID = viewID
@@ -61,45 +58,16 @@ class GunMarkerComponent(IGunMarkerComponent):
         self._view = None
         self._isActive = isActive
         self._scale = 1.0
-        self._subGun = subGun
-        self._id = id
-        self._isSubArcade = isSubArcade
-        self._verticalDeviation = 1.0
-        self._screenPosition = 1.0
         return
 
     def addView(self, container):
         if not self._view is None:
             raise AssertionError('View is already created.')
             self._view = self._createView(container)
-            self._setViewDispersionRadius(100)
-            self._verticalDeviation = self.verticalDeviation()
-            self._screenPosition = self.screenPosition()
-            if self._subGun and self._isSubArcade:
-                self._view.aimOffset = self.__aimOffset[1]
             LOG_DEBUG('FlashGUIComponent is created', self._name, self._view)
             self._isActive and self._setupDataProvider()
         container.addChild(self._view, self._name)
         return
-
-    def _setViewDispersionRadius(self, newRadius):
-        if self._view is not None:
-            self._view.dispersionRadius = newRadius
-        else:
-            LOG_ERROR('GunMarkerComponent._setViewDispersionRadius called on self._view == None')
-        return
-
-    def verticalDeviation(self):
-        if self._view is None:
-            return 0
-        else:
-            return self._view.verticalDeviation
-
-    def screenPosition(self):
-        if self._view is None:
-            return 0
-        else:
-            return self._view.screenPosition
 
     def removeView(self, container):
         raise self._view is not None or AssertionError('View is already removed.')
@@ -110,9 +78,6 @@ class GunMarkerComponent(IGunMarkerComponent):
 
     def getScale(self):
         return self._scale
-
-    def getId(self):
-        return self._id
 
     def setScale(self, scale):
         self._scale = scale
@@ -130,17 +95,11 @@ class GunMarkerComponent(IGunMarkerComponent):
     def getViewID(self):
         return self._viewID
 
-    def subGun(self):
-        return self._subGun
-
-    def isSubArcade(self):
-        return self._isSubArcade
-
     def getName(self):
         return self._name
 
     def getViewSettings(self):
-        return _ViewSettings(self._viewID, self._linkage, self._name, self._view is not None, self._subGun, self._id, self._isSubArcade, self.verticalDeviation(), self.screenPosition())
+        return _ViewSettings(self._viewID, self._linkage, self._name, self._view is not None)
 
     def isActive(self):
         return self._isActive
@@ -185,13 +144,6 @@ class DefaultGunMarkerComponent(GunMarkerComponent):
         return view
 
 
-class SubGunMarkerComponent(DefaultGunMarkerComponent):
-
-    def _createView(self, container):
-        view = super(SubGunMarkerComponent, self)._createView(container)
-        return view
-
-
 class SPGGunMarkerComponent(GunMarkerComponent):
 
     def setScale(self, scale):
@@ -209,15 +161,6 @@ class SPGGunMarkerComponent(GunMarkerComponent):
         view.widthMode = 'PIXEL'
         view.setPointsBaseScale(self._scale)
         return view
-
-    def _setViewDispersionRadius(self, newRadius):
-        return 0
-
-    def verticalDeviation(self):
-        return 0
-
-    def screenPosition(self):
-        return 0
 
 
 class VideoGunMarkerComponent(DefaultGunMarkerComponent):

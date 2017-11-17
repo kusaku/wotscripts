@@ -12,8 +12,6 @@ class TankPartNames:
     HULL = 'hull'
     TURRET = 'turret'
     GUN = 'gun'
-    ADDITIONAL_TURRET = 'additional_turret_'
-    ADDITIONAL_GUN = 'additional_gun_'
     ALL = (CHASSIS,
      HULL,
      TURRET,
@@ -25,13 +23,6 @@ class TankPartNames:
             if n == name:
                 return idx
 
-        if name.find('additional') != -1:
-            lastUnderscore = name.rfind('_') + 1
-            addlComponentIndex = int(name[lastUnderscore:])
-            realIndex = (addlComponentIndex + 1) * 2
-            if name.find('turret') != -1:
-                return realIndex
-            return realIndex + 1
         raise Exception('Invalid part name!')
 
 
@@ -124,16 +115,3 @@ def getCrashedSkeleton(vehicleDesc):
 
 def getPartModelsFromDesc(vehicleDesc, modelStateName):
     return VehiclePartsTuple(chassis=vehicleDesc.chassis.models.getPathByStateName(modelStateName), hull=vehicleDesc.hull.models.getPathByStateName(modelStateName), turret=vehicleDesc.turret.models.getPathByStateName(modelStateName), gun=vehicleDesc.gun.models.getPathByStateName(modelStateName))
-
-
-def getAdditionalTurretsModelsFromDesc(vehicleDesc, modelStateName):
-    additionalTurrets = []
-    for turret in vehicleDesc.turrets:
-        if turret == vehicleDesc.turrets[0]:
-            continue
-        turretModelName = turret.turret.models.getPathByStateName(modelStateName)
-        gunModelName = turret.gun.models.getPathByStateName(modelStateName)
-        turretInfo = (turretModelName, gunModelName)
-        additionalTurrets.append(turretInfo)
-
-    return additionalTurrets

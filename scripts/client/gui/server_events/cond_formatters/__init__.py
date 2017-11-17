@@ -126,14 +126,7 @@ BATTLE_RESULTS_KEYS = {'capturePoints': CONDITION_ICON.BASE_CAPTURE,
  'spottedBeforeWeBecameSpotted': CONDITION_ICON.DISCOVER,
  'isEnemyBaseCaptured': CONDITION_ICON.BASE_CAPTURE,
  'isAnyOurCrittedInnerModules': CONDITION_ICON.SURVIVE,
- 'isNotSpotted': CONDITION_ICON.SURVIVE,
- 'totalHealed': CONDITION_ICON.SAVE_HP,
- 'bossHazardDamageReceived': CONDITION_ICON.HIT,
- 'bossDamageReceived': CONDITION_ICON.HIT,
- 'bossSecondaryTurretKill': CONDITION_ICON.KILL_VEHICLES,
- 'healthPickups': CONDITION_ICON.SAVE_HP,
- 'secondaryTurretKills': CONDITION_ICON.KILL_VEHICLES,
- 'bossDirectHits': CONDITION_ICON.DAMAGE}
+ 'isNotSpotted': CONDITION_ICON.SURVIVE}
 BATTLE_RESULTS_AGGREGATED_KEYS = {tuple(sorted(['damagedVehicleCntAssistedTrack', 'damagedVehicleCntAssistedRadio'])): CONDITION_ICON.ASSIST_RADIO,
  tuple(sorted(['killsAssistedTrack', 'killsAssistedRadio'])): CONDITION_ICON.ASSIST_RADIO,
  tuple(sorted(['damageAssistedStun', 'damageAssistedTrack'])): CONDITION_ICON.ASSIST,
@@ -196,6 +189,19 @@ def getSeparator(groupType = GROUP_TYPE.AND):
     if groupType == GROUP_TYPE.OR:
         return i18n.makeString('#quests:details/groups/or')
     return ''
+
+
+def getSeparatorBlock(groupType = GROUP_TYPE.AND):
+    """
+    Create a separator block data
+    """
+    label = getSeparator(groupType)
+    if label:
+        item = packText(text_styles.standard(label))
+        item.update(isSeparator=True)
+        return item
+    else:
+        return None
 
 
 def packTokenProgress(tokenId, questId, title, image, gotCount, needCount, isBigSize = False):

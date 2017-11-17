@@ -39,9 +39,6 @@ class _PlayerEvents(object):
         self.onEnqueuedRanked = Event.Event()
         self.onDequeuedRanked = Event.Event()
         self.onEnqueuedRankedFailure = Event.Event()
-        self.onEnqueuedEventBattlesTwo = Event.Event()
-        self.onDequeuedEventBattlesTwo = Event.Event()
-        self.onEnqueuedEventBattlesTwoFailure = Event.Event()
         self.onPrebattleJoined = Event.Event()
         self.onPrebattleLeft = Event.Event()
         self.onPrebattleJoinFailure = Event.Event()
@@ -56,7 +53,6 @@ class _PlayerEvents(object):
         self.onKickedFromFalloutMultiteam = Event.Event()
         self.onKickedFromSandboxQueue = Event.Event()
         self.onKickedFromRankedQueue = Event.Event()
-        self.onKickedFromEventBattlesTwoQueue = Event.Event()
         self.onKickedFromPrebattle = Event.Event()
         self.onKickedFromArena = Event.Event()
         self.onQueueInfoReceived = Event.Event()
@@ -103,8 +99,6 @@ class _PlayerEvents(object):
         self.onShowDevelopmentInfo = Event.Event()
         self.onEntityCheckOutEnqueued = Event.Event()
         self.onRoundFinished = Event.Event()
-        self.onGiftReceived = Event.Event()
-        self.onGiftClaimed = Event.Event()
 
 
 g_playerEvents = _PlayerEvents()

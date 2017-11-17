@@ -259,8 +259,7 @@ class WebBrowser(object):
             self.__cbID = None
         self.__ui = None
         self.__navigationFilters = None
-        if self.__uiObj is not None:
-            self.__uiObj.cursorMgr.setCursorForced(Cursor.ARROW)
+        self.__setUICursor(self.__uiObj, Cursor.ARROW)
         g_mgr.delBrowser(self)
         return
 
@@ -268,9 +267,7 @@ class WebBrowser(object):
         if self.hasBrowser and not self.isFocused:
             self.__browser.focus()
             self.__isFocused = True
-            ui = self.__ui()
-            if ui:
-                ui.cursorMgr.setCursorForced(self.__browser.script.cursorType)
+            self.__setUICursor(self.__ui(), self.__browser.script.cursorType)
 
     def unfocus(self):
         if self.hasBrowser and self.isFocused:
@@ -514,6 +511,10 @@ class WebBrowser(object):
             return False
         return True
 
+    def __setUICursor(self, ui, cursorType):
+        if ui and cursorType:
+            ui.cursorMgr.setCursorForced(cursorType)
+
     def __onTitleChange(self, title):
         if self.__isValidTitle(title):
             LOG_BROWSER('onTitleChange', title, self.__browser.url)
@@ -521,9 +522,7 @@ class WebBrowser(object):
 
     def __onCursorUpdated(self):
         if self.hasBrowser and self.isFocused:
-            ui = self.__ui()
-            if ui:
-                ui.cursorMgr.setCursorForced(self.__browser.script.cursorType)
+            self.__setUICursor(self.__ui(), self.__browser.script.cursorType)
 
     def __onReady(self, success):
         self.ready(success)

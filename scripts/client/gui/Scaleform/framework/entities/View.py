@@ -23,6 +23,11 @@ class ViewKey(_ViewKey):
     def __repr__(self):
         return '{}[alias={}, name={}]'.format(self.__class__.__name__, self.alias, self.name)
 
+    def __eq__(self, other):
+        if isinstance(other, ViewKey):
+            return self.name == other.name and self.alias == other.alias
+        return False
+
 
 class _ViewSoundsManager(object):
     """

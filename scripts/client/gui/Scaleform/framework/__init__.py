@@ -16,7 +16,7 @@ class COMMON_VIEW_ALIAS(object):
     WAITING = 'waiting'
 
 
-class GroupedViewSettings(namedtuple('GroupedViewSettings', 'alias clazz url type group event scope cacheable containers canDrag canClose isModal isCentered')):
+class GroupedViewSettings(namedtuple('GroupedViewSettings', 'alias clazz url type group event scope cacheable containers canDrag canClose isModal isCentered isResizable')):
     """
     Grouped view setting.
     
@@ -33,6 +33,7 @@ class GroupedViewSettings(namedtuple('GroupedViewSettings', 'alias clazz url typ
     :param canClose: is the view can be closed
     :param isModal: is the view is modal
     :param isCentered: is the view is centered on screen
+    :param isResizable: can the view be resized
     """
 
     def getDAAPIObject(self):
@@ -45,7 +46,8 @@ class GroupedViewSettings(namedtuple('GroupedViewSettings', 'alias clazz url typ
          'canDrag': self.canDrag,
          'canClose': self.canClose,
          'isModal': self.isModal,
-         'isCentered': self.isCentered}
+         'isCentered': self.isCentered,
+         'isResizable': self.isResizable}
 
     def replaceSettings(self, settings):
         return self._replace(**settings)
@@ -72,6 +74,7 @@ GroupedViewSettings.__new__.__defaults__ = (None,
  True,
  True,
  False,
+ True,
  True)
 
 class ViewSettings(GroupedViewSettings):
@@ -80,9 +83,9 @@ class ViewSettings(GroupedViewSettings):
     """
 
     @staticmethod
-    def __new__(cls, alias, clazz, url, type, event, scope, cacheable, containers, canDrag, canClose, isModal, isCentered):
+    def __new__(cls, alias, clazz, url, type, event, scope, cacheable, containers, canDrag, canClose, isModal, isCentered, isResizable):
         """ overloaded ctor only for empty group passing reason """
-        return GroupedViewSettings.__new__(cls, alias, clazz, url, type, None, event, scope, cacheable, containers, canDrag, canClose, isModal, isCentered)
+        return GroupedViewSettings.__new__(cls, alias, clazz, url, type, None, event, scope, cacheable, containers, canDrag, canClose, isModal, isCentered, isResizable)
 
 
 ViewSettings.__new__.__defaults__ = (None,
@@ -96,6 +99,7 @@ ViewSettings.__new__.__defaults__ = (None,
  True,
  True,
  False,
+ True,
  True)
 
 class ContainerSettings(namedtuple('ContainerSettings', 'type clazz')):
@@ -113,8 +117,8 @@ ContainerSettings.__new__.__defaults__ = (None, None)
 class ConditionalViewSettings(GroupedViewSettings):
 
     @staticmethod
-    def __new__(cls, alias, clazzFunc, url, type, group, event, scope, cacheable, containers, canDrag, canClose, isModal, isCentered):
-        self = GroupedViewSettings.__new__(cls, alias, '', url, type, group, event, scope, cacheable, containers, canDrag, canClose, isModal, isCentered)
+    def __new__(cls, alias, clazzFunc, url, type, group, event, scope, cacheable, containers, canDrag, canClose, isModal, isCentered, isResizable):
+        self = GroupedViewSettings.__new__(cls, alias, '', url, type, group, event, scope, cacheable, containers, canDrag, canClose, isModal, isCentered, isResizable)
         self.__clazzFunc = clazzFunc
         self.__url = url
         self.__type = type
@@ -165,6 +169,7 @@ ConditionalViewSettings.__new__.__defaults__ = (None,
  True,
  True,
  False,
+ True,
  True)
 g_entitiesFactories = EntitiesFactories((DAAPIModuleFactory((ViewTypes.COMPONENT,)), ViewFactory((ViewTypes.DEFAULT,
   ViewTypes.LOBBY_SUB,

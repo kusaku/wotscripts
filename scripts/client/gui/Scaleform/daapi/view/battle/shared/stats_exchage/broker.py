@@ -56,7 +56,7 @@ class CollectableStats(object):
     def addVehicleStatusUpdate(self, vInfoVO):
         raise NotImplementedError
 
-    def getTotalStats(self, arenaDP):
+    def getTotalStats(self, arenaVisitor, sessionProvider):
         raise NotImplementedError
 
     def getTotalScore(self):
@@ -79,7 +79,7 @@ class NoCollectableStats(CollectableStats):
     def addVehicleStatusUpdate(self, vInfoVO):
         pass
 
-    def getTotalStats(self, arenaDP):
+    def getTotalStats(self, arenaVisitor, sessionProvider):
         return None
 
     def getTotalScore(self):
