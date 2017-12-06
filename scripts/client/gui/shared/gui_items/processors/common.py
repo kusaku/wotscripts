@@ -123,6 +123,105 @@ class BattleResultsGetter(Processor):
         BigWorld.player().battleResultsCache.get(self.__arenaUniqueID, lambda code, battleResults: self._response(code, callback, ctx=battleResults))
 
 
+class OutfitApplier(Processor):
+    """ Outfit buyer and applier.
+    """
+
+    def __init__(self, vehicle, outfit, season):
+        super(OutfitApplier, self).__init__()
+        self.vehicle = vehicle
+        self.outfit = outfit
+        self.season = season
+
+    def _errorHandler(self, code, errStr = '', ctx = None):
+        if not errStr:
+            msg = 'server_error'
+        else:
+            msg = errStr
+        return makeI18nError('customization/{}'.format(msg))
+
+    def _request(self, callback):
+        LOG_DEBUG('Make server request to put on outfit on vehicle {}, season {}'.format(self.vehicle.invID, self.season))
+        BigWorld.player().shop.buyAndEquipOutfit(self.vehicle.invID, self.season, self.outfit.pack().makeCompDescr(), lambda code: self._response(code, callback))
+
+
+class StyleApplier(Processor):
+    """ Style buyer and applier.
+    """
+
+    def __init__(self, vehicle, style = None):
+        super(StyleApplier, self).__init__()
+        self.vehicle = vehicle
+        self.style = style
+
+    def _errorHandler(self, code, errStr = '', ctx = None):
+        if not errStr:
+            msg = 'server_error'
+        else:
+            msg = errStr
+        return makeI18nError('customization/{}'.format(msg))
+
+    def _request(self, callback):
+        LOG_DEBUG('Make server request to put on style on vehicle {}'.format(self.vehicle.invID))
+        if self.style:
+            styleID = self.style.id
+        else:
+            styleID = 0
+        BigWorld.player().shop.buyAndEquipStyle(self.vehicle.invID, styleID, lambda code: self._response(code, callback))
+
+
+class CustomizationsBuyer(Processor):
+    """ Customizations buyer.
+    """
+
+    def __init__(self, vehicle, item, count):
+        super(CustomizationsBuyer, self).__init__()
+        self.vehicle = vehicle
+        self.item = item
+        self.count = count
+
+    def _errorHandler(self, code, errStr = '', ctx = None):
+        if not errStr:
+            msg = 'server_error'
+        else:
+            msg = errStr
+        return makeI18nError('customization/{}'.format(msg))
+
+    def _request(self, callback):
+        if self.vehicle:
+            invID = self.vehicle.invID
+        else:
+            invID = 0
+        LOG_DEBUG('Make server request to buy customizations on vehicle {}: {} count {}'.format(invID, self.item, self.count))
+        BigWorld.player().shop.buyCustomizations(invID, {self.item.intCD: self.count}, lambda code: self._response(code, callback))
+
+
+class CustomizationsSeller(Processor):
+    """ Customizations buyer.
+    """
+
+    def __init__(self, vehicle, item, count = 1):
+        super(CustomizationsSeller, self).__init__()
+        self.vehicle = vehicle
+        self.item = item
+        self.count = count
+
+    def _errorHandler(self, code, errStr = '', ctx = None):
+        if not errStr:
+            msg = 'server_error'
+        else:
+            msg = errStr
+        return makeI18nError('customization/{}'.format(msg))
+
+    def _request(self, callback):
+        if self.vehicle:
+            invID = self.vehicle.invID
+        else:
+            invID = 0
+        LOG_DEBUG('Make server request to sell customizations on vehicle {}, item {}, count {}'.format(invID, self.item, self.count))
+        BigWorld.player().shop.sellCustomizations(invID, self.item.intCD, self.count, lambda code: self._response(code, callback))
+
+
 class BadgesSelector(Processor):
 
     def __init__(self, badges = None):

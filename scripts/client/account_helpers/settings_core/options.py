@@ -63,6 +63,7 @@ class APPLY_METHOD:
     NORMAL = 'normal'
     DELAYED = 'delayed'
     RESTART = 'restart'
+    NEXT_BATTLE = 'next_battle'
 
 
 class ISetting(object):
@@ -200,6 +201,8 @@ class SettingsContainer(ISetting):
             return APPLY_METHOD.RESTART
         if APPLY_METHOD.DELAYED in methods:
             return APPLY_METHOD.DELAYED
+        if APPLY_METHOD.NEXT_BATTLE in methods:
+            return APPLY_METHOD.NEXT_BATTLE
         return APPLY_METHOD.NORMAL
 
     def getSetting(self, name):
@@ -423,22 +426,19 @@ class StorageSetting(RegularSetting):
         return result
 
 
-class DumpSetting(RegularSetting):
-
-    def getDumpValue(self):
-        return self._get()
+class StorageDumpSetting(StorageSetting):
 
     def setDumpedValue(self, value):
         BattleReplay.g_replayCtrl.setSetting(self.settingName, value)
 
     def getDumpedValue(self):
-        return BattleReplay.g_replayCtrl.getSetting(self.settingName, self._default)
+        return BattleReplay.g_replayCtrl.getSetting(self.settingName, self.getDefaultValue())
+
+    def getDumpValue(self):
+        return self._get()
 
     def dump(self):
         BattleReplay.g_replayCtrl.setSetting(self.settingName, self.getDumpValue())
-
-
-class StorageDumpSetting(StorageSetting, DumpSetting):
 
     def _get(self):
         if BattleReplay.isPlaying():
@@ -451,11 +451,23 @@ class StorageDumpSetting(StorageSetting, DumpSetting):
         return super(StorageDumpSetting, self)._set(value)
 
 
-class AccountDumpSetting(AccountSetting, DumpSetting):
+class AccountDumpSetting(AccountSetting):
 
-    def __init__(self, settingName, key, subKey = None, isPreview = False):
-        AccountSetting.__init__(self, key, subKey)
-        DumpSetting.__init__(self, settingName, isPreview=isPreview)
+    def __init__(self, settingName, key, subKey = None):
+        super(AccountDumpSetting, self).__init__(key, subKey)
+        self.__dumpName = settingName
+
+    def setDumpedValue(self, value):
+        BattleReplay.g_replayCtrl.setSetting(self.__dumpName, value)
+
+    def getDumpedValue(self):
+        return BattleReplay.g_replayCtrl.getSetting(self.__dumpName, self.getDefaultValue())
+
+    def getDumpValue(self):
+        return self._get()
+
+    def dump(self):
+        BattleReplay.g_replayCtrl.setSetting(self.__dumpName, self.getDumpValue())
 
     def _get(self):
         if BattleReplay.isPlaying():
@@ -474,6 +486,12 @@ class StorageAccountSetting(StorageDumpSetting):
         return AccountSettings.getSettingsDefault(self.settingName)
 
 
+class C11nHistoricallyAccurateSetting(StorageAccountSetting):
+
+    def getApplyMethod(self, value):
+        return APPLY_METHOD.NEXT_BATTLE
+
+
 class SettingFalseByDefault(StorageDumpSetting):
 
     def getDefaultValue(self):
@@ -484,15 +502,6 @@ class TutorialSetting(StorageDumpSetting):
 
     def getDefaultValue(self):
         return False
-
-
-class ExcludeInReplayAccountSetting(StorageAccountSetting):
-
-    def getDumpValue(self):
-        return None
-
-    def setDumpedValue(self, value):
-        pass
 
 
 class UserPrefsSetting(SettingAbstract):
@@ -1490,7 +1499,7 @@ class BattleLoadingTipSetting(AccountDumpSetting):
 
     def _getOptions(self):
         settingsKey = '#settings:game/%s/%s'
-        return [ settingsKey % (self.settingName, type) for type in self.OPTIONS.TIPS_TYPES ]
+        return [ settingsKey % (self.key, type) for type in self.OPTIONS.TIPS_TYPES ]
 
 
 class ShowMarksOnGunSetting(StorageAccountSetting):
@@ -1891,17 +1900,14 @@ class FPSPerfomancerSetting(StorageDumpSetting):
 
 class _BaseSoundPresetSetting(AccountDumpSetting):
 
-    def __init__(self, actionsMap, settingName, key, subKey = None, isPreview = False):
+    def __init__(self, actionsMap, settingName, key, subKey = None):
         """
         :param actionsMap: [tuple]. Each element have to be tuple of two elements: method and arguments for this method
         :param settingName: [str] setting name
         :param key: [str] account setting section name
         :param subKey: [str] account setting subsection name
-        :param isPreview: [bool] is preview available. It means that value is changed by player selection, and
-            it is saved if player applies changes, otherwise - value is changed and saved only
-            if player applies changes.
         """
-        super(_BaseSoundPresetSetting, self).__init__(settingName, key, subKey, isPreview=isPreview)
+        super(_BaseSoundPresetSetting, self).__init__(settingName, key, subKey)
         self.__actionsMap = actionsMap
 
     def setSystemValue(self, value):
@@ -1960,7 +1966,7 @@ class SoundDevicePresetSetting(_BaseSoundPresetSetting):
     soundsCtrl = dependency.descriptor(ISoundsController)
 
     def __init__(self, settingName, key, subKey = None, isPreview = False):
-        super(SoundDevicePresetSetting, self).__init__(((self.__setSound, 0), (self.__setSound, 1), (self.__setSound, 2)), settingName, key, subKey=subKey, isPreview=isPreview)
+        super(SoundDevicePresetSetting, self).__init__(((self.__setSound, 0), (self.__setSound, 1), (self.__setSound, 2)), settingName, key, subKey=subKey)
 
     def _getOptions(self):
         options = []

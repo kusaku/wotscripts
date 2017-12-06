@@ -41,9 +41,9 @@ class _CompoundAssembler(VehicleAssemblerAbstract):
         VehicleAssemblerAbstract.__init__(self)
         self.__appearance = CompoundAppearance()
 
-    def prerequisites(self, typeDescriptor, id, health = 1, isCrewActive = True, isTurretDetached = False):
+    def prerequisites(self, typeDescriptor, id, health = 1, isCrewActive = True, isTurretDetached = False, outfitCD = ''):
         raise 'pillbox' not in typeDescriptor.type.tags or AssertionError('Pillboxes are not supported and have never been')
-        prereqs = self.__appearance.prerequisites(typeDescriptor, id, health, isCrewActive, isTurretDetached)
+        prereqs = self.__appearance.prerequisites(typeDescriptor, id, health, isCrewActive, isTurretDetached, outfitCD)
         compoundAssembler = prepareCompoundAssembler(typeDescriptor, self.__appearance.damageState.modelState, BigWorld.player().spaceID, isTurretDetached)
         prereqs += [compoundAssembler]
         return (compoundAssembler, prereqs)

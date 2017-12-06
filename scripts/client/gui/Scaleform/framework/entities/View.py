@@ -29,6 +29,18 @@ class ViewKey(_ViewKey):
         return False
 
 
+class ViewKeyDynamic(ViewKey):
+    """
+    View key matcher based on alias only. Used for matching keys
+    with dynamically generated names (like dialogs).
+    """
+
+    def __eq__(self, other):
+        if isinstance(other, ViewKey):
+            return self.alias == other.alias
+        return False
+
+
 class _ViewSoundsManager(object):
     """
     Represents sound manager that tracks all sounds emitted through it and stops them when the view is destroyed.

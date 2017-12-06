@@ -201,6 +201,7 @@ class ShowDialogEvent(SharedEvent):
     SHOW_DESERTER_DLG = 'showDeserterDialog'
     SHOW_EXECUTION_CHOOSER_DIALOG = 'showExecutionChooserDialog'
     SHOW_USE_AWARD_SHEET_DIALOG = 'useAwardSheetDialog'
+    SHOW_CONFIRM_CUSTOMIZATION_ITEM_DIALOG = 'showConfirmCustomizationItemDialog'
 
     def __init__(self, meta, handler):
         super(ShowDialogEvent, self).__init__(meta.getEventType())
@@ -287,6 +288,8 @@ class LobbySimpleEvent(HasCtxEvent):
     EVENTS_UPDATED = 'questUpdated'
     HIDE_HANGAR = 'hideHangar'
     NOTIFY_CURSOR_OVER_3DSCENE = 'notifyCursorOver3dScene'
+    NOTIFY_CURSOR_DRAGGING = 'notifyCursorDragging'
+    NOTIFY_SPACE_MOVED = 'notifySpaceMoved'
     PREMIUM_BOUGHT = 'premiumBought'
     WAITING_SHOWN = 'waitingShown'
     BATTLE_RESULTS_POSTED = 'battleResultsPosted'

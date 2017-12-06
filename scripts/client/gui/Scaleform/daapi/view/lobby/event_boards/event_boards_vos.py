@@ -151,10 +151,10 @@ def makeEventBoardsTableDataVO(rewardCategories, method):
 def makeParameterTooltipVO(method, amount, parameter):
     parametersWithTooltip = [_op.ORIGINALXP, _op.XP]
     maxOrSum = 'max' if method == _cm.MAX else 'sum'
-    if parameter in parametersWithTooltip:
+    if parameter in parametersWithTooltip and amount is not None:
         return makeTooltip(body=_ms(EVENT_BOARDS.tooltip_top_description_all(maxOrSum, parameter), number=amount))
     else:
-        return None
+        return
 
 
 def makeEventBoardsTableViewStatusVO(title, tooltip, info, value1, value2, value3, showPoints, buttonLabel, buttonTooltip, buttonVisible, buttonEnabled, titleTooltip):

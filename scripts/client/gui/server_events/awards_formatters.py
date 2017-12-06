@@ -1,7 +1,5 @@
 # Embedded file name: scripts/client/gui/server_events/awards_formatters.py
 from collections import namedtuple
-import nations
-from items import vehicles
 from gui.Scaleform.genConsts.SLOT_HIGHLIGHT_TYPES import SLOT_HIGHLIGHT_TYPES
 from gui.Scaleform.genConsts.TOOLTIPS_CONSTANTS import TOOLTIPS_CONSTANTS
 from gui.Scaleform.locale.QUESTS import QUESTS
@@ -9,13 +7,15 @@ from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.server_events.formatters import parseComplexToken, TOKEN_SIZES
 from gui.shared.formatters import text_styles
-from gui.shared.gui_items import GUI_ITEM_TYPE, getItemIconName
+from gui.shared.gui_items import GUI_ITEM_TYPE, GUI_ITEM_TYPE_INDICES, getItemIconName
 from gui.shared.gui_items.Tankman import getRoleUserName
 from gui.shared.money import Currency
 from gui.shared.utils.functions import makeTooltip
+from gui.shared.utils.requesters import REQ_CRITERIA
 from helpers import time_utils, i18n, dependency
 from shared_utils import CONST_CONTAINER, findFirst
 from skeletons.gui.server_events import IEventsCache
+from skeletons.gui.customization import ICustomizationService
 
 class AWARDS_SIZES(CONST_CONTAINER):
     SMALL = 'small'
@@ -401,19 +401,15 @@ class TokenBonusFormatter(SimpleBonusFormatter):
 
 
 class CustomizationUnlockFormatter(TokenBonusFormatter):
+    c11n = dependency.descriptor(ICustomizationService)
     __TOKEN_POSTFIX = ':camouflage'
-    __ICON_NAME = 'camouflages'
+    __ICON_NAME = 'camouflage'
 
     def _format(self, bonus):
         tokens = bonus.getTokens()
         unlockTokenID = findFirst(lambda ID: ID.endswith(self.__TOKEN_POSTFIX), tokens.keys())
         if unlockTokenID is not None:
-            camouflages = []
-            for nationID in nations.INDICES.values():
-                for camo in vehicles.g_cache.customization(nationID)['camouflages'].itervalues():
-                    if unlockTokenID == camo['requiredToken']:
-                        camouflages.append(camo)
-
+            camouflages = self.c11n.getCamouflages(criteria=REQ_CRITERIA.CUSTOMIZATION.UNLOCKED_BY(unlockTokenID))
             images = {size:RES_ICONS.getBonusIcon(size, self.__ICON_NAME) for size in AWARDS_SIZES.ALL()}
             result = [PreformattedBonus(bonusName=bonus.getName(), label=formatCountLabel(len(camouflages)), align=LABEL_ALIGN.RIGHT, images=images, isSpecial=False, tooltip=makeTooltip(TOOLTIPS.PERSONALMISSIONS_AWARDS_CAMOUFLAGE_HEADER, TOOLTIPS.PERSONALMISSIONS_AWARDS_CAMOUFLAGE_BODY))]
         else:
@@ -591,25 +587,35 @@ class TankwomanBonusFormatter(SimpleBonusFormatter):
 
 
 class CustomizationsBonusFormatter(SimpleBonusFormatter):
+    c11n = dependency.descriptor(ICustomizationService)
 
     def _format(self, bonus):
         result = []
         for item, data in zip(bonus.getCustomizations(), bonus.getList()):
-            result.append(PreformattedBonus(bonusName=bonus.getName(), images=self._getImages(item), userName=self._getUserName(item), isSpecial=True, label=formatCountLabel(item.get('value')), labelFormatter=self._getLabelFormatter(bonus), specialAlias=TOOLTIPS_CONSTANTS.CUSTOMIZATION_ITEM, specialArgs=[ data[o] for o in bonus.INFOTIP_ARGS_ORDER ], align=LABEL_ALIGN.RIGHT, isCompensation=self._isCompensation(bonus)))
+            result.append(PreformattedBonus(bonusName=bonus.getName(), images=self._getImages(item), userName=self._getUserName(item), isSpecial=True, label=formatCountLabel(item.get('value')), labelFormatter=self._getLabelFormatter(bonus), specialAlias=TOOLTIPS_CONSTANTS.TECH_CUSTOMIZATION_ITEM, specialArgs=[ data[o] for o in bonus.INFOTIP_ARGS_ORDER ], align=LABEL_ALIGN.RIGHT, isCompensation=self._isCompensation(bonus)))
 
         return result
 
     @classmethod
     def _getImages(cls, item):
         result = {}
+        c11nItem = cls.__getC11nItem(item)
         for size in AWARDS_SIZES.ALL():
-            result[size] = RES_ICONS.getBonusIcon(size, item.get('custType'))
+            result[size] = RES_ICONS.getBonusIcon(size, c11nItem.itemTypeName)
 
         return result
 
     @classmethod
     def _getUserName(cls, item):
-        return i18n.makeString('#quests:bonusName/%s' % item.get('custType'))
+        c11nItem = cls.__getC11nItem(item)
+        return i18n.makeString(QUESTS.getBonusName(c11nItem.itemTypeName))
+
+    @classmethod
+    def __getC11nItem(cls, item):
+        itemTypeName = item.get('custType')
+        itemID = item.get('id')
+        itemTypeID = GUI_ITEM_TYPE_INDICES.get(itemTypeName)
+        return cls.c11n.getItemByID(itemTypeID, itemID)
 
 
 class OperationCustomizationsBonusFormatter(CustomizationsBonusFormatter):
@@ -620,10 +626,9 @@ class OperationCustomizationsBonusFormatter(CustomizationsBonusFormatter):
             cType = item.get('custType')
             if cType in customizations:
                 item, count = customizations[cType]
-                count += item.get('value')
-                customizations[cType] = (item, count)
+                customizations[cType] = (item, count + 1)
             else:
-                customizations[cType] = (item, item.get('value'))
+                customizations[cType] = (item, 1)
 
         result = []
         for item, count in customizations.itervalues():

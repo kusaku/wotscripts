@@ -3,25 +3,24 @@ from gui.Scaleform.daapi.view.lobby.popover.SmartPopOverView import SmartPopOver
 
 class CustomizationFiltersPopoverMeta(SmartPopOverView):
 
-    def changeFilter(self, groupId, itemId):
-        self._printOverrideError('changeFilter')
+    def changeGroup(self, itemId):
+        self._printOverrideError('changeGroup')
 
     def setDefaultFilter(self):
         self._printOverrideError('setDefaultFilter')
 
-    def as_setInitDataS(self, data):
+    def setShowOnlyHistoric(self, value):
+        self._printOverrideError('setShowOnlyHistoric')
+
+    def setShowOnlyAcquired(self, value):
+        self._printOverrideError('setShowOnlyAcquired')
+
+    def as_setDataS(self, data):
         """
         :param data: Represented by FiltersPopoverVO (AS)
         """
         if self._isDAAPIInited():
-            return self.flashObject.as_setInitData(data)
-
-    def as_setStateS(self, data):
-        """
-        :param data: Represented by FiltersStateVO (AS)
-        """
-        if self._isDAAPIInited():
-            return self.flashObject.as_setState(data)
+            return self.flashObject.as_setData(data)
 
     def as_enableDefBtnS(self, value):
         if self._isDAAPIInited():

@@ -8,7 +8,7 @@ if IS_CLIENT:
 else:
     from realm_utils import ResMgr
 _g_itemTypes = None
-ITEM_TYPE_NAMES = ('_reserved', 'vehicle', 'vehicleChassis', 'vehicleTurret', 'vehicleGun', 'vehicleEngine', 'vehicleFuelTank', 'vehicleRadio', 'tankman', 'optionalDevice', 'shell', 'equipment')
+ITEM_TYPE_NAMES = ('_reserved', 'vehicle', 'vehicleChassis', 'vehicleTurret', 'vehicleGun', 'vehicleEngine', 'vehicleFuelTank', 'vehicleRadio', 'tankman', 'optionalDevice', 'shell', 'equipment', 'customizationItem')
 
 class ITEM_TYPES(dict):
 
@@ -96,6 +96,9 @@ class ItemsPrices(object):
     def getPrices(self, descriptor):
         return self._itemsPriceInfo[descriptor]
 
+    def tryGetPrice(self, descriptor, defaultValue = None):
+        return self._itemsPriceInfo.get(descriptor, defaultValue)
+
     def getPrice(self, descriptor, currencyCode):
         return self._itemsPriceInfo[descriptor].get(currencyCode, 0)
 
@@ -173,9 +176,9 @@ def getTypeOfCompactDescr(compactDescr):
 
 def makeIntCompactDescrByID(itemTypeName, nationID, itemID):
     if not 0 <= itemID <= 65535:
-        raise AssertionError
+        raise AssertionError(itemID)
         if not 0 <= nationID <= 15:
-            raise AssertionError
+            raise AssertionError(nationID)
             itemTypeID = ITEM_TYPES[itemTypeName]
             header = itemTypeID <= 15 and itemTypeID + (nationID << 4)
             return (itemID << 8) + header

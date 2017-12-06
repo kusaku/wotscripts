@@ -23,6 +23,10 @@ class IProtoPlugin(object):
         """
         pass
 
+    def goToReplay(self):
+        """Routine invokes when battle replay is playing."""
+        pass
+
     def setFilters(self, msgFilterChain):
         """
         Sets shared filters to plugin.

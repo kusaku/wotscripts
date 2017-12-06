@@ -504,11 +504,14 @@ class AvatarInputHandler(CallbackDelayer, ComponentSystem):
                         player.positionControl.bindToVehicle(False, -1)
                     else:
                         player.positionControl.bindToVehicle(False)
-                if prevCtrl.isManualBind() and not self.__curCtrl.isManualBind():
+                elif prevCtrl.isManualBind() and not self.__curCtrl.isManualBind():
                     if isObserverMode:
                         player.positionControl.followCamera(False)
                         player.positionControl.bindToVehicle(True, self.__observerVehicle)
                     else:
+                        player.positionControl.bindToVehicle(True)
+                elif not prevCtrl.isManualBind() and not self.__curCtrl.isManualBind():
+                    if isObserverMode and not self.isObserverFPV:
                         player.positionControl.bindToVehicle(True)
                 newAutoRotationMode = self.__curCtrl.getPreferredAutorotationMode()
                 if newAutoRotationMode is not None:
@@ -530,7 +533,8 @@ class AvatarInputHandler(CallbackDelayer, ComponentSystem):
             self.__targeting.onRecreateDevice()
             self.__curCtrl.setGUIVisible(self.__isGUIVisible)
             if isObserverMode:
-                self.__curCtrl.enable(vehicleID=self.__observerVehicle, **args)
+                args.update(vehicleID=self.__observerVehicle)
+                self.__curCtrl.enable(**args)
             else:
                 self.__curCtrl.enable(**args)
             isReplayPlaying = replayCtrl.isPlaying
