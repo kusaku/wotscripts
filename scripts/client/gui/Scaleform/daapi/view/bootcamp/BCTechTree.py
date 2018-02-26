@@ -1,5 +1,5 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/bootcamp/BCTechTree.py
-from gui.Scaleform.daapi.view.lobby.techtree.TechTree import TechTree
+from gui.Scaleform.daapi.view.lobby.techtree.techtree_page import TechTree
 from gui.shared import event_dispatcher as shared_events
 from skeletons.gui.shared import IItemsCache
 from helpers import dependency
@@ -35,6 +35,9 @@ class BCTechTree(TechTree):
                 nodeState = node['state']
                 if not NODE_STATE.inInventory(nodeState) and not NODE_STATE.isPremium(nodeState):
                     node['state'] = NODE_STATE_FLAGS.LOCKED
+                    if NODE_STATE.isAnnouncement(nodeState):
+                        node['state'] |= NODE_STATE_FLAGS.ANNOUNCEMENT
+                        node['state'] |= NODE_STATE_FLAGS.NOT_CLICKABLE
 
         data['nodes'][0]['displayInfo']['position'] = [16, 90]
         data['nodes'][0]['displayInfo']['lines'][0]['outPin'] = [144, 108]

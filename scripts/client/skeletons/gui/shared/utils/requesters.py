@@ -743,6 +743,9 @@ class IRecycleBinRequester(IRequester):
     def getVehicleRestoreInfo(self, intCD, restoreDuration, restoreCooldown):
         raise NotImplementedError
 
+    def getVehiclesIntCDs(self):
+        raise NotImplementedError
+
     def getTankmen(self, maxDuration):
         raise NotImplementedError
 
@@ -814,6 +817,14 @@ class IRankedRequester(IRequester):
 
     @property
     def seasonStepsCount(self):
+        raise NotImplementedError
+
+    @property
+    def shields(self):
+        raise NotImplementedError
+
+    @property
+    def clientShields(self):
         raise NotImplementedError
 
 

@@ -1,6 +1,9 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/server_events/awards_formatters.py
+from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.server_events import formatters
 from gui.server_events.awards_formatters import AWARDS_SIZES, AwardsPacker, QuestsBonusComposer
+from helpers import dependency
+from skeletons.new_year import INewYearController
 SIMPLE_BONUSES_MAX_ITEMS = 5
 
 class OldStyleBonusFormatter(object):

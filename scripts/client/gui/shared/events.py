@@ -333,6 +333,11 @@ class FightButtonEvent(LobbySimpleEvent):
     FIGHT_BUTTON_UPDATE = 'updateFightButton'
 
 
+class FaderEvent(LobbySimpleEvent):
+    FADE_IN = 'fadeIn'
+    FADE_OUT = 'fadeOut'
+
+
 class SkillDropEvent(SharedEvent):
     SKILL_DROPPED_SUCCESSFULLY = 'skillDroppedSuccess'
 
@@ -515,6 +520,8 @@ class OpenLinkEvent(SharedEvent):
     GLOBAL_MAP_PROMO = 'globalMapPromo'
     PREM_SHOP = 'premShopURL'
     TOKEN_SHOP = 'tokenShopUrl'
+    NY18_SHOP = 'ny18ShopUrl'
+    NY18_BUY_BOX = 'ny18BoxBaseURL'
 
     def __init__(self, eventType, url = '', title = '', params = None):
         super(OpenLinkEvent, self).__init__(eventType)
@@ -580,3 +587,9 @@ class MarkersManagerEvent(SharedEvent):
 
 class VehicleBuyEvent(HasCtxEvent):
     VEHICLE_SELECTED = 'vehicleBuyEvent/vehicleSelected'
+
+
+class NewYearEvent(HasCtxEvent):
+    CLOSE_LEVEL_UP_VIEW = 'newYear/closeLevelUpView'
+    ON_PLACE_GROUND_LIGHTS = 'newYear/onPlaceGroundLights'
+    ON_REMOVE_GROUND_LIGHTS = 'newYear/onRemoveGroundLights'

@@ -166,7 +166,7 @@ class _PrimeTimeCondition(_Condition):
     def getTooltip(self):
         primeTimes = self._event.getPrimeTimes().getPrimeTimes()
         currentPeripheryID = self._connectionMgr.peripheryID
-        showTooltip = any(primeTimes)
+        showTooltip = len(primeTimes) > 1
         if showTooltip:
             return makePrimeTimesTooltipVO(primeTimes, currentPeripheryID, self._lobbyContext.getPeripheryName)
         else:
@@ -322,22 +322,18 @@ class _TopLeaderboard(object):
 
     def __getMyPosititon(self):
         event = self._event
-        top = self._top
-        finished = event.isFinished()
-        if finished and top.getBattlesCount() > 0:
+        if event.isFinished() and self.__notFull:
             return text_styles.neutral(_ms(EVENT_BOARDS.TOP_PARTICIPATION_NOTPARTICIPATED))
         if self.__notFull:
             return text_styles.neutral(_ms(EVENT_BOARDS.TOP_PARTICIPATION_NOTFULL))
         if self.__notInTop:
             return text_styles.neutral(_ms(EVENT_BOARDS.TOP_PARTICIPATION_NOTINTOP))
-        return '{} {}'.format(_ms(EVENT_BOARDS.TOP_POSITION), self._top.getMyPosition())
+        return text_styles.main('{} {}'.format(_ms(EVENT_BOARDS.TOP_POSITION), self._top.getMyPosition()))
 
     def __getStatusValue(self):
         event = self._event
-        top = self._top
-        finished = event.isFinished()
-        if self.__notFull and not finished:
-            count = text_styles.stats(str(event.getCardinality() - top.getBattlesCount()))
+        if self.__notFull and not event.isFinished():
+            count = text_styles.stats(str(event.getCardinality() - self._top.getBattlesCount()))
             text = text_styles.standard(_ms(EVENT_BOARDS.TOP_REASON_NOTFULL))
             return '{} {}'.format(text, count)
         else:
@@ -472,7 +468,8 @@ class EventInfo(object):
             if self._topMeta:
                 recalculationTS = self._topMeta.getLastLeaderboardRecalculationTS()
                 if recalculationTS is not None:
-                    description1 = text_styles.standard(formatUpdateTime(recalculationTS))
+                    if not event.isFinished():
+                        description1 = text_styles.standard(formatUpdateTime(recalculationTS))
                     recalculationInterval = self._topMeta.getRecalculationInterval()
                     if recalculationInterval is not None:
                         interval = int(recalculationInterval / ONE_MINUTE)

@@ -36,33 +36,42 @@ class EventBoardsController(IEventBoardController, IEventBoardsListener):
         self.__eventBoardsSettings.fini()
 
     def getPlayerEventsData(self):
-        if self.__eventBoardsSettings:
+        if self.__eventBoardsSettings is not None:
             return self.__eventBoardsSettings.getPlayerEventsData()
         else:
-            return None
+            return
 
     def getEventsSettingsData(self):
-        if self.__eventBoardsSettings:
+        if self.__eventBoardsSettings is not None:
             return self.__eventBoardsSettings.getEventsSettings()
         else:
-            return None
+            return
 
     def hasEvents(self):
-        if self.__eventBoardsSettings:
+        if self.__eventBoardsSettings is not None:
             return self.__eventBoardsSettings.hasEvents()
-        return False
+        else:
+            return False
 
     def getMyEventsTopData(self):
-        if self.__eventBoardsSettings:
+        if self.__eventBoardsSettings is not None:
             return self.__eventBoardsSettings.getMyEventsTop()
         else:
-            return None
+            return
 
     def getHangarFlagData(self):
         return self.__hangarFlagData
 
     def updateHangarFlag(self):
         self._invokeListeners('onUpdateHangarFlag')
+
+    def cleanEventsData(self):
+        self.__isLoggedIn = False
+        if self.__eventBoardsSettings is not None:
+            self.__eventBoardsSettings.cleanEventsData()
+        if self.__hangarFlagData is not None:
+            self.__hangarFlagData.cleanEventsData()
+        return
 
     @async
     @process
@@ -128,8 +137,7 @@ class EventBoardsController(IEventBoardController, IEventBoardsListener):
                 eventID = event.getEventID()
                 pState = playerData.getPlayerStateByEventId(eventID)
                 vehicles = event.getLimits().getVehiclesWhiteList()
-                availableVehicles = self.__getAvailableVehicles(vehicles)
-                if len(availableVehicles) is 0:
+                if not self.__getAvailableVehicles(vehicles) and pState is not None:
                     pState.updateStateReason(_psr.VEHICLESMISSING)
                 if not event.isStarted() or pState is None or pState.getPlayerState() != EVENT_STATE.JOINED:
                     continue

@@ -1,8 +1,10 @@
 # Embedded file name: scripts/client/gui/shared/gui_items/processors/common.py
 import BigWorld
-from debug_utils import LOG_DEBUG, LOG_WARNING
+from debug_utils import LOG_DEBUG, LOG_ERROR, LOG_WARNING
+from gui import SystemMessages
+from gui.Scaleform.locale.MESSENGER import MESSENGER
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
-from gui.SystemMessages import SM_TYPE
+from gui.SystemMessages import SM_TYPE, CURRENCY_TO_SM_TYPE
 from gui.shared.formatters import formatPrice, formatGoldPrice, text_styles, icons
 from gui.shared.gui_items.processors import Processor, makeError, makeSuccess, makeI18nError, makeI18nSuccess, plugins
 from gui.shared.money import Money, Currency
@@ -195,6 +197,25 @@ class CustomizationsBuyer(Processor):
         LOG_DEBUG('Make server request to buy customizations on vehicle {}: {} count {}'.format(invID, self.item, self.count))
         BigWorld.player().shop.buyCustomizations(invID, {self.item.intCD: self.count}, lambda code: self._response(code, callback))
 
+    def _getTotalPrice(self):
+        buyPrice = self.item.buyPrices.itemPrice.price
+        if not buyPrice:
+            LOG_ERROR('Incorrect attempt to buy item {}'.format(self.item))
+        return buyPrice * self.count
+
+    def _getMsgCtx(self):
+        return {'itemType': self.item.userType,
+         'itemName': self.item.userName,
+         'count': BigWorld.wg_getIntegralFormat(int(self.count)),
+         'money': formatPrice(self._getTotalPrice())}
+
+    def _successHandler(self, code, ctx = None):
+        currency = self.item.buyPrices.itemPrice.price.getCurrency(byWeight=True)
+        messageType = MESSENGER.SERVICECHANNELMESSAGES_SYSMSG_CUSTOMIZATIONS_BUY
+        sysMsgType = CURRENCY_TO_SM_TYPE.get(currency, SM_TYPE.PurchaseForGold)
+        SystemMessages.pushI18nMessage(messageType, type=sysMsgType, **self._getMsgCtx())
+        return makeSuccess(auxData=ctx)
+
 
 class CustomizationsSeller(Processor):
     """ Customizations buyer.
@@ -212,6 +233,23 @@ class CustomizationsSeller(Processor):
         else:
             msg = errStr
         return makeI18nError('customization/{}'.format(msg))
+
+    def _getTotalPrice(self):
+        sellPrice = self.item.sellPrices.itemPrice.price
+        if not sellPrice:
+            LOG_ERROR('Attempt to sell item {} that is not sold.'.format(self.item))
+        return sellPrice * self.count
+
+    def _getMsgCtx(self):
+        return {'itemType': self.item.userType,
+         'itemName': self.item.userName,
+         'count': BigWorld.wg_getIntegralFormat(int(self.count)),
+         'money': formatPrice(self._getTotalPrice())}
+
+    def _successHandler(self, code, ctx = None):
+        messageType = MESSENGER.SERVICECHANNELMESSAGES_SYSMSG_CUSTOMIZATIONS_SELL
+        SystemMessages.pushI18nMessage(messageType, type=SM_TYPE.Selling, **self._getMsgCtx())
+        return makeSuccess(auxData=ctx)
 
     def _request(self, callback):
         if self.vehicle:

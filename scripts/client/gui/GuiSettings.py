@@ -129,6 +129,7 @@ _DEFAULT_SETTINGS = {'registrationURL': '',
  'tokenShopAvailabilityURL': '',
  'tokenShopAPIKey': '',
  'personalMissions': {},
+ 'adventCalendarBaseURL': '',
  'rankedBattles': {}}
 
 class GuiSettings(object):

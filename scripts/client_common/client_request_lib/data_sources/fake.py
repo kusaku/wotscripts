@@ -7,6 +7,7 @@ Created on Jul 1, 2015
 from functools import wraps, partial
 from datetime import datetime, timedelta, time as dt_time
 import random
+import string
 from client_request_lib import exceptions
 from client_request_lib.data_sources import base
 EXAMPLES = {}
@@ -148,7 +149,9 @@ class FakeDataAccessor(base.BaseDataAccessor):
     def login(self, callback, account_id, spa_token):
         self.account = account_id
         self._account = self.requests_before_logout
-        result, status_code = ('ok', 200)
+        access_token = ''.join((random.choice(string.ascii_uppercase + string.digits) for _ in range(10)))
+        result, status_code = {'access_token': access_token,
+         'expires_in': 36000}, 200
         response_code = exceptions.ResponseCodes.NO_ERRORS
         _doResponse(callback, result, status_code, response_code)
 
@@ -738,6 +741,13 @@ class FakeDataAccessor(base.BaseDataAccessor):
         return fake data from `give_leadership` section
         """
         return self._request_data('give_leadership', unit_id)
+
+    @fake_method(example={})
+    def give_equipment_commander(self, periphery_id, unit_id, target_account_id, fields = None):
+        """
+        return fake data from `give_leadership` section
+        """
+        return self._request_data('give_equipment_commander', unit_id)
 
     @fake_method(example={})
     def leave_room(self, periphery_id, unit_id, fields = None):

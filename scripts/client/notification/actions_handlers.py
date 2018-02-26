@@ -7,16 +7,18 @@ from gui import DialogsInterface, makeHtmlString, SystemMessages
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui.Scaleform.genConsts.CLANS_ALIASES import CLANS_ALIASES
 from gui.Scaleform.genConsts.QUESTS_ALIASES import QUESTS_ALIASES
+from gui.Scaleform.genConsts.RANKEDBATTLES_ALIASES import RANKEDBATTLES_ALIASES
 from gui.battle_results import RequestResultsContext
 from gui.clans import contexts as clan_ctxs
 from gui.clans.clan_helpers import showAcceptClanInviteDialog
 from gui.Scaleform.genConsts.FORTIFICATION_ALIASES import FORTIFICATION_ALIASES
 from gui.prb_control import prbInvitesProperty, prbDispatcherProperty
-from gui.prb_control.prb_getters import getBattleID
+from gui.ranked_battles import ranked_helpers
 from gui.shared import g_eventBus, events, actions, EVENT_BUS_SCOPE, event_dispatcher as shared_events
 from gui.shared.utils import decorators
 from gui.wgnc import g_wgncProvider
 from helpers import dependency
+from items.new_year_types import NY_STATE
 from messenger.m_constants import PROTO_TYPE
 from messenger.proto import proto_getter
 from notification.settings import NOTIFICATION_TYPE, NOTIFICATION_BUTTON_STATE
@@ -24,7 +26,8 @@ from notification.tutorial_helper import TutorialGlobalStorage, TUTORIAL_GLOBAL_
 from predefined_hosts import g_preDefinedHosts
 from skeletons.gui.battle_results import IBattleResultsService
 from skeletons.gui.clans import IClanController
-from skeletons.gui.game_control import IBrowserController
+from skeletons.gui.game_control import IBrowserController, IRankedBattlesController
+from skeletons.new_year import INewYearController
 
 class _ActionHandler(object):
 
@@ -275,6 +278,58 @@ class _ShowClanProfileHandler(_ActionHandler):
         shared_events.showClanProfileWindow(clan.getClanID(), clan.getClanAbbrev())
 
 
+class _OpenNYRewardsScreen(_ActionHandler):
+    _newYearController = dependency.descriptor(INewYearController)
+
+    @classmethod
+    def getNotType(cls):
+        return NOTIFICATION_TYPE.MESSAGE
+
+    @classmethod
+    def getActions(self):
+        return ('openNyRewards',)
+
+    def handleAction(self, model, entityID, action):
+        super(_OpenNYRewardsScreen, self).handleAction(model, entityID, action)
+        ny_state = self._newYearController.state
+        if ny_state == NY_STATE.IN_PROGRESS or ny_state == NY_STATE.FINISHED:
+            g_eventBus.handleEvent(events.LoadViewEvent(VIEW_ALIAS.LOBBY_NY_REWARDS, name=VIEW_ALIAS.LOBBY_NY_REWARDS, ctx={'previewAlias': VIEW_ALIAS.LOBBY_HANGAR}), scope=EVENT_BUS_SCOPE.LOBBY)
+        else:
+            BigWorld.callback(0.0, lambda : SystemMessages.pushI18nMessage('#ny:system_messages/state/error/notAvailable', type=SystemMessages.SM_TYPE.Warning))
+
+
+class ShowRankedSeasonCompleteHandler(_ActionHandler):
+    """
+    Handle player's click on more-info-button in a ranked battles season complete notification
+    Show RankedBattlesSeasonView one more time
+    """
+    rankedController = dependency.descriptor(IRankedBattlesController)
+
+    @classmethod
+    def getNotType(cls):
+        return NOTIFICATION_TYPE.MESSAGE
+
+    @classmethod
+    def getActions(self):
+        return ('showRankedSeasonComplete',)
+
+    def handleAction(self, model, entityID, action):
+        notification = model.getNotification(self.getNotType(), entityID)
+        savedData = notification.getSavedData()
+        if savedData is not None:
+            self.__showSeasonAward(savedData['quest'], savedData['awards'])
+        return
+
+    def __showSeasonAward(self, quest, data):
+        seasonID, _, _ = ranked_helpers.getRankedDataFromTokenQuestID(quest.getID())
+        season = self.rankedController.getSeason(seasonID)
+        if season is not None:
+            g_eventBus.handleEvent(events.LoadViewEvent(RANKEDBATTLES_ALIASES.RANKED_BATTLES_SEASON_COMPLETE, ctx={'quest': quest,
+             'awards': data,
+             'season': season}), scope=EVENT_BUS_SCOPE.LOBBY)
+        return
+
+
 class ShowBattleResultsHandler(_ShowArenaResultHandler):
     battleResults = dependency.descriptor(IBattleResultsService)
 
@@ -500,6 +555,7 @@ _AVAILABLE_HANDLERS = (ShowBattleResultsHandler,
  CancelFriendshipHandler,
  WGNCActionsHandler,
  SecurityLinkHandler,
+ ShowRankedSeasonCompleteHandler,
  _ShowClanAppsHandler,
  _ShowClanInvitesHandler,
  _AcceptClanAppHandler,
@@ -510,7 +566,8 @@ _AVAILABLE_HANDLERS = (ShowBattleResultsHandler,
  _ShowClanSettingsFromInvitesHandler,
  _AcceptClanInviteHandler,
  _DeclineClanInviteHandler,
- _OpenEventBoardsHandler)
+ _OpenEventBoardsHandler,
+ _OpenNYRewardsScreen)
 
 class NotificationsActionsHandlers(object):
     __slots__ = ('__single', '__multi')

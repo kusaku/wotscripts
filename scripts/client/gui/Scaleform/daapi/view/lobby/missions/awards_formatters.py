@@ -11,14 +11,15 @@ from helpers import i18n, dependency
 from skeletons.gui.server_events import IEventsCache
 _OPERATION_AWARDS_COUNT = 3
 
-class CardAwardComposer(QuestsBonusComposer):
+class CurtailingAwardsComposer(QuestsBonusComposer):
     """
-    Awards formatter for mission card in missions view
+    Awards formatter which curtails formatted bonuses to count given in displayedAwardsCount.
+    If there is more bonuses then specified they are wrapped in 'box' VO and listed in its tooltip
     """
 
     def __init__(self, displayedAwardsCount, awardsFormatter = None):
         self._displayedAwardsCount = displayedAwardsCount
-        super(CardAwardComposer, self).__init__(awardsFormatter)
+        super(CurtailingAwardsComposer, self).__init__(awardsFormatter)
 
     def getShortBonusesData(self, bonuses):
         return self._getShortBonusesData(self.getPreformattedBonuses(bonuses))
@@ -73,7 +74,7 @@ class CardAwardComposer(QuestsBonusComposer):
         return bonuses
 
 
-class DetailedCardAwardComposer(CardAwardComposer):
+class DetailedCardAwardComposer(CurtailingAwardsComposer):
     """
     Awards formatter for detailed mission card in detailed missions view
     """
@@ -84,7 +85,7 @@ class DetailedCardAwardComposer(CardAwardComposer):
         return self._packBonuses(preformattedBonuses, size)
 
 
-class PersonalMissionsAwardComposer(CardAwardComposer):
+class PersonalMissionsAwardComposer(CurtailingAwardsComposer):
     """
     Awards formatter for personal mission bonuses.
     May display specific reward sheet and free reward sheets bonuses.
@@ -252,7 +253,7 @@ class TooltipOperationAwardComposer(MainOperationAwardComposer):
             return None
 
 
-class MarathonAwardComposer(CardAwardComposer):
+class MarathonAwardComposer(CurtailingAwardsComposer):
     """
     Awards formatter for marathons header
     """

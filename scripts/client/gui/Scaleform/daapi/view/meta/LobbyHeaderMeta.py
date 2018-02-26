@@ -1,4 +1,8 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/meta/LobbyHeaderMeta.py
+"""
+This file was generated using the wgpygen.
+Please, don't edit this file manually.
+"""
 from gui.Scaleform.framework.entities.BaseDAAPIComponent import BaseDAAPIComponent
 
 class LobbyHeaderMeta(BaseDAAPIComponent):
@@ -32,6 +36,10 @@ class LobbyHeaderMeta(BaseDAAPIComponent):
 
     def fightClick(self, mapID, actionName):
         self._printOverrideError('fightClick')
+
+    def as_updateNYVisibilityS(self, isShowMainMenu, isShowGlow, isShowMainMenuGlow):
+        if self._isDAAPIInited():
+            return self.flashObject.as_updateNYVisibility(isShowMainMenu, isShowGlow, isShowMainMenuGlow)
 
     def as_setScreenS(self, alias):
         if self._isDAAPIInited():
@@ -94,6 +102,14 @@ class LobbyHeaderMeta(BaseDAAPIComponent):
     def as_updatePingStatusS(self, pingStatus, isColorBlind):
         if self._isDAAPIInited():
             return self.flashObject.as_updatePingStatus(pingStatus, isColorBlind)
+
+    def as_updateNYEnabledS(self, isNYEnabled):
+        if self._isDAAPIInited():
+            return self.flashObject.as_updateNYEnabled(isNYEnabled)
+
+    def as_updateNYAvailableS(self, isNYAvailable):
+        if self._isDAAPIInited():
+            return self.flashObject.as_updateNYAvailable(isNYAvailable)
 
     def as_setWalletStatusS(self, walletStatus):
         if self._isDAAPIInited():

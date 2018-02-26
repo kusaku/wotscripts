@@ -15,6 +15,7 @@ from helpers import i18n, dependency, time_utils
 from skeletons.gui.server_events import IEventsCache
 from skeletons.gui.shared import IItemsCache
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
+from gui.shared.gui_items import GUI_ITEM_TYPE_NAMES
 from gui.shared.gui_items.Vehicle import getTypeBigIconPath, VEHICLE_CLASS_NAME
 from gui.shared.money import MONEY_UNDEFINED, Currency, Money
 from gui.shared.tooltips.common import CURRENCY_SETTINGS, _getCurrencySetting
@@ -28,6 +29,7 @@ _VEHICLE_NATION_ICON_PATH = '../maps/icons/filters/nations/%s.png'
 _MAX_ITEMS_IN_TABLE = 3
 _PRIORITY_FOR_FUTURE_ACTION = 4
 _MULTIPLIER = 'Multiplier'
+_ALL = 'All'
 _PREMIUM_PACKET = 'premiumPacket'
 _gold_bonus_list = ('slotsPrices',
  'berthsPrices',
@@ -239,10 +241,19 @@ class ActionInfo(EventInfoModel):
     def _getFullDescription(self, stepName, discount = None, forHeroCard = False):
         modifiedStepName = self.__modifyName(stepName)
         locKey = None
+        isSpecifiedAsianAction = constants.IS_SINGAPORE and modifiedStepName == constants.ASIA_ACTION_ID_BOX_BUYING
         if forHeroCard:
-            locKey = QUESTS.getActionDescription('hero/full/{}'.format(modifiedStepName))
+            if isSpecifiedAsianAction:
+                formatter = 'asia/hero/full/{}'.format(modifiedStepName)
+            else:
+                formatter = 'hero/full/{}'.format(modifiedStepName)
+            locKey = QUESTS.getActionDescription(formatter)
         if locKey is None:
-            locKey = QUESTS.getActionDescription('full/{}'.format(modifiedStepName))
+            if isSpecifiedAsianAction:
+                formatter = 'asia/full/{}'.format(modifiedStepName)
+            else:
+                formatter = 'full/{}'.format(modifiedStepName)
+            locKey = QUESTS.getActionDescription(formatter)
         return i18n.makeString(locKey, discount=discount)
 
     def _getShortDescription(self, stepName, **kwargs):
@@ -907,6 +918,24 @@ class C11nPriceGroupPriceActionInfo(ActionInfo):
 
         return sorted(res, key=lambda x: x['discount'], reverse=True)[:3]
 
+    def getPicture(self):
+        data = super(C11nPriceGroupPriceActionInfo, self).getPicture()
+        if data.get('isWeb', False):
+            return data
+        paramName = self.discount.getParamName()
+        if paramName.endswith(_ALL):
+            itemTypeIDs = set((item.itemTypeID for _, item in self.discount.parse()))
+        else:
+            itemTypeIDs = set((item.itemTypeID for item in self.discount.parse()))
+        if len(itemTypeIDs) == 1:
+            paramName = GUI_ITEM_TYPE_NAMES[itemTypeIDs.pop()]
+            image = RES_ICONS.getCustomActionImage(paramName)
+        else:
+            paramName = self.discount.getParamName()
+            image = _PARAM_TO_IMG_DICT.get(paramName)
+        return {'isWeb': False,
+         'src': image}
+
 
 class ComingSoonActionInfo(ActionInfo):
     """Future actions with limited fields to show
@@ -994,6 +1023,30 @@ class ComingSoonActionInfo(ActionInfo):
         return paramName
 
 
+class CalendarActionInfo(ActionInfo):
+
+    def isDiscountVisible(self):
+        return True
+
+    def getTitle(self):
+        return i18n.makeString(QUESTS.ACTION_SHORT_CALENDAR)
+
+    def getTriggerChainID(self):
+        return 'calendar'
+
+
+class NyBoxBuyingActionInfo(ActionInfo):
+
+    def isDiscountVisible(self):
+        return True
+
+    def getTitle(self):
+        return i18n.makeString(QUESTS.ACTION_SHORT_BOXBUYING)
+
+    def getTriggerChainID(self):
+        return 'boxbuying'
+
+
 def getEconomicalStatsDict():
     itemsCache = dependency.instance(IItemsCache)
     shop = itemsCache.items.shop
@@ -1069,14 +1122,16 @@ _PARAM_TO_IMG_DICT = {'exchangeRate': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_CONVE
  'mul_ShellPriceNation': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_SHELLS,
  'mul_ShellPrice': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_SHELLS,
  'set_ShellPrice': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_SHELLS,
- 'set_PriceGroupPrice': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_CUSTOMIZATION,
- 'mul_PriceGroupPrice': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_CUSTOMIZATION,
- 'mul_PriceGroupPriceByTag': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_CUSTOMIZATION,
- 'mul_PriceGroupPriceAll': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_CUSTOMIZATION,
+ 'set_PriceGroupPrice': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_CUSTOM_MIXED,
+ 'mul_PriceGroupPrice': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_CUSTOM_MIXED,
+ 'mul_PriceGroupPriceByTag': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_CUSTOM_MIXED,
+ 'mul_PriceGroupPriceAll': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_CUSTOM_MIXED,
  'set_GoodiePrice': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_RESERVE,
  'mul_GoodiePrice': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_RESERVE,
  'mul_GoodiePriceAll': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_RESERVE,
- 'tradeInSellPriceFactor': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_TRADE_IN}
+ 'tradeInSellPriceFactor': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_TRADE_IN,
+ 'calendar': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_CALENDAR,
+ 'boxbuying': RES_ICONS.MAPS_ICONS_ACTIONS_480X280_BOXES}
 _MODIFIERS_DICT = {'mul_EconomicsParams': EconomicsActionsInfo,
  'set_EconomicsParams': EconomicsActionsInfo,
  'mul_EconomicsPrices': EconomicsActionsInfo,
@@ -1094,7 +1149,9 @@ _MODIFIERS_DICT = {'mul_EconomicsParams': EconomicsActionsInfo,
  'mul_PriceGroupPriceAll': C11nPriceGroupPriceActionInfo,
  'set_GoodiePrice': BoosterPriceActionInfo,
  'mul_GoodiePrice': BoosterPriceActionInfo,
- 'mul_GoodiePriceAll': BoosterPriceActionInfo}
+ 'mul_GoodiePriceAll': BoosterPriceActionInfo,
+ 'calendar': CalendarActionInfo,
+ 'boxbuying': NyBoxBuyingActionInfo}
 
 def getModifierObj(name, event, modifier):
     if name in _MODIFIERS_DICT:

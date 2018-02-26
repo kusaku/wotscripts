@@ -3,7 +3,10 @@ from gui import makeHtmlString
 from gui.Scaleform.genConsts.ACTION_PRICE_CONSTANTS import ACTION_PRICE_CONSTANTS
 from gui.Scaleform.genConsts.BATTLE_RESULT_TYPES import BATTLE_RESULT_TYPES
 from gui.Scaleform.genConsts.BLOCKS_TOOLTIP_TYPES import BLOCKS_TOOLTIP_TYPES
+from gui.Scaleform.genConsts.CURRENCIES_CONSTANTS import CURRENCIES_CONSTANTS
 from gui.Scaleform.genConsts.RANKEDBATTLES_ALIASES import RANKEDBATTLES_ALIASES
+from gui.ranked_battles.ranked_helpers import buildRankVO
+from gui.shared.formatters import text_styles
 from gui.shared.tooltips import ACTION_TOOLTIPS_TYPE, ACTION_TOOLTIPS_STATE
 from gui.shared.utils.functions import makeTooltip
 from gui.shared.money import MONEY_UNDEFINED
@@ -57,7 +60,7 @@ def packTextParameterBlockData(name, value, linkage = BLOCKS_TOOLTIP_TYPES.TOOLT
     return packBlockDataItem(linkage, data, padding)
 
 
-def packTextParameterWithIconBlockData(name, value, icon, linkage = BLOCKS_TOOLTIP_TYPES.TOOLTIP_TEXT_PARAMETER_WITH_ICON_BLOCK_LINKAGE, valueWidth = -1, gap = 5, nameOffset = -1, padding = None):
+def packTextParameterWithIconBlockData(name, value, icon, linkage = BLOCKS_TOOLTIP_TYPES.TOOLTIP_TEXT_PARAMETER_WITH_ICON_BLOCK_LINKAGE, valueWidth = -1, gap = 5, nameOffset = -1, padding = None, iconYOffset = None):
     data = {'name': name,
      'value': value,
      'icon': icon}
@@ -67,6 +70,8 @@ def packTextParameterWithIconBlockData(name, value, icon, linkage = BLOCKS_TOOLT
         data['gap'] = gap
     if nameOffset != -1:
         data['nameOffset'] = nameOffset
+    if iconYOffset is not None:
+        data['iconYOffset'] = iconYOffset
     return packBlockDataItem(linkage, data, padding)
 
 
@@ -253,13 +258,8 @@ def packGroupBlockData(listData, linkage = BLOCKS_TOOLTIP_TYPES.TOOLTIP_GROUP_BL
     return packBlockDataItem(linkage, data, padding)
 
 
-def packRankBlockData(rank, isEnabled = True, isMaster = False, rankCount = '', linkage = BLOCKS_TOOLTIP_TYPES.TOOLTIP_RANK_BLOCK_LINKAGE, padding = None):
-    data = {'imageSrc': rank.getIcon('big'),
-     'smallImageSrc': rank.getIcon('small'),
-     'isEnabled': isEnabled,
-     'isMaster': isMaster,
-     'rankID': str(rank.getID()),
-     'rankCount': str(rankCount)}
+def packRankBlockData(rank, isEnabled = True, shieldStatus = None, linkage = BLOCKS_TOOLTIP_TYPES.TOOLTIP_RANK_BLOCK_LINKAGE, padding = None):
+    data = buildRankVO(rank=rank, isEnabled=isEnabled, imageSize=RANKEDBATTLES_ALIASES.WIDGET_BIG, hasTooltip=True, shieldStatus=shieldStatus, showLadderPoints=False)
     return packBlockDataItem(linkage, data, padding)
 
 
@@ -411,3 +411,40 @@ def packBadgeInfoBlockData(badgeImgSource, vehImgSource, playerName, vehName, li
      'playerName': playerName,
      'vehName': vehName}
     return packBlockDataItem(linkage, data, padding)
+
+
+def packNYProgressBlockData(leftText, rightText, currentScores, nextLvlScores, progressPct, useHtml = True, linkage = BLOCKS_TOOLTIP_TYPES.TOOLTIP_NY_PROGRESS_BLOCK_LINKAGE, padding = None):
+    return packBlockDataItem(linkage, {'leftText': leftText,
+     'rightText': rightText,
+     'currentScores': currentScores,
+     'nextLvlScores': nextLvlScores,
+     'progressPct': progressPct,
+     'useHtml': useHtml}, padding)
+
+
+def packNYAwardsBlockData(title, salePct, firstAward, secondAward = '', linkage = BLOCKS_TOOLTIP_TYPES.TOOLTIP_NY_AWARDS_BLOCK_LINKAGE, padding = None):
+    return packBlockDataItem(linkage, {'title': title,
+     'salePct': salePct,
+     'firstAward': firstAward,
+     'secondAward': secondAward}, padding)
+
+
+def packMoneyAndXpValueBlock(value, icon, iconYoffset, paddingBottom = 15, valueWidth = 84):
+    valueBlock = packTextParameterWithIconBlockData(name=text_styles.main(TOOLTIPS.HEADER_BUTTONS_AVAILABLE), value=value, icon=icon, padding=packPadding(bottom=paddingBottom), valueWidth=valueWidth, iconYOffset=iconYoffset)
+    return valueBlock
+
+
+def packMoneyAndXpBlocks(tooltipBlocks, btnType, valueBlocks):
+    titleBlocks = list()
+    titleBlocks.append(packTitleDescBlock(text_styles.highTitle(TOOLTIPS.getHeaderBtnTitle(btnType)), None, padding=packPadding(bottom=15)))
+    tooltipBlocks.append(packBuildUpBlockData(titleBlocks))
+    if valueBlocks is not None:
+        tooltipBlocks.append(packBuildUpBlockData(valueBlocks, linkage=BLOCKS_TOOLTIP_TYPES.TOOLTIP_BUILDUP_BLOCK_WHITE_BG_LINKAGE))
+    if btnType != CURRENCIES_CONSTANTS.GOLD:
+        decsBlocks = list()
+        decsBlocks.append(packTextBlockData(text_styles.main(TOOLTIPS.getHeaderBtnDesc(btnType)), padding=packPadding(bottom=15)))
+        tooltipBlocks.append(packBuildUpBlockData(decsBlocks))
+    actionBlocks = list()
+    actionBlocks.append(packAlignedTextBlockData(text=text_styles.standard(TOOLTIPS.getHeaderBtnClickDesc(btnType)), align=BLOCKS_TOOLTIP_TYPES.ALIGN_CENTER))
+    tooltipBlocks.append(packBuildUpBlockData(actionBlocks))
+    return tooltipBlocks

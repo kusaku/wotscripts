@@ -45,7 +45,11 @@ _DEFAULT_SPACES_PATH = 'spaces'
 _SERVER_CMD_CHANGE_HANGAR = 'cmd_change_hangar'
 _SERVER_CMD_CHANGE_HANGAR_PREM = 'cmd_change_hangar_prem'
 
-def _getDefaultHangarPath(isPremium):
+def _getDefaultHangarPath(isPremium, xmlCfg = None):
+    if xmlCfg is not None:
+        defaultHangar = xmlCfg.readString('default_hangar')
+        if defaultHangar:
+            return '%s/%s' % (_DEFAULT_SPACES_PATH, defaultHangar)
     if isPremium:
         template = '%s/hangar_premium_v2'
     else:
@@ -71,6 +75,11 @@ class OutfitComponent():
     PAINT = 2
     DECAL = 4
     ALL = CAMO | PAINT | DECAL
+
+
+def getHangarSpaceConfig():
+    global _CFG
+    return _CFG
 
 
 class HangarCameraYawFilter():
@@ -140,7 +149,7 @@ def readHangarSettings(igrKey):
     global _CFG
     hangarsXml = ResMgr.openSection('gui/hangars.xml')
     for isPremium in (False, True):
-        spacePath = _getDefaultHangarPath(isPremium)
+        spacePath = _getDefaultHangarPath(isPremium, hangarsXml)
         settingsXmlPath = spacePath + '/space.settings'
         ResMgr.purge(settingsXmlPath, True)
         settingsXml = ResMgr.openSection(settingsXmlPath)
@@ -767,14 +776,6 @@ class _VehicleAppearance(ComponentSystem):
             self.__showMarksOnGun = not diff['showMarksOnGun']
             self.refresh()
         elif 'dynamicFov' in diff or 'fov' in diff:
-            if 'fov' in diff:
-                staticFOV, dynamicFOVLow, dynamicFOVTop = diff['fov']
-                defaultHorizontalFov = math.radians(dynamicFOVTop)
-
-                def resetFov(value):
-                    FovExtended.instance().defaultHorizontalFov = value
-
-                BigWorld.callback(0.0, partial(resetFov, defaultHorizontalFov))
             self.__hangarSpace.updateCameraByMouseMove(0, 0, 0)
 
     def __getActiveOutfit(self):
@@ -1090,31 +1091,38 @@ class _VehicleAppearance(ComponentSystem):
 class _ClientHangarSpacePathOverride():
 
     def __init__(self):
+        self.__isEnabled = True
         g_playerEvents.onEventNotificationsChanged += self.__onEventNotificationsChanged
         g_playerEvents.onDisconnected += self.__onDisconnected
 
     def destroy(self):
         g_playerEvents.onEventNotificationsChanged -= self.__onEventNotificationsChanged
         g_playerEvents.onDisconnected -= self.__onDisconnected
+        self.__isEnabled = False
 
     def setPremium(self, isPremium):
+        if not self.__isEnabled:
+            return
         from gui.shared.utils.HangarSpace import g_hangarSpace
         g_hangarSpace.refreshSpace(isPremium, True)
 
     def setPath(self, path, isPremium = None, reload = True):
-        if path is not None and not path.startswith('spaces/'):
-            path = 'spaces/' + path
-        from gui.shared.utils.HangarSpace import g_hangarSpace
-        if isPremium is None:
-            isPremium = g_hangarSpace.isPremium
-        if path is not None:
-            _EVENT_HANGAR_PATHS[isPremium] = path
-        elif _EVENT_HANGAR_PATHS.has_key(isPremium):
-            del _EVENT_HANGAR_PATHS[isPremium]
-        readHangarSettings('igrPremHangarPath' + ('CN' if constants.IS_CHINA else ''))
-        if reload:
-            g_hangarSpace.refreshSpace(g_hangarSpace.isPremium, True)
-        return
+        if not self.__isEnabled:
+            return
+        else:
+            if path is not None and not path.startswith('spaces/'):
+                path = 'spaces/' + path
+            from gui.shared.utils.HangarSpace import g_hangarSpace
+            if isPremium is None:
+                isPremium = g_hangarSpace.isPremium
+            if path is not None:
+                _EVENT_HANGAR_PATHS[isPremium] = path
+            elif _EVENT_HANGAR_PATHS.has_key(isPremium):
+                del _EVENT_HANGAR_PATHS[isPremium]
+            readHangarSettings('igrPremHangarPath' + ('CN' if constants.IS_CHINA else ''))
+            if reload:
+                g_hangarSpace.refreshSpace(g_hangarSpace.isPremium, True)
+            return
 
     def __onDisconnected(self):
         global _EVENT_HANGAR_PATHS

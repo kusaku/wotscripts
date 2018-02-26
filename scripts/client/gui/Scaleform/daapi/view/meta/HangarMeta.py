@@ -1,4 +1,8 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/meta/HangarMeta.py
+"""
+This file was generated using the wgpygen.
+Please, don't edit this file manually.
+"""
 from gui.Scaleform.framework.entities.View import View
 
 class HangarMeta(View):
@@ -66,3 +70,19 @@ class HangarMeta(View):
     def as_setAlertMessageBlockVisibleS(self, isVisible):
         if self._isDAAPIInited():
             return self.flashObject.as_setAlertMessageBlockVisible(isVisible)
+
+    def as_initNYS(self, isEnabled, isAvailable, counter):
+        if self._isDAAPIInited():
+            return self.flashObject.as_initNY(isEnabled, isAvailable, counter)
+
+    def as_updateNYBoxCounterS(self, counter):
+        if self._isDAAPIInited():
+            return self.flashObject.as_updateNYBoxCounter(counter)
+
+    def as_updateNYEnabledS(self, isEnabled):
+        if self._isDAAPIInited():
+            return self.flashObject.as_updateNYEnabled(isEnabled)
+
+    def as_updateNYAvailableS(self, isAvailable):
+        if self._isDAAPIInited():
+            return self.flashObject.as_updateNYAvailable(isAvailable)

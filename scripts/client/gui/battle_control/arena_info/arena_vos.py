@@ -15,6 +15,7 @@ _INVALIDATE_OP = settings.INVALIDATE_OP
 _VEHICLE_STATUS = settings.VEHICLE_STATUS
 _PLAYER_STATUS = settings.PLAYER_STATUS
 _DELIVERY_STATUS = settings.INVITATION_DELIVERY_STATUS
+_DEFAULT_PLAYER_GROUP = 1
 
 class EPIC_RANDOM_KEYS():
     PLAYER_GROUP = 'playerGroup'
@@ -22,7 +23,7 @@ class EPIC_RANDOM_KEYS():
     @staticmethod
     def getKeys(static = True):
         if static:
-            return [EPIC_RANDOM_KEYS.PLAYER_GROUP]
+            return [(EPIC_RANDOM_KEYS.PLAYER_GROUP, _DEFAULT_PLAYER_GROUP)]
         return []
 
     @staticmethod
@@ -42,11 +43,10 @@ class GameModeDataVO(object):
         self.__internalData = {}
         if gameMode in GAMEMODE_SPECIFIC_KEYS:
             keys = GAMEMODE_SPECIFIC_KEYS[gameMode]
-            for key in keys.getKeys(static):
-                self.__internalData[key] = None
+            for key, defaultValue in keys.getKeys(static):
+                self.__internalData[key] = defaultValue
 
             self.__sortingKeys = keys.getSortingKeys(static)
-        return
 
     def update(self, data):
         invalidate = _INVALIDATE_OP.NONE

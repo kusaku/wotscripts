@@ -299,6 +299,9 @@ def onDisconnected():
     UsersInfoHelper.clear()
     Waiting.rollback()
     Waiting.cancelCallback()
+    if ServicesLocator.lobbyContext.getServerSettings().isElenEnabled():
+        ServicesLocator.eventsController.cleanEventsData()
+    BigWorld.purgeUrlRequestCache()
 
 
 def onKickedFromServer(reason, isBan, expiryTime):

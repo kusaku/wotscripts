@@ -4,7 +4,7 @@ import re
 import time
 import types
 from Queue import Queue
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 import ArenaType
 import BigWorld
 import account_helpers
@@ -22,18 +22,20 @@ from gui.Scaleform.locale.BADGE import BADGE
 from gui.Scaleform.locale.ITEM_TYPES import ITEM_TYPES
 from gui.Scaleform.locale.MENU import MENU
 from gui.Scaleform.locale.MESSENGER import MESSENGER
+from gui.Scaleform.locale.RANKED_BATTLES import RANKED_BATTLES
 from gui.Scaleform.locale.SYSTEM_MESSAGES import SYSTEM_MESSAGES
 from gui.SystemMessages import SM_TYPE
 from gui.clans.formatters import getClanFullName
 from gui.prb_control.formatters import getPrebattleFullDescription
 from gui.ranked_battles import ranked_helpers
-from gui.ranked_battles.ranked_models import PostBattleRankInfo
+from gui.ranked_battles.ranked_models import PostBattleRankInfo, RANK_CHANGE_STATES
 from gui.server_events.awards_formatters import CompletionTokensBonusFormatter
+from gui.server_events.bonuses import VehiclesBonus
 from gui.server_events.finders import PERSONAL_MISSION_TOKEN
 from gui.shared import formatters as shared_fmts
 from gui.shared.formatters import text_styles
 from gui.shared.formatters.currency import getBWFormatter
-from gui.shared.gui_items.Tankman import Tankman, calculateRoleLevel
+from gui.shared.gui_items.Tankman import Tankman
 from gui.shared.gui_items.Vehicle import getUserName, getShortUserName
 from gui.shared.gui_items.dossier.factories import getAchievementFactory
 from gui.shared.money import Money, MONEY_UNDEFINED, Currency
@@ -43,6 +45,7 @@ from helpers import dependency
 from helpers import i18n, html, getLocalizedData
 from helpers import time_utils
 from items import getTypeInfoByIndex, getTypeInfoByName, vehicles as vehicles_core
+from items.new_year_types import NY_STATE
 from messenger import g_settings
 from messenger.ext import passCensor
 from messenger.formatters import TimeFormatter, NCContextItemFormatter
@@ -52,6 +55,9 @@ from skeletons.gui.game_control import IRankedBattlesController
 from skeletons.gui.goodies import IGoodiesCache
 from skeletons.gui.server_events import IEventsCache
 from skeletons.gui.shared import IItemsCache
+from skeletons.new_year import INewYearController
+from gui.Scaleform.locale.NY import NY
+from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 _EOL = '\n'
 _DEFAULT_MESSAGE = 'defaultMessage'
 
@@ -366,9 +372,17 @@ class BattleResultsFormatter(WaitItemsSyncFormatter):
             achievementsStrings.extend(raresStrings)
         if battleResults.get('guiType', 0) == ARENA_GUI_TYPE.RANKED:
             rankedController = dependency.instance(IRankedBattlesController)
-            stateChange = rankedController.getRankChangeStatus(PostBattleRankInfo.fromDict(battleResults))
-            stateChangeStr = i18n.makeString(MESSENGER.rankedStateChange(stateChange))
+            rankInfo = PostBattleRankInfo.fromDict(battleResults)
+            stateChange = rankedController.getRankChangeStatus(rankInfo)
+            if stateChange == RANK_CHANGE_STATES.RANK_POINT:
+                stateChangeStr = i18n.makeString(RANKED_BATTLES.BATTLERESULT_STATUS_RANKPOINT)
+            else:
+                winnerStr = 'win' if battleResults.get('isWinner', 0) > 0 else 'lose'
+                stateChangeStr = i18n.makeString(MESSENGER.rankedStateChange(winnerStr, stateChange))
             achievementsStrings.append(stateChangeStr)
+            shieldsStr = MESSENGER.rankedShieldStateChange(rankInfo.shieldState)
+            if shieldsStr is not None:
+                achievementsStrings.append(i18n.makeString(shieldsStr))
         achievementsBlock = ''
         if achievementsStrings:
             achievementsBlock = g_settings.htmlTemplates.format('battleResultAchieves', {'achieves': ', '.join(achievementsStrings)})
@@ -564,6 +578,7 @@ class GiftReceivedFormatter(ServiceChannelFormatter):
 
 
 class InvoiceReceivedFormatter(WaitItemsSyncFormatter):
+    _nyCtrl = dependency.descriptor(INewYearController)
     __assetHandlers = {INVOICE_ASSET.GOLD: '_formatAmount',
      INVOICE_ASSET.CREDITS: '_formatAmount',
      INVOICE_ASSET.CRYSTAL: '_formatAmount',
@@ -814,6 +829,11 @@ class InvoiceReceivedFormatter(WaitItemsSyncFormatter):
             dossier = dataEx.get('dossier', {})
             if dossier:
                 operations.append(self.__getDossierString())
+            ny18Toys = dataEx.get('ny18Toys', {})
+            if ny18Toys:
+                ny18ToysStr = self._getNy18ToyString(ny18Toys)
+                if ny18ToysStr:
+                    operations.append(ny18ToysStr)
             _extendCustomizationData(dataEx, operations)
             tankmenFreeXP = dataEx.get('tankmenFreeXP', {})
             if tankmenFreeXP:
@@ -963,9 +983,9 @@ class InvoiceReceivedFormatter(WaitItemsSyncFormatter):
                 if rentDays:
                     rentDays = g_settings.htmlTemplates.format('rentDays', {'value': str(rentDays)})
                     vInfo.append(rentDays)
-            crewLevel = calculateRoleLevel(vehData.get('crewLvl', 50), vehData.get('crewFreeXP', 0))
-            if crewLevel > 50:
-                if vehData.get('crewInBarracks', False) and ('crewFreeXP' in vehData or 'crewLvl' in vehData or 'tankmen' in vehData):
+            crewLevel = VehiclesBonus.getTmanRoleLevel(vehData)
+            if crewLevel is not None and crewLevel > VehiclesBonus.DEFAULT_CREW_LVL:
+                if 'crewInBarracks' in vehData and vehData['crewInBarracks']:
                     crewWithLevelString = cls.__i18nCrewWithLvlDroppedString % crewLevel
                 else:
                     crewWithLevelString = cls.__i18nCrewString % crewLevel
@@ -996,6 +1016,39 @@ class InvoiceReceivedFormatter(WaitItemsSyncFormatter):
             template = 'awardListAccruedInvoiceReceived' if count > 0 else 'awardListDebitedInvoiceReceived'
             return g_settings.htmlTemplates.format(template, {'count': count})
         return ''
+
+    @classmethod
+    def _getNy18ToyString(cls, toysData):
+        accuredToys = defaultdict(lambda : 0)
+        debitedToys = defaultdict(lambda : 0)
+        accruedToysStr = []
+        debitedToysStr = []
+        for toyID, count in toysData.iteritems():
+            christmasItemInfo = cls._nyCtrl.toysDescrs.get(toyID)
+            if christmasItemInfo is not None:
+                if count > 0:
+                    accuredToys[christmasItemInfo.type] += count
+                else:
+                    debitedToys[christmasItemInfo.type] += abs(count)
+            else:
+                LOG_WARNING("Couldn't find toy {}".format(toyID))
+
+        for guiType, count in accuredToys.iteritems():
+            guiTypeName = i18n.makeString('#ny:system_messages/invoiceReceived/toyType/{}'.format(guiType))
+            if count > 0:
+                accruedToysStr.append(i18n.makeString('#ny:system_messages/invoiceReceived/toy', name=guiTypeName, count=count))
+
+        for guiType, count in debitedToys.iteritems():
+            guiTypeName = i18n.makeString('#ny:system_messages/invoiceReceived/toyType/{}'.format(guiType))
+            if count > 0:
+                debitedToysStr.append(i18n.makeString('#ny:system_messages/invoiceReceived/toy', name=guiTypeName, count=count))
+
+        result = []
+        if accruedToysStr:
+            result.append(g_settings.htmlTemplates.format('toysInvoiceReceived', ctx={'toys': ', '.join(accruedToysStr)}))
+        if debitedToysStr:
+            result.append(g_settings.htmlTemplates.format('toysDebitedReceived', ctx={'toys': ', '.join(debitedToysStr)}))
+        return '<br/>'.join(result)
 
 
 class AdminMessageFormatter(ServiceChannelFormatter):
@@ -1605,6 +1658,7 @@ class BootcampResultsFormatter(WaitItemsSyncFormatter):
 
 class TokenQuestsFormatter(WaitItemsSyncFormatter):
     _eventsCache = dependency.descriptor(IEventsCache)
+    _nyCtrl = dependency.descriptor(INewYearController)
 
     @async
     @process
@@ -1621,10 +1675,33 @@ class TokenQuestsFormatter(WaitItemsSyncFormatter):
                 return
             if self.__processPersonalMissionsSpecial(completedQuestIDs, message, callback):
                 return
+            newYearQuestDescrsIds = set(self._nyCtrl.boxStorage.getDescriptors().keys() + self._nyCtrl.chestStorage.getDescriptors().keys() + self._nyCtrl.collectionRewardsBySettingID)
+            isNYeventFinished = self._nyCtrl.state == NY_STATE.FINISHED
+            isNYChest = bool(not completedQuestIDs.difference(set(self._nyCtrl.chestStorage.getDescriptors().keys())))
+            nyTemplateName = None
+            if not isNYeventFinished:
+                if completedQuestIDs.intersection(newYearQuestDescrsIds):
+                    if not completedQuestIDs.difference(newYearQuestDescrsIds):
+                        if isNYChest:
+                            nyTemplateName = 'nyChestOpenedInvoice'
+                        else:
+                            LOG_DEBUG("Standard Message won't show because it was NY sys msg response.", completedQuestIDs)
+                            callback([])
+                            return
+            else:
+                boxesDescriptorsSet = set(self._nyCtrl.boxStorage.getDescriptors().keys())
+                chestsDescriptorsSet = set(self._nyCtrl.chestStorage.getDescriptors().keys())
+                forcedOpenedBoxes = boxesDescriptorsSet.intersection(completedQuestIDs)
+                forcedOpenedChests = chestsDescriptorsSet.intersection(completedQuestIDs)
+                if forcedOpenedBoxes or forcedOpenedChests:
+                    nyTemplateName = 'nyFinishGoodsInvoice' if not forcedOpenedChests else 'nyFinishGoodsInvoiceWithVD'
+                    self._nyCtrl.stateHandler.setMessageShown()
             fmt = self.formatQuestAchieves(data, asBattleFormatter=False)
             if fmt is not None:
                 settings = self._getGuiSettings(message, self._getTemplateName(completedQuestIDs))
-                formatted = g_settings.msgTemplates.format(self._getTemplateName(completedQuestIDs), {'achieves': fmt})
+                formatted = g_settings.msgTemplates.format(nyTemplateName or self._getTemplateName(completedQuestIDs), {'achieves': fmt})
+                if not isNYeventFinished and isNYChest:
+                    settings.priorityLevel = 'low'
         callback([_MessageData(formatted, settings)])
         return
 
@@ -1673,6 +1750,21 @@ class TokenQuestsFormatter(WaitItemsSyncFormatter):
         for intCD, count in items.iteritems():
             itemDescr = vehicles_core.getItemByCompactDescr(intCD)
             itemsNames.append(i18n.makeString('#messenger:serviceChannelMessages/battleResults/quests/items/name', name=itemDescr.i18n.userString, count=BigWorld.wg_getIntegralFormat(count)))
+
+        nyBonuses = []
+        if data.get('tokens'):
+            for nyTokenId, nyTokenParams in data['tokens'].iteritems():
+                if nyTokenId in cls._nyCtrl.boxStorage.getDescriptors():
+                    itemsNames.append(i18n.makeString('#ny:system_messages/battleResult/boxes', count=BigWorld.wg_getIntegralFormat(nyTokenParams.get('count', 0))))
+                if nyTokenId in cls._nyCtrl.vehDiscountsStorage.getDescriptors():
+                    intLevel = cls._nyCtrl.vehDiscountsStorage.extractLevelFromDiscountID(nyTokenId)
+                    vehLvlStr = i18n.makeString(TOOLTIPS.level(intLevel))
+                    nyBonuses.insert(0, i18n.makeString(NY.REWARDSSCREEN_TOOLTIP_VEHICLE_HEADER, level=vehLvlStr))
+                elif nyTokenId in cls._nyCtrl.tankmanDiscountsStorage.getDescriptors():
+                    nyBonuses.append(i18n.makeString(NY.TOOLTIP_CAROUSELITEM_AWARDS_GIRL))
+
+        for b in nyBonuses:
+            itemsNames.insert(0, b)
 
         if itemsNames:
             result.append(cls.__makeQuestsAchieve('battleQuestsItems', names=', '.join(itemsNames)))
@@ -1975,7 +2067,7 @@ class RentalsExpiredFormatter(ServiceChannelFormatter):
     def format(self, message, *args):
         vehTypeCD = message.data.get('vehTypeCD', None)
         if vehTypeCD is not None:
-            return (self._getMessage(vehTypeCD), self._getGuiSettings(message, self._templateKey))
+            return [_MessageData(self._getMessage(vehTypeCD), self._getGuiSettings(message, self._templateKey))]
         else:
             return (None, None)
 
@@ -2292,6 +2384,7 @@ class RankedQuestFormatter(WaitItemsSyncFormatter):
         data = message.data.copy()
         formattedRanks = []
         finalAwards = None
+        savedData = None
         title = ''
         isSynced = yield self._waitForSyncItems()
         if isSynced:
@@ -2309,6 +2402,8 @@ class RankedQuestFormatter(WaitItemsSyncFormatter):
                             if leagueData is not None:
                                 extraAwards['league'] = leagueData['league']
                             finalAwards = self.__packFinalAwards(self.__makeAwardsDict(extraAwards, data))
+                            savedData = {'quest': quest,
+                             'awards': data}
                     elif quest.isForRank() or quest.isForVehicleMastering():
                         if quest.isForVehicleMastering():
                             vehicleIntCD = first(data.get('playerVehicles'))
@@ -2335,8 +2430,13 @@ class RankedQuestFormatter(WaitItemsSyncFormatter):
         if finalAwards:
             awardsBlocks = [finalAwards]
             awardsBlocks.extend(formattedRanks)
+            additionalData = None
+            if savedData is not None:
+                additionalData = {'savedData': savedData}
             formatted = g_settings.msgTemplates.format('rankedCycleQuest', ctx={'awardsBlocks': _EOL.join(awardsBlocks),
-             'title': title})
+             'title': title}, data=additionalData)
+            if additionalData is None and 'buttonsStates' in formatted:
+                formatted['buttonsStates'].update({'submit': 0})
         elif formattedRanks:
             overallAwardsExceptPoints = self.__packRankAwards(data.copy())
             if overallAwardsExceptPoints:
@@ -2383,3 +2483,55 @@ class RankedQuestFormatter(WaitItemsSyncFormatter):
 
     def __packAward(self, key, value, extraKey):
         return '{} {}'.format(i18n.makeString(SYSTEM_MESSAGES.getRankedNotificationBonusName(name=key, extra=extraKey)), self.__awardsStyles.get(key, text_styles.stats)(value))
+
+
+class _NewYearFormatter(ClientSysMessageFormatter):
+
+    def format(self, data, *args):
+        key = self._getKey()
+        formatted = g_settings.msgTemplates.format(key)
+        return [_MessageData(formatted, self._getGuiSettings(args, key))]
+
+    def _getKey(self):
+        raise NotImplementedError
+
+
+class NewYearStartedFormatter(_NewYearFormatter):
+
+    def _getKey(self):
+        return 'OpenNYRewardsScreenAtStart'
+
+
+class NewYearFinishedFormatter(_NewYearFormatter):
+
+    def _getKey(self):
+        return 'OpenNYRewardsScreenAtFinish'
+
+
+class NewYearTankmanRecruitFormatter(ClientSysMessageFormatter):
+
+    def format(self, data, *args):
+        tankman = Tankman(args[0])
+        key = 'tankmenNYInvoiceReceived'
+        formatted = g_settings.msgTemplates.format(key, ctx={'rankName': tankman.rankUserName,
+         'lastName': tankman.lastUserName,
+         'role': tankman.roleUserName,
+         'vehicle': getUserName(tankman.vehicleNativeDescr.type),
+         'skillLevel': tankman.roleLevel})
+        return [_MessageData(formatted, self._getGuiSettings(args, key))]
+
+
+class NewYearPresentBoxFormatter(ClientSysMessageFormatter):
+
+    def format(self, data, *args):
+        key = 'presentBoxReceived'
+        formatted = g_settings.msgTemplates.format(key, ctx={'msgBody': args[0]})
+        return [_MessageData(formatted, self._getGuiSettings(args, key))]
+
+
+class NewYearSettingCollectedFormatter(ClientSysMessageFormatter):
+
+    def format(self, data, *args):
+        key = 'nySettingCollected'
+        formatted = g_settings.msgTemplates.format(key, ctx={'msgBody': args[0]})
+        return [_MessageData(formatted, self._getGuiSettings(args, key))]

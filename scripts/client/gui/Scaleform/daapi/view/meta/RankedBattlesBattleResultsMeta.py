@@ -1,4 +1,8 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/meta/RankedBattlesBattleResultsMeta.py
+"""
+This file was generated using the wgpygen.
+Please, don't edit this file manually.
+"""
 from gui.Scaleform.daapi.view.meta.WrapperViewMeta import WrapperViewMeta
 
 class RankedBattlesBattleResultsMeta(WrapperViewMeta):
@@ -6,8 +10,8 @@ class RankedBattlesBattleResultsMeta(WrapperViewMeta):
     def closeView(self):
         self._printOverrideError('closeView')
 
-    def ready(self):
-        self._printOverrideError('ready')
+    def animationCheckBoxSelected(self, value):
+        self._printOverrideError('animationCheckBoxSelected')
 
     def as_setDataS(self, data):
         """

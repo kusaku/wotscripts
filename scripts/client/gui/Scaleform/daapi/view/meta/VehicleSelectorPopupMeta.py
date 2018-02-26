@@ -1,4 +1,8 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/meta/VehicleSelectorPopupMeta.py
+"""
+This file was generated using the wgpygen.
+Please, don't edit this file manually.
+"""
 from gui.Scaleform.framework.entities.abstract.AbstractWindowView import AbstractWindowView
 
 class VehicleSelectorPopupMeta(AbstractWindowView):
@@ -28,6 +32,6 @@ class VehicleSelectorPopupMeta(AbstractWindowView):
         if self._isDAAPIInited():
             return self.flashObject.as_setListMode(isMultipleSelect)
 
-    def as_setInfoTextS(self, text, componentsOffset):
+    def as_setTextsS(self, titleText, infoText, selectButtonLabel, cancelButtonLabel):
         if self._isDAAPIInited():
-            return self.flashObject.as_setInfoText(text, componentsOffset)
+            return self.flashObject.as_setTexts(titleText, infoText, selectButtonLabel, cancelButtonLabel)

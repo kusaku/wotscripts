@@ -227,6 +227,10 @@ class Turret(InstallableItem):
         self.turretDetachmentEffects = None
         return
 
+    @property
+    def isGunCarriage(self):
+        return 'gunCarriage' in self.tags
+
 
 @add_shallow_copy()
 

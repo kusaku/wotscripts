@@ -1,13 +1,11 @@
-# Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/techtree/Research.py
+# Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/techtree/research_page.py
 import nations
 from CurrentVehicle import g_currentVehicle
-from constants import IS_DEVELOPMENT
 from debug_utils import LOG_DEBUG
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui.Scaleform.daapi.view.lobby.techtree import dumpers
 from gui.Scaleform.daapi.view.lobby.techtree.data import ResearchItemsData
 from gui.Scaleform.daapi.view.lobby.techtree.settings import SelectedNation
-from gui.Scaleform.daapi.view.lobby.techtree.settings import USE_XML_DUMPING
 from gui.Scaleform.daapi.view.lobby.techtree.techtree_dp import g_techTreeDP
 from gui.Scaleform.daapi.view.lobby.vehicle_compare.formatters import getBtnCompareData
 from gui.Scaleform.daapi.view.meta.ResearchMeta import ResearchMeta
@@ -34,11 +32,7 @@ class Research(ResearchMeta):
     __sound_env__ = LobbySubViewEnv
 
     def __init__(self, ctx = None, skipConfirm = False):
-        if USE_XML_DUMPING and IS_DEVELOPMENT:
-            dumper = dumpers.ResearchItemsXMLDumper()
-        else:
-            dumper = dumpers.ResearchItemsObjDumper()
-        super(Research, self).__init__(ResearchItemsData(dumper))
+        super(Research, self).__init__(ResearchItemsData(dumpers.ResearchItemsObjDumper()))
         self._resolveLoadCtx(ctx=ctx)
         self._skipConfirm = skipConfirm
 
@@ -58,8 +52,6 @@ class Research(ResearchMeta):
         Game communication.
         Overridden method of the class _Py_ScriptHandler.requestNationData.
         """
-        if USE_XML_DUMPING and IS_DEVELOPMENT:
-            self.as_useXMLDumpingS()
         self.redraw()
         return True
 

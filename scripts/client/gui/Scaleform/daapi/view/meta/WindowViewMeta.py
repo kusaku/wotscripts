@@ -1,4 +1,8 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/meta/WindowViewMeta.py
+"""
+This file was generated using the wgpygen.
+Please, don't edit this file manually.
+"""
 from gui.Scaleform.daapi.view.meta.WrapperViewMeta import WrapperViewMeta
 
 class WindowViewMeta(WrapperViewMeta):

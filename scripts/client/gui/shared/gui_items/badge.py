@@ -1,4 +1,6 @@
 # Embedded file name: scripts/client/gui/shared/gui_items/badge.py
+from account_helpers import AccountSettings
+from account_helpers.AccountSettings import LAST_BADGES_VISIT
 from dossiers2.ui.achievements import BADGES_BLOCK
 from gui.Scaleform.locale.BADGE import BADGE
 from gui.Scaleform.settings import getBadgeIconPath, getBadgeHighlightIconPath, BADGES_ICONS, BADGES_HIGHLIGHTS
@@ -106,6 +108,20 @@ class Badge(GUIItem):
         if self.getName().startswith('global_map'):
             return getBadgeHighlightIconPath(BADGES_HIGHLIGHTS.GOLD)
         return ''
+
+    def isNew(self):
+        """
+        Indicate that player is haven't see the badge yet
+        :return: bool
+        """
+        result = False
+        if self.isAchieved:
+            lastBadgesVisit = AccountSettings.getSettings(LAST_BADGES_VISIT)
+            if lastBadgesVisit is not None:
+                result = lastBadgesVisit < self.achievedAt
+            else:
+                result = True
+        return result
 
     def __checkType(self, badgeType):
         return self.data['type'] & badgeType > 0

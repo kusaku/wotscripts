@@ -8,7 +8,7 @@ import Event
 import AccountCommands
 import ClientPrebattle
 from account_helpers import AccountSyncData, Inventory, DossierCache, Shop, Stats, QuestProgress, CustomFilesCache, BattleResultsCache, ClientGoodies, client_recycle_bin, AccountSettings
-from account_helpers import ClientRanked, ClientBadges
+from account_helpers import ClientRanked, ClientBadges, ClientNewYear
 from account_helpers import ClientInvitations, vehicle_rotation
 from PlayerEvents import g_playerEvents as events
 from account_helpers.AccountSettings import CURRENT_VEHICLE
@@ -86,6 +86,7 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
         self.ranked = g_accountRepository.ranked
         self.badges = g_accountRepository.badges
         self.customFilesCache = g_accountRepository.customFilesCache
+        self.newYear = g_accountRepository.newYear
         self.syncData.setAccount(self)
         self.inventory.setAccount(self)
         self.stats.setAccount(self)
@@ -101,6 +102,7 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
         self.recycleBin.setAccount(self)
         self.ranked.setAccount(self)
         self.badges.setAccount(self)
+        self.newYear.setAccount(self)
         self.isLongDisconnectedFromCenter = False
         self.prebattle = None
         self.unitBrowser = ClientUnitBrowser(self)
@@ -121,6 +123,7 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
         self.isInFalloutClassic = False
         self.isInFalloutMultiteam = False
         self.isInRankedQueue = False
+        self.selectedHangarEntityId = None
         self.__onCmdResponse = {}
         self.__onStreamComplete = {}
         return
@@ -144,6 +147,7 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
         self.recycleBin.onAccountBecomePlayer()
         self.ranked.onAccountBecomePlayer()
         self.badges.onAccountBecomePlayer()
+        self.newYear.onAccountBecomePlayer()
         chatManager.switchPlayerProxy(self)
         events.onAccountBecomePlayer()
         BigWorld.target.source = BigWorld.MouseTargetingMatrix()
@@ -170,6 +174,7 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
         self.recycleBin.onAccountBecomeNonPlayer()
         self.ranked.onAccountBecomeNonPlayer()
         self.badges.onAccountBecomeNonPlayer()
+        self.newYear.onAccountBecomeNonPlayer()
         self.__cancelCommands()
         self.syncData.setAccount(None)
         self.inventory.setAccount(None)
@@ -185,6 +190,7 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
         self.recycleBin.setAccount(None)
         self.ranked.setAccount(None)
         self.badges.setAccount(None)
+        self.newYear.setAccount(None)
         self.unitMgr.clear()
         self.unitBrowser.clear()
         events.onAccountBecomeNonPlayer()
@@ -382,12 +388,15 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
     def targetFocus(self, entity):
         if isinstance(entity, ClientSelectableObject) and entity.enabled:
             from gui.shared.utils.HangarSpace import g_hangarSpace
+            self.selectedHangarEntityId = entity.id
             g_hangarSpace.onObjectSelected(entity)
 
     def targetBlur(self, prevEntity):
         if isinstance(prevEntity, ClientSelectableObject):
             from gui.shared.utils.HangarSpace import g_hangarSpace
+            self.selectedHangarEntityId = None
             g_hangarSpace.onObjectUnselected(prevEntity)
+        return
 
     def onKickedFromQueue(self, queueType):
         LOG_DEBUG('onKickedFromQueue', queueType)
@@ -942,8 +951,8 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
         proxy = lambda requestID, resultID, errorStr, ext = {}: callback(resultID, errorStr, ext)
         self._doCmdStr(AccountCommands.CMD_QUERY_BALANCE_INFO, '', proxy)
 
-    def runQuest(self, questType, questID, callback):
-        self._doCmdIntStr(AccountCommands.CMD_RUN_QUEST, questType, questID, lambda requestID, resultID, errorStr: callback(resultID))
+    def runQuest(self, questType, questIDs, callback):
+        self._doCmdIntStrArr(AccountCommands.CMD_RUN_QUEST, questType, questIDs, lambda requestID, resultID, errorStr: callback(resultID))
 
     def pawnFreeAwardList(self, questType, questID, callback):
         args = [questType, questID]
@@ -975,15 +984,20 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
     def _doCmdIntArr(self, cmd, arr, callback):
         return self.__doCmd('doCmdIntArr', cmd, callback, arr)
 
+    def _doCmdIntStrArr(self, cmd, int1, strArr, callback):
+        return self.__doCmd('doCmdIntStrArr', cmd, callback, int1, strArr)
+
     def _doCmdIntArrStrArr(self, cmd, intArr, strArr, callback):
         return self.__doCmd('doCmdIntArrStrArr', cmd, callback, intArr, strArr)
 
     def _update(self, triggerEvents, diff):
         LOG_DEBUG_DEV('_update', diff if triggerEvents else 'full sync')
-        isFullSync = diff.get('prevRev', None) is None
-        if not self.syncData.updatePersistentCache(diff, isFullSync):
-            return False
+        if not self.newYear.checkDiffSanity(diff):
+            return True
         else:
+            isFullSync = diff.get('prevRev', None) is None
+            if not self.syncData.updatePersistentCache(diff, isFullSync):
+                return False
             self.syncData.revision = diff.get('rev', 0)
             self.inventory.synchronize(isFullSync, diff)
             self.stats.synchronize(isFullSync, diff)
@@ -1002,6 +1016,8 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
             self.__synchronizeCacheDict(self.eventsData, diff, 'eventsData', 'replace', events.onEventsDataChanged)
             self.__synchronizeCacheDict(self.personalMissionsLock, diff.get('cache', None), 'potapovQuestIDs', 'replace', events.onPMLocksChanged)
             self.__synchronizeCacheSimpleValue('globalRating', diff.get('account', None), 'globalRating', events.onAccountGlobalRatingChanged)
+            self.newYear.synchronize(isFullSync, diff)
+            cacheDiff = diff.get('cache', {})
             events.onClientUpdated(diff, not triggerEvents)
             if triggerEvents and not isFullSync:
                 for vehTypeCompDescr in diff.get('stats', {}).get('eliteVehicles', ()):
@@ -1215,6 +1231,7 @@ class _AccountRepository(object):
         self.ranked = ClientRanked.ClientRanked(self.syncData)
         self.badges = ClientBadges.ClientBadges(self.syncData)
         self.gMap = ClientGlobalMap()
+        self.newYear = ClientNewYear.ClientNewYear(self.syncData)
         self.onTokenReceived = Event.Event()
         self.requestID = AccountCommands.REQUEST_ID_UNRESERVED_MIN
 
@@ -1232,6 +1249,7 @@ def _delAccountRepository():
         g_accountRepository.customFilesCache.close()
         g_accountRepository.onTokenReceived.clear()
         g_accountRepository.prebattleInvitations.clear()
+        g_accountRepository.newYear.clear()
         g_accountRepository = None
         return
 

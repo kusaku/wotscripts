@@ -5,6 +5,7 @@ from constants import ARENA_GUI_TYPE
 import gui
 from CurrentVehicle import g_currentVehicle, g_currentPreviewVehicle
 from dossiers2.ui.achievements import ACHIEVEMENT_BLOCK
+from gui.Scaleform.daapi.view.lobby.techtree.techtree_dp import g_techTreeDP
 from gui.Scaleform.daapi.view.lobby.vehicle_compare import cmp_helpers
 from gui.Scaleform.genConsts.SEASONS_CONSTANTS import SEASONS_CONSTANTS
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
@@ -205,7 +206,8 @@ class AwardContext(ShopContext):
 
 
 class RankedRankContext(ToolTipContext):
-    """ Rank class for tooltip context
+    """
+    Rank class for tooltip context
     """
     rankedController = dependency.descriptor(IRankedBattlesController)
 
@@ -460,6 +462,15 @@ class TechTreeContext(ShopContext):
         value = super(TechTreeContext, self).getParamsConfiguration(item)
         value.vehicle = self._vehicle
         return value
+
+
+class VehicleAnnouncementContext(ToolTipContext):
+
+    def __init__(self, fieldsToExclude = None):
+        super(VehicleAnnouncementContext, self).__init__(TOOLTIP_COMPONENT.SHOP, fieldsToExclude)
+
+    def buildItem(self, node, *args, **kwargs):
+        return g_techTreeDP.getAnnouncementByCD(int(node.id))
 
 
 class VehCmpModulesContext(TechTreeContext):
@@ -784,4 +795,25 @@ class InventoryBattleBoosterContext(ShopBattleBoosterContext):
     def getStatusConfiguration(self, item):
         value = super(InventoryBattleBoosterContext, self).getStatusConfiguration(item)
         value.checkBuying = False
+        return value
+
+
+class NewYearAwardsResultContext(ProfileContext):
+    """ Profile class for tool tip context
+    """
+
+    def __init__(self, fieldsToExclude = None):
+        super(NewYearAwardsResultContext, self).__init__(fieldsToExclude)
+        self._component = TOOLTIP_COMPONENT.NY_REWARDS
+
+    def buildItem(self, block, name, value = 0, customData = None):
+        factory = factories.getAchievementFactory((block, name))
+        if factory is not None:
+            return factory.create(value=value)
+        else:
+            return
+
+    def getParamsConfiguration(self, item):
+        value = super(ProfileContext, self).getParamsConfiguration(item)
+        value.checkAchievementExistence = False
         return value

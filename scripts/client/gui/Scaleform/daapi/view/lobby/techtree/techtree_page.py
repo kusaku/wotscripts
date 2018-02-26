@@ -1,4 +1,4 @@
-# Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/techtree/TechTree.py
+# Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/techtree/techtree_page.py
 import GUI
 import Keys
 import nations
@@ -10,7 +10,6 @@ from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui.Scaleform.daapi.view.lobby.techtree import dumpers
 from gui.Scaleform.daapi.view.lobby.techtree.data import NationTreeData
 from gui.Scaleform.daapi.view.lobby.techtree.settings import SelectedNation
-from gui.Scaleform.daapi.view.lobby.techtree.settings import USE_XML_DUMPING
 from gui.Scaleform.daapi.view.lobby.techtree.techtree_dp import g_techTreeDP
 from gui.Scaleform.daapi.view.meta.TechTreeMeta import TechTreeMeta
 from gui.shared import events, EVENT_BUS_SCOPE
@@ -23,11 +22,7 @@ class TechTree(TechTreeMeta):
     __sound_env__ = LobbySubViewEnv
 
     def __init__(self, ctx = None):
-        if USE_XML_DUMPING and IS_DEVELOPMENT:
-            dumper = dumpers.NationXMLDumper()
-        else:
-            dumper = dumpers.NationObjDumper()
-        super(TechTree, self).__init__(NationTreeData(dumper))
+        super(TechTree, self).__init__(NationTreeData(dumpers.NationObjDumper()))
         self._resolveLoadCtx(ctx=ctx)
 
     def __del__(self):
@@ -40,8 +35,6 @@ class TechTree(TechTreeMeta):
         """
         Overridden method of the class _Py_ScriptHandler.requestNationTreeData.
         """
-        if USE_XML_DUMPING and IS_DEVELOPMENT:
-            self.as_useXMLDumpingS()
         self.as_setAvailableNationsS(g_techTreeDP.getAvailableNations())
         self.as_setSelectedNationS(SelectedNation.getName())
         return True

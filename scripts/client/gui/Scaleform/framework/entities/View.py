@@ -6,7 +6,7 @@ import SoundGroups
 from gui.Scaleform.framework.entities.abstract.AbstractViewMeta import AbstractViewMeta
 from gui.doc_loaders import hints_layout
 from gui.shared.events import FocusEvent
-_ViewKey = namedtuple('ViewKey', ['alias', 'name'])
+_ViewKey = namedtuple('_ViewKey', ['alias', 'name'])
 
 class ViewKey(_ViewKey):
     """
@@ -336,6 +336,9 @@ class View(AbstractViewMeta):
         :param alias: view alias represented by string.
         """
         self.fireEvent(FocusEvent(FocusEvent.COMPONENT_FOCUSED))
+
+    def delaySwitchTo(self, viewAlias, freezeCbk, unfreezeCbk):
+        return False
 
     def _populate(self):
         super(View, self)._populate()

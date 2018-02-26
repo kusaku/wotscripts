@@ -1,4 +1,8 @@
 # Embedded file name: scripts/client/messenger/gui/Scaleform/meta/ContactNoteManageViewMeta.py
+"""
+This file was generated using the wgpygen.
+Please, don't edit this file manually.
+"""
 from messenger.gui.Scaleform.meta.BaseManageContactViewMeta import BaseManageContactViewMeta
 
 class ContactNoteManageViewMeta(BaseManageContactViewMeta):

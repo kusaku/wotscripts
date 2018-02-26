@@ -69,6 +69,12 @@ CUSTOMIZATION_POPOVER_ALIASES = {GUI_ITEM_TYPE.STYLE: CUSTOMIZATION_ALIASES.CUST
  GUI_ITEM_TYPE.INSCRIPTION: CUSTOMIZATION_ALIASES.CUSTOMIZATION_DECAL_POPOVER,
  GUI_ITEM_TYPE.MODIFICATION: CUSTOMIZATION_ALIASES.CUSTOMIZATION_EFFECT_POPOVER}
 SEASONS_ORDER = (SeasonType.SUMMER, SeasonType.WINTER, SeasonType.DESERT)
+TYPES_ORDER = (GUI_ITEM_TYPE.PAINT,
+ GUI_ITEM_TYPE.CAMOUFLAGE,
+ GUI_ITEM_TYPE.EMBLEM,
+ GUI_ITEM_TYPE.INSCRIPTION,
+ GUI_ITEM_TYPE.MODIFICATION,
+ GUI_ITEM_TYPE.STYLE)
 
 class PurchaseItem(object):
     __slots__ = ('item', 'price', 'areaID', 'slot', 'regionID', 'selected', 'group', 'isFromInventory', 'isDismantling')
@@ -197,8 +203,9 @@ def getStyleInventoryCount(item, styleInfo = None):
             inventoryCount -= 1
         if original and original.intCD == item.intCD:
             inventoryCount += 1
-    elif original and g_currentVehicle.item.getStyledOutfit(SeasonType.SUMMER).isEnabled():
-        inventoryCount += 1
+    elif original and original.intCD == item.intCD:
+        if g_currentVehicle.item.getStyledOutfit(SeasonType.SUMMER).isEnabled():
+            inventoryCount += 1
     return max(0, inventoryCount)
 
 

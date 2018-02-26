@@ -1,4 +1,8 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/meta/CustomizationBuyWindowMeta.py
+"""
+This file was generated using the wgpygen.
+Please, don't edit this file manually.
+"""
 from gui.Scaleform.framework.entities.abstract.AbstractWindowView import AbstractWindowView
 
 class CustomizationBuyWindowMeta(AbstractWindowView):
@@ -36,6 +40,6 @@ class CustomizationBuyWindowMeta(AbstractWindowView):
         if self._isDAAPIInited():
             return self.flashObject.as_setTotalData(data)
 
-    def as_setBuyBtnEnabledS(self, isEnabled):
+    def as_setBuyBtnStateS(self, isEnabled, label):
         if self._isDAAPIInited():
-            return self.flashObject.as_setBuyBtnEnabled(isEnabled)
+            return self.flashObject.as_setBuyBtnState(isEnabled, label)

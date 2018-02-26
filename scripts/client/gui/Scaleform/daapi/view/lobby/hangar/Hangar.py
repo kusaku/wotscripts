@@ -3,7 +3,6 @@ import BigWorld
 import SoundGroups
 from CurrentVehicle import g_currentVehicle
 from constants import QUEUE_TYPE
-from gui.prb_control.entities.listener import IGlobalListener
 from gui.ClientUpdateManager import g_clientUpdateManager
 from gui.Scaleform.Waiting import Waiting
 from gui.Scaleform.daapi import LobbySubView
@@ -15,10 +14,12 @@ from gui.Scaleform.genConsts.HANGAR_ALIASES import HANGAR_ALIASES
 from gui.Scaleform.genConsts.TOOLTIPS_CONSTANTS import TOOLTIPS_CONSTANTS
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.prb_control.ctrl_events import g_prbCtrlEvents
+from gui.prb_control.entities.listener import IGlobalListener
+from gui.ranked_battles.constants import PRIME_TIME_STATUS
 from gui.shared import events, EVENT_BUS_SCOPE
-from gui.shared.items_cache import CACHE_SYNC_REASON
 from gui.shared.events import LobbySimpleEvent
 from gui.shared.gui_items import GUI_ITEM_TYPE
+from gui.shared.items_cache import CACHE_SYNC_REASON
 from gui.shared.utils.HangarSpace import g_hangarSpace
 from gui.shared.utils.functions import makeTooltip
 from helpers import dependency
@@ -27,7 +28,7 @@ from skeletons.gui.game_control import IFalloutController, IRankedBattlesControl
 from skeletons.gui.game_control import IIGRController
 from skeletons.gui.lobby_context import ILobbyContext
 from skeletons.gui.shared import IItemsCache
-from gui.ranked_battles.constants import PRIME_TIME_STATUS
+from skeletons.new_year import INewYearController
 
 class Hangar(LobbySubView, HangarMeta, IGlobalListener):
     __background_alpha__ = 0.0
@@ -36,6 +37,7 @@ class Hangar(LobbySubView, HangarMeta, IGlobalListener):
     falloutCtrl = dependency.descriptor(IFalloutController)
     igrCtrl = dependency.descriptor(IIGRController)
     lobbyContext = dependency.descriptor(ILobbyContext)
+    _newYearController = dependency.descriptor(INewYearController)
 
     def __init__(self, _ = None):
         LobbySubView.__init__(self, 0)
@@ -59,14 +61,23 @@ class Hangar(LobbySubView, HangarMeta, IGlobalListener):
         g_hangarSpace.setVehicleSelectable(True)
         g_prbCtrlEvents.onVehicleClientStateChanged += self.__onVehicleClientStateChanged
         self.lobbyContext.getServerSettings().onServerSettingsChange += self.__onServerSettingChanged
+        self._newYearController.onStateChanged += self.__onNYStateChanged
+        self._newYearController.boxStorage.onCountChanged += self.__onBoxesCountChanged
         g_clientUpdateManager.addMoneyCallback(self.onMoneyUpdate)
         g_clientUpdateManager.addCallbacks({})
         self.startGlobalListening()
+        self.as_initNYS(self._newYearController.isAvailable(), self._newYearController.isAvailable(), self._newYearController.boxStorage.count)
         self.__updateAll()
         self.addListener(LobbySimpleEvent.NOTIFY_CURSOR_OVER_3DSCENE, self.__onNotifyCursorOver3dScene)
         self.addListener(LobbySimpleEvent.WAITING_SHOWN, self.__onWaitingShown, EVENT_BUS_SCOPE.LOBBY)
         self.addListener(events.FightButtonEvent.FIGHT_BUTTON_UPDATE, self.__handleFightButtonUpdated, scope=EVENT_BUS_SCOPE.LOBBY)
+        selectedHangarEntityId = BigWorld.player().selectedHangarEntityId
+        if selectedHangarEntityId is not None:
+            entity = BigWorld.entities.get(selectedHangarEntityId, None)
+            if entity is not None:
+                self.__on3DObjectSelected(entity)
         self._onPopulateEnd()
+        return
 
     def onEscape(self):
         dialogsContainer = self.app.containerManager.getContainer(ViewTypes.TOP_WINDOW)
@@ -112,6 +123,8 @@ class Hangar(LobbySubView, HangarMeta, IGlobalListener):
         g_hangarSpace.setVehicleSelectable(False)
         g_prbCtrlEvents.onVehicleClientStateChanged -= self.__onVehicleClientStateChanged
         self.lobbyContext.getServerSettings().onServerSettingsChange -= self.__onServerSettingChanged
+        self._newYearController.onStateChanged -= self.__onNYStateChanged
+        self._newYearController.boxStorage.onCountChanged -= self.__onBoxesCountChanged
         if self.__selected3DEntity is not None:
             BigWorld.wgDelEdgeDetectEntity(self.__selected3DEntity)
             self.__selected3DEntity = None
@@ -119,6 +132,14 @@ class Hangar(LobbySubView, HangarMeta, IGlobalListener):
         self.stopGlobalListening()
         LobbySubView._dispose(self)
         return
+
+    def __onNYStateChanged(self, _):
+        available = self._newYearController.isAvailable()
+        self.as_updateNYEnabledS(available)
+        self.as_updateNYAvailableS(available)
+
+    def __onBoxesCountChanged(self, *args):
+        self.as_updateNYBoxCounterS(self._newYearController.boxStorage.count)
 
     def __switchCarousels(self):
         prevCarouselAlias = self.__currentCarouselAlias
@@ -291,7 +312,7 @@ class Hangar(LobbySubView, HangarMeta, IGlobalListener):
         self.__onEntityChanged()
 
     def onMoneyUpdate(self, *args):
-        self.__updateAmmoPanel()
+        pass
 
     def onRankedUpdate(self):
         self.__updateRankedWidget()
@@ -342,11 +363,11 @@ class Hangar(LobbySubView, HangarMeta, IGlobalListener):
     def __updateState(self):
         state = g_currentVehicle.getViewState()
         self.as_setCrewEnabledS(state.isCrewOpsEnabled())
-        if state.isOnlyForEventBattles():
-            customizationTooltip = makeTooltip(_ms(TOOLTIPS.HANGAR_TUNING_DISABLEDFOREVENTVEHICLE_HEADER), _ms(TOOLTIPS.HANGAR_TUNING_DISABLEDFOREVENTVEHICLE_BODY))
-        else:
+        isC11nEnabled = self.lobbyContext.getServerSettings().isCustomizationEnabled() and state.isCustomizationEnabled() and not state.isOnlyForEventBattles()
+        if isC11nEnabled:
             customizationTooltip = makeTooltip(_ms(TOOLTIPS.HANGAR_TUNING_HEADER), _ms(TOOLTIPS.HANGAR_TUNING_BODY))
-        isC11nEnabled = self.lobbyContext.getServerSettings().isCustomizationEnabled() and state.isCustomizationEnabled()
+        else:
+            customizationTooltip = makeTooltip(_ms(TOOLTIPS.HANGAR_TUNING_DISABLED_HEADER), _ms(TOOLTIPS.HANGAR_TUNING_DISABLED_BODY))
         self.as_setupAmmunitionPanelS(state.isMaintenanceEnabled(), makeTooltip(_ms(TOOLTIPS.HANGAR_MAINTENANCE_HEADER), _ms(TOOLTIPS.HANGAR_MAINTENANCE_BODY)), isC11nEnabled, customizationTooltip)
         self.as_setControlsVisibleS(state.isUIShown())
 
@@ -357,6 +378,7 @@ class Hangar(LobbySubView, HangarMeta, IGlobalListener):
         self.__updateAlertMessage()
         self.__updateNavigationInResearchPanel()
         self.__updateHeader()
+        self.__switchCarousels()
 
     def __onVehicleClientStateChanged(self, vehicles):
         self.__updateAmmoPanel()

@@ -1,4 +1,8 @@
 # Embedded file name: scripts/client/messenger/gui/Scaleform/meta/BaseContactViewMeta.py
+"""
+This file was generated using the wgpygen.
+Please, don't edit this file manually.
+"""
 from gui.Scaleform.framework.entities.BaseDAAPIComponent import BaseDAAPIComponent
 
 class BaseContactViewMeta(BaseDAAPIComponent):

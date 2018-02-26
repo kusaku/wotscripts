@@ -12,7 +12,7 @@ from gui.shared.items_parameters.functions import getBasicShell
 from gui.shared.items_parameters.params_cache import g_paramsCache
 from helpers import dependency
 from items import vehicles, ITEM_TYPES
-from shared_utils import findFirst
+from shared_utils import findFirst, first
 from skeletons.gui.shared.gui_items import IGuiItemsFactory
 _ITEM_TYPE_HANDLERS = {ITEM_TYPES.vehicleRadio: params.RadioParams,
  ITEM_TYPES.vehicleEngine: params.EngineParams,
@@ -161,10 +161,11 @@ def camouflageComparator(vehicle, camo, factory = None):
     """
     currParams = params.VehicleParams(vehicle).getParamsDict()
     if camo:
-        outfit = vehicle.getOutfit(camo.season)
+        season = first(camo.seasons)
+        outfit = vehicle.getOutfit(season)
         if not outfit:
             outfit = factory.createOutfit(isEnabled=True)
-            vehicle.setCustomOutfit(camo.season, outfit)
+            vehicle.setCustomOutfit(season, outfit)
         slot = outfit.hull.slotFor(GUI_ITEM_TYPE.CAMOUFLAGE)
         oldCamo = slot.getItem()
         slot.set(camo)

@@ -1,4 +1,4 @@
-# Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/techtree/ResearchView.py
+# Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/techtree/research_view.py
 from debug_utils import LOG_DEBUG
 from gui import SystemMessages
 from gui.Scaleform.daapi import LobbySubView

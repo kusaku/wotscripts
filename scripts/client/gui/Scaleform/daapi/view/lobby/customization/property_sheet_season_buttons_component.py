@@ -207,11 +207,12 @@ class PropertySheetSeasonButtonsComponent(PropertySheetSeasonButtonsComponentMet
         renderer.actionText = action[1]
         renderer.seasonIcon = self.__getSeasonIcon(SEASON_IDX_TO_TYPE[seasonIDX], state)
         renderer.applyItemIntCD = activeItem.intCD if activeItem is not None else -1
-        renderer.itemIcon = currentItem.icon if currentItem is not None else ''
-        renderer.itemIsWide = currentItem.isWide() if currentItem is not None else False
+        smallSlotVO = {'itemIcon': currentItem.icon if currentItem is not None else '',
+         'itemIsWide': currentItem.isWide() if currentItem is not None else False}
+        renderer.smallSlotVO = smallSlotVO
         renderer.wouldAddItem = wouldAddItem and action[0] is not SEASON_BUTTON_ACTIONS.LOCKED
         itemForPurchase = currentItem if currentItem is not None else activeItem
-        buyPrice = itemForPurchase.getBuyPrice() if itemForPurchase else ITEM_PRICE_EMPTY
+        buyPrice = itemForPurchase.getBuyPrice() if itemForPurchase and not itemForPurchase.isHidden else ITEM_PRICE_EMPTY
         renderer.buyPrice = getItemPricesVO(buyPrice)[0]
         renderer.currencyType = buyPrice.getCurrency() if buyPrice is not ITEM_PRICE_EMPTY else ''
         renderer.showBorder = currentItem is not None and currentItem == activeItem and renderer.seasonIDX == SEASON_TYPE_TO_IDX[self._activeSeason]
@@ -232,6 +233,8 @@ class PropertySheetSeasonButtonsComponent(PropertySheetSeasonButtonsComponentMet
             state = SeasonButtonStates.FILLED
         else:
             state = SeasonButtonStates.LOCKED_FILLED
+        if state == SeasonButtonStates.EMPTY_ADD and activeCustomizationItem and activeCustomizationItem.isHidden:
+            state = SeasonButtonStates.EMPTY_APPLY
         return state
 
     def __getAction(self, state):
@@ -297,15 +300,14 @@ class PropertySheetButtonRenderer(object):
      'removeItemIntCD',
      'seasonIcon',
      'action',
-     'itemIcon',
-     'itemIsWide',
      'buyPrice',
      'actionText',
      'requiresPurchase',
      'showPurchaseGlow',
      'showBorder',
      'wouldAddItem',
-     'currencyType']
+     'currencyType',
+     'smallSlotVO']
 
     def __init__(self):
         super(PropertySheetButtonRenderer, self).__init__()
@@ -314,8 +316,6 @@ class PropertySheetButtonRenderer(object):
         self.applyItemIntCD = -1
         self.seasonIcon = ''
         self.action = ''
-        self.itemIcon = ''
-        self.itemIsWide = False
         self.buyPrice = None
         self.actionText = ''
         self.requiresPurchase = False
@@ -323,6 +323,7 @@ class PropertySheetButtonRenderer(object):
         self.showBorder = False
         self.wouldAddItem = False
         self.currencyType = ''
+        self.smallSlotVO = None
         return
 
     def asdict(self):
@@ -331,12 +332,11 @@ class PropertySheetButtonRenderer(object):
          'applyItemIntCD': self.applyItemIntCD,
          'seasonIcon': self.seasonIcon,
          'action': self.action,
-         'itemIcon': self.itemIcon,
-         'itemIsWide': self.itemIsWide,
          'buyPrice': self.buyPrice,
          'actionText': self.actionText,
          'requiresPurchase': self.requiresPurchase,
          'showPurchaseGlow': self.showPurchaseGlow,
          'showBorder': self.showBorder,
          'wouldAddItem': self.wouldAddItem,
-         'currencyType': self.currencyType}
+         'currencyType': self.currencyType,
+         'smallSlotVO': self.smallSlotVO}

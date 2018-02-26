@@ -31,9 +31,6 @@ import material_kinds
 import DataLinks
 import Vehicular
 from gui.shared.gui_items.customization.outfit import Outfit
-from helpers import dependency
-from skeletons.account_helpers.settings_core import ISettingsCore
-from account_helpers.settings_core import settings_constants
 _VEHICLE_APPEAR_TIME = 0.2
 _ROOT_NODE_NAME = 'V'
 _GUN_RECOIL_NODE_NAME = 'G'
@@ -56,6 +53,7 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
     typeDescriptor = property(lambda self: self.__typeDesc)
     id = property(lambda self: self.__vID)
     isAlive = property(lambda self: self.__isAlive)
+    isObserver = property(lambda self: self.__isObserver)
 
     def __setFashions(self, fashions, isTurretDetached = False):
         self.__fashions = fashions
@@ -158,6 +156,7 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
         self.__periodicTimerID = None
         self.__wasDeactivated = False
         self.__inSpeedTreeCollision = False
+        self.__isObserver = False
         return
 
     def prerequisites(self, typeDescriptor, vID, health, isCrewActive, isTurretDetached, outfitCD):
@@ -204,7 +203,7 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
         else:
             super(CompoundAppearance, self).activate()
             isPlayerVehicle = self.__vehicle.isPlayerVehicle
-            isObserver = 'observer' in self.__typeDesc.type.tags
+            self.__isObserver = 'observer' in self.__typeDesc.type.tags
             player = BigWorld.player()
             self.__originalFilter = self.__vehicle.filter
             self.__vehicle.filter = self.__filter
@@ -218,12 +217,12 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
                 self.__inSpeedTreeCollision = True
                 BigWorld.setSpeedTreeCollisionBody(self.__compoundModel.getBoundsForPart(TankPartIndexes.HULL))
             self.__linkCompound()
-            if not isObserver:
+            if not self.__isObserver:
                 self.__chassisDecal.attach()
             self.__createAndAttachStickers()
             self.__startSystems()
             self.setupGunMatrixTargets()
-            if not isObserver:
+            if not self.__isObserver:
                 self.__vehicle.filter.enableLagDetection(not self.__currentDamageState.isCurrentModelDamaged)
             self.onModelChanged()
             if self.lodCalculator is not None:
@@ -236,7 +235,7 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
             self.__periodicTimerID = BigWorld.callback(_PERIODIC_TIME, self.__onPeriodicTimer)
             if self.fashion is not None:
                 self.fashion.activate()
-            if isObserver:
+            if self.__isObserver:
                 self.__compoundModel.visible = False
             BigWorld.player().arena.onPeriodChange += self.__arenaPeriodChanged
             BigWorld.player().inputHandler.onCameraChanged += self.__onCameraChanged
@@ -533,8 +532,7 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
         outfitCD = self.__vehicle.publicInfo['outfit']
         outfit = Outfit(outfitCD)
         if not (self.__vehicle.isPlayerVehicle or outfit.isHistorical()):
-            settingsCore = dependency.instance(ISettingsCore)
-            if settingsCore.getSetting(settings_constants.GAME.C11N_HISTORICALLY_ACCURATE):
+            if BigWorld.player().isC11nHistorical:
                 outfit = Outfit()
         return outfit
 

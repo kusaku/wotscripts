@@ -208,10 +208,8 @@ class CustomizationService(_ServiceItemShopMixin, _ServiceHelpersMixin, ICustomi
         self._helper = None
         self._mode = HighlightingMode.PAINT_REGIONS
         self._eventsManager = Event.EventManager()
-        self._isOver3dScene = True
         self._anchorPositions = None
         self._needHelperRestart = False
-        self._isMoved = True
         self.onRegionHighlighted = Event.Event(self._eventsManager)
         self.onRemoveItems = Event.Event(self._eventsManager)
         self.onCarouselFilter = Event.Event(self._eventsManager)
@@ -329,12 +327,14 @@ class CustomizationService(_ServiceItemShopMixin, _ServiceHelpersMixin, ICustomi
         """
         return self._helper
 
-    def __onRegionHighlighted(self, triplet):
-        areaID, regionID, selected = -1, -1, False
-        if triplet:
-            areaID, regionID, selected = triplet
-        if self._isOver3dScene:
-            self.onRegionHighlighted(MODE_TO_C11N_TYPE[self._mode], areaID, regionID)
+    def __onRegionHighlighted(self, args):
+        areaID, regionID, selected, hovered = (-1,
+         -1,
+         False,
+         False)
+        if args:
+            areaID, regionID, selected, hovered = args
+        self.onRegionHighlighted(MODE_TO_C11N_TYPE[self._mode], areaID, regionID, selected, hovered)
 
     def __onSpaceCreate(self):
         """ Restart the highlighter if it was previously started
@@ -352,8 +352,8 @@ class CustomizationService(_ServiceItemShopMixin, _ServiceHelpersMixin, ICustomi
         makes no sense to highlighter.
         """
         if self._helper:
-            self._isOver3dScene = event.ctx.get('isOver3dScene', False)
-            self._helper.setSelectingEnabled(self._isOver3dScene)
+            isOver3dScene = event.ctx.get('isOver3dScene', False)
+            self._helper.setSelectingEnabled(isOver3dScene)
 
     def __onNotifyCursorDragging(self, event):
         """ We need to track the lobby cursor dragging since clicks during
@@ -361,9 +361,8 @@ class CustomizationService(_ServiceItemShopMixin, _ServiceHelpersMixin, ICustomi
         """
         if self._helper:
             isDragging = event.ctx.get('isDragging', False)
-            if not isDragging and self._isMoved:
-                self._helper.setHighlightingEnabled(True)
-                self._isMoved = False
+            if not isDragging:
+                self._helper.setCursorDragging(False)
 
     def __onNotifySpaceMoved(self, event):
         """ We need to track the fact that space moved because it's an
@@ -373,5 +372,4 @@ class CustomizationService(_ServiceItemShopMixin, _ServiceHelpersMixin, ICustomi
             dx = event.ctx.get('dx')
             dy = event.ctx.get('dy')
             if dx or dy:
-                self._isMoved = True
-                self._helper.setHighlightingEnabled(False)
+                self._helper.setCursorDragging(True)
